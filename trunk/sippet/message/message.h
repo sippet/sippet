@@ -30,29 +30,71 @@
 #ifndef SIPPET_MESSAGE_MESSAGE_H_
 #define SIPPET_MESSAGE_MESSAGE_H_
 
-#include <vector>
-#include "talk/base/refcount.h"
-#include "talk/base/scoped_ptr.h"
-#include "talk/base/scoped_ref_ptr.h"
-#include "talk/base/constructormagic.h"
-#include "sippet/base/raw_ostream.h"
+#include "sippet/base/ilist.h"
+#include "base/memory/ref_counted.h"
+#include "base/memory/scoped_ptr.h"
 #include "sippet/message/header.h"
+
+namespace llvm {
+
+// Traits for intrusive list of headers...
+template<> struct ilist_traits<sippet::Header>
+  : public ilist_default_traits<sippet::Header> {
+
+  /// \brief Return a node that marks the end of a list.
+  ///
+  /// The sentinel is relative to this instance, so we use a non-static
+  /// method.
+  sippet::Header *createSentinel() const {
+    // Since i(p)lists always publicly derive from their corresponding traits,
+    // placing a data member in this class will augment the i(p)list.  But since
+    // the NodeTy is expected to be publicly derive from ilist_node<NodeTy>,
+    // there is a legal viable downcast from it to NodeTy. We use this trick to
+    // superimpose an i(p)list with a "ghostly" NodeTy, which becomes the
+    // sentinel. Dereferencing the sentinel is forbidden (save the
+    // ilist_node<NodeTy>), so no one will ever notice the superposition.
+    return static_cast<sippet::Header*>(&Sentinel);
+  }
+  static void destroySentinel(sippet::Header*) {}
+
+  sippet::Header *provideInitialHead() const { return createSentinel(); }
+  sippet::Header *ensureHead(sippet::Header*) const { return createSentinel(); }
+  static void noteHead(sippet::Header*, sippet::Header*) {}
+private:
+  mutable llvm::ilist_half_node<sippet::Header> Sentinel;
+};
+
+} // End of llvm namespace
 
 namespace sippet {
 
-class Message : public talk_base::RefCountInterface {
+class raw_ostream;
+
+class Message : public base::RefCounted<Message> {
+public:
+  typedef llvm::iplist<Header> HeaderListType;
+
+  // Header iterators...
+  typedef HeaderListType::iterator iterator;
+  typedef HeaderListType::const_iterator const_iterator;
+  typedef HeaderListType::reverse_iterator reverse_iterator;
+  typedef HeaderListType::const_reverse_iterator const_reverse_iterator;
+  typedef HeaderListType::reference reference;
+  typedef HeaderListType::const_reference const_reference;
+  typedef HeaderListType::size_type size_type;
+
 private:
+  HeaderListType headers_;
+
   DISALLOW_COPY_AND_ASSIGN(Message);
 
 protected:
-  Message();
-  virtual ~Message();
+  Message() {}
+
+  friend class base::RefCounted<Message>;
+  virtual ~Message() {}
 
 public:
-  typedef talk_base::scoped_refptr<Message> pointer;
-  typedef header_iterator<Header> iterator;
-  typedef header_iterator<const Header> const_iterator;
-
   //! An enumeration to indicate the message header.
   enum HeaderTy {
     HDR_ACCEPT,
@@ -102,41 +144,94 @@ public:
   };
 
   //! Returns true if the current message is a request.
-  virtual bool IsRequest() = 0;
+  virtual bool IsRequest() const = 0;
 
   //! Returns true if the current message is a response.
-  virtual bool IsResponse() = 0;
+  virtual bool IsResponse() const = 0;
 
-  //! Returns a STL-like header iterator. Note you cannot change the headers
-  //! while iterating.
-        iterator begin()       { return iterator(headers_); }
-  const_iterator begin() const { return const_iterator(headers_); }
+  //===--------------------------------------------------------------------===//
+  /// Header iterator methods
+  ///
+  iterator       begin()       { return headers_.begin(); }
+  const_iterator begin() const { return headers_.begin(); }
+  iterator       end  ()       { return headers_.end();   }
+  const_iterator end  () const { return headers_.end();   }
 
-  //! Returns a STL-like header iterator pointing to end. Note you cannot
-  //! change the headers while iterating.
-        iterator end()         { return iterator(0); }
-  const_iterator end() const   { return const_iterator(0); }
+  reverse_iterator       rbegin()       { return headers_.rbegin(); }
+  const_reverse_iterator rbegin() const { return headers_.rbegin(); }
+  reverse_iterator       rend  ()       { return headers_.rend();   }
+  const_reverse_iterator rend  () const { return headers_.rend();   }
 
-  //! Return a reference to the first header found of the indicated name, or
-  //! null if not found. Note you cannot change the headers while iterating.
-        iterator FindFirst(HeaderTy name);
-  const_iterator FindFirst(HeaderTy name) const;
+  size_type      size() const { return headers_.size();  }
+  bool          empty() const { return headers_.empty(); }
 
-  //! Return a reference to the next header found of the indicated name, or
-  //! null if not found. Note you cannot change the headers while iterating.
-        iterator FindNext(iterator start, HeaderTy name);
-  const_iterator FindNext(iterator start, HeaderTy name) const;
+  reference       front()       { return headers_.front(); }
+  const_reference front() const { return headers_.front(); }
+  reference       back()        { return headers_.back();  }
+  const_reference back() const  { return headers_.back();  }
 
-  //! Append a header to the message.
-  void Append(Header::pointer header);
+  //! Insert a header before a specific position in the message.
+  iterator insert(iterator where, scoped_ptr<Header> header) {
+    return headers_.insert(where, header.release());
+  }
+
+  //! Insert a header after a specific position in the message.
+  iterator insertAfter(iterator where, scoped_ptr<Header> header) {
+    return headers_.insertAfter(where, header.release());
+  }
+
+  //! Insert a header to the beginning of the message.
+  void push_front(scoped_ptr<Header> header) {
+    headers_.push_front(header.release());
+  }
+
+  //! Insert a header to the end of the message.
+  void push_back(scoped_ptr<Header> header) {
+    headers_.push_back(header.release());
+  }
+ 
+  //! Remove an existing header and return an iterator to the next header.
+  iterator erase(iterator position) {
+    return headers_.erase(position);
+  }
+
+  //! Remove all headers in the given interval.
+  void erase(iterator first, iterator last) {
+    headers_.erase(first, last);
+  }
+
+  //! Clear all headers.
+  void clear() {
+    headers_.clear();
+  }
+
+  //! Remove the first header of the message.
+  void pop_front() {
+    headers_.pop_front();
+  }
+
+  //! Remove the last header of the message.
+  void pop_back() {
+    headers_.pop_back();
+  }
+
+  //! Insert a set of headers to the message before a certain element, in
+  //! order. The set of headers must be of type scoped_ptr<Header>.
+  template<class InIt>
+  void insert(iterator where, InIt first, InIt last) {
+    for (; first != last; ++first)
+      headers_.insert(where, first->release());
+  }
+
+  //! Erase all headers matching a given predicate.
+  template<class Pr1> void erase_if(Pr1 pred) {
+    headers_.erase_if(pred);
+  }
 
   //! Print this message to the output.
-  virtual void print(raw_ostream &os);
-
-private:
-  Header *headers_;
+  virtual void print(raw_ostream &os) const;
 };
 
-}
+} // End of sippet namespace
 
 #endif // SIPPET_MESSAGE_MESSAGE_H_
