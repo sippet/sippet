@@ -34,7 +34,7 @@
 
 namespace sippet {
 
-class Request : public Message {
+class Request : public RefCountedObject<Message> {
 private:
   DISALLOW_COPY_AND_ASSIGN(Request);
 
