@@ -38,6 +38,65 @@ class raw_ostream;
 
 class Header : public llvm::ilist_node<Header> {
 public:
+  //! An enumeration to indicate the message header.
+  enum Type {
+    HDR_ACCEPT,
+    HDR_ACCEPT_ENCODING,
+    HDR_ACCEPT_LANGUAGE,
+    HDR_ALERT_INFO,
+    HDR_ALLOW,
+    HDR_AUTHENTICATION_INFO,
+    HDR_AUTHORIZATION,
+    HDR_CALL_ID,
+    HDR_CALL_INFO,
+    HDR_CONTACT,
+    HDR_CONTENT_DISPOSITION,
+    HDR_CONTENT_ENCODING,
+    HDR_CONTENT_LANGUAGE,
+    HDR_CONTENT_LENGTH,
+    HDR_CONTENT_TYPE,
+    HDR_CSEQ,
+    HDR_DATE,
+    HDR_ERROR_INFO,
+    HDR_EXPIRES,
+    HDR_FROM,
+    HDR_IN_REPLY_TO,
+    HDR_MAX_FORWARDS,
+    HDR_MIN_EXPIRES,
+    HDR_MIME_VERSION,
+    HDR_ORGANIZATION,
+    HDR_PRIORITY,
+    HDR_PROXY_AUTHENTICATE,
+    HDR_PROXY_AUTHORIZATION,
+    HDR_PROXY_REQUIRE,
+    HDR_RECORD_ROUTE,
+    HDR_REPLY_TO,
+    HDR_REQUIRE,
+    HDR_RETRY_AFTER,
+    HDR_ROUTE,
+    HDR_SERVER,
+    HDR_SUBJECT,
+    HDR_SUPPORTED,
+    HDR_TIMESTAMP,
+    HDR_TO,
+    HDR_UNSUPPORTED,
+    HDR_USER_AGENT,
+    HDR_VIA,
+    HDR_WARNING,
+    HDR_WWW_AUTHENTICATE
+  };
+
+private:
+  Type type_;
+
+  DISALLOW_COPY_AND_ASSIGN(Header);
+
+protected:
+  Header(Type type) : type_(type) {}
+
+public:
+  Type type() const { return type_; }
+
   virtual void print(raw_ostream &os) const = 0;
 };
 

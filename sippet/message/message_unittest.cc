@@ -28,6 +28,7 @@
  */
 
 #include "sippet/message/message.h"
+#include "sippet/message/headers/accept.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -41,6 +42,7 @@ public:
 
 class InstanceOfHeader : public Header {
 public:
+  InstanceOfHeader() : Header(Header::HDR_ACCEPT) {}
   virtual void print(raw_ostream &os) const { }
 };
 
