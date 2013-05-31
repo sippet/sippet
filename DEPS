@@ -30,6 +30,9 @@ deps = {
   "google_apis/build":
     Var("chromium_trunk") + "/src/google_apis/build@" + Var("chromium_revision"),
 
+  "base":
+    Var("chromium_trunk") + "/src/base@" + Var("chromium_revision"),
+
   "net/third_party/nss":
     Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
 
@@ -45,11 +48,20 @@ deps = {
   "third_party/libjingle/source":
     (Var("googlecode_url") % "libjingle") + "/trunk@" + Var("libjingle_revision"),
 
-  "third_party/icu/":
+  "third_party/icu":
     From("chromium_deps", "src/third_party/icu"),
 
   "third_party/sqlite":
     Var("chromium_trunk") + "/src/third_party/sqlite@" + Var("chromium_revision"),
+
+  "third_party/modp_b64":
+    Var("chromium_trunk") + "/src/third_party/modp_b64@" + Var("chromium_revision"),
+
+  "third_party/tcmalloc":
+    Var("chromium_trunk") + "/src/third_party/tcmalloc@" + Var("chromium_revision"),
+
+  "third_party/jemalloc":
+    Var("chromium_trunk") + "/src/third_party/jemalloc@" + Var("chromium_revision"),
 
   "tools/clang":
     Var("chromium_trunk") + "/src/tools/clang@" + Var("chromium_revision"),

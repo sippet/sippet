@@ -31,9 +31,8 @@
       'target_name': 'All',
       'type': 'none',
       'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:*',
-        '<(DEPTH)/testing/gmock.gyp:*',
-        '<(DEPTH)/third_party/libjingle/libjingle.gyp:*',
+        'sippet.gyp:*',
+        'sippet_tests.gyp:*',
       ],
     },
   ],
