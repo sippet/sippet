@@ -189,7 +189,7 @@ public:
 
   /// write_hname - Output SIP header name. When configure for compact mode,
   /// it will substitute header names for their corresponding letters.
-  raw_ostream &write_hname(const base::StringPiece &Str);
+  raw_ostream &write_hname(base::StringPiece Str);
 
   raw_ostream &write(unsigned char C);
   raw_ostream &write(const char *Ptr, size_t Size);

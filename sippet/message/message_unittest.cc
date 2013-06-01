@@ -97,3 +97,9 @@ TEST_F(MessageTest, Basic) {
   message_->clear();
   EXPECT_TRUE(message_->empty());
 }
+
+TEST_F(MessageTest, Accept) {
+  scoped_ptr<Accept> accept(new Accept);
+
+  EXPECT_EQ(Header::HDR_ACCEPT, accept->type());
+}

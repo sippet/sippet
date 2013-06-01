@@ -203,6 +203,11 @@ raw_ostream &raw_ostream::operator<<(const void *P) {
   return write_hex((uintptr_t) P);
 }
 
+raw_ostream &raw_ostream::write_hname(base::StringPiece Str) {
+  // TODO: add short names
+  return (*this) << Str << ": ";
+}
+
 raw_ostream &raw_ostream::operator<<(double N) {
 #ifdef _WIN32
   // On MSVCRT and compatible, output of %e is incompatible to Posix
