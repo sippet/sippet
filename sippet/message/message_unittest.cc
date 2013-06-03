@@ -29,6 +29,10 @@
 
 #include "sippet/message/message.h"
 #include "sippet/message/headers/accept.h"
+#include "sippet/message/headers/accept_encoding.h"
+#include "sippet/message/headers/accept_language.h"
+#include "sippet/message/headers/alert_info.h"
+#include "sippet/message/headers/allow.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
