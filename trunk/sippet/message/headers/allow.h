@@ -41,11 +41,17 @@ namespace sippet {
 class method {
 public:
   method() {}
+  method(const method &other) : method_(other.method_) {}
   explicit method(const std::string &meth)
     : method_(meth)
   { /* TODO: convert to upper case */ }
 
   ~method() {}
+
+  method &operator=(const method &other) {
+    method_ = other.method_;
+    return *this;
+  }
 
   std::string value() const { return method_; }
 
@@ -65,8 +71,18 @@ raw_ostream &operator << (raw_ostream &os, const method &m) {
 class Allow :
   public Header,
   public has_multiple<method> {
+private:
+  Allow(const Allow &other) : Header(other), has_multiple(other) {}
+  Allow &operator=(const Allow &);
+  virtual Allow *DoClone() const {
+    return new Allow(*this);
+  }
 public:
   Allow() : Header(Header::HDR_ALLOW) {}
+
+  scoped_ptr<Allow> Clone() const {
+    return scoped_ptr<Allow>(DoClone());
+  }
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Allow");

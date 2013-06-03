@@ -42,9 +42,17 @@ class encoding :
   public has_parameters {
 public:
   encoding() {}
+  encoding(const encoding &other)
+    : has_parameters(other), encoding_(other.encoding_) {}
   explicit encoding(const std::string &enc)
     : encoding_(enc)
   { /* TODO: convert to lower case */ }
+
+  encoding &operator=(const encoding &other) {
+    encoding_ = other.encoding_;
+    has_parameters::operator=(other);
+    return *this;
+  }
 
   ~encoding() {}
 
@@ -69,8 +77,19 @@ raw_ostream &operator << (raw_ostream &os, const encoding &e) {
 class AcceptEncoding :
   public Header,
   public has_multiple<encoding> {
+private:
+  AcceptEncoding(const AcceptEncoding &other)
+    : Header(other), has_multiple(other) {}
+  AcceptEncoding &operator=(const AcceptEncoding &);
+  virtual AcceptEncoding *DoClone() const {
+    return new AcceptEncoding(*this);
+  }
 public:
   AcceptEncoding() : Header(Header::HDR_ACCEPT_ENCODING) {}
+
+  scoped_ptr<AcceptEncoding> Clone() const {
+    return scoped_ptr<AcceptEncoding>(DoClone());
+  }
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Accept-Encoding");

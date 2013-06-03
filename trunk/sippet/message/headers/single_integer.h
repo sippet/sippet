@@ -27,74 +27,37 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADERS_CONTENT_DISPOSITION_H_
-#define SIPPET_MESSAGE_HEADERS_CONTENT_DISPOSITION_H_
-
-#include <string>
-#include "sippet/message/header.h"
-#include "sippet/message/headers/has_multiple.h"
-#include "sippet/message/headers/has_parameters.h"
-#include "sippet/base/raw_ostream.h"
+#ifndef SIPPET_MESSAGE_HEADERS_SINGLE_INTEGER_H_
+#define SIPPET_MESSAGE_HEADERS_SINGLE_INTEGER_H_
 
 namespace sippet {
 
-class disposition :
-  public has_parameters {
+class single_integer {
 public:
-  disposition() {}
-  disposition(const disposition &other)
-    : has_parameters(other), type_(other.type_) {}
-  explicit disposition(const std::string &type)
-    : type_(type)
-  { /* TODO: convert to lower case */ }
+  typedef long value_type;
 
-  ~disposition() {}
-
-  disposition &operator=(const disposition &other) {
-    type_ = other.type_;
-    has_parameters::operator=(other);
+  single_integer() {}
+  single_integer(const single_integer &other) : integer_(other.integer_) {}
+  ~single_integer() {}
+  single_integer &operator=(const single_integer &other) {
+    integer_ = other.integer_;
     return *this;
   }
 
-  std::string type() const { return type_; }
+  void set_value(value_type integer) { integer_ = integer; }
+  value_type value() const { return integer_; }
 
   void print(raw_ostream &os) const {
-    os << type();
-    has_parameters::print(os);
+    os << value();
   }
+
 private:
-  std::string type_;
-};
-
-inline
-raw_ostream &operator << (raw_ostream &os, const disposition &d) {
-  d.print(os);
-  return os;
-}
-
-class ContentDisposition :
-  public Header,
-  public has_multiple<disposition> {
-private:
-  ContentDisposition(const ContentDisposition &other)
-    : Header(other), has_multiple(other) {}
-  ContentDisposition &operator=(ContentDisposition &other);
-  virtual ContentDisposition *DoClone() const {
-    return new ContentDisposition(*this);
-  }
-public:
-  ContentDisposition() : Header(Header::HDR_CONTENT_DISPOSITION) {}
-
-  scoped_ptr<ContentDisposition> Clone() const {
-    return scoped_ptr<ContentDisposition>(DoClone());
-  }
-
-  virtual void print(raw_ostream &os) const {
-    os.write_hname("Content-Disposition");
-    has_multiple::print(os);
-  }
+  value_type integer_;
 };
 
 } // End of sippet namespace
 
-#endif // SIPPET_MESSAGE_HEADERS_CONTENT_DISPOSITION_H_
+#endif // SIPPET_MESSAGE_HEADERS_SINGLE_INTEGER_H_
+
+/* Modeline for vim: set tw=79 et ts=4: */
+
