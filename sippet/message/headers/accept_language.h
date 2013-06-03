@@ -27,8 +27,8 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADERS_ACCEPT_H_
-#define SIPPET_MESSAGE_HEADERS_ACCEPT_H_
+#ifndef SIPPET_MESSAGE_HEADERS_ACCEPT_LANGUAGE_H_
+#define SIPPET_MESSAGE_HEADERS_ACCEPT_LANGUAGE_H_
 
 #include <string>
 #include "sippet/message/header.h"
@@ -38,50 +38,46 @@
 
 namespace sippet {
 
-class media_range :
+class language :
   public has_parameters {
 public:
-  media_range() {}
-  media_range(const std::string &type, const std::string &subtype)
-    : type_(type), subtype_(subtype)
+  language() {}
+  explicit language(const std::string &lang)
+    : language_(lang)
   { /* TODO: convert to lower case */ }
 
-  ~media_range() {}
+  ~language() {}
 
-  std::string type() const { return type_; }
-  std::string subtype() const { return subtype_; }
-  std::string range() const { return type_ + "/" + subtype_; }
+  std::string value() const { return language_; }
 
-  bool allowsAll() { return type_ == "*" && allowsAllSubtypes(); }
-  bool allowsAllSubtypes() { return subtype_ == "*"; }
+  bool allowsAll() { return language_ == "*"; }
 
   void print(raw_ostream &os) const {
-    os << range();
+    os << value();
     has_parameters::print(os);
   }
 private:
-  std::string type_;
-  std::string subtype_;
+  std::string language_;
 };
 
 inline
-raw_ostream &operator << (raw_ostream &os, const media_range &m) {
-  m.print(os);
+raw_ostream &operator << (raw_ostream &os, const language &l) {
+  l.print(os);
   return os;
 }
 
-class Accept :
+class AcceptLanguage :
   public Header,
-  public has_multiple<media_range> {
+  public has_multiple<language> {
 public:
-  Accept() : Header(Header::HDR_ACCEPT) {}
+  AcceptLanguage() : Header(Header::HDR_ACCEPT_LANGUAGE) {}
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Accept");
+    os.write_hname("Accept-Language");
     has_multiple::print(os);
   }
 };
 
 } // End of sippet namespace
 
-#endif // SIPPET_MESSAGE_HEADERS_ACCEPT_H_
+#endif // SIPPET_MESSAGE_HEADERS_ACCEPT_LANGUAGE_H_
