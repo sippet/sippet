@@ -53,6 +53,12 @@ private:
   std::string value_;
 };
 
+inline
+raw_ostream &operator << (raw_ostream &os, const single_value &v) {
+  v.print(os);
+  return os;
+}
+
 } // End of sippet namespace
 
 #endif // SIPPET_MESSAGE_HEADERS_SINGLE_VALUE_H_
