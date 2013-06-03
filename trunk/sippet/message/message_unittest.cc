@@ -36,8 +36,7 @@ using namespace sippet;
 
 class InstanceOfMessage : public Message {
 public:
-  virtual bool IsRequest() const { return false; }
-  virtual bool IsResponse() const { return false; }
+  InstanceOfMessage() : Message(true) {}
 };
 
 class InstanceOfHeader : public Header {
@@ -102,4 +101,7 @@ TEST_F(MessageTest, Accept) {
   scoped_ptr<Accept> accept(new Accept);
 
   EXPECT_EQ(Header::HDR_ACCEPT, accept->type());
+
+  Header *h = accept.get();
+  EXPECT_TRUE(isa<Accept>(h));
 }
