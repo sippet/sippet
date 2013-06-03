@@ -31,11 +31,12 @@
 #define SIPPET_MESSAGE_MESSAGE_H_
 
 #include "sippet/base/ilist.h"
+#include "sippet/base/casting.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/scoped_ptr.h"
 #include "sippet/message/header.h"
 
-namespace llvm {
+namespace sippet {
 
 // Traits for intrusive list of headers...
 template<> struct ilist_traits<sippet::Header>
@@ -61,18 +62,16 @@ template<> struct ilist_traits<sippet::Header>
   sippet::Header *ensureHead(sippet::Header*) const { return createSentinel(); }
   static void noteHead(sippet::Header*, sippet::Header*) {}
 private:
-  mutable llvm::ilist_half_node<sippet::Header> Sentinel;
+  mutable ilist_half_node<sippet::Header> Sentinel;
 };
 
-} // End of llvm namespace
-
-namespace sippet {
-
 class raw_ostream;
+class Request;
+class Response;
 
 class Message : public base::RefCounted<Message> {
 public:
-  typedef llvm::iplist<Header> HeaderListType;
+  typedef iplist<Header> HeaderListType;
 
   // Header iterators...
   typedef HeaderListType::iterator iterator;
@@ -84,22 +83,23 @@ public:
   typedef HeaderListType::size_type size_type;
 
 private:
+  bool isRequest_;
   HeaderListType headers_;
 
   DISALLOW_COPY_AND_ASSIGN(Message);
 
 protected:
-  Message() {}
+  Message(bool isRequest) : isRequest_(isRequest) {}
 
   friend class base::RefCounted<Message>;
   virtual ~Message() {}
 
 public:
   //! Returns true if the current message is a request.
-  virtual bool IsRequest() const = 0;
+  bool IsRequest() const { return isRequest_; }
 
   //! Returns true if the current message is a response.
-  virtual bool IsResponse() const = 0;
+  bool IsResponse() const { return !isRequest_; }
 
   //===--------------------------------------------------------------------===//
   /// Header iterator methods
@@ -182,6 +182,21 @@ public:
 
   //! Print this message to the output.
   virtual void print(raw_ostream &os) const;
+};
+
+// isa - Provide some specializations of isa so that we don't have to include
+// the subtype header files to test to see if the value is a subclass...
+//
+template <> struct isa_impl<Request, Message> {
+  static inline bool doit(const Message &m) {
+    return m.IsRequest();
+  }
+};
+
+template <> struct isa_impl<Response, Message> {
+  static inline bool doit(const Message &m) {
+    return m.IsResponse();
+  }
 };
 
 } // End of sippet namespace
