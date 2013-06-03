@@ -31,6 +31,7 @@
 #define SIPPET_MESSAGE_HEADER_H_
 
 #include "sippet/base/ilist_node.h"
+#include "base/memory/scoped_ptr.h"
 
 namespace sippet {
 
@@ -133,13 +134,18 @@ public:
 private:
   Type type_;
 
-  DISALLOW_COPY_AND_ASSIGN(Header);
+  Header &operator=(const Header &);
 
 protected:
+  Header(const Header &other) : type_(other.type_) {}
   Header(Type type) : type_(type) {}
+
+  virtual Header *DoClone() const = 0;
 
 public:
   Type type() const { return type_; }
+
+  scoped_ptr<Header> Clone() const { return scoped_ptr<Header>(DoClone()); }
 
   virtual void print(raw_ostream &os) const = 0;
 };

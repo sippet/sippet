@@ -30,38 +30,28 @@
 #ifndef SIPPET_MESSAGE_HEADERS_ACCEPT_H_
 #define SIPPET_MESSAGE_HEADERS_ACCEPT_H_
 
-#include <string>
-#include "sippet/message/header.h"
+#include "sippet/message/headers/content_type.h"
 #include "sippet/message/headers/has_multiple.h"
-#include "sippet/message/headers/has_parameters.h"
-#include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
 class media_range :
-  public has_parameters {
+  public media_type {
 public:
   media_range() {}
+  media_range(const media_range &other)
+    : media_type(other) {}
   media_range(const std::string &type, const std::string &subtype)
-    : type_(type), subtype_(subtype)
-  { /* TODO: convert to lower case */ }
-
+    : media_type(type, subtype) {}
   ~media_range() {}
 
-  std::string type() const { return type_; }
-  std::string subtype() const { return subtype_; }
-  std::string range() const { return type_ + "/" + subtype_; }
-
-  bool allowsAll() { return type_ == "*" && allowsAllSubtypes(); }
-  bool allowsAllSubtypes() { return subtype_ == "*"; }
-
-  void print(raw_ostream &os) const {
-    os << range();
-    has_parameters::print(os);
+  media_range &operator=(const media_range &other) {
+    media_type::operator=(other);
+    return *this;
   }
-private:
-  std::string type_;
-  std::string subtype_;
+
+  bool allowsAll() { return type() == "*" && allowsAllSubtypes(); }
+  bool allowsAllSubtypes() { return subtype() == "*"; }
 };
 
 inline
@@ -73,8 +63,18 @@ raw_ostream &operator << (raw_ostream &os, const media_range &m) {
 class Accept :
   public Header,
   public has_multiple<media_range> {
+private:
+  Accept(const Accept &other) : Header(other), has_multiple(other) {}
+  Accept &operator=(const Accept &);
+  virtual Accept *DoClone() const {
+    return new Accept(*this);
+  }
 public:
   Accept() : Header(Header::HDR_ACCEPT) {}
+
+  scoped_ptr<Accept> Clone() const {
+    return scoped_ptr<Accept>(DoClone());
+  }
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Accept");
