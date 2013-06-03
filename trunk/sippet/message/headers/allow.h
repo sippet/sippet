@@ -27,8 +27,8 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADERS_ACCEPT_H_
-#define SIPPET_MESSAGE_HEADERS_ACCEPT_H_
+#ifndef SIPPET_MESSAGE_HEADERS_ALLOW_H_
+#define SIPPET_MESSAGE_HEADERS_ALLOW_H_
 
 #include <string>
 #include "sippet/message/header.h"
@@ -38,50 +38,42 @@
 
 namespace sippet {
 
-class media_range :
-  public has_parameters {
+class method {
 public:
-  media_range() {}
-  media_range(const std::string &type, const std::string &subtype)
-    : type_(type), subtype_(subtype)
-  { /* TODO: convert to lower case */ }
+  method() {}
+  explicit method(const std::string &meth)
+    : method_(meth)
+  { /* TODO: convert to upper case */ }
 
-  ~media_range() {}
+  ~method() {}
 
-  std::string type() const { return type_; }
-  std::string subtype() const { return subtype_; }
-  std::string range() const { return type_ + "/" + subtype_; }
-
-  bool allowsAll() { return type_ == "*" && allowsAllSubtypes(); }
-  bool allowsAllSubtypes() { return subtype_ == "*"; }
+  std::string value() const { return method_; }
 
   void print(raw_ostream &os) const {
-    os << range();
-    has_parameters::print(os);
+    os << value();
   }
 private:
-  std::string type_;
-  std::string subtype_;
+  std::string method_;
 };
 
 inline
-raw_ostream &operator << (raw_ostream &os, const media_range &m) {
+raw_ostream &operator << (raw_ostream &os, const method &m) {
   m.print(os);
   return os;
 }
 
-class Accept :
+class Allow :
   public Header,
-  public has_multiple<media_range> {
+  public has_multiple<method> {
 public:
-  Accept() : Header(Header::HDR_ACCEPT) {}
+  Allow() : Header(Header::HDR_ALLOW) {}
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Accept");
+    os.write_hname("Allow");
     has_multiple::print(os);
   }
 };
 
 } // End of sippet namespace
 
-#endif // SIPPET_MESSAGE_HEADERS_ACCEPT_H_
+#endif // SIPPET_MESSAGE_HEADERS_ALLOW_H_
