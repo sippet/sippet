@@ -45,6 +45,13 @@ public:
   typedef typename std::vector<T>::const_reference const_reference;
   typedef typename std::vector<T>::size_type size_type;
 
+protected:
+  has_multiple(const has_multiple &other) : items_(other.items_) {}
+  has_multiple &operator=(const has_multiple &other) {
+    items_ = other.items_;
+    return *this;
+  }
+public:
   has_multiple() {}
   ~has_multiple() {}
 

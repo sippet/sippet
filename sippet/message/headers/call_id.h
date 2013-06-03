@@ -32,25 +32,31 @@
 
 #include <string>
 #include "sippet/message/header.h"
+#include "sippet/message/headers/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
 class CallId :
-  public Header {
+  public Header,
+  public single_value {
+private:
+  CallId(const CallId &other) : Header(other), single_value(other) {}
+  CallId &operator=(const CallId &other);
+  virtual CallId *DoClone() const {
+    return new CallId(*this);
+  }
 public:
   CallId() : Header(Header::HDR_CALL_ID) {}
 
-  void set_value(const std::string &value) { value_ = value; }
-  std::string value() const { return value_; }
+  scoped_ptr<CallId> Clone() const {
+    return scoped_ptr<CallId>(DoClone());
+  }
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Call-ID");
-    os << value();
+    single_value::print(os);
   }
-
-private:
-  std::string value_;
 };
 
 } // End of sippet namespace

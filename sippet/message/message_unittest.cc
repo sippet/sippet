@@ -86,8 +86,17 @@ public:
 };
 
 class InstanceOfHeader : public Header {
+private:
+  InstanceOfHeader(const InstanceOfHeader &other) : Header(other) {}
+  InstanceOfHeader &operator=(const InstanceOfHeader &other);
+  virtual InstanceOfHeader *DoClone() const {
+    return new InstanceOfHeader(*this);
+  }
 public:
   InstanceOfHeader() : Header(Header::HDR_ACCEPT) {}
+  virtual scoped_ptr<InstanceOfHeader> Clone() {
+    return scoped_ptr<InstanceOfHeader>(DoClone());
+  }
   virtual void print(raw_ostream &os) const { }
 };
 

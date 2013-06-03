@@ -42,11 +42,19 @@ class language :
   public has_parameters {
 public:
   language() {}
+  language(const language &other)
+    : has_parameters(other), language_(other.language_) {}
   explicit language(const std::string &lang)
     : language_(lang)
   { /* TODO: convert to lower case */ }
 
   ~language() {}
+
+  language &operator=(const language &other) {
+    language_ = other.language_;
+    has_parameters::operator=(other);
+    return *this;
+  }
 
   std::string value() const { return language_; }
 
@@ -69,8 +77,19 @@ raw_ostream &operator << (raw_ostream &os, const language &l) {
 class AcceptLanguage :
   public Header,
   public has_multiple<language> {
+private:
+  AcceptLanguage(const AcceptLanguage &other)
+    : Header(other), has_multiple(other) {}
+  AcceptLanguage &operator=(const AcceptLanguage &);
+  virtual AcceptLanguage *DoClone() const {
+    return new AcceptLanguage(*this);
+  }
 public:
   AcceptLanguage() : Header(Header::HDR_ACCEPT_LANGUAGE) {}
+
+  scoped_ptr<AcceptLanguage> Clone() const {
+    return scoped_ptr<AcceptLanguage>(DoClone());
+  }
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Accept-Language");
