@@ -41,10 +41,17 @@
         '<(DEPTH)/third_party',
       ],
       'sources': [
+        'base/casting.h',
+        'base/format.h',
         'base/ilist.h',
         'base/ilist_node.h',
-        'base/raw_ostream.h',
         'base/raw_ostream.cc',
+        'base/raw_ostream.h',
+        'base/stl_extras.h',
+        'base/string_extras.h',
+        'base/type_traits.h',
+        'message/header.h',
+        'message/message.h',
         'message/message.cc',
       ],
     },  # target sippet

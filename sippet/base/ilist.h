@@ -1,49 +1,52 @@
-//==-- llvm/ADT/ilist.h - Intrusive Linked List Template ---------*- C++ -*-==//
-//
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
-//
-//===----------------------------------------------------------------------===//
-//
-// This file defines classes to implement an intrusive doubly linked list class
-// (i.e. each node of the list must contain a next and previous field for the
-// list.
-//
-// The ilist_traits trait class is used to gain access to the next and previous
-// fields of the node type that the list is instantiated with.  If it is not
-// specialized, the list defaults to using the getPrev(), getNext() method calls
-// to get the next and previous pointers.
-//
-// The ilist class itself, should be a plug in replacement for list, assuming
-// that the nodes contain next/prev pointers.  This list replacement does not
-// provide a constant time size() method, so be careful to use empty() when you
-// really want to know if it's empty.
-//
-// The ilist class is implemented by allocating a 'tail' node when the list is
-// created (using ilist_traits<>::createSentinel()).  This tail node is
-// absolutely required because the user must be able to compute end()-1. Because
-// of this, users of the direct next/prev links will see an extra link on the
-// end of the list, which should be ignored.
-//
-// Requirements for a user of this list:
-//
-//   1. The user must provide {g|s}et{Next|Prev} methods, or specialize
-//      ilist_traits to provide an alternate way of getting and setting next and
-//      prev links.
-//
-//===----------------------------------------------------------------------===//
+/*
+ * University of Illinois/NCSA
+ * Open Source License
+ * 
+ * Copyright (c) 2003-2013 University of Illinois at Urbana-Champaign.
+ * All rights reserved.
+ * 
+ * Developed by:
+ *     LLVM Team
+ *     University of Illinois at Urbana-Champaign
+ *     http://llvm.org
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal with
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+ * of the Software, and to permit persons to whom the Software is furnished to do
+ * so, subject to the following conditions:
+ * 
+ *     * Redistributions of source code must retain the above copyright notice,
+ *       this list of conditions and the following disclaimers.
+ * 
+ *     * Redistributions in binary form must reproduce the above copyright notice,
+ *       this list of conditions and the following disclaimers in the
+ *       documentation and/or other materials provided with the distribution.
+ * 
+ *     * Neither the names of the LLVM Team, University of Illinois at
+ *       Urbana-Champaign, nor the names of its contributors may be used to
+ *       endorse or promote products derived from this Software without specific
+ *       prior written permission.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH THE
+ * SOFTWARE.
+ */
 
-#ifndef LLVM_ADT_ILIST_H
-#define LLVM_ADT_ILIST_H
+#ifndef SIPPET_BASE_ILIST_H_
+#define SIPPET_BASE_ILIST_H_
 
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <iterator>
 
-namespace llvm {
+namespace sippet {
 
 template<typename NodeTy, typename Traits> class iplist;
 template<typename NodeTy> class ilist_iterator;
@@ -706,14 +709,14 @@ struct ilist : public iplist<NodeTy> {
   void resize(size_type newsize) { resize(newsize, NodeTy()); }
 };
 
-} // End llvm namespace
+} // End of sippet namespace
 
 namespace std {
   // Ensure that swap uses the fast list swap...
   template<class Ty>
-  void swap(llvm::iplist<Ty> &Left, llvm::iplist<Ty> &Right) {
+  void swap(sippet::iplist<Ty> &Left, sippet::iplist<Ty> &Right) {
     Left.swap(Right);
   }
 }  // End 'std' extensions...
 
-#endif // LLVM_ADT_ILIST_H
+#endif // SIPPET_BASE_ILIST_H_
