@@ -48,7 +48,7 @@ private:
     return new InReplyTo(*this);
   }
 public:
-  InReplyTo() : Header(Header::HDR_ACCEPT) {}
+  InReplyTo() : Header(Header::HDR_IN_REPLY_TO) {}
 
   scoped_ptr<InReplyTo> Clone() const {
     return scoped_ptr<InReplyTo>(DoClone());
@@ -63,6 +63,3 @@ public:
 } // End of sippet namespace
 
 #endif // SIPPET_MESSAGE_HEADERS_IN_REPLY_TO_H_
-
-/* Modeline for vim: set tw=79 et ts=4: */
-
