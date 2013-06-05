@@ -32,51 +32,50 @@
 
 #include <string>
 #include "sippet/message/header.h"
+#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/has_parameters.h"
+#include "sippet/message/headers/bits/param_setters.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
-class language :
-  public has_parameters {
+class Language :
+  public single_value<std::string>,
+  public has_parameters,
+  public has_qvalue<Language> {
 public:
-  language() {}
-  language(const language &other)
-    : has_parameters(other), language_(other.language_) {}
-  explicit language(const std::string &lang)
-    : language_(lang)
-  { /* TODO: convert to lower case */ }
+  Language() {}
+  Language(const Language &other)
+    : has_parameters(other), single_value(other) {}
+  explicit Language(const std::string &value)
+    : single_value(value) { /* TODO: convert to lower case */ }
 
-  ~language() {}
+  ~Language() {}
 
-  language &operator=(const language &other) {
-    language_ = other.language_;
+  Language &operator=(const Language &other) {
+    single_value::operator=(other);
     has_parameters::operator=(other);
     return *this;
   }
 
-  std::string value() const { return language_; }
-
-  bool allowsAll() { return language_ == "*"; }
+  bool AllowsAll() { return value() == "*"; }
 
   void print(raw_ostream &os) const {
     os << value();
     has_parameters::print(os);
   }
-private:
-  std::string language_;
 };
 
 inline
-raw_ostream &operator << (raw_ostream &os, const language &l) {
+raw_ostream &operator << (raw_ostream &os, const Language &l) {
   l.print(os);
   return os;
 }
 
 class AcceptLanguage :
   public Header,
-  public has_multiple<language> {
+  public has_multiple<Language> {
 private:
   DISALLOW_ASSIGN(AcceptLanguage);
   AcceptLanguage(const AcceptLanguage &other)

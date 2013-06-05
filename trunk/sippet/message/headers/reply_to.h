@@ -36,10 +36,10 @@ namespace sippet {
 
 class ReplyTo :
   public Header,
-  public contact_info {
+  public ContactBase {
 private:
   ReplyTo(const ReplyTo &other)
-    : Header(other), contact_info(other) {}
+    : Header(other), ContactBase(other) {}
   ReplyTo &operator=(const ReplyTo &);
   virtual ReplyTo *DoClone() const {
     return new ReplyTo(*this);
@@ -47,7 +47,7 @@ private:
 public:
   ReplyTo() : Header(Header::HDR_REPLY_TO) {}
   ReplyTo(const std::string &address, const std::string &displayName="")
-    : Header(Header::HDR_REPLY_TO), contact_info(address, displayName) {}
+    : Header(Header::HDR_REPLY_TO), ContactBase(address, displayName) {}
 
   scoped_ptr<ReplyTo> Clone() const {
     return scoped_ptr<ReplyTo>(DoClone());
@@ -55,7 +55,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Reply-To");
-    contact_info::print(os);
+    ContactBase::print(os);
   }
 };
 

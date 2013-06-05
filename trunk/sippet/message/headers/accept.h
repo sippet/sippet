@@ -35,34 +35,34 @@
 
 namespace sippet {
 
-class media_range :
-  public media_type {
+class MediaRange :
+  public MediaType {
 public:
-  media_range() {}
-  media_range(const media_range &other)
-    : media_type(other) {}
-  media_range(const std::string &type, const std::string &subtype)
-    : media_type(type, subtype) {}
-  ~media_range() {}
+  MediaRange() {}
+  MediaRange(const MediaRange &other)
+    : MediaType(other) {}
+  MediaRange(const std::string &type, const std::string &subtype)
+    : MediaType(type, subtype) {}
+  ~MediaRange() {}
 
-  media_range &operator=(const media_range &other) {
-    media_type::operator=(other);
+  MediaRange &operator=(const MediaRange &other) {
+    MediaType::operator=(other);
     return *this;
   }
 
-  bool allowsAll() { return type() == "*" && allowsAllSubtypes(); }
-  bool allowsAllSubtypes() { return subtype() == "*"; }
+  bool AllowsAll() { return type() == "*" && AllowsAllSubtypes(); }
+  bool AllowsAllSubtypes() { return subtype() == "*"; }
 };
 
 inline
-raw_ostream &operator << (raw_ostream &os, const media_range &m) {
+raw_ostream &operator << (raw_ostream &os, const MediaRange &m) {
   m.print(os);
   return os;
 }
 
 class Accept :
   public Header,
-  public has_multiple<media_range> {
+  public has_multiple<MediaRange> {
 private:
   DISALLOW_ASSIGN(Accept);
   Accept(const Accept &other) : Header(other), has_multiple(other) {}

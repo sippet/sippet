@@ -33,24 +33,26 @@
 #include <string>
 #include "sippet/message/header.h"
 #include "sippet/message/headers/bits/has_parameters.h"
+#include "sippet/message/headers/bits/has_multiple.h"
+#include "sippet/message/headers/bits/param_setters.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
-class contact_info :
+class ContactBase :
   public has_parameters {
 public:
-  contact_info() {}
-  contact_info(const contact_info &other)
+  ContactBase() {}
+  ContactBase(const ContactBase &other)
     : has_parameters(other), address_(other.address_),
       displayName_(other.displayName_) {}
-  explicit contact_info(const std::string &address,
+  explicit ContactBase(const std::string &address,
                         const std::string &displayName="")
     : address_(address), displayName_(displayName) {}
 
-  ~contact_info() {}
+  ~ContactBase() {}
 
-  contact_info &operator=(const contact_info &other) {
+  ContactBase &operator=(const ContactBase &other) {
     address_ = other.address_;
     displayName_ = other.displayName_;
     has_parameters::operator=(other);
@@ -71,25 +73,48 @@ private:
   std::string displayName_;
 };
 
+class ContactInfo :
+  public ContactBase,
+  public has_qvalue<ContactInfo>,
+  public has_expires<ContactInfo> {
+public:
+  ContactInfo() {}
+  ContactInfo(const ContactInfo &other)
+    : ContactBase(other) {}
+  explicit ContactInfo(const std::string &address,
+                       const std::string &displayName="")
+    : ContactBase(address, displayName) {}
+
+  ~ContactInfo() {}
+
+  ContactInfo &operator=(const ContactInfo &other) {
+    ContactBase::operator=(other);
+    return *this;
+  }
+};
+
+inline raw_ostream &operator<<(raw_ostream &os, const ContactInfo &i) {
+  i.print(os);
+  return os;
+}
+
 class Contact :
   public Header,
-  public contact_info {
+  public has_multiple<ContactInfo> {
 private:
   Contact(const Contact &other)
-    : Header(other), contact_info(other), star_(other.star_) {}
+    : Header(other), has_multiple(other), star_(other.star_) {}
   Contact &operator=(const Contact &);
   virtual Contact *DoClone() const {
     return new Contact(*this);
   }
 public:
-  enum Star { STAR };
+  enum _All { All };
 
-  Contact() : Header(Header::HDR_CONTACT), star_(false) {}
-  Contact(Star)
+  Contact()
+    : Header(Header::HDR_CONTACT), star_(false) {}
+  Contact(_All)
     : Header(Header::HDR_CONTACT), star_(true) {}
-  Contact(const std::string &address, const std::string &displayName="")
-    : Header(Header::HDR_CONTACT), star_(false),
-      contact_info(address, displayName) {}
 
   scoped_ptr<Contact> Clone() const {
     return scoped_ptr<Contact>(DoClone());
@@ -100,7 +125,7 @@ public:
     if (star_)
       os << "*";
     else
-      contact_info::print(os);
+      has_multiple::print(os);
   }
 private:
   bool star_;
