@@ -33,22 +33,24 @@
 #include <string>
 #include "sippet/message/header.h"
 #include "sippet/message/headers/bits/has_parameters.h"
+#include "sippet/message/headers/bits/param_setters.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
-class media_type :
-  public has_parameters {
+class MediaType :
+  public has_parameters,
+  public has_qvalue<MediaType> {
 public:
-  media_type() {}
-  media_type(const media_type &other)
+  MediaType() {}
+  MediaType(const MediaType &other)
     : has_parameters(other), type_(other.type_), subtype_(other.subtype_) {}
-  media_type(const std::string &type, const std::string &subtype)
+  MediaType(const std::string &type, const std::string &subtype)
     : type_(type), subtype_(subtype)
   { /* TODO: convert to lower case */ }
-  ~media_type() {}
+  ~MediaType() {}
 
-  media_type &operator=(const media_type &other) {
+  MediaType &operator=(const MediaType &other) {
     type_ = other.type_;
     subtype_ = other.subtype_;
     has_parameters::operator=(other);
@@ -74,9 +76,9 @@ private:
 
 class ContentType :
   public Header,
-  public media_type {
+  public MediaType {
 private:
-  ContentType(const ContentType &other) : Header(other), media_type(other) {}
+  ContentType(const ContentType &other) : Header(other), MediaType(other) {}
   ContentType &operator=(const ContentType &);
   virtual ContentType *DoClone() const {
     return new ContentType(*this);
@@ -84,7 +86,7 @@ private:
 public:
   ContentType() : Header(Header::HDR_CONTENT_TYPE) {}
   ContentType(const std::string &type, const std::string &subtype)
-    : Header(Header::HDR_CONTENT_LANGUAGE), media_type(type, subtype) {}
+    : Header(Header::HDR_CONTENT_LANGUAGE), MediaType(type, subtype) {}
 
   scoped_ptr<ContentType> Clone() const {
     return scoped_ptr<ContentType>(DoClone());
@@ -92,7 +94,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Content-Type");
-    media_type::print(os);
+    MediaType::print(os);
   }
 };
 

@@ -36,10 +36,11 @@ namespace sippet {
 
 class From :
   public Header,
-  public contact_info {
+  public ContactBase,
+  public has_tag<From> {
 private:
   From(const From &other)
-    : Header(other), contact_info(other) {}
+    : Header(other), ContactBase(other) {}
   From &operator=(const From &);
   virtual From *DoClone() const {
     return new From(*this);
@@ -47,7 +48,7 @@ private:
 public:
   From() : Header(Header::HDR_FROM) {}
   From(const std::string &address, const std::string &displayName="")
-    : Header(Header::HDR_FROM), contact_info(address, displayName) {}
+    : Header(Header::HDR_FROM), ContactBase(address, displayName) {}
 
   scoped_ptr<From> Clone() const {
     return scoped_ptr<From>(DoClone());
@@ -55,7 +56,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("From");
-    contact_info::print(os);
+    ContactBase::print(os);
   }
 };
 

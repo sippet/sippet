@@ -38,29 +38,39 @@
 
 namespace sippet {
 
-class disposition :
+class Disposition :
   public has_parameters {
 public:
-  disposition() {}
-  disposition(const disposition &other)
+  enum Type {
+    render, session, icon, alert
+  };
+
+  Disposition() {}
+  Disposition(const Disposition &other)
     : has_parameters(other), type_(other.type_) {}
-  explicit disposition(const std::string &type)
-    : type_(type)
-  { /* TODO: convert to lower case */ }
+  explicit Disposition(Type t) { SetType(t); }
+  explicit Disposition(const std::string &type)
+    : type_(type) {}
 
-  ~disposition() {}
+  ~Disposition() {}
 
-  disposition &operator=(const disposition &other) {
+  Disposition &operator=(const Disposition &other) {
     type_ = other.type_;
     has_parameters::operator=(other);
     return *this;
   }
 
-  std::string type() const { return type_; }
-  void type(const std::string &type) { type_ = type; }
+  std::string GetType() const { return type_; }
+
+  void SetType(Type t) {
+    static const char *rep[] = { "render", "session", "icon", "alert" };
+    type_ = rep[static_cast<int>(t)];
+  }
+
+  void SetType(const std::string &type) { type_ = type; }
 
   void print(raw_ostream &os) const {
-    os << type();
+    os << GetType();
     has_parameters::print(os);
   }
 private:
@@ -69,10 +79,10 @@ private:
 
 class ContentDisposition :
   public Header,
-  public disposition {
+  public Disposition {
 private:
   ContentDisposition(const ContentDisposition &other)
-    : Header(other), disposition(other) {}
+    : Header(other), Disposition(other) {}
   ContentDisposition &operator=(ContentDisposition &other);
   virtual ContentDisposition *DoClone() const {
     return new ContentDisposition(*this);
@@ -80,7 +90,7 @@ private:
 public:
   ContentDisposition() : Header(Header::HDR_CONTENT_DISPOSITION) {}
   ContentDisposition(const std::string &type)
-    : Header(Header::HDR_CONTENT_DISPOSITION), disposition(type) {}
+    : Header(Header::HDR_CONTENT_DISPOSITION), Disposition(type) {}
 
   scoped_ptr<ContentDisposition> Clone() const {
     return scoped_ptr<ContentDisposition>(DoClone());
@@ -88,7 +98,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Content-Disposition");
-    disposition::print(os);
+    Disposition::print(os);
   }
 };
 

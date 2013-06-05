@@ -32,51 +32,50 @@
 
 #include <string>
 #include "sippet/message/header.h"
+#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/has_parameters.h"
+#include "sippet/message/headers/bits/param_setters.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
-class encoding :
-  public has_parameters {
+class Encoding :
+  public single_value<std::string>,
+  public has_parameters,
+  public has_qvalue<Encoding> {
 public:
-  encoding() {}
-  encoding(const encoding &other)
-    : has_parameters(other), encoding_(other.encoding_) {}
-  explicit encoding(const std::string &enc)
-    : encoding_(enc)
-  { /* TODO: convert to lower case */ }
+  Encoding() {}
+  Encoding(const Encoding &other)
+    : has_parameters(other), single_value(other) {}
+  explicit Encoding(const single_value::value_type &value)
+    : single_value(value) { /* TODO: convert to lower case */ }
 
-  encoding &operator=(const encoding &other) {
-    encoding_ = other.encoding_;
+  Encoding &operator=(const Encoding &other) {
+    single_value::operator=(other);
     has_parameters::operator=(other);
     return *this;
   }
 
-  ~encoding() {}
+  ~Encoding() {}
 
-  std::string value() const { return encoding_; }
-
-  bool allowsAll() { return encoding_ == "*"; }
+  bool AllowsAll() const { return value() == "*"; }
 
   void print(raw_ostream &os) const {
     os << value();
     has_parameters::print(os);
   }
-private:
-  std::string encoding_;
 };
 
 inline
-raw_ostream &operator << (raw_ostream &os, const encoding &e) {
+raw_ostream &operator << (raw_ostream &os, const Encoding &e) {
   e.print(os);
   return os;
 }
 
 class AcceptEncoding :
   public Header,
-  public has_multiple<encoding> {
+  public has_multiple<Encoding> {
 private:
   DISALLOW_ASSIGN(AcceptEncoding);
   AcceptEncoding(const AcceptEncoding &other)
