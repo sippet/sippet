@@ -93,6 +93,9 @@ deps_os = {
     "third_party/winsdk_samples/src":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/winsdk_samples_v71@3145",
 
+    "tools/win/toolchain":
+      Var("chromium_trunk") + "/src/tools/win/toolchain@" + Var("chromium_revision"),
+
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),

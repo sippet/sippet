@@ -78,9 +78,9 @@ class AcceptEncoding :
   public Header,
   public has_multiple<encoding> {
 private:
+  DISALLOW_ASSIGN(AcceptEncoding);
   AcceptEncoding(const AcceptEncoding &other)
     : Header(other), has_multiple(other) {}
-  AcceptEncoding &operator=(const AcceptEncoding &);
   virtual AcceptEncoding *DoClone() const {
     return new AcceptEncoding(*this);
   }
