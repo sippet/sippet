@@ -56,11 +56,15 @@ public:
   }
 
   std::string type() const { return type_; }
+  void set_type(const std::string &type) { type_ = type; }
+
   std::string subtype() const { return subtype_; }
+  void set_subtype(const std::string &subtype) { subtype_ = subtype; }
+
   std::string value() const { return type_ + "/" + subtype_; }
 
   void print(raw_ostream &os) const {
-    os << type();
+    os << value();
     has_parameters::print(os);
   }
 private:
@@ -79,6 +83,8 @@ private:
   }
 public:
   ContentType() : Header(Header::HDR_CONTENT_TYPE) {}
+  ContentType(const std::string &type, const std::string &subtype)
+    : Header(Header::HDR_CONTENT_LANGUAGE), media_type(type, subtype) {}
 
   scoped_ptr<ContentType> Clone() const {
     return scoped_ptr<ContentType>(DoClone());

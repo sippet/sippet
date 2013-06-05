@@ -36,7 +36,8 @@ class single_integer {
 public:
   typedef long value_type;
 
-  single_integer() {}
+  single_integer() : integer_(0) {}
+  single_integer(value_type value) : integer_(value) {}
   single_integer(const single_integer &other) : integer_(other.integer_) {}
   ~single_integer() {}
   single_integer &operator=(const single_integer &other) {

@@ -48,6 +48,8 @@ private:
   }
 public:
   Priority() : Header(Header::HDR_PRIORITY) {}
+  Priority(const std::string &priority)
+    : Header(Header::HDR_PRIORITY), single_value(priority) {}
 
   scoped_ptr<Priority> Clone() const {
     return scoped_ptr<Priority>(DoClone());

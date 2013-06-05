@@ -35,6 +35,7 @@ namespace sippet {
 class single_value {
 public:
   single_value() {}
+  single_value(const std::string &value) : value_(value) {}
   single_value(const single_value &other) : value_(other.value_) {}
   ~single_value() {}
   single_value &operator=(const single_value &other) {

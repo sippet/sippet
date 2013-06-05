@@ -57,6 +57,7 @@ public:
   }
 
   std::string type() const { return type_; }
+  void type(const std::string &type) { type_ = type; }
 
   void print(raw_ostream &os) const {
     os << type();
@@ -66,15 +67,9 @@ private:
   std::string type_;
 };
 
-inline
-raw_ostream &operator << (raw_ostream &os, const disposition &d) {
-  d.print(os);
-  return os;
-}
-
 class ContentDisposition :
   public Header,
-  public has_multiple<disposition> {
+  public disposition {
 private:
   ContentDisposition(const ContentDisposition &other)
     : Header(other), has_multiple(other) {}
@@ -84,6 +79,8 @@ private:
   }
 public:
   ContentDisposition() : Header(Header::HDR_CONTENT_DISPOSITION) {}
+  ContentDisposition(const std::string &type)
+    : Header(Header::HDR_CONTENT_DISPOSITION), disposition(type) {}
 
   scoped_ptr<ContentDisposition> Clone() const {
     return scoped_ptr<ContentDisposition>(DoClone());
@@ -91,7 +88,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Content-Disposition");
-    has_multiple::print(os);
+    disposition::print(os);
   }
 };
 
