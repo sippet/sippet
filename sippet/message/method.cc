@@ -27,39 +27,41 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADERS_ALLOW_H_
-#define SIPPET_MESSAGE_HEADERS_ALLOW_H_
-
-#include <string>
-#include "sippet/message/header.h"
-#include "sippet/message/headers/has_multiple.h"
-#include "sippet/message/headers/has_parameters.h"
 #include "sippet/message/method.h"
+
+namespace {
+
+const char *methods[] = {
+  "INVITE",
+  "ACK",
+  "CANCEL",
+  "PRACK",
+  "BYE",
+  "REFER",
+  "INFO",
+  "UPDATE",
+  "OPTIONS",
+  "REGISTER",
+  "MESSAGE",
+  "SUBSCRIBE",
+  "NOTIFY",
+  "PUBLISH",
+  "PULL",
+  "PUSH",
+  "STORE",
+  "?????", // Reserved for unknown
+};
+
+} // End of empty namespace
 
 namespace sippet {
 
-class Allow :
-  public Header,
-  public has_multiple<Method> {
-private:
-  Allow(const Allow &other) : Header(other), has_multiple(other) {}
-  Allow &operator=(const Allow &);
-  virtual Allow *DoClone() const {
-    return new Allow(*this);
-  }
-public:
-  Allow() : Header(Header::HDR_ALLOW) {}
-
-  scoped_ptr<Allow> Clone() const {
-    return scoped_ptr<Allow>(DoClone());
-  }
-
-  virtual void print(raw_ostream &os) const {
-    os.write_hname("Allow");
-    has_multiple::print(os);
-  }
-};
+std::string Method::name() const {
+  const int max_size = sizeof(methods) / sizeof(methods[0]);
+  int index = static_cast<int>(method_);
+  if (index >= max_size)
+    return methods[max_size-1];
+  return methods[index];
+}
 
 } // End of sippet namespace
-
-#endif // SIPPET_MESSAGE_HEADERS_ALLOW_H_
