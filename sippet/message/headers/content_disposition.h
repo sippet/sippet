@@ -72,7 +72,7 @@ class ContentDisposition :
   public disposition {
 private:
   ContentDisposition(const ContentDisposition &other)
-    : Header(other), has_multiple(other) {}
+    : Header(other), disposition(other) {}
   ContentDisposition &operator=(ContentDisposition &other);
   virtual ContentDisposition *DoClone() const {
     return new ContentDisposition(*this);

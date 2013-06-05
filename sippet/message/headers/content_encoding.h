@@ -39,7 +39,7 @@ namespace sippet {
 
 class ContentEncoding :
   public Header,
-  public single_value {
+  public single_value<std::string> {
 private:
   ContentEncoding(const ContentEncoding &other)
     : Header(other), single_value(other) {}
@@ -49,7 +49,7 @@ private:
   }
 public:
   ContentEncoding() : Header(Header::HDR_CONTENT_ENCODING) {}
-  ContentEncoding(const std::string &encoding)
+  ContentEncoding(const single_value::value_type &encoding)
     : Header(Header::HDR_CONTENT_LANGUAGE), single_value(encoding) {}
 
   scoped_ptr<ContentEncoding> Clone() const {

@@ -39,7 +39,7 @@ namespace sippet {
 
 class Organization :
   public Header,
-  public single_value {
+  public single_value<std::string> {
 private:
   Organization(const Organization &other) : Header(other), single_value(other) {}
   Organization &operator=(const Organization &other);
@@ -48,7 +48,7 @@ private:
   }
 public:
   Organization() : Header(Header::HDR_ORGANIZATION) {}
-  Organization(const std::string &organization)
+  Organization(const single_value::value_type &organization)
     : Header(Header::HDR_ORGANIZATION), single_value(organization) {}
 
   scoped_ptr<Organization> Clone() const {

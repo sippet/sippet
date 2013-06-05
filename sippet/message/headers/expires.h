@@ -31,24 +31,24 @@
 #define SIPPET_MESSAGE_HEADERS_EXPIRES_H_
 
 #include "sippet/message/header.h"
-#include "sippet/message/headers/bits/single_integer.h"
+#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
 class Expires :
   public Header,
-  public single_integer {
+  public single_value<unsigned> {
 private:
-  Expires(const Expires &other) : Header(other), single_integer(other) {}
+  Expires(const Expires &other) : Header(other), single_value(other) {}
   Expires &operator=(const Expires &);
   virtual Expires *DoClone() const {
     return new Expires(*this);
   }
 public:
   Expires() : Header(Header::HDR_EXPIRES) {}
-  Expires(single_integer::value_type seconds)
-    : Header(Header::HDR_EXPIRES), single_integer(seconds) {}
+  Expires(const single_value::value_type &seconds)
+    : Header(Header::HDR_EXPIRES), single_value(seconds) {}
 
   scoped_ptr<Expires> Clone() const {
     return scoped_ptr<Expires>(DoClone());
@@ -56,7 +56,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Expires");
-    single_integer::print(os);
+    single_value::print(os);
   }
 };
 

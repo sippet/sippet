@@ -40,7 +40,7 @@ namespace sippet {
 
 class Require :
   public Header,
-  public has_multiple<single_value> {
+  public has_multiple<single_value<std::string> > {
 private:
   Require(const Require &other) : Header(other), has_multiple(other) {}
   Require &operator=(const Require &);
