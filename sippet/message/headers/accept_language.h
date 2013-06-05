@@ -78,9 +78,9 @@ class AcceptLanguage :
   public Header,
   public has_multiple<language> {
 private:
+  DISALLOW_ASSIGN(AcceptLanguage);
   AcceptLanguage(const AcceptLanguage &other)
     : Header(other), has_multiple(other) {}
-  AcceptLanguage &operator=(const AcceptLanguage &);
   virtual AcceptLanguage *DoClone() const {
     return new AcceptLanguage(*this);
   }

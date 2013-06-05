@@ -69,7 +69,7 @@ public:
 
   // Miscellaneous inspection routines.
   size_type max_size() const { return items_.max_size(); }
-  bool empty() const { return items_.empty() }
+  bool empty() const { return items_.empty(); }
 
   // Front and back accessor functions...
   reference front() { return items_.front(); }
