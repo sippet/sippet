@@ -59,5 +59,3 @@ private:
 
 #endif // SIPPET_MESSAGE_HEADERS_SINGLE_INTEGER_H_
 
-/* Modeline for vim: set tw=79 et ts=4: */
-
