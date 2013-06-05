@@ -48,6 +48,8 @@ private:
   }
 public:
   ContentLanguage() : Header(Header::HDR_CONTENT_LANGUAGE) {}
+  ContentLanguage(const std::string &language)
+    : Header(Header::HDR_CONTENT_LANGUAGE), single_value(language) {}
 
   scoped_ptr<ContentLanguage> Clone() const {
     return scoped_ptr<ContentLanguage>(DoClone());

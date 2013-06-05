@@ -50,6 +50,8 @@ private:
   }
 public:
   RetryAfter() : Header(Header::HDR_RETRY_AFTER) {}
+  RetryAfter(single_integer::value_type seconds)
+    : Header(Header::HDR_RETRY_AFTER), single_integer(seconds) {}
 
   scoped_ptr<RetryAfter> Clone() const {
     return scoped_ptr<RetryAfter>(DoClone());

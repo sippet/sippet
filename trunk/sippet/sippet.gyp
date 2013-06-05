@@ -97,6 +97,8 @@
         'message/headers/via.h',
         'message/headers/warning.h',
         'message/headers/www_authenticate.h',
+        'message/method.h',
+        'message/method.cc',
         'message/message.h',
         'message/message.cc',
       ],

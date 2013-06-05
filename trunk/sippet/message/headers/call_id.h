@@ -48,6 +48,8 @@ private:
   }
 public:
   CallId() : Header(Header::HDR_CALL_ID) {}
+  CallId(const std::string &callid)
+    : Header(Header::HDR_CALL_ID), single_value(callid) {}
 
   scoped_ptr<CallId> Clone() const {
     return scoped_ptr<CallId>(DoClone());

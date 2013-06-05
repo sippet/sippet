@@ -47,6 +47,8 @@ private:
   }
 public:
   MinExpires() : Header(Header::HDR_MIN_EXPIRES) {}
+  MinExpires(single_integer::value_type seconds)
+    : Header(Header::HDR_MIN_EXPIRES), single_integer(seconds) {}
 
   scoped_ptr<MinExpires> Clone() const {
     return scoped_ptr<MinExpires>(DoClone());

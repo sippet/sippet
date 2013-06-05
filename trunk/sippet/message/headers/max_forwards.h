@@ -47,6 +47,8 @@ private:
   }
 public:
   MaxForwards() : Header(Header::HDR_MAX_FORWARDS) {}
+  MaxForwards(single_integer::value_type n)
+    : Header(Header::HDR_MAX_FORWARDS), single_integer(n) {}
 
   scoped_ptr<MaxForwards> Clone() const {
     return scoped_ptr<MaxForwards>(DoClone());
