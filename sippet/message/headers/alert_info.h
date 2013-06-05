@@ -39,19 +39,19 @@
 
 namespace sippet {
 
-class alert_param :
+class AlertParam :
   public single_value<std::string>,
   public has_parameters {
 public:
-  alert_param() {}
-  alert_param(const alert_param &other)
+  AlertParam() {}
+  AlertParam(const AlertParam &other)
     : has_parameters(other), single_value(other) {}
-  explicit alert_param(const single_value::value_type &type)
+  explicit AlertParam(const single_value::value_type &type)
     : single_value(type) {}
 
-  ~alert_param() {}
+  ~AlertParam() {}
 
-  alert_param &operator=(const alert_param &other) {
+  AlertParam &operator=(const AlertParam &other) {
     single_value::operator=(other);
     has_parameters::operator=(other);
     return *this;
@@ -65,7 +65,7 @@ public:
 
 class AlertInfo :
   public Header,
-  public has_multiple<alert_param> {
+  public has_multiple<AlertParam> {
 private:
   AlertInfo(const AlertInfo &other) : Header(other), has_multiple(other) {}
   AlertInfo &operator=(const AlertInfo &);

@@ -35,23 +35,25 @@
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/has_parameters.h"
 #include "sippet/message/headers/bits/single_value.h"
+#include "sippet/message/headers/bits/param_setters.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
-class info :
+class Info :
   public single_value<std::string>,
-  public has_parameters {
+  public has_parameters,
+  public has_purpose<Info> {
 public:
-  info() {}
-  info(const info &other)
+  Info() {}
+  Info(const Info &other)
     : has_parameters(other), single_value(other) {}
-  explicit info(const single_value::value_type &type)
+  explicit Info(const single_value::value_type &type)
     : single_value(type) {}
 
-  ~info() {}
+  ~Info() {}
 
-  info &operator=(const info &other) {
+  Info &operator=(const Info &other) {
     single_value::operator=(other);
     has_parameters::operator=(other);
     return *this;
@@ -65,7 +67,7 @@ public:
 
 class CallInfo :
   public Header,
-  public has_multiple<info> {
+  public has_multiple<Info> {
 private:
   CallInfo(const CallInfo &other) : Header(other), has_multiple(other) {}
   CallInfo &operator=(const CallInfo &);

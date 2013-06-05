@@ -41,6 +41,7 @@ public:
   single_value(const value_type &value) : value_(value) {}
   single_value(const single_value &other) : value_(other.value_) {}
   ~single_value() {}
+
   single_value &operator=(const single_value &other) {
     value_ = other.value_;
     return *this;
