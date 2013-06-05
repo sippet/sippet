@@ -31,7 +31,7 @@
 #define SIPPET_MESSAGE_HEADERS_CONTENT_LENGTH_H_
 
 #include "sippet/message/header.h"
-#include "sippet/message/headers/single_integer.h"
+#include "sippet/message/headers/bits/single_integer.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
