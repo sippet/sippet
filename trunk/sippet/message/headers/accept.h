@@ -31,7 +31,7 @@
 #define SIPPET_MESSAGE_HEADERS_ACCEPT_H_
 
 #include "sippet/message/headers/content_type.h"
-#include "sippet/message/headers/has_multiple.h"
+#include "sippet/message/headers/bits/has_multiple.h"
 
 namespace sippet {
 
