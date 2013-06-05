@@ -40,7 +40,7 @@ namespace sippet {
 
 class ProxyRequire :
   public Header,
-  public has_multiple<single_value> {
+  public has_multiple<single_value<std::string> > {
 private:
   ProxyRequire(const ProxyRequire &other) : Header(other), has_multiple(other) {}
   ProxyRequire &operator=(const ProxyRequire &);

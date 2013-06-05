@@ -40,7 +40,7 @@ namespace sippet {
 
 class InReplyTo :
   public Header,
-  public has_multiple<single_value> {
+  public has_multiple<single_value<std::string> > {
 private:
   InReplyTo(const InReplyTo &other) : Header(other), has_multiple(other) {}
   InReplyTo &operator=(const InReplyTo &);

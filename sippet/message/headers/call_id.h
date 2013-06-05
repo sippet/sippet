@@ -39,7 +39,7 @@ namespace sippet {
 
 class CallId :
   public Header,
-  public single_value {
+  public single_value<std::string> {
 private:
   CallId(const CallId &other) : Header(other), single_value(other) {}
   CallId &operator=(const CallId &other);
@@ -48,7 +48,7 @@ private:
   }
 public:
   CallId() : Header(Header::HDR_CALL_ID) {}
-  CallId(const std::string &callid)
+  CallId(const single_value::value_type &callid)
     : Header(Header::HDR_CALL_ID), single_value(callid) {}
 
   scoped_ptr<CallId> Clone() const {

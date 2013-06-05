@@ -40,7 +40,7 @@ namespace sippet {
 
 class Unsupported :
   public Header,
-  public has_multiple<single_value> {
+  public has_multiple<single_value<std::string> > {
 private:
   Unsupported(const Unsupported &other) : Header(other), has_multiple(other) {}
   Unsupported &operator=(const Unsupported &);

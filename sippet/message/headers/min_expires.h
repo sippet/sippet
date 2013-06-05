@@ -31,24 +31,24 @@
 #define SIPPET_MESSAGE_HEADERS_MIN_EXPIRES_H_
 
 #include "sippet/message/header.h"
-#include "sippet/message/headers/bits/single_integer.h"
+#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
 class MinExpires :
   public Header,
-  public single_integer {
+  public single_value<unsigned> {
 private:
-  MinExpires(const MinExpires &other) : Header(other), single_integer(other) {}
+  MinExpires(const MinExpires &other) : Header(other), single_value(other) {}
   MinExpires &operator=(const MinExpires &);
   virtual MinExpires *DoClone() const {
     return new MinExpires(*this);
   }
 public:
   MinExpires() : Header(Header::HDR_MIN_EXPIRES) {}
-  MinExpires(single_integer::value_type seconds)
-    : Header(Header::HDR_MIN_EXPIRES), single_integer(seconds) {}
+  MinExpires(const single_value::value_type &seconds)
+    : Header(Header::HDR_MIN_EXPIRES), single_value(seconds) {}
 
   scoped_ptr<MinExpires> Clone() const {
     return scoped_ptr<MinExpires>(DoClone());
@@ -56,7 +56,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Min-Expires");
-    single_integer::print(os);
+    single_value::print(os);
   }
 };
 

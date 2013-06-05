@@ -31,24 +31,24 @@
 #define SIPPET_MESSAGE_HEADERS_MAX_FORWARDS_H_
 
 #include "sippet/message/header.h"
-#include "sippet/message/headers/bits/single_integer.h"
+#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
 class MaxForwards :
   public Header,
-  public single_integer {
+  public single_value<unsigned> {
 private:
-  MaxForwards(const MaxForwards &other) : Header(other), single_integer(other) {}
+  MaxForwards(const MaxForwards &other) : Header(other), single_value(other) {}
   MaxForwards &operator=(const MaxForwards &);
   virtual MaxForwards *DoClone() const {
     return new MaxForwards(*this);
   }
 public:
   MaxForwards() : Header(Header::HDR_MAX_FORWARDS) {}
-  MaxForwards(single_integer::value_type n)
-    : Header(Header::HDR_MAX_FORWARDS), single_integer(n) {}
+  MaxForwards(const single_value::value_type &n)
+    : Header(Header::HDR_MAX_FORWARDS), single_value(n) {}
 
   scoped_ptr<MaxForwards> Clone() const {
     return scoped_ptr<MaxForwards>(DoClone());
@@ -56,7 +56,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Max-Forwards");
-    single_integer::print(os);
+    single_value::print(os);
   }
 };
 
