@@ -32,8 +32,8 @@
 
 #include <string>
 #include "sippet/message/header.h"
-#include "sippet/message/headers/has_multiple.h"
-#include "sippet/message/headers/has_parameters.h"
+#include "sippet/message/headers/bits/has_multiple.h"
+#include "sippet/message/headers/bits/has_parameters.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
