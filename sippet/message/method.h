@@ -27,39 +27,63 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADERS_ALLOW_H_
-#define SIPPET_MESSAGE_HEADERS_ALLOW_H_
+#ifndef SIPPET_MESSAGE_METHOD_H_
+#define SIPPET_MESSAGE_METHOD_H_
 
 #include <string>
-#include "sippet/message/header.h"
-#include "sippet/message/headers/has_multiple.h"
-#include "sippet/message/headers/has_parameters.h"
-#include "sippet/message/method.h"
+#include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
-class Allow :
-  public Header,
-  public has_multiple<Method> {
-private:
-  Allow(const Allow &other) : Header(other), has_multiple(other) {}
-  Allow &operator=(const Allow &);
-  virtual Allow *DoClone() const {
-    return new Allow(*this);
-  }
+class Method {
 public:
-  Allow() : Header(Header::HDR_ALLOW) {}
+  enum Type {
+    INVITE = 0,
+    ACK,
+    CANCEL,
+    PRACK,
+    BYE,
+    REFER,
+    INFO,
+    UPDATE,
+    OPTIONS,
+    REGISTER,
+    MESSAGE,
+    SUBSCRIBE,
+    NOTIFY,
+    PUBLISH,
+    PULL,
+    PUSH,
+    STORE,
+    Unknown
+  };
 
-  scoped_ptr<Allow> Clone() const {
-    return scoped_ptr<Allow>(DoClone());
+  Method() : method_(Unknown) {}
+  Method(const Method &other) : method_(other.method_) {}
+  explicit Method(const Type &m) : method_(m) {}
+  ~Method() {}
+
+  Method &operator=(const Method &other) {
+    method_ = other.method_;
+    return *this;
   }
 
-  virtual void print(raw_ostream &os) const {
-    os.write_hname("Allow");
-    has_multiple::print(os);
+  Type type() const { return method_; }
+  std::string name() const;
+
+  void print(raw_ostream &os) const {
+    os << name();
   }
+private:
+  Type method_;
 };
+
+inline
+raw_ostream &operator << (raw_ostream &os, const Method &m) {
+  m.print(os);
+  return os;
+}
 
 } // End of sippet namespace
 
-#endif // SIPPET_MESSAGE_HEADERS_ALLOW_H_
+#endif // SIPPET_MESSAGE_METHOD_H_
