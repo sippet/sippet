@@ -47,6 +47,8 @@ private:
   }
 public:
   Expires() : Header(Header::HDR_EXPIRES) {}
+  Expires(single_integer::value_type seconds)
+    : Header(Header::HDR_EXPIRES), single_integer(seconds) {}
 
   scoped_ptr<Expires> Clone() const {
     return scoped_ptr<Expires>(DoClone());

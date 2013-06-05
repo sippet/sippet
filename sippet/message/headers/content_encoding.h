@@ -49,6 +49,8 @@ private:
   }
 public:
   ContentEncoding() : Header(Header::HDR_CONTENT_ENCODING) {}
+  ContentEncoding(const std::string &encoding)
+    : Header(Header::HDR_CONTENT_LANGUAGE), single_value(encoding) {}
 
   scoped_ptr<ContentEncoding> Clone() const {
     return scoped_ptr<ContentEncoding>(DoClone());

@@ -47,6 +47,8 @@ private:
   }
 public:
   ContentLength() : Header(Header::HDR_CONTENT_LENGTH) {}
+  ContentLength(single_integer::value_type length)
+    : Header(Header::HDR_CONTENT_LENGTH), single_integer(length) {}
 
   scoped_ptr<ContentLength> Clone() const {
     return scoped_ptr<ContentLength>(DoClone());
