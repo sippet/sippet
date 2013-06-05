@@ -84,6 +84,17 @@ public:
     };
     return std::find_if(param_begin(), param_end(), _pred(key));
   }
+  const_param_iterator param_find(const std::string &key) const {
+    struct _pred {
+      _pred(const std::string &key) : key_(key) {}
+      bool operator ()(const param_type &pair) {
+        return pair.first == key_;
+      }
+     private:
+      const std::string &key_;
+    };
+    return std::find_if(param_begin(), param_end(), _pred(key));
+  }
 
   // set a parameter, or create one if it does not exist
   void param_set(const std::string &key, const std::string &value) {

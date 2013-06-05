@@ -208,12 +208,6 @@ raw_ostream &raw_ostream::write_escaped(const base::StringPiece &Str,
   return *this;
 }
 
-raw_ostream &raw_ostream::operator<<(const void *P) {
-  *this << '0' << 'x';
-
-  return write_hex((uintptr_t) P);
-}
-
 raw_ostream &raw_ostream::write_hname(base::StringPiece Str) {
   // TODO: add short names
   return (*this) << Str << ": ";

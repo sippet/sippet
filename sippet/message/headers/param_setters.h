@@ -27,61 +27,38 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADERS_ACCEPT_H_
-#define SIPPET_MESSAGE_HEADERS_ACCEPT_H_
+#ifndef SIPPET_MESSAGE_HEADERS_PARAM_SETTERS_H_
+#define SIPPET_MESSAGE_HEADERS_PARAM_SETTERS_H_
 
-#include "sippet/message/headers/content_type.h"
-#include "sippet/message/headers/bits/has_multiple.h"
+#include <cstdlib>
+#include <string>
+#include "sippet/base/format.h"
+#include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
-class media_range :
-  public media_type {
-public:
-  media_range() {}
-  media_range(const media_range &other)
-    : media_type(other) {}
-  media_range(const std::string &type, const std::string &subtype)
-    : media_type(type, subtype) {}
-  ~media_range() {}
-
-  media_range &operator=(const media_range &other) {
-    media_type::operator=(other);
-    return *this;
-  }
-
-  bool allowsAll() { return type() == "*" && allowsAllSubtypes(); }
-  bool allowsAllSubtypes() { return subtype() == "*"; }
-};
-
-inline
-raw_ostream &operator << (raw_ostream &os, const media_range &m) {
-  m.print(os);
-  return os;
+template<class T>
+inline bool has_qvalue(const T& atom) {
+  return atom.param_find("q") != atom.param_end();
 }
 
-class Accept :
-  public Header,
-  public has_multiple<media_range> {
-private:
-  DISALLOW_ASSIGN(Accept);
-  Accept(const Accept &other) : Header(other), has_multiple(other) {}
-  virtual Accept *DoClone() const {
-    return new Accept(*this);
-  }
-public:
-  Accept() : Header(Header::HDR_ACCEPT) {}
+template<class T>
+inline double qvalue(const T& atom) {
+  assert(has_qvalue(atom) && "Cannot read qvalue");
+  return atof(atom.param_find("q")->second.c_str());
+}
 
-  scoped_ptr<Accept> Clone() const {
-    return scoped_ptr<Accept>(DoClone());
-  }
-
-  virtual void print(raw_ostream &os) const {
-    os.write_hname("Accept");
-    has_multiple::print(os);
-  }
-};
+template<class T>
+inline void set_qvalue(T &atom, double q) {
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  os << format("%.3f", q);
+  os.flush();
+  while (buffer.size() > 3 && buffer.back() == '0')
+    buffer.pop_back();
+  atom.param_set("q", buffer);
+}
 
 } // End of sippet namespace
 
-#endif // SIPPET_MESSAGE_HEADERS_ACCEPT_H_
+#endif // SIPPET_MESSAGE_HEADERS_PARAM_SETTERS_H_

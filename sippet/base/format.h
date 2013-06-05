@@ -65,7 +65,7 @@ protected:
   virtual int snprint(char *Buffer, unsigned BufferSize) const = 0;
 
 public:
-  format_object_base(const char *fmt) : Fmt(fmt) {}
+  explicit format_object_base(const char *fmt) : Fmt(fmt) {}
   virtual ~format_object_base() {}
 
   /// print - Format the object into the specified buffer.  On success, this
