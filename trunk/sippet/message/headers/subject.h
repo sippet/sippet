@@ -39,7 +39,7 @@ namespace sippet {
 
 class Subject :
   public Header,
-  public single_value {
+  public single_value<std::string> {
 private:
   Subject(const Subject &other) : Header(other), single_value(other) {}
   Subject &operator=(const Subject &other);
@@ -48,7 +48,7 @@ private:
   }
 public:
   Subject() : Header(Header::HDR_SUBJECT) {}
-  Subject(const std::string &subject)
+  Subject(const single_value::value_type &subject)
     : Header(Header::HDR_SUBJECT), single_value(subject) {}
 
   scoped_ptr<Subject> Clone() const {

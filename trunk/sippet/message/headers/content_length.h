@@ -31,24 +31,24 @@
 #define SIPPET_MESSAGE_HEADERS_CONTENT_LENGTH_H_
 
 #include "sippet/message/header.h"
-#include "sippet/message/headers/bits/single_integer.h"
+#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
 class ContentLength :
   public Header,
-  public single_integer {
+  public single_value<unsigned> {
 private:
-  ContentLength(const ContentLength &other) : Header(other), single_integer(other) {}
+  ContentLength(const ContentLength &other) : Header(other), single_value(other) {}
   ContentLength &operator=(const ContentLength &);
   virtual ContentLength *DoClone() const {
     return new ContentLength(*this);
   }
 public:
   ContentLength() : Header(Header::HDR_CONTENT_LENGTH) {}
-  ContentLength(single_integer::value_type length)
-    : Header(Header::HDR_CONTENT_LENGTH), single_integer(length) {}
+  ContentLength(const single_value::value_type &length)
+    : Header(Header::HDR_CONTENT_LENGTH), single_value(length) {}
 
   scoped_ptr<ContentLength> Clone() const {
     return scoped_ptr<ContentLength>(DoClone());
@@ -56,7 +56,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Content-Length");
-    single_integer::print(os);
+    single_value::print(os);
   }
 };
 

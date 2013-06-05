@@ -39,7 +39,7 @@ namespace sippet {
 
 class Priority :
   public Header,
-  public single_value {
+  public single_value<std::string> {
 private:
   Priority(const Priority &other) : Header(other), single_value(other) {}
   Priority &operator=(const Priority &other);
@@ -48,7 +48,7 @@ private:
   }
 public:
   Priority() : Header(Header::HDR_PRIORITY) {}
-  Priority(const std::string &priority)
+  Priority(const single_value::value_type &priority)
     : Header(Header::HDR_PRIORITY), single_value(priority) {}
 
   scoped_ptr<Priority> Clone() const {

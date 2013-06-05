@@ -63,7 +63,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("CSeq");
-    single_value::print(os);
+    os << sequence_ << " " << method_;
   }
 
 private:

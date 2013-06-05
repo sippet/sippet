@@ -31,7 +31,7 @@
 #define SIPPET_MESSAGE_HEADERS_RETRY_AFTER_H_
 
 #include "sippet/message/header.h"
-#include "sippet/message/headers/bits/single_integer.h"
+#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/message/headers/bits/has_parameters.h"
 #include "sippet/base/raw_ostream.h"
 
@@ -39,19 +39,19 @@ namespace sippet {
 
 class RetryAfter :
   public Header,
-  public single_integer,
+  public single_value<unsigned>,
   public has_parameters {
 private:
   RetryAfter(const RetryAfter &other)
-    : Header(other), single_integer(other), has_parameters(other) {}
+    : Header(other), single_value(other), has_parameters(other) {}
   RetryAfter &operator=(const RetryAfter &);
   virtual RetryAfter *DoClone() const {
     return new RetryAfter(*this);
   }
 public:
   RetryAfter() : Header(Header::HDR_RETRY_AFTER) {}
-  RetryAfter(single_integer::value_type seconds)
-    : Header(Header::HDR_RETRY_AFTER), single_integer(seconds) {}
+  RetryAfter(single_value::value_type seconds)
+    : Header(Header::HDR_RETRY_AFTER), single_value(seconds) {}
 
   scoped_ptr<RetryAfter> Clone() const {
     return scoped_ptr<RetryAfter>(DoClone());
@@ -59,7 +59,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Retry-After");
-    single_integer::print(os);
+    single_value::print(os);
     has_parameters::print(os);
   }
 };

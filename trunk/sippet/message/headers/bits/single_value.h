@@ -32,10 +32,13 @@
 
 namespace sippet {
 
+template<typename T>
 class single_value {
 public:
+  typedef T value_type;
+
   single_value() {}
-  single_value(const std::string &value) : value_(value) {}
+  single_value(const value_type &value) : value_(value) {}
   single_value(const single_value &other) : value_(other.value_) {}
   ~single_value() {}
   single_value &operator=(const single_value &other) {
@@ -43,19 +46,19 @@ public:
     return *this;
   }
 
-  void set_value(const std::string &value) { value_ = value; }
-  std::string value() const { return value_; }
+  void set_value(const value_type &value) { value_ = value; }
+  value_type value() const { return value_; }
 
   void print(raw_ostream &os) const {
     os << value();
   }
 
 private:
-  std::string value_;
+  value_type value_;
 };
 
-inline
-raw_ostream &operator << (raw_ostream &os, const single_value &v) {
+template<typename T> inline
+raw_ostream &operator << (raw_ostream &os, const single_value<T> &v) {
   v.print(os);
   return os;
 }

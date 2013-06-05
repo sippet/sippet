@@ -39,7 +39,7 @@ namespace sippet {
 
 class ContentLanguage :
   public Header,
-  public single_value {
+  public single_value<std::string> {
 private:
   ContentLanguage(const ContentLanguage &other) : Header(other), single_value(other) {}
   ContentLanguage &operator=(const ContentLanguage &other);
@@ -48,7 +48,7 @@ private:
   }
 public:
   ContentLanguage() : Header(Header::HDR_CONTENT_LANGUAGE) {}
-  ContentLanguage(const std::string &language)
+  ContentLanguage(const single_value::value_type &language)
     : Header(Header::HDR_CONTENT_LANGUAGE), single_value(language) {}
 
   scoped_ptr<ContentLanguage> Clone() const {
