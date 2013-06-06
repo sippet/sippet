@@ -36,8 +36,7 @@
 
 namespace sippet {
 
-class Authorization :
-  public Header,
+class Credentials :
   public has_username,
   public has_realm,
   public has_nonce,
@@ -47,24 +46,30 @@ class Authorization :
   public has_cnonce,
   public has_opaque,
   public has_auth_params {
-private:
-  Authorization(const Authorization &other)
-    : Header(other), has_username(other), has_realm(other), has_nonce(other),
-      has_uri(other), has_response(other), has_algorithm(other),
-      has_cnonce(other), has_opaque(other), has_auth_params(other) {}
-  Authorization &operator=(const Authorization &);
-  virtual Authorization *DoClone() const {
-    return new Authorization(*this);
-  }
 public:
-  Authorization() : Header(Header::HDR_AUTHORIZATION) {}
+  enum Scheme {
+    Digest = 0
+  };
 
-  scoped_ptr<Authorization> Clone() const {
-    return scoped_ptr<Authorization>(DoClone());
+  Credentials() {}
+  Credentials(Scheme s) { set_scheme(s); }
+  Credentials(const std::string &scheme) : scheme_(scheme) {}
+  Credentials(const Credentials &other)
+    : has_username(other), has_realm(other), has_nonce(other),
+      has_uri(other), has_response(other), has_algorithm(other),
+      has_cnonce(other), has_opaque(other), has_auth_params(other),
+      scheme_(other.scheme_) {}
+  ~Credentials() {}
+
+  std::string scheme() const { return scheme_; }
+  void set_scheme(const std::string &scheme) { scheme_ = scheme; }
+  void set_scheme(Scheme s) {
+    const char *rep[] = { "Digest" };
+    scheme_ = rep[static_cast<int>(s)];
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Authorization");
+    os << scheme_ << " ";
     bool written = false;
     if (!username().empty()) {
       has_username::print(os), written = true;
@@ -101,6 +106,35 @@ public:
       if (written) os << ", ";
       has_auth_params::print(os);
     }
+  }
+private:
+  std::string scheme_;
+};
+
+class Authorization :
+  public Header,
+  public Credentials {
+private:
+  Authorization(const Authorization &other)
+    : Header(other), Credentials(other) {}
+  Authorization &operator=(const Authorization &);
+  virtual Authorization *DoClone() const {
+    return new Authorization(*this);
+  }
+public:
+  Authorization() : Header(Header::HDR_AUTHORIZATION) {}
+  Authorization(Scheme s)
+    : Header(Header::HDR_AUTHORIZATION), Credentials(s) {}
+  Authorization(const std::string &scheme)
+    : Header(Header::HDR_AUTHORIZATION), Credentials(scheme) {}
+
+  scoped_ptr<Authorization> Clone() const {
+    return scoped_ptr<Authorization>(DoClone());
+  }
+
+  virtual void print(raw_ostream &os) const {
+    os.write_hname("Authorization");
+    Credentials::print(os);
   }
 };
 
