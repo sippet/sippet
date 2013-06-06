@@ -40,7 +40,7 @@ namespace sippet {
 
 class Require :
   public Header,
-  public has_multiple<single_value<std::string> > {
+  public has_multiple<std::string> {
 private:
   Require(const Require &other) : Header(other), has_multiple(other) {}
   Require &operator=(const Require &);
@@ -49,6 +49,8 @@ private:
   }
 public:
   Require() : Header(Header::HDR_REQUIRE) {}
+  Require(const std::string &value)
+    : Header(Header::HDR_REQUIRE) { push_back(value); }
 
   scoped_ptr<Require> Clone() const {
     return scoped_ptr<Require>(DoClone());

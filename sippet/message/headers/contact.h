@@ -73,6 +73,12 @@ private:
   std::string displayName_;
 };
 
+inline
+raw_ostream &operator<<(raw_ostream &os, const ContactBase &b) {
+  b.print(os);
+  return os;
+}
+
 class ContactInfo :
   public ContactBase,
   public has_qvalue<ContactInfo>,

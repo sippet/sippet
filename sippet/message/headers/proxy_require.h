@@ -33,14 +33,13 @@
 #include <string>
 #include "sippet/message/header.h"
 #include "sippet/message/headers/bits/has_multiple.h"
-#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
 class ProxyRequire :
   public Header,
-  public has_multiple<single_value<std::string> > {
+  public has_multiple<std::string> {
 private:
   ProxyRequire(const ProxyRequire &other) : Header(other), has_multiple(other) {}
   ProxyRequire &operator=(const ProxyRequire &);
@@ -49,6 +48,8 @@ private:
   }
 public:
   ProxyRequire() : Header(Header::HDR_PROXY_REQUIRE) {}
+  ProxyRequire(const std::string &value)
+    : Header(Header::HDR_PROXY_REQUIRE) { push_back(value); }
 
   scoped_ptr<ProxyRequire> Clone() const {
     return scoped_ptr<ProxyRequire>(DoClone());
