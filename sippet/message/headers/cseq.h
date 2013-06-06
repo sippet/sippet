@@ -56,7 +56,7 @@ public:
   }
 
   unsigned sequence() const { return sequence_; }
-  void set_sequence(unsigned seq) { sequence_ = seq; }
+  void set_sequence(unsigned sequence) { sequence_ = sequence; }
 
   Method method() const { return method_; }
   void set_method(const Method &method) { method_ = method; }

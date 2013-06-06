@@ -31,6 +31,8 @@
 #define SIPPET_MESSAGE_METHOD_H_
 
 #include <string>
+#include <memory>
+#include "base/memory/scoped_ptr.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
@@ -58,24 +60,70 @@ public:
     Unknown
   };
 
-  Method() : method_(Unknown) {}
-  Method(const Method &other) : method_(other.method_) {}
-  explicit Method(const Type &m) : method_(m) {}
+  Method() : method_(&NullMethod::instance) {}
+  Method(const Method &other)
+    : method_(other.method_->clone()) {}
+  explicit Method(const Type &m) : method_(new KnownMethod(m)) {}
+  explicit Method(const char *m) : method_(coerce(m)) {}
+  explicit Method(const std::string &m) : method_(coerce(m.c_str())) {}
   ~Method() {}
 
   Method &operator=(const Method &other) {
-    method_ = other.method_;
+    method_.reset(other.method_->clone());
     return *this;
   }
 
-  Type type() const { return method_; }
-  std::string name() const;
+  Type type() const { return method_->type(); }
+  void set_type(Type t) { method_.reset(new KnownMethod(t)); }
+
+  const char *str() const { return method_->str(); }
+  void set_str(const char *str) { method_.reset(coerce(str)); }
+  void set_str(const std::string &str) { method_.reset(coerce(str.c_str())); }
 
   void print(raw_ostream &os) const {
-    os << name();
+    os << str();
   }
 private:
-  Type method_;
+  struct MethodImp {
+    virtual Type type() = 0;
+    virtual const char *str() = 0;
+    virtual MethodImp *clone() = 0;
+    virtual void release() = 0;
+  };
+
+  struct NullMethod : public MethodImp {
+    virtual Type type() { return Unknown; }
+    virtual const char *str() { return ""; }
+    virtual NullMethod *clone() { return this; }
+    virtual void release() {}
+    static NullMethod instance;
+  };
+  
+  struct KnownMethod : public MethodImp {
+    Type method_;
+    KnownMethod(Type method) : method_(method) {}
+    virtual Type type() { return method_; }
+    virtual const char *str();
+    virtual KnownMethod *clone() { return new KnownMethod(*this); }
+    virtual void release() { delete this; }
+  };
+  
+  struct UnknownMethod : public MethodImp {
+    std::string method_;
+    UnknownMethod(const char *m) : method_(m) {}
+    virtual Type type() { return Unknown; }
+    virtual const char *str() { return method_.c_str(); }
+    virtual UnknownMethod *clone() { return new UnknownMethod(*this); }
+    virtual void release() { delete this; }
+  };
+
+  struct MethodRelease {
+    inline void operator()(MethodImp* ptr) const { ptr->release(); }
+  };
+
+  scoped_ptr<MethodImp, MethodRelease> method_;
+
+  MethodImp *coerce(const char *str);
 };
 
 inline

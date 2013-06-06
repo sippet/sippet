@@ -32,73 +32,48 @@
 
 #include <string>
 #include "sippet/message/header.h"
-#include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/has_parameters.h"
+#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
-class Disposition :
-  public has_parameters {
-public:
-  enum Type {
-    render, session, icon, alert
-  };
-
-  Disposition() {}
-  Disposition(const Disposition &other)
-    : has_parameters(other), type_(other.type_) {}
-  explicit Disposition(Type t) { SetType(t); }
-  explicit Disposition(const std::string &type)
-    : type_(type) {}
-
-  ~Disposition() {}
-
-  Disposition &operator=(const Disposition &other) {
-    type_ = other.type_;
-    has_parameters::operator=(other);
-    return *this;
-  }
-
-  std::string GetType() const { return type_; }
-
-  void SetType(Type t) {
-    static const char *rep[] = { "render", "session", "icon", "alert" };
-    type_ = rep[static_cast<int>(t)];
-  }
-
-  void SetType(const std::string &type) { type_ = type; }
-
-  void print(raw_ostream &os) const {
-    os << GetType();
-    has_parameters::print(os);
-  }
-private:
-  std::string type_;
-};
-
 class ContentDisposition :
   public Header,
-  public Disposition {
+  public single_value<std::string>,
+  public has_parameters {
 private:
   ContentDisposition(const ContentDisposition &other)
-    : Header(other), Disposition(other) {}
+    : Header(other), has_parameters(other), single_value(other) {}
   ContentDisposition &operator=(ContentDisposition &other);
   virtual ContentDisposition *DoClone() const {
     return new ContentDisposition(*this);
   }
 public:
-  ContentDisposition() : Header(Header::HDR_CONTENT_DISPOSITION) {}
-  ContentDisposition(const std::string &type)
-    : Header(Header::HDR_CONTENT_DISPOSITION), Disposition(type) {}
+  enum Type {
+    render = 0, session, icon, alert
+  };
+
+  ContentDisposition()
+    : Header(Header::HDR_CONTENT_DISPOSITION) {}
+  ContentDisposition(Type t)
+    : Header(Header::HDR_CONTENT_DISPOSITION) { set_value(t); }
+  ContentDisposition(const single_value::value_type &value)
+    : Header(Header::HDR_CONTENT_DISPOSITION), single_value(value) {}
 
   scoped_ptr<ContentDisposition> Clone() const {
     return scoped_ptr<ContentDisposition>(DoClone());
   }
 
+  void set_value(Type t) {
+    static const char *rep[] = { "render", "session", "icon", "alert" };
+    single_value::set_value(rep[static_cast<int>(t)]);
+  }
+
   virtual void print(raw_ostream &os) const {
     os.write_hname("Content-Disposition");
-    Disposition::print(os);
+    os << type();
+    has_parameters::print(os);
   }
 };
 
