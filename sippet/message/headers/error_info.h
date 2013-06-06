@@ -73,8 +73,8 @@ class ErrorInfo :
   public Header,
   public has_multiple<ErrorUri> {
 private:
+  DISALLOW_ASSIGN(ErrorInfo);
   ErrorInfo(const ErrorInfo &other) : Header(other), has_multiple(other) {}
-  ErrorInfo &operator=(const ErrorInfo &);
   virtual ErrorInfo *DoClone() const {
     return new ErrorInfo(*this);
   }

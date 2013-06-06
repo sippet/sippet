@@ -40,8 +40,8 @@ class MaxForwards :
   public Header,
   public single_value<unsigned> {
 private:
+  DISALLOW_ASSIGN(MaxForwards);
   MaxForwards(const MaxForwards &other) : Header(other), single_value(other) {}
-  MaxForwards &operator=(const MaxForwards &);
   virtual MaxForwards *DoClone() const {
     return new MaxForwards(*this);
   }

@@ -41,8 +41,8 @@ class Organization :
   public Header,
   public single_value<std::string> {
 private:
+  DISALLOW_ASSIGN(Organization);
   Organization(const Organization &other) : Header(other), single_value(other) {}
-  Organization &operator=(const Organization &other);
   virtual Organization *DoClone() const {
     return new Organization(*this);
   }

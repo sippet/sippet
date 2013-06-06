@@ -41,8 +41,8 @@ class Subject :
   public Header,
   public single_value<std::string> {
 private:
+  DISALLOW_ASSIGN(Subject);
   Subject(const Subject &other) : Header(other), single_value(other) {}
-  Subject &operator=(const Subject &other);
   virtual Subject *DoClone() const {
     return new Subject(*this);
   }

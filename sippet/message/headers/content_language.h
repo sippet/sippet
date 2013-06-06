@@ -41,9 +41,9 @@ class ContentLanguage :
   public Header,
   public has_multiple<std::string> {
 private:
+  DISALLOW_ASSIGN(ContentLanguage);
   ContentLanguage(const ContentLanguage &other)
     : Header(other), has_multiple(other) {}
-  ContentLanguage &operator=(const ContentLanguage &other);
   virtual ContentLanguage *DoClone() const {
     return new ContentLanguage(*this);
   }

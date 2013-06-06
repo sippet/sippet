@@ -41,8 +41,8 @@ class ProxyRequire :
   public Header,
   public has_multiple<std::string> {
 private:
+  DISALLOW_ASSIGN(ProxyRequire);
   ProxyRequire(const ProxyRequire &other) : Header(other), has_multiple(other) {}
-  ProxyRequire &operator=(const ProxyRequire &);
   virtual ProxyRequire *DoClone() const {
     return new ProxyRequire(*this);
   }

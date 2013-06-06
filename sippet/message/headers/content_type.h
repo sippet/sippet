@@ -78,8 +78,8 @@ class ContentType :
   public Header,
   public MediaType {
 private:
+  DISALLOW_ASSIGN(ContentType);
   ContentType(const ContentType &other) : Header(other), MediaType(other) {}
-  ContentType &operator=(const ContentType &);
   virtual ContentType *DoClone() const {
     return new ContentType(*this);
   }

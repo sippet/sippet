@@ -42,7 +42,8 @@ class CallId :
   public single_value<std::string> {
 private:
   DISALLOW_ASSIGN(CallId);
-  CallId(const CallId &other) : Header(other), single_value(other) {}
+  CallId(const CallId &other)
+    : Header(other), single_value(other) {}
   virtual CallId *DoClone() const {
     return new CallId(*this);
   }

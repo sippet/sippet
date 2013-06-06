@@ -42,8 +42,8 @@ class Date :
   public Header,
   public single_value<base::Time> {
 private:
+  DISALLOW_ASSIGN(Date);
   Date(const Date &other) : Header(other), single_value(other) {}
-  Date &operator=(const Date &other);
   virtual Date *DoClone() const {
     return new Date(*this);
   }

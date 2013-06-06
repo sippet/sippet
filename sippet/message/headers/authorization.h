@@ -37,87 +37,32 @@
 namespace sippet {
 
 class Credentials :
-  public has_username,
-  public has_realm,
-  public has_nonce,
-  public has_uri,
-  public has_response,
-  public has_algorithm,
-  public has_cnonce,
-  public has_opaque,
+  public has_username<Credentials>,
+  public has_realm<Credentials>,
+  public has_nonce<Credentials>,
+  public has_uri<Credentials>,
+  public has_response<Credentials>,
+  public has_algorithm<Credentials>,
+  public has_cnonce<Credentials>,
+  public has_opaque<Credentials>,
+  public has_nc<Credentials>,
   public has_auth_params {
 public:
-  enum Scheme {
-    Digest = 0
-  };
-
   Credentials() {}
-  Credentials(Scheme s) { set_scheme(s); }
-  Credentials(const std::string &scheme) : scheme_(scheme) {}
+  Credentials(Scheme s) : has_auth_params(s) {}
+  Credentials(const std::string &scheme) : has_auth_params(scheme) {}
   Credentials(const Credentials &other)
-    : has_username(other), has_realm(other), has_nonce(other),
-      has_uri(other), has_response(other), has_algorithm(other),
-      has_cnonce(other), has_opaque(other), has_auth_params(other),
-      scheme_(other.scheme_) {}
+    : has_auth_params(other) {}
   ~Credentials() {}
-
-  std::string scheme() const { return scheme_; }
-  void set_scheme(const std::string &scheme) { scheme_ = scheme; }
-  void set_scheme(Scheme s) {
-    const char *rep[] = { "Digest" };
-    scheme_ = rep[static_cast<int>(s)];
-  }
-
-  virtual void print(raw_ostream &os) const {
-    os << scheme_ << " ";
-    bool written = false;
-    if (!username().empty()) {
-      has_username::print(os), written = true;
-    }
-    if (!realm().empty()) {
-      if (written) os << ", ";
-      has_realm::print(os), written = true;
-    }
-    if (!nonce().empty()) {
-      if (written) os << ", ";
-      has_nonce::print(os), written = true;
-    }
-    if (!uri().empty()) {
-      if (written) os << ", ";
-      has_uri::print(os), written = true;
-    }
-    if (!response().empty()) {
-      if (written) os << ", ";
-      has_response::print(os), written = true;
-    }
-    if (!algorithm().empty()) {
-      if (written) os << ", ";
-      has_algorithm::print(os), written = true;
-    }
-    if (!cnonce().empty()) {
-      if (written) os << ", ";
-      has_cnonce::print(os), written = true;
-    }
-    if (!opaque().empty()) {
-      if (written) os << ", ";
-      has_opaque::print(os), written = true;
-    }
-    if (!has_auth_params::param_empty()) {
-      if (written) os << ", ";
-      has_auth_params::print(os);
-    }
-  }
-private:
-  std::string scheme_;
 };
 
 class Authorization :
   public Header,
   public Credentials {
 private:
+  DISALLOW_ASSIGN(Authorization);
   Authorization(const Authorization &other)
     : Header(other), Credentials(other) {}
-  Authorization &operator=(const Authorization &);
   virtual Authorization *DoClone() const {
     return new Authorization(*this);
   }

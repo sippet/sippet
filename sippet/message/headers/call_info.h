@@ -75,8 +75,8 @@ class CallInfo :
   public Header,
   public has_multiple<Info> {
 private:
+  DISALLOW_ASSIGN(CallInfo);
   CallInfo(const CallInfo &other) : Header(other), has_multiple(other) {}
-  CallInfo &operator=(const CallInfo &);
   virtual CallInfo *DoClone() const {
     return new CallInfo(*this);
   }
