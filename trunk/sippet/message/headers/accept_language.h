@@ -40,20 +40,20 @@
 
 namespace sippet {
 
-class Language :
+class LanguageRange :
   public single_value<std::string>,
   public has_parameters,
-  public has_qvalue<Language> {
+  public has_qvalue<LanguageRange> {
 public:
-  Language() {}
-  Language(const Language &other)
+  LanguageRange() {}
+  LanguageRange(const LanguageRange &other)
     : has_parameters(other), single_value(other) {}
-  explicit Language(const std::string &value)
+  explicit LanguageRange(const std::string &value)
     : single_value(value) { /* TODO: convert to lower case */ }
 
-  ~Language() {}
+  ~LanguageRange() {}
 
-  Language &operator=(const Language &other) {
+  LanguageRange &operator=(const LanguageRange &other) {
     single_value::operator=(other);
     has_parameters::operator=(other);
     return *this;
@@ -68,14 +68,14 @@ public:
 };
 
 inline
-raw_ostream &operator << (raw_ostream &os, const Language &l) {
+raw_ostream &operator << (raw_ostream &os, const LanguageRange &l) {
   l.print(os);
   return os;
 }
 
 class AcceptLanguage :
   public Header,
-  public has_multiple<Language> {
+  public has_multiple<LanguageRange> {
 private:
   DISALLOW_ASSIGN(AcceptLanguage);
   AcceptLanguage(const AcceptLanguage &other)
