@@ -41,7 +41,8 @@ namespace sippet {
 class ContentDisposition :
   public Header,
   public single_value<std::string>,
-  public has_parameters {
+  public has_parameters,
+  public has_handling<ContentDisposition> {
 private:
   ContentDisposition(const ContentDisposition &other)
     : Header(other), has_parameters(other), single_value(other) {}
@@ -72,7 +73,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Content-Disposition");
-    os << type();
+    os << value();
     has_parameters::print(os);
   }
 };

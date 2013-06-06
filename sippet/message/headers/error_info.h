@@ -39,19 +39,19 @@
 
 namespace sippet {
 
-class error_uri :
+class ErrorUri :
   public single_value<std::string>,
   public has_parameters {
 public:
-  error_uri() {}
-  error_uri(const error_uri &other)
+  ErrorUri() {}
+  ErrorUri(const ErrorUri &other)
     : has_parameters(other), single_value(other) {}
-  explicit error_uri(const single_value::value_type &type)
+  explicit ErrorUri(const single_value::value_type &type)
     : single_value(type) {}
 
-  ~error_uri() {}
+  ~ErrorUri() {}
 
-  error_uri &operator=(const error_uri &other) {
+  ErrorUri &operator=(const ErrorUri &other) {
     single_value::operator=(other);
     has_parameters::operator=(other);
     return *this;
@@ -63,9 +63,15 @@ public:
   }
 };
 
+inline
+raw_ostream &operator<<(raw_ostream &os, const ErrorUri &u) {
+  u.print(os);
+  return os;
+}
+
 class ErrorInfo :
   public Header,
-  public has_multiple<error_uri> {
+  public has_multiple<ErrorUri> {
 private:
   ErrorInfo(const ErrorInfo &other) : Header(other), has_multiple(other) {}
   ErrorInfo &operator=(const ErrorInfo &);
@@ -80,7 +86,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Call-Info");
+    os.write_hname("Error-Info");
     has_multiple::print(os);
   }
 };

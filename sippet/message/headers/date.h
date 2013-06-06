@@ -69,9 +69,9 @@ public:
     os.write_hname("Date");
     os << wkday[exploded.day_of_week]
        << ", "
-       << format("%2d %s %d", exploded.day_of_month, month[exploded.month-1], exploded.year)
+       << format("%.2d %s %d", exploded.day_of_month, month[exploded.month-1], exploded.year)
        << " "
-       << format("%2d:%2d:%2d", exploded.hour, exploded.minute, exploded.second)
+       << format("%.2d:%.2d:%.2d", exploded.hour, exploded.minute, exploded.second)
        << " GMT";
   }
 };

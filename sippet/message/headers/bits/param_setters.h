@@ -84,7 +84,7 @@ public:
 
   void set_purpose(PurposeType t) {
     static const char *rep[] = { "icon", "info", "card" };
-    static_cast<T*>(this)->param_set("purpose", rep[static_int<int>(t)]);
+    static_cast<T*>(this)->param_set("purpose", rep[static_cast<int>(t)]);
   }
 
   void set_purpose(const std::string &purpose) {

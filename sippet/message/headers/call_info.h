@@ -65,6 +65,12 @@ public:
   }
 };
 
+inline
+raw_ostream &operator<<(raw_ostream &os, const Info &i) {
+  i.print(os);
+  return os;
+}
+
 class CallInfo :
   public Header,
   public has_multiple<Info> {
