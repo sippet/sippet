@@ -61,15 +61,25 @@ public:
   virtual void print(raw_ostream &os) const {
     os.write_hname("Authentication-Info");
     bool written = false;
-    if (!nextnonce().empty()) has_nextnonce::print(os), written = true;
-    if (written) os << ", ";
-    if (!qop().empty()) has_qop::print(os), written = true;
-    if (written) os << ", ";
-    if (!rspauth().empty()) has_rspauth::print(os), written = true;
-    if (written) os << ", ";
-    if (!cnonce().empty()) has_cnonce::print(os), written = true;
-    if (written) os << ", ";
-    if (nc() != 0) has_nc::print(os);
+    if (!nextnonce().empty()) {
+      has_nextnonce::print(os), written = true;
+    }
+    if (!qop().empty()) {
+      if (written) os << ", ";
+      has_qop::print(os), written = true;
+    }
+    if (!rspauth().empty()) {
+      if (written) os << ", ";
+      has_rspauth::print(os), written = true;
+    }
+    if (!cnonce().empty()) {
+      if (written) os << ", ";
+      has_cnonce::print(os), written = true;
+    }
+    if (nc() != 0) {
+      if (written) os << ", ";
+      has_nc::print(os);
+    }
   }
 };
 
