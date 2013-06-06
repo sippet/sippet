@@ -468,7 +468,16 @@ TEST(HeaderTest, ProxyRequire) {
   EXPECT_EQ("Proxy-Require: foo", os.str());
 }
 
-// TODO: RecordRoute
+TEST(HeaderTest, RecordRoute) {
+  scoped_ptr<RecordRoute> record_route(new RecordRoute(RouteParam("sip:p2.example.com;lr")));
+  record_route->push_back(RouteParam("sip:p1.example.com;lr"));
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  record_route->print(os);
+
+  EXPECT_EQ("Record-Route: <sip:p2.example.com;lr>, <sip:p1.example.com;lr>", os.str());
+}
 
 TEST(HeaderTest, ReplyTo) {
   scoped_ptr<ReplyTo> reply_to(new ReplyTo("sip:bob@biloxi.com","Bob"));
@@ -500,7 +509,15 @@ TEST(HeaderTest, RetryAfter) {
   EXPECT_EQ("Retry-After: 300", os.str());
 }
 
-// TODO: Route
+TEST(HeaderTest, Route) {
+  scoped_ptr<Route> route(new Route(RouteParam("sip:alice@atlanta.com")));
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  route->print(os);
+
+  EXPECT_EQ("Route: <sip:alice@atlanta.com>", os.str());
+}
 
 TEST(HeaderTest, Subject) {
   scoped_ptr<Subject> subject(new Subject("Need more boxes"));
