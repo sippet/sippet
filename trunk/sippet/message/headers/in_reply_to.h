@@ -33,14 +33,13 @@
 #include <string>
 #include "sippet/message/header.h"
 #include "sippet/message/headers/bits/has_multiple.h"
-#include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
 class InReplyTo :
   public Header,
-  public has_multiple<single_value<std::string> > {
+  public has_multiple<std::string> {
 private:
   InReplyTo(const InReplyTo &other) : Header(other), has_multiple(other) {}
   InReplyTo &operator=(const InReplyTo &);

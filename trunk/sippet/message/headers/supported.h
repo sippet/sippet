@@ -40,7 +40,7 @@ namespace sippet {
 
 class Supported :
   public Header,
-  public has_multiple<single_value<std::string> > {
+  public has_multiple<std::string> {
 private:
   Supported(const Supported &other) : Header(other), has_multiple(other) {}
   Supported &operator=(const Supported &);
@@ -49,6 +49,8 @@ private:
   }
 public:
   Supported() : Header(Header::HDR_SUPPORTED) {}
+  Supported(const std::string &value)
+    : Header(Header::HDR_SUPPORTED) { push_back(value); }
 
   scoped_ptr<Supported> Clone() const {
     return scoped_ptr<Supported>(DoClone());
