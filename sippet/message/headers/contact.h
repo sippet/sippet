@@ -99,11 +99,6 @@ public:
   }
 };
 
-inline raw_ostream &operator<<(raw_ostream &os, const ContactInfo &i) {
-  i.print(os);
-  return os;
-}
-
 class Contact :
   public Header,
   public has_multiple<ContactInfo> {
