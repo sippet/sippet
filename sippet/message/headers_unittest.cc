@@ -220,7 +220,19 @@ TEST(HeaderTest, AuthenticationInfo) {
   EXPECT_EQ("Authentication-Info: nextnonce=\"47364c23432d2e131a5fb210812c\", qop=auth, rspauth=\"xxx\", cnonce=\"0a4f113b\", nc=00000001", os.str());
 }
 
-// TODO: Authorization
+TEST(HeaderTest, Authorization) {
+  scoped_ptr<Authorization> authorization(new Authorization(Authorization::Digest));
+  authorization->set_username("Alice");
+  authorization->set_realm("atlanta.com");
+  authorization->set_nonce("84a4cc6f3082121f32b42a2187831a9e");
+  authorization->set_response("7587245234b3434cc3412213e5f113a5432");
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  authorization->print(os);
+
+  EXPECT_EQ("Authorization: Digest username=\"Alice\", realm=\"atlanta.com\", nonce=\"84a4cc6f3082121f32b42a2187831a9e\", response=\"7587245234b3434cc3412213e5f113a5432\"", os.str());
+}
 
 TEST(HeaderTest, CallId) {
   scoped_ptr<CallId> callid(new CallId("f81d4fae-7dec-11d0-a765-00a0c91e6bf6@biloxi.com"));
@@ -454,8 +466,36 @@ TEST(HeaderTest, Priority) {
   EXPECT_EQ("Priority: emergency", os.str());
 }
 
-// TODO: ProxyAuthenticate
-// TODO: ProxyAuthorization
+TEST(HeaderTest, ProxyAuthenticate) {
+  scoped_ptr<ProxyAuthenticate> proxy_authenticate(new ProxyAuthenticate(ProxyAuthenticate::Digest));
+  proxy_authenticate->set_realm("atlanta.com");
+  proxy_authenticate->set_domain("sip:ss1.carrier.com");
+  proxy_authenticate->set_qop("auth");
+  proxy_authenticate->set_nonce("f84f1cec41e6cbe5aea9c8e88d359");
+  proxy_authenticate->set_opaque("");
+  proxy_authenticate->set_stale(false);
+  proxy_authenticate->set_algorithm(ProxyAuthenticate::MD5);
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  proxy_authenticate->print(os);
+
+  EXPECT_EQ("Proxy-Authenticate: Digest realm=\"atlanta.com\", domain=\"sip:ss1.carrier.com\", qop=\"auth\", nonce=\"f84f1cec41e6cbe5aea9c8e88d359\", opaque=\"\", stale=false, algorithm=MD5", os.str());
+}
+
+TEST(HeaderTest, ProxyAuthorization) {
+  scoped_ptr<ProxyAuthorization> proxy_authorization(new ProxyAuthorization(ProxyAuthorization::Digest));
+  proxy_authorization->set_username("Alice");
+  proxy_authorization->set_realm("atlanta.com");
+  proxy_authorization->set_nonce("c60f3082ee1212b402a21831ae");
+  proxy_authorization->set_response("245f23415f11432b3434341c022");
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  proxy_authorization->print(os);
+
+  EXPECT_EQ("Proxy-Authorization: Digest username=\"Alice\", realm=\"atlanta.com\", nonce=\"c60f3082ee1212b402a21831ae\", response=\"245f23415f11432b3434341c022\"", os.str());   
+}
 
 TEST(HeaderTest, ProxyRequire) {
   scoped_ptr<ProxyRequire> proxy_require(new ProxyRequire);
@@ -582,4 +622,20 @@ TEST(HeaderTest, UserAgent) {
 
 // TODO: Via
 // TODO: Warning
-// TODO: WwwAuthenticate
+
+TEST(HeaderTest, WwwAuthenticate) {
+  scoped_ptr<WwwAuthenticate> www_authenticate(new WwwAuthenticate(WwwAuthenticate::Digest));
+  www_authenticate->set_realm("atlanta.com");
+  www_authenticate->set_domain("sip:boxesbybob.com");
+  www_authenticate->set_qop("auth");
+  www_authenticate->set_nonce("f84f1cec41e6cbe5aea9c8e88d359");
+  www_authenticate->set_opaque("");
+  www_authenticate->set_stale(false);
+  www_authenticate->set_algorithm(WwwAuthenticate::MD5);
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  www_authenticate->print(os);
+
+  EXPECT_EQ("WWW-Authenticate: Digest realm=\"atlanta.com\", domain=\"sip:boxesbybob.com\", qop=\"auth\", nonce=\"f84f1cec41e6cbe5aea9c8e88d359\", opaque=\"\", stale=false, algorithm=MD5", os.str());
+}

@@ -56,7 +56,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("ProxyAuthorization");
+    os.write_hname("Proxy-Authorization");
     Credentials::print(os);
   }
 };
