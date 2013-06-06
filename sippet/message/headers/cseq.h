@@ -37,22 +37,22 @@
 
 namespace sippet {
 
-class CSeq :
+class Cseq :
   public Header {
 private:
-  DISALLOW_ASSIGN(CSeq);
-  CSeq(const CSeq &other)
+  DISALLOW_ASSIGN(Cseq);
+  Cseq(const Cseq &other)
     : Header(other), sequence_(other.sequence_), method_(other.method_) {}
-  virtual CSeq *DoClone() const {
-    return new CSeq(*this);
+  virtual Cseq *DoClone() const {
+    return new Cseq(*this);
   }
 public:
-  CSeq() : Header(Header::HDR_CSEQ) {}
-  CSeq(unsigned sequence, const Method &method)
+  Cseq() : Header(Header::HDR_CSEQ) {}
+  Cseq(unsigned sequence, const Method &method)
     : Header(Header::HDR_CSEQ), sequence_(sequence), method_(method) {}
 
-  scoped_ptr<CSeq> Clone() const {
-    return scoped_ptr<CSeq>(DoClone());
+  scoped_ptr<Cseq> Clone() const {
+    return scoped_ptr<Cseq>(DoClone());
   }
 
   unsigned sequence() const { return sequence_; }
@@ -65,7 +65,6 @@ public:
     os.write_hname("CSeq");
     os << sequence_ << " " << method_;
   }
-
 private:
   unsigned sequence_;
   Method method_;

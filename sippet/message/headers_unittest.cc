@@ -75,6 +75,7 @@
 #include "sippet/message/headers/via.h"
 #include "sippet/message/headers/warning.h"
 #include "sippet/message/headers/www_authenticate.h"
+#include "sippet/message/headers/generic.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -171,6 +172,9 @@ TEST(HeaderTest, AlertInfo) {
   scoped_ptr<AlertInfo> alert_info(new AlertInfo);
   alert_info->push_back(AlertParam("http://www.example.com/sounds/moo.wav"));
 
+  Header *h = alert_info.get();
+  EXPECT_TRUE(isa<AlertInfo>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   alert_info->print(os);
@@ -183,6 +187,9 @@ TEST(HeaderTest, Allow) {
   allow->push_back(Method("INVITE"));
   allow->push_back(Method::ACK);
   allow->push_back(Method::BYE);
+
+  Header *h = allow.get();
+  EXPECT_TRUE(isa<Allow>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -213,6 +220,9 @@ TEST(HeaderTest, AuthenticationInfo) {
   authentication_info->set_cnonce("0a4f113b");
   authentication_info->set_nc(1);
 
+  Header *h = authentication_info.get();
+  EXPECT_TRUE(isa<AuthenticationInfo>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   authentication_info->print(os);
@@ -227,6 +237,9 @@ TEST(HeaderTest, Authorization) {
   authorization->set_nonce("84a4cc6f3082121f32b42a2187831a9e");
   authorization->set_response("7587245234b3434cc3412213e5f113a5432");
 
+  Header *h = authorization.get();
+  EXPECT_TRUE(isa<Authorization>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   authorization->print(os);
@@ -237,6 +250,9 @@ TEST(HeaderTest, Authorization) {
 TEST(HeaderTest, CallId) {
   scoped_ptr<CallId> callid(new CallId("f81d4fae-7dec-11d0-a765-00a0c91e6bf6@biloxi.com"));
 
+  Header *h = callid.get();
+  EXPECT_TRUE(isa<CallId>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   callid->print(os);
@@ -246,11 +262,13 @@ TEST(HeaderTest, CallId) {
 
 TEST(HeaderTest, CallInfo) {
   scoped_ptr<CallInfo> call_info(new CallInfo);
-
   call_info->push_back(Info("http://wwww.example.com/alice/photo.jpg"));
   call_info->back().set_purpose(Info::icon);
   call_info->push_back(Info("http://www.example.com/alice/"));
   call_info->back().set_purpose(Info::info);
+
+  Header *h = call_info.get();
+  EXPECT_TRUE(isa<CallInfo>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -284,6 +302,9 @@ TEST(HeaderTest, ContentDisposition) {
   content_disposition->param_set("filename","smime.p7m");
   content_disposition->set_handling(ContentDisposition::required);
 
+  Header *h = content_disposition.get();
+  EXPECT_TRUE(isa<ContentDisposition>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   content_disposition->print(os);
@@ -293,6 +314,9 @@ TEST(HeaderTest, ContentDisposition) {
 
 TEST(HeaderTest, ContentEncoding) {
   scoped_ptr<ContentEncoding> content_encoding(new ContentEncoding("gzip"));
+
+  Header *h = content_encoding.get();
+  EXPECT_TRUE(isa<ContentEncoding>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -306,6 +330,9 @@ TEST(HeaderTest, ContentLanguage) {
   content_language->push_back("en");
   content_language->push_back("pt-br");
 
+  Header *h = content_language.get();
+  EXPECT_TRUE(isa<ContentLanguage>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   content_language->print(os);
@@ -315,8 +342,11 @@ TEST(HeaderTest, ContentLanguage) {
 
 TEST(HeaderTest, ContentLength) {
   scoped_ptr<ContentLength> content_length(new ContentLength(0));
-
+  
   EXPECT_EQ(0, content_length->value());
+
+  Header *h = content_length.get();
+  EXPECT_TRUE(isa<ContentLength>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -328,6 +358,9 @@ TEST(HeaderTest, ContentLength) {
 TEST(HeaderTest, ContentType) {
   scoped_ptr<ContentType> content_type(new ContentType(MediaType("application","sdp")));
 
+  Header *h = content_type.get();
+  EXPECT_TRUE(isa<ContentType>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   content_type->print(os);
@@ -335,11 +368,14 @@ TEST(HeaderTest, ContentType) {
   EXPECT_EQ("Content-Type: application/sdp", os.str());
 }
 
-TEST(HeaderTest, CSeq) {
-  scoped_ptr<CSeq> cseq(new CSeq(1, Method::REGISTER));
+TEST(HeaderTest, Cseq) {
+  scoped_ptr<Cseq> cseq(new Cseq(1, Method::REGISTER));
 
   EXPECT_EQ(1, cseq->sequence());
   EXPECT_EQ(Method::REGISTER, cseq->method());
+
+  Header *h = cseq.get();
+  EXPECT_TRUE(isa<Cseq>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -354,6 +390,9 @@ TEST(HeaderTest, Date) {
 
   EXPECT_EQ(date->value(), t);
 
+  Header *h = date.get();
+  EXPECT_TRUE(isa<Date>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   date->print(os);
@@ -365,6 +404,9 @@ TEST(HeaderTest, ErrorInfo) {
   scoped_ptr<ErrorInfo> error_info(new ErrorInfo);
   error_info->push_back(ErrorUri("sip:not-in-service-recording@atlanta.com"));
 
+  Header *h = error_info.get();
+  EXPECT_TRUE(isa<ErrorInfo>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   error_info->print(os);
@@ -373,11 +415,14 @@ TEST(HeaderTest, ErrorInfo) {
 }
 
 TEST(HeaderTest, Expires) {
-  scoped_ptr<Expires> error_info(new Expires(300));
+  scoped_ptr<Expires> expires(new Expires(300));
+
+  Header *h = expires.get();
+  EXPECT_TRUE(isa<Expires>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
-  error_info->print(os);
+  expires->print(os);
 
   EXPECT_EQ("Expires: 300", os.str());
 }
@@ -385,6 +430,9 @@ TEST(HeaderTest, Expires) {
 TEST(HeaderTest, From) {
   scoped_ptr<From> from(new From("sip:agb@bell-telephone.com", "A. G. Bell"));
   from->set_tag("a48s");
+
+  Header *h = from.get();
+  EXPECT_TRUE(isa<From>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -398,6 +446,9 @@ TEST(HeaderTest, InReplyTo) {
   in_reply_to->push_back("70710@saturn.bell-tel.com");
   in_reply_to->push_back("17320@saturn.bell-tel.com");
 
+  Header *h = in_reply_to.get();
+  EXPECT_TRUE(isa<InReplyTo>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   in_reply_to->print(os);
@@ -409,6 +460,9 @@ TEST(HeaderTest, MaxForwards) {
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
 
   EXPECT_EQ(70, max_forwards->value());
+
+  Header *h = max_forwards.get();
+  EXPECT_TRUE(isa<MaxForwards>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -423,6 +477,9 @@ TEST(HeaderTest, MimeVersion) {
   EXPECT_EQ(1, mime_version->major());
   EXPECT_EQ(0, mime_version->minor());
 
+  Header *h = mime_version.get();
+  EXPECT_TRUE(isa<MimeVersion>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   mime_version->print(os);
@@ -434,6 +491,9 @@ TEST(HeaderTest, MinExpires) {
   scoped_ptr<MinExpires> min_expires(new MinExpires(5));
 
   EXPECT_EQ(5, min_expires->value());
+
+  Header *h = min_expires.get();
+  EXPECT_TRUE(isa<MinExpires>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -447,6 +507,9 @@ TEST(HeaderTest, Organization) {
 
   EXPECT_EQ("Boxes by Bob", organization->value());
 
+  Header *h = organization.get();
+  EXPECT_TRUE(isa<Organization>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   organization->print(os);
@@ -458,6 +521,9 @@ TEST(HeaderTest, Priority) {
   scoped_ptr<Priority> priority(new Priority(Priority::emergency));
 
   EXPECT_EQ("emergency", priority->value());
+
+  Header *h = priority.get();
+  EXPECT_TRUE(isa<Priority>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -476,6 +542,9 @@ TEST(HeaderTest, ProxyAuthenticate) {
   proxy_authenticate->set_stale(false);
   proxy_authenticate->set_algorithm(ProxyAuthenticate::MD5);
 
+  Header *h = proxy_authenticate.get();
+  EXPECT_TRUE(isa<ProxyAuthenticate>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   proxy_authenticate->print(os);
@@ -490,6 +559,9 @@ TEST(HeaderTest, ProxyAuthorization) {
   proxy_authorization->set_nonce("c60f3082ee1212b402a21831ae");
   proxy_authorization->set_response("245f23415f11432b3434341c022");
 
+  Header *h = proxy_authorization.get();
+  EXPECT_TRUE(isa<ProxyAuthorization>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   proxy_authorization->print(os);
@@ -500,6 +572,9 @@ TEST(HeaderTest, ProxyAuthorization) {
 TEST(HeaderTest, ProxyRequire) {
   scoped_ptr<ProxyRequire> proxy_require(new ProxyRequire);
   proxy_require->push_back("foo");
+
+  Header *h = proxy_require.get();
+  EXPECT_TRUE(isa<ProxyRequire>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -512,6 +587,9 @@ TEST(HeaderTest, RecordRoute) {
   scoped_ptr<RecordRoute> record_route(new RecordRoute(RouteParam("sip:p2.example.com;lr")));
   record_route->push_back(RouteParam("sip:p1.example.com;lr"));
 
+  Header *h = record_route.get();
+  EXPECT_TRUE(isa<RecordRoute>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   record_route->print(os);
@@ -521,6 +599,9 @@ TEST(HeaderTest, RecordRoute) {
 
 TEST(HeaderTest, ReplyTo) {
   scoped_ptr<ReplyTo> reply_to(new ReplyTo("sip:bob@biloxi.com","Bob"));
+
+  Header *h = reply_to.get();
+  EXPECT_TRUE(isa<ReplyTo>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -532,6 +613,9 @@ TEST(HeaderTest, ReplyTo) {
 TEST(HeaderTest, Require) {
   scoped_ptr<Require> require(new Require("100rel"));
 
+  Header *h = require.get();
+  EXPECT_TRUE(isa<Require>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   require->print(os);
@@ -541,6 +625,9 @@ TEST(HeaderTest, Require) {
 
 TEST(HeaderTest, RetryAfter) {
   scoped_ptr<RetryAfter> retry_after(new RetryAfter(300));
+
+  Header *h = retry_after.get();
+  EXPECT_TRUE(isa<RetryAfter>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -552,6 +639,9 @@ TEST(HeaderTest, RetryAfter) {
 TEST(HeaderTest, Route) {
   scoped_ptr<Route> route(new Route(RouteParam("sip:alice@atlanta.com")));
 
+  Header *h = route.get();
+  EXPECT_TRUE(isa<Route>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   route->print(os);
@@ -561,6 +651,9 @@ TEST(HeaderTest, Route) {
 
 TEST(HeaderTest, Subject) {
   scoped_ptr<Subject> subject(new Subject("Need more boxes"));
+
+  Header *h = subject.get();
+  EXPECT_TRUE(isa<Subject>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -572,6 +665,9 @@ TEST(HeaderTest, Subject) {
 TEST(HeaderTest, Supported) {
   scoped_ptr<Supported> supported(new Supported("100rel"));
 
+  Header *h = supported.get();
+  EXPECT_TRUE(isa<Supported>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   supported->print(os);
@@ -581,6 +677,9 @@ TEST(HeaderTest, Supported) {
 
 TEST(HeaderTest, Timestamp) {
   scoped_ptr<Timestamp> timestamp(new Timestamp(100, 2.2345));
+
+  Header *h = timestamp.get();
+  EXPECT_TRUE(isa<Timestamp>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -593,6 +692,9 @@ TEST(HeaderTest, To) {
   scoped_ptr<To> to(new To("sip:operator@cs.columbia.edu","The Operator"));
   to->set_tag("287447");
 
+  Header *h = to.get();
+  EXPECT_TRUE(isa<To>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   to->print(os);
@@ -602,6 +704,9 @@ TEST(HeaderTest, To) {
 
 TEST(HeaderTest, Unsupported) {
   scoped_ptr<Unsupported> unsupported(new Unsupported("foo"));
+
+  Header *h = unsupported.get();
+  EXPECT_TRUE(isa<Unsupported>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);
@@ -613,6 +718,9 @@ TEST(HeaderTest, Unsupported) {
 TEST(HeaderTest, UserAgent) {
   scoped_ptr<UserAgent> user_agent(new UserAgent("Softphone Beta1.5"));
 
+  Header *h = user_agent.get();
+  EXPECT_TRUE(isa<UserAgent>(h));
+
   std::string buffer;
   raw_string_ostream os(buffer);
   user_agent->print(os);
@@ -620,8 +728,35 @@ TEST(HeaderTest, UserAgent) {
   EXPECT_EQ("User-Agent: Softphone Beta1.5", os.str());
 }
 
-// TODO: Via
-// TODO: Warning
+TEST(HeaderTest, Via) {
+  scoped_ptr<Via> via(new Via);
+  via->push_back(ViaParam(ViaParam::UDP, "pc33.atlanta.com"));
+  via->back().set_branch("z9hG4bK776asdhds");
+
+  Header *h = via.get();
+  EXPECT_TRUE(isa<Via>(h));
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  via->print(os);
+
+  EXPECT_EQ("Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bK776asdhds", os.str());
+}
+
+TEST(HeaderTest, Warning) {
+  scoped_ptr<Warning> warning(new Warning);
+  warning->push_back(WarnParam(370, "devnull", "Choose a bigger pipe"));
+  warning->push_back(WarnParam(307, "isi.edu", "Session parameter 'foo' not understood"));
+
+  Header *h = warning.get();
+  EXPECT_TRUE(isa<Warning>(h));
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  warning->print(os);
+
+  EXPECT_EQ("Warning: 370 devnull \"Choose a bigger pipe\", 307 isi.edu \"Session parameter 'foo' not understood\"", os.str());
+}
 
 TEST(HeaderTest, WwwAuthenticate) {
   scoped_ptr<WwwAuthenticate> www_authenticate(new WwwAuthenticate(WwwAuthenticate::Digest));
@@ -632,6 +767,9 @@ TEST(HeaderTest, WwwAuthenticate) {
   www_authenticate->set_opaque("");
   www_authenticate->set_stale(false);
   www_authenticate->set_algorithm(WwwAuthenticate::MD5);
+
+  Header *h = www_authenticate.get();
+  EXPECT_TRUE(isa<WwwAuthenticate>(h));
 
   std::string buffer;
   raw_string_ostream os(buffer);

@@ -86,7 +86,7 @@ private:
 public:
   ContentType() : Header(Header::HDR_CONTENT_TYPE) {}
   explicit ContentType(const MediaType &mediaType)
-    : Header(Header::HDR_CONTENT_LANGUAGE), MediaType(mediaType) {}
+    : Header(Header::HDR_CONTENT_TYPE), MediaType(mediaType) {}
 
   scoped_ptr<ContentType> Clone() const {
     return scoped_ptr<ContentType>(DoClone());
