@@ -112,6 +112,3 @@ private:
 } // End of sippet namespace
 
 #endif // SIPPET_MESSAGE_HEADER_HAS_MULTIPLE_H_
-
-/* Modeline for vim: set tw=79 et ts=4: */
-

@@ -123,6 +123,3 @@ private:
 } // End of sippet namespace
 
 #endif // SIPPET_MESSAGE_HEADERS_HAS_PARAMETERS_H_
-
-/* Modeline for vim: set tw=79 et ts=4: */
-

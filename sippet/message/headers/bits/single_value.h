@@ -67,6 +67,3 @@ raw_ostream &operator << (raw_ostream &os, const single_value<T> &v) {
 } // End of sippet namespace
 
 #endif // SIPPET_MESSAGE_HEADERS_SINGLE_VALUE_H_
-
-/* Modeline for vim: set tw=79 et ts=4: */
-

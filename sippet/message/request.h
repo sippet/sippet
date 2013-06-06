@@ -82,6 +82,3 @@ private:
 }
 
 #endif // SIPPET_MESSAGE_REQUEST_H_
-
-/* Modeline for vim: set tw=79 et ts=4: */
-

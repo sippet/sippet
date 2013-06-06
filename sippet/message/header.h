@@ -420,6 +420,3 @@ template <> struct isa_impl<WwwAuthenticate, Header> {
 } // End of sippet namespace
 
 #endif // SIPPET_MESSAGE_HEADER_H_
-
-/* Modeline for vim: set tw=79 et ts=4: */
-
