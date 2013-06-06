@@ -51,7 +51,7 @@ private:
 public:
   ContentEncoding() : Header(Header::HDR_CONTENT_ENCODING) {}
   ContentEncoding(const std::string &encoding)
-    : Header(Header::HDR_CONTENT_LANGUAGE) {
+    : Header(Header::HDR_CONTENT_ENCODING) {
     push_back(encoding);
   }
 
