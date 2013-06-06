@@ -30,8 +30,8 @@
 #ifndef SIPPET_MESSAGE_HEADERS_PARAM_SETTERS_H_
 #define SIPPET_MESSAGE_HEADERS_PARAM_SETTERS_H_
 
-#include <cstdlib>
 #include <string>
+#include "base/string_number_conversions.h"
 #include "sippet/base/format.h"
 #include "sippet/base/raw_ostream.h"
 
@@ -46,11 +46,15 @@ public:
   }
 
   double qvalue() const {
+    double v;
     assert(HasQvalue() && "Cannot read qvalue");
-    return atof(static_cast<const T*>(this)->param_find("q")->second.c_str());
+    if (base::StringToDouble(static_cast<const T*>(this)->param_find("q")->second, &v))
+      return v;
+    return 0;
   }
 
   void set_qvalue(double q) {
+    assert(q > 0 && "Invalid qvalue");
     std::string buffer;
     raw_string_ostream os(buffer);
     os << format("%.3f", q);
@@ -100,7 +104,10 @@ public:
     assert(HasExpires() && "Cannot read expires");
     const std::string &value =
       static_cast<const T*>(this)->param_find("expires")->second;
-    return static_cast<unsigned>(atoi(value.c_str()));
+    int ret;
+    if (StringToInt(value, &ret))
+      return static_cast<unsigned>(ret);
+    return 0;
   }
 
   void set_expires(unsigned seconds) {
@@ -126,6 +133,33 @@ public:
 
   void set_tag(const std::string &tag) {
     static_cast<T*>(this)->param_set("tag", tag);
+  }
+};
+
+template<class T>
+class has_handling {
+public:
+  enum HandlingType {
+    optional = 0, required
+  };
+
+  bool HasHandling() const {
+    return static_cast<const T*>(this)->param_find("handling") !=
+           static_cast<const T*>(this)->param_end();
+  }
+
+  std::string handling() const {
+    assert(HasTag() && "Cannot read handling");
+    return static_cast<const T*>(this)->param_find("handling")->second;
+  }
+
+  void set_handling(HandlingType t) {
+    static const char *rep[] = { "optional", "required" };
+    static_cast<T*>(this)->param_set("handling", rep[static_cast<int>(t)]);
+  }
+
+  void set_handling(const std::string &handling) {
+    static_cast<T*>(this)->param_set("handling", handling);
   }
 };
 

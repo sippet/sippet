@@ -28,6 +28,8 @@
  */
 
 #include "sippet/message/method.h"
+#include "base/string_util.h"
+#include <functional>
 
 namespace {
 
@@ -48,20 +50,32 @@ const char *methods[] = {
   "PUBLISH",
   "PULL",
   "PUSH",
-  "STORE",
-  "?????", // Reserved for unknown
+  "STORE"
 };
+
+const int max_size = sizeof(methods) / sizeof(methods[0]);
 
 } // End of empty namespace
 
 namespace sippet {
 
-std::string Method::name() const {
-  const int max_size = sizeof(methods) / sizeof(methods[0]);
+Method::NullMethod Method::NullMethod::instance;
+
+const char *Method::KnownMethod::str() {
   int index = static_cast<int>(method_);
   if (index >= max_size)
-    return methods[max_size-1];
+    return "????"; // should not happen
   return methods[index];
+}
+
+Method::MethodImp *Method::coerce(const char *str) {
+  std::string input(str);
+  StringToUpperASCII(input);
+  for (int i = 0; i < max_size; ++i) {
+    if (input == methods[i])
+      return new KnownMethod(static_cast<Type>(i));
+  }
+  return new UnknownMethod(str);
 }
 
 } // End of sippet namespace
