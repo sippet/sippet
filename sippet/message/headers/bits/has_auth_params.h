@@ -27,8 +27,8 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADERS_BITS_HAS_PARAMETERS_H_
-#define SIPPET_MESSAGE_HEADERS_BITS_HAS_PARAMETERS_H_
+#ifndef SIPPET_MESSAGE_HEADERS_BITS_HAS_AUTH_PARAMS_H_
+#define SIPPET_MESSAGE_HEADERS_BITS_HAS_AUTH_PARAMS_H_
 
 #include <vector>
 #include <utility>
@@ -39,21 +39,21 @@
 
 namespace sippet {
 
-class has_parameters {
+class has_auth_params {
 public:
   typedef std::pair<std::string, std::string> param_type;
   typedef std::vector<param_type>::iterator param_iterator;
   typedef std::vector<param_type>::const_iterator const_param_iterator;
 
 protected:
-  has_parameters(const has_parameters &other) : params_(other.params_) {}
-  has_parameters &operator=(const has_parameters &other) {
+  has_auth_params(const has_auth_params &other) : params_(other.params_) {}
+  has_auth_params &operator=(const has_auth_params &other) {
     params_ = other.params_;
     return *this;
   }
 public:
-  has_parameters() {}
-  ~has_parameters() {}
+  has_auth_params() {}
+  ~has_auth_params() {}
 
   // Iterator creation methods.
   param_iterator param_begin()             { return params_.begin(); }
@@ -112,8 +112,10 @@ public:
   // print parameters
   void print(raw_ostream &os) const {
     for (const_param_iterator i = param_begin(), ie = param_end(); i != ie; ++i) {
+      if (i != param_begin())
+        os << ", ";
       // TODO: value should be escaped
-      os << ";" << i->first << "=" << i->second;
+      os << i->first << "=\"" << i->second << "\"";
     }
   }
 private:
@@ -122,4 +124,4 @@ private:
 
 } // End of sippet namespace
 
-#endif // SIPPET_MESSAGE_HEADERS_BITS_HAS_PARAMETERS_H_
+#endif // SIPPET_MESSAGE_HEADERS_BITS_HAS_AUTH_PARAMS_H_

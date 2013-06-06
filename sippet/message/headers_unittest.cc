@@ -205,7 +205,21 @@ TEST(HeaderTest, Allow) {
   EXPECT_EQ("Allow: REGISTER, CANCEL, INVITE, ACK, BYE", os.str());
 }
 
-// TODO: AuthenticationInfo
+TEST(HeaderTest, AuthenticationInfo) {
+  scoped_ptr<AuthenticationInfo> authentication_info(new AuthenticationInfo);
+  authentication_info->set_nextnonce("47364c23432d2e131a5fb210812c");
+  authentication_info->set_qop(AuthenticationInfo::auth);
+  authentication_info->set_rspauth("xxx");
+  authentication_info->set_cnonce("0a4f113b");
+  authentication_info->set_nc(1);
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  authentication_info->print(os);
+
+  EXPECT_EQ("Authentication-Info: nextnonce=\"47364c23432d2e131a5fb210812c\", qop=auth, rspauth=\"xxx\", cnonce=\"0a4f113b\", nc=00000001", os.str());
+}
+
 // TODO: Authorization
 
 TEST(HeaderTest, CallId) {

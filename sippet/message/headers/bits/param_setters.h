@@ -27,8 +27,8 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADERS_PARAM_SETTERS_H_
-#define SIPPET_MESSAGE_HEADERS_PARAM_SETTERS_H_
+#ifndef SIPPET_MESSAGE_HEADERS_BITS_PARAM_SETTERS_H_
+#define SIPPET_MESSAGE_HEADERS_BITS_PARAM_SETTERS_H_
 
 #include <string>
 #include "base/string_number_conversions.h"
@@ -165,4 +165,4 @@ public:
 
 } // End of sippet namespace
 
-#endif // SIPPET_MESSAGE_HEADERS_PARAM_SETTERS_H_
+#endif // SIPPET_MESSAGE_HEADERS_BITS_PARAM_SETTERS_H_
