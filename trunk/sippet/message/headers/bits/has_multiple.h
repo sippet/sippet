@@ -27,8 +27,8 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADER_HAS_MULTIPLE_H_
-#define SIPPET_MESSAGE_HEADER_HAS_MULTIPLE_H_
+#ifndef SIPPET_MESSAGE_HEADERS_BITS_HAS_MULTIPLE_H_
+#define SIPPET_MESSAGE_HEADERS_BITS_HAS_MULTIPLE_H_
 
 #include <vector>
 
@@ -111,4 +111,4 @@ private:
 
 } // End of sippet namespace
 
-#endif // SIPPET_MESSAGE_HEADER_HAS_MULTIPLE_H_
+#endif // SIPPET_MESSAGE_HEADERS_BITS_HAS_MULTIPLE_H_
