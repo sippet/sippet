@@ -37,6 +37,31 @@
 
 namespace sippet {
 
+#define string_token_param_template(cls, Name, Capitalized)         \
+template<class T>                                                   \
+class cls {                                                         \
+public:                                                             \
+  bool Has##Capitalized() const {                                   \
+    return static_cast<const T*>(this)->param_find(#Name) !=        \
+           static_cast<const T*>(this)->param_end();                \
+  }                                                                 \
+  std::string Name() const {                                        \
+    assert(Has##Capitalized() && "Cannot read " #Name);             \
+    return static_cast<const T*>(this)->param_find(#Name)->second;  \
+  }                                                                 \
+  void set_##Name(const std::string &Name) {                        \
+    static_cast<T*>(this)->param_set(#Name, Name);                  \
+  }                                                                 \
+};
+
+string_token_param_template(has_tag,        tag,        Tag         )
+string_token_param_template(has_maddr,      maddr,      Maddr       )
+string_token_param_template(has_received,   received,   Received    )
+string_token_param_template(has_branch,     branch,     Branch      )
+
+#undef string_token_param_template
+
+
 template<class T>
 class has_qvalue {
 public:
@@ -119,20 +144,28 @@ public:
 };
 
 template<class T>
-class has_tag {
+class has_ttl {
 public:
-  bool HasTag() const {
-    return static_cast<const T*>(this)->param_find("tag") !=
+  bool HasTtl() const {
+    return static_cast<const T*>(this)->param_find("ttl") !=
            static_cast<const T*>(this)->param_end();
   }
 
-  std::string tag() const {
-    assert(HasTag() && "Cannot read tag");
-    return static_cast<const T*>(this)->param_find("tag")->second;
+  unsigned ttl() const {
+    assert(HasTtl() && "Cannot read ttl");
+    const std::string &value =
+      static_cast<const T*>(this)->param_find("ttl")->second;
+    int ret;
+    if (StringToInt(value, &ret))
+      return static_cast<unsigned>(ret);
+    return 0;
   }
 
-  void set_tag(const std::string &tag) {
-    static_cast<T*>(this)->param_set("tag", tag);
+  void set_ttl(unsigned seconds) {
+    std::string buffer;
+    raw_string_ostream os(buffer);
+    os << seconds;
+    static_cast<T*>(this)->param_set("ttl", os.str());
   }
 };
 
