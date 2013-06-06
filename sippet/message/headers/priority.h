@@ -47,12 +47,23 @@ private:
     return new Priority(*this);
   }
 public:
+  enum Level {
+    emergency = 0, urgent, normal, non_urgent
+  };
+
   Priority() : Header(Header::HDR_PRIORITY) {}
+  Priority(Level l)
+    : Header(Header::HDR_PRIORITY) { set_value(l); }
   Priority(const single_value::value_type &priority)
     : Header(Header::HDR_PRIORITY), single_value(priority) {}
 
   scoped_ptr<Priority> Clone() const {
     return scoped_ptr<Priority>(DoClone());
+  }
+
+  void set_value(Level l) {
+    const char *rep[] = { "emergency", "urgent", "normal", "non-urgent" };
+    single_value::set_value(rep[static_cast<int>(l)]);
   }
 
   virtual void print(raw_ostream &os) const {

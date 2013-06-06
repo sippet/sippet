@@ -36,6 +36,7 @@
 #include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/format.h"
 #include "sippet/base/raw_ostream.h"
+#include "base/strings/string_number_conversions.h"
 
 namespace sippet {
 
@@ -82,7 +83,7 @@ private:
     if (frac == 0)
       os << static_cast<int>(i);
     else
-      os << format("%.6f", v);
+      os << base::DoubleToString(v);
   }
 };
 

@@ -40,7 +40,7 @@ namespace sippet {
 
 class Unsupported :
   public Header,
-  public has_multiple<single_value<std::string> > {
+  public has_multiple<std::string> {
 private:
   Unsupported(const Unsupported &other) : Header(other), has_multiple(other) {}
   Unsupported &operator=(const Unsupported &);
@@ -49,6 +49,8 @@ private:
   }
 public:
   Unsupported() : Header(Header::HDR_UNSUPPORTED) {}
+  Unsupported(const std::string &value)
+    : Header(Header::HDR_UNSUPPORTED) { push_back(value); }
 
   scoped_ptr<Unsupported> Clone() const {
     return scoped_ptr<Unsupported>(DoClone());
