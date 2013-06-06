@@ -316,6 +316,27 @@ private:
   std::string nextnonce_;
 };
 
+class has_domain {
+public:
+  has_domain() {}
+  has_domain(const has_domain &other) : domain_(other.domain_) {}
+  ~has_domain() {}
+
+  has_domain &operator=(const has_domain &other) {
+    domain_ = other.domain_;
+    return *this;
+  }
+
+  std::string domain() const { return domain_; }
+  void set_domain(const std::string &domain) { domain_ = domain; }
+
+  void print(raw_ostream &os) const {
+    os << "domain=\"" << domain_ << "\"";
+  }
+private:
+  std::string domain_;
+};
+
 class has_stale {
 public:
   has_stale() {}
