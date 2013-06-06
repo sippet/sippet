@@ -42,8 +42,8 @@ class Require :
   public Header,
   public has_multiple<std::string> {
 private:
+  DISALLOW_ASSIGN(Require);
   Require(const Require &other) : Header(other), has_multiple(other) {}
-  Require &operator=(const Require &);
   virtual Require *DoClone() const {
     return new Require(*this);
   }

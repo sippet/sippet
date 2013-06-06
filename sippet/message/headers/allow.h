@@ -42,8 +42,9 @@ class Allow :
   public Header,
   public has_multiple<Method> {
 private:
-  Allow(const Allow &other) : Header(other), has_multiple(other) {}
-  Allow &operator=(const Allow &);
+  DISALLOW_ASSIGN(Allow);
+  Allow(const Allow &other)
+    : Header(other), has_multiple(other) {}
   virtual Allow *DoClone() const {
     return new Allow(*this);
   }

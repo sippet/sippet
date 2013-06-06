@@ -42,9 +42,9 @@ class ContentEncoding :
   public Header,
   public has_multiple<single_value<std::string> > {
 private:
+  DISALLOW_ASSIGN(ContentEncoding);
   ContentEncoding(const ContentEncoding &other)
     : Header(other), has_multiple(other) {}
-  ContentEncoding &operator=(const ContentEncoding &other);
   virtual ContentEncoding *DoClone() const {
     return new ContentEncoding(*this);
   }

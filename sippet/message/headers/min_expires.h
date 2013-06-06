@@ -40,8 +40,8 @@ class MinExpires :
   public Header,
   public single_value<unsigned> {
 private:
+  DISALLOW_ASSIGN(MinExpires);
   MinExpires(const MinExpires &other) : Header(other), single_value(other) {}
-  MinExpires &operator=(const MinExpires &);
   virtual MinExpires *DoClone() const {
     return new MinExpires(*this);
   }

@@ -42,8 +42,8 @@ class Unsupported :
   public Header,
   public has_multiple<std::string> {
 private:
+  DISALLOW_ASSIGN(Unsupported);
   Unsupported(const Unsupported &other) : Header(other), has_multiple(other) {}
-  Unsupported &operator=(const Unsupported &);
   virtual Unsupported *DoClone() const {
     return new Unsupported(*this);
   }

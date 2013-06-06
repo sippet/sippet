@@ -41,8 +41,8 @@ class Priority :
   public Header,
   public single_value<std::string> {
 private:
+  DISALLOW_ASSIGN(Priority);
   Priority(const Priority &other) : Header(other), single_value(other) {}
-  Priority &operator=(const Priority &other);
   virtual Priority *DoClone() const {
     return new Priority(*this);
   }

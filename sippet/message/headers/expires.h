@@ -40,8 +40,8 @@ class Expires :
   public Header,
   public single_value<unsigned> {
 private:
+  DISALLOW_ASSIGN(Expires);
   Expires(const Expires &other) : Header(other), single_value(other) {}
-  Expires &operator=(const Expires &);
   virtual Expires *DoClone() const {
     return new Expires(*this);
   }

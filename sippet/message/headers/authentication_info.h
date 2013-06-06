@@ -38,16 +38,16 @@ namespace sippet {
 
 class AuthenticationInfo :
   public Header,
-  public has_nextnonce,
-  public has_qop,
-  public has_rspauth,
-  public has_cnonce,
-  public has_nc {
+  public has_nextnonce<AuthenticationInfo>,
+  public has_qop<AuthenticationInfo>,
+  public has_rspauth<AuthenticationInfo>,
+  public has_cnonce<AuthenticationInfo>,
+  public has_nc<AuthenticationInfo>,
+  public has_auth_params {
 private:
+  DISALLOW_ASSIGN(AuthenticationInfo);
   AuthenticationInfo(const AuthenticationInfo &other)
-    : Header(other), has_nextnonce(other), has_qop(other), has_rspauth(other),
-      has_cnonce(other), has_nc(other) {}
-  AuthenticationInfo &operator=(const AuthenticationInfo &);
+    : Header(other), has_auth_params(other) {}
   virtual AuthenticationInfo *DoClone() const {
     return new AuthenticationInfo(*this);
   }
@@ -60,26 +60,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Authentication-Info");
-    bool written = false;
-    if (!nextnonce().empty()) {
-      has_nextnonce::print(os), written = true;
-    }
-    if (!qop().empty()) {
-      if (written) os << ", ";
-      has_qop::print(os), written = true;
-    }
-    if (!rspauth().empty()) {
-      if (written) os << ", ";
-      has_rspauth::print(os), written = true;
-    }
-    if (!cnonce().empty()) {
-      if (written) os << ", ";
-      has_cnonce::print(os), written = true;
-    }
-    if (nc() != 0) {
-      if (written) os << ", ";
-      has_nc::print(os);
-    }
+    has_auth_params::print(os);
   }
 };
 

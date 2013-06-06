@@ -73,8 +73,8 @@ class AlertInfo :
   public Header,
   public has_multiple<AlertParam> {
 private:
+  DISALLOW_ASSIGN(AlertInfo);
   AlertInfo(const AlertInfo &other) : Header(other), has_multiple(other) {}
-  AlertInfo &operator=(const AlertInfo &);
   virtual AlertInfo *DoClone() const {
     return new AlertInfo(*this);
   }

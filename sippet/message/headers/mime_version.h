@@ -42,9 +42,9 @@ namespace sippet {
 class MimeVersion :
   public Header {
 private:
+  DISALLOW_ASSIGN(MimeVersion);
   MimeVersion(const MimeVersion &other)
     : Header(other), major_(other.major_), minor_(other.minor_) {}
-  MimeVersion &operator=(const MimeVersion &other);
   virtual MimeVersion *DoClone() const {
     return new MimeVersion(*this);
   }
