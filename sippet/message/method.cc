@@ -70,7 +70,7 @@ const char *Method::KnownMethod::str() {
 
 Method::MethodImp *Method::coerce(const char *str) {
   std::string input(str);
-  StringToUpperASCII(input);
+  input = StringToUpperASCII(input);
   for (int i = 0; i < max_size; ++i) {
     if (input == methods[i])
       return new KnownMethod(static_cast<Type>(i));

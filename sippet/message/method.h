@@ -63,7 +63,7 @@ public:
   Method() : method_(&NullMethod::instance) {}
   Method(const Method &other)
     : method_(other.method_->clone()) {}
-  explicit Method(const Type &m) : method_(new KnownMethod(m)) {}
+  Method(const Type &m) : method_(new KnownMethod(m)) {}
   explicit Method(const char *m) : method_(coerce(m)) {}
   explicit Method(const std::string &m) : method_(coerce(m.c_str())) {}
   ~Method() {}
@@ -71,6 +71,10 @@ public:
   Method &operator=(const Method &other) {
     method_.reset(other.method_->clone());
     return *this;
+  }
+
+  bool operator==(Method::Type t) const {
+    return type() == t;
   }
 
   Type type() const { return method_->type(); }
@@ -130,6 +134,11 @@ inline
 raw_ostream &operator << (raw_ostream &os, const Method &m) {
   m.print(os);
   return os;
+}
+
+inline
+bool operator==(Method::Type t, const Method &m) {
+  return m == t;
 }
 
 } // End of sippet namespace

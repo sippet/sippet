@@ -63,6 +63,12 @@ public:
   }
 };
 
+inline
+raw_ostream &operator<<(raw_ostream &os, const AlertParam &p) {
+  p.print(os);
+  return os;
+}
+
 class AlertInfo :
   public Header,
   public has_multiple<AlertParam> {
