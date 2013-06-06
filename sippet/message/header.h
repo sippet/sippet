@@ -80,6 +80,7 @@ class UserAgent;
 class Via;
 class Warning;
 class WwwAuthenticate;
+class Generic;
 
 class Header : public ilist_node<Header> {
 public:
@@ -128,7 +129,8 @@ public:
     HDR_USER_AGENT,
     HDR_VIA,
     HDR_WARNING,
-    HDR_WWW_AUTHENTICATE
+    HDR_WWW_AUTHENTICATE,
+    HDR_GENERIC
   };
 
 private:
@@ -414,6 +416,12 @@ template <> struct isa_impl<Warning, Header> {
 template <> struct isa_impl<WwwAuthenticate, Header> {
   static inline bool doit(const Header &h) {
     return h.type() == Header::HDR_WWW_AUTHENTICATE;
+  }
+};
+
+template <> struct isa_impl<Generic, Header> {
+  static inline bool doit(const Header &h) {
+    return h.type() == Header::HDR_GENERIC;
   }
 };
 
