@@ -32,6 +32,7 @@
 
 #include <string>
 #include "sippet/message/header.h"
+#include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
@@ -39,18 +40,20 @@ namespace sippet {
 
 class ContentEncoding :
   public Header,
-  public single_value<std::string> {
+  public has_multiple<single_value<std::string> > {
 private:
   ContentEncoding(const ContentEncoding &other)
-    : Header(other), single_value(other) {}
+    : Header(other), has_multiple(other) {}
   ContentEncoding &operator=(const ContentEncoding &other);
   virtual ContentEncoding *DoClone() const {
     return new ContentEncoding(*this);
   }
 public:
   ContentEncoding() : Header(Header::HDR_CONTENT_ENCODING) {}
-  ContentEncoding(const single_value::value_type &encoding)
-    : Header(Header::HDR_CONTENT_LANGUAGE), single_value(encoding) {}
+  ContentEncoding(const std::string &encoding)
+    : Header(Header::HDR_CONTENT_LANGUAGE) {
+    push_back(encoding);
+  }
 
   scoped_ptr<ContentEncoding> Clone() const {
     return scoped_ptr<ContentEncoding>(DoClone());
@@ -58,7 +61,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Content-Encoding");
-    single_value::print(os);
+    has_multiple::print(os);
   }
 };
 

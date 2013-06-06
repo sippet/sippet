@@ -32,6 +32,7 @@
 
 #include <string>
 #include "sippet/message/header.h"
+#include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
 
@@ -39,17 +40,21 @@ namespace sippet {
 
 class ContentLanguage :
   public Header,
-  public single_value<std::string> {
+  public has_multiple<single_value<std::string> > {
 private:
-  ContentLanguage(const ContentLanguage &other) : Header(other), single_value(other) {}
+  ContentLanguage(const ContentLanguage &other)
+    : Header(other), has_multiple(other) {}
   ContentLanguage &operator=(const ContentLanguage &other);
   virtual ContentLanguage *DoClone() const {
     return new ContentLanguage(*this);
   }
 public:
-  ContentLanguage() : Header(Header::HDR_CONTENT_LANGUAGE) {}
-  ContentLanguage(const single_value::value_type &language)
-    : Header(Header::HDR_CONTENT_LANGUAGE), single_value(language) {}
+  ContentLanguage()
+    : Header(Header::HDR_CONTENT_LANGUAGE) {}
+  ContentLanguage(const std::string &language)
+    : Header(Header::HDR_CONTENT_LANGUAGE) {
+    push_back(language);
+  }
 
   scoped_ptr<ContentLanguage> Clone() const {
     return scoped_ptr<ContentLanguage>(DoClone());
@@ -57,7 +62,7 @@ public:
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("Content-Language");
-    single_value::print(os);
+    has_multiple::print(os);
   }
 };
 
