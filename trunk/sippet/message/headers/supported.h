@@ -42,8 +42,8 @@ class Supported :
   public Header,
   public has_multiple<std::string> {
 private:
+  DISALLOW_ASSIGN(Supported);
   Supported(const Supported &other) : Header(other), has_multiple(other) {}
-  Supported &operator=(const Supported &);
   virtual Supported *DoClone() const {
     return new Supported(*this);
   }

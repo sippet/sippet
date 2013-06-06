@@ -35,82 +35,29 @@
 namespace sippet {
 
 class Challenge :
-  public has_realm,
-  public has_domain,
-  public has_nonce,
-  public has_opaque,
-  public has_stale,
-  public has_algorithm,
-  public has_qop_options,
+  public has_realm<Challenge>,
+  public has_domain<Challenge>,
+  public has_nonce<Challenge>,
+  public has_opaque<Challenge>,
+  public has_stale<Challenge>,
+  public has_algorithm<Challenge>,
+  public has_qop_options<Challenge>,
   public has_auth_params {
 public:
-  enum Scheme {
-    Digest = 0
-  };
-
   Challenge() {}
-  Challenge(Scheme s) { set_scheme(s); }
-  Challenge(const std::string &scheme) : scheme_(scheme) {}
-  Challenge(const Challenge &other)
-    : has_realm(other), has_domain(other), has_nonce(other),
-      has_opaque(other), has_stale(other), has_algorithm(other),
-      has_qop_options(other), has_auth_params(other),
-      scheme_(other.scheme_) {}
+  Challenge(Scheme s) : has_auth_params(s) {}
+  Challenge(const std::string &scheme) : has_auth_params(scheme) {}
+  Challenge(const Challenge &other) : has_auth_params(other) {}
   ~Challenge() {}
-
-  std::string scheme() const { return scheme_; }
-  void set_scheme(const std::string &scheme) { scheme_ = scheme; }
-  void set_scheme(Scheme s) {
-    const char *rep[] = { "Digest" };
-    scheme_ = rep[static_cast<int>(s)];
-  }
-
-  virtual void print(raw_ostream &os) const {
-    os << scheme_ << " ";
-    bool written = false;
-    if (!realm().empty()) {
-      has_realm::print(os), written = true;
-    }
-    if (!domain().empty()) {
-      if (written) os << ", ";
-      has_domain::print(os), written = true;
-    }
-    if (!nonce().empty()) {
-      if (written) os << ", ";
-      has_nonce::print(os), written = true;
-    }
-    if (!opaque().empty()) {
-      if (written) os << ", ";
-      has_opaque::print(os), written = true;
-    }
-    if (stale()) {
-      if (written) os << ", ";
-      has_stale::print(os), written = true;
-    }
-    if (!algorithm().empty()) {
-      if (written) os << ", ";
-      has_algorithm::print(os), written = true;
-    }
-    if (!qop_options().empty()) {
-      if (written) os << ", ";
-      has_qop_options::print(os), written = true;
-    }
-    if (!has_auth_params::param_empty()) {
-      if (written) os << ", ";
-      has_auth_params::print(os);
-    }
-  }
-private:
-  std::string scheme_;
 };
 
 class WwwAuthenticate :
   public Header,
   public Challenge {
 private:
+  DISALLOW_ASSIGN(WwwAuthenticate);
   WwwAuthenticate(const WwwAuthenticate &other)
     : Header(other), Challenge(other) {}
-  WwwAuthenticate &operator=(const WwwAuthenticate &);
   virtual WwwAuthenticate *DoClone() const {
     return new WwwAuthenticate(*this);
   }

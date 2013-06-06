@@ -108,9 +108,9 @@ class Contact :
   public Header,
   public has_multiple<ContactInfo> {
 private:
+  DISALLOW_ASSIGN(Contact);
   Contact(const Contact &other)
     : Header(other), has_multiple(other), star_(other.star_) {}
-  Contact &operator=(const Contact &);
   virtual Contact *DoClone() const {
     return new Contact(*this);
   }

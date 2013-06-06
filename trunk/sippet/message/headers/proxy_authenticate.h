@@ -38,9 +38,9 @@ class ProxyAuthenticate :
   public Header,
   public Challenge {
 private:
+  DISALLOW_ASSIGN(ProxyAuthenticate);
   ProxyAuthenticate(const ProxyAuthenticate &other)
     : Header(other), Challenge(other) {}
-  ProxyAuthenticate &operator=(const ProxyAuthenticate &);
   virtual ProxyAuthenticate *DoClone() const {
     return new ProxyAuthenticate(*this);
   }

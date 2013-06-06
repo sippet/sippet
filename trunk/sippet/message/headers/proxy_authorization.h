@@ -38,9 +38,9 @@ class ProxyAuthorization :
   public Header,
   public Credentials {
 private:
+  DISALLOW_ASSIGN(ProxyAuthorization);
   ProxyAuthorization(const ProxyAuthorization &other)
     : Header(other), Credentials(other) {}
-  ProxyAuthorization &operator=(const ProxyAuthorization &);
   virtual ProxyAuthorization *DoClone() const {
     return new ProxyAuthorization(*this);
   }

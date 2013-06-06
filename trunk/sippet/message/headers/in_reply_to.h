@@ -41,8 +41,8 @@ class InReplyTo :
   public Header,
   public has_multiple<std::string> {
 private:
+  DISALLOW_ASSIGN(InReplyTo);
   InReplyTo(const InReplyTo &other) : Header(other), has_multiple(other) {}
-  InReplyTo &operator=(const InReplyTo &);
   virtual InReplyTo *DoClone() const {
     return new InReplyTo(*this);
   }

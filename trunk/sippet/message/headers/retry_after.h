@@ -42,9 +42,9 @@ class RetryAfter :
   public single_value<unsigned>,
   public has_parameters {
 private:
+  DISALLOW_ASSIGN(RetryAfter);
   RetryAfter(const RetryAfter &other)
     : Header(other), single_value(other), has_parameters(other) {}
-  RetryAfter &operator=(const RetryAfter &);
   virtual RetryAfter *DoClone() const {
     return new RetryAfter(*this);
   }

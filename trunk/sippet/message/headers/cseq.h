@@ -40,9 +40,9 @@ namespace sippet {
 class CSeq :
   public Header {
 private:
+  DISALLOW_ASSIGN(CSeq);
   CSeq(const CSeq &other)
     : Header(other), sequence_(other.sequence_), method_(other.method_) {}
-  CSeq &operator=(const CSeq &other);
   virtual CSeq *DoClone() const {
     return new CSeq(*this);
   }

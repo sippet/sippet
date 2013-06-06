@@ -44,9 +44,9 @@ class ContentDisposition :
   public has_parameters,
   public has_handling<ContentDisposition> {
 private:
+  DISALLOW_ASSIGN(ContentDisposition);
   ContentDisposition(const ContentDisposition &other)
     : Header(other), has_parameters(other), single_value(other) {}
-  ContentDisposition &operator=(ContentDisposition &other);
   virtual ContentDisposition *DoClone() const {
     return new ContentDisposition(*this);
   }

@@ -40,8 +40,8 @@ class ContentLength :
   public Header,
   public single_value<unsigned> {
 private:
+  DISALLOW_ASSIGN(ContentLength);
   ContentLength(const ContentLength &other) : Header(other), single_value(other) {}
-  ContentLength &operator=(const ContentLength &);
   virtual ContentLength *DoClone() const {
     return new ContentLength(*this);
   }

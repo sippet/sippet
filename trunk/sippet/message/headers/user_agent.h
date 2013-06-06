@@ -41,8 +41,8 @@ class UserAgent :
   public Header,
   public single_value<std::string> {
 private:
+  DISALLOW_ASSIGN(UserAgent);
   UserAgent(const UserAgent &other) : Header(other), single_value(other) {}
-  UserAgent &operator=(const UserAgent &other);
   virtual UserAgent *DoClone() const {
     return new UserAgent(*this);
   }

@@ -38,9 +38,9 @@ class ReplyTo :
   public Header,
   public ContactBase {
 private:
+  DISALLOW_ASSIGN(ReplyTo);
   ReplyTo(const ReplyTo &other)
     : Header(other), ContactBase(other) {}
-  ReplyTo &operator=(const ReplyTo &);
   virtual ReplyTo *DoClone() const {
     return new ReplyTo(*this);
   }

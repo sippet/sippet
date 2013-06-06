@@ -30,96 +30,60 @@
 #ifndef SIPPET_MESSAGE_HEADERS_BITS_HAS_AUTH_PARAMS_H_
 #define SIPPET_MESSAGE_HEADERS_BITS_HAS_AUTH_PARAMS_H_
 
-#include <vector>
-#include <utility>
-#include <algorithm>
-#include <string>
-#include <cassert>
-#include "sippet/base/raw_ostream.h"
+#include "sippet/message/headers/bits/has_parameters.h"
 
 namespace sippet {
 
-class has_auth_params {
+class has_auth_params :
+  public has_parameters {
 public:
-  typedef std::pair<std::string, std::string> param_type;
-  typedef std::vector<param_type>::iterator param_iterator;
-  typedef std::vector<param_type>::const_iterator const_param_iterator;
+  enum Scheme {
+    Digest = 0
+  };
 
-protected:
-  has_auth_params(const has_auth_params &other) : params_(other.params_) {}
-  has_auth_params &operator=(const has_auth_params &other) {
-    params_ = other.params_;
-    return *this;
-  }
-public:
-  has_auth_params() {}
+  has_auth_params() : has_scheme_(false) {}
+  has_auth_params(Scheme s) { set_scheme(s); }
+  has_auth_params(const std::string &scheme)
+    : scheme_(scheme), has_scheme_(true) {}
+  has_auth_params(const has_auth_params &other)
+    : scheme_(other.scheme_), has_scheme_(other.has_scheme_) {}
   ~has_auth_params() {}
 
-  // Iterator creation methods.
-  param_iterator param_begin()             { return params_.begin(); }
-  const_param_iterator param_begin() const { return params_.begin(); }
-  param_iterator param_end()               { return params_.end();   }
-  const_param_iterator param_end() const   { return params_.end();   }
-
-  // Miscellaneous inspection routines.
-  bool param_empty() const { return params_.empty(); }
-
-  // erase - remove a node from the controlled sequence... and delete it.
-  param_iterator param_erase(param_iterator where) {
-    return params_.erase(where);
+  has_auth_params &operator=(const has_auth_params &other) {
+    scheme_ = other.scheme_;
+    has_scheme_ = other.has_scheme_;
+    has_parameters::operator=(other);
+    return *this;
   }
 
-  // clear everything
-  void param_clear() { params_.clear(); }
-
-  // find an existing parameter
-  param_iterator param_find(const std::string &key) {
-    struct _pred {
-      _pred(const std::string &key) : key_(key) {}
-      bool operator ()(const param_type &pair) {
-        return pair.first == key_;
-      }
-     private:
-      const std::string &key_;
-    };
-    return std::find_if(param_begin(), param_end(), _pred(key));
+  bool HasScheme() const { return has_scheme_; }
+  std::string scheme() const {
+    assert(HasScheme() && "Cannot read scheme");
+    return scheme_;
   }
-  const_param_iterator param_find(const std::string &key) const {
-    struct _pred {
-      _pred(const std::string &key) : key_(key) {}
-      bool operator ()(const param_type &pair) {
-        return pair.first == key_;
-      }
-     private:
-      const std::string &key_;
-    };
-    return std::find_if(param_begin(), param_end(), _pred(key));
+  void set_scheme(const std::string &scheme) {
+    assert(!scheme.empty() && "Invalid scheme");
+    scheme_ = scheme;
+    has_scheme_ = true;
+  }
+  void set_scheme(Scheme s) {
+    const char *rep[] = { "Digest" };
+    set_scheme(rep[static_cast<int>(s)]);
   }
 
-  // set a parameter, or create one if it does not exist
-  void param_set(const std::string &key, const std::string &value) {
-    assert(!key.empty() && "Key cannot be empty");
-    // TODO: value should be unescaped
-    param_iterator it = param_find(key);
-    if (it == param_end()) {
-      params_.push_back(std::make_pair(key, value));
-    }
-    else {
-      (*it).second = value;
-    }
-  }
-
-  // print parameters
   void print(raw_ostream &os) const {
+    if (has_scheme_)
+      os << scheme_ << " ";
     for (const_param_iterator i = param_begin(), ie = param_end(); i != ie; ++i) {
       if (i != param_begin())
         os << ", ";
       // TODO: value should be escaped
-      os << i->first << "=\"" << i->second << "\"";
+      os << i->first << "=" << i->second;
     }
   }
 private:
-  std::vector<param_type> params_;
+  bool has_scheme_;
+  std::string scheme_;
 };
 
 } // End of sippet namespace

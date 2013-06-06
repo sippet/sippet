@@ -43,9 +43,9 @@ namespace sippet {
 class Timestamp :
   public Header {
 private:
+  DISALLOW_ASSIGN(Timestamp);
   Timestamp(const Timestamp &other)
     : Header(other), timestamp_(other.timestamp_), delay_(other.delay_) {}
-  Timestamp &operator=(const Timestamp &other);
   virtual Timestamp *DoClone() const {
     return new Timestamp(*this);
   }

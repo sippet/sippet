@@ -39,9 +39,9 @@ class From :
   public ContactBase,
   public has_tag<From> {
 private:
+  DISALLOW_ASSIGN(From);
   From(const From &other)
     : Header(other), ContactBase(other) {}
-  From &operator=(const From &);
   virtual From *DoClone() const {
     return new From(*this);
   }

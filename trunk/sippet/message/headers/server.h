@@ -41,8 +41,8 @@ class Server :
   public Header,
   public single_value<std::string> {
 private:
+  DISALLOW_ASSIGN(Server);
   Server(const Server &other) : Header(other), single_value(other) {}
-  Server &operator=(const Server &other);
   virtual Server *DoClone() const {
     return new Server(*this);
   }
