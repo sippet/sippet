@@ -27,8 +27,8 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#ifndef SIPPET_MESSAGE_HEADERS_SINGLE_VALUE_H_
-#define SIPPET_MESSAGE_HEADERS_SINGLE_VALUE_H_
+#ifndef SIPPET_MESSAGE_HEADERS_BITS_SINGLE_VALUE_H_
+#define SIPPET_MESSAGE_HEADERS_BITS_SINGLE_VALUE_H_
 
 namespace sippet {
 
@@ -66,4 +66,4 @@ raw_ostream &operator << (raw_ostream &os, const single_value<T> &v) {
 
 } // End of sippet namespace
 
-#endif // SIPPET_MESSAGE_HEADERS_SINGLE_VALUE_H_
+#endif // SIPPET_MESSAGE_HEADERS_BITS_SINGLE_VALUE_H_
