@@ -31,7 +31,7 @@
 #define SIPPET_MESSAGE_HEADERS_BITS_AUTH_SETTERS_H_
 
 #include <string>
-#include "sippet/base/raw_ostream.h"
+#include "base/stringprintf.h"
 
 namespace sippet {
 
@@ -125,14 +125,11 @@ public:
     assert(HasNc() && "Cannot read nc");
     int output;
     if (base::HexStringToInt(static_cast<T*>(this)->param_find("nc")->second, &output))
-      return output;
+      return static_cast<unsigned>(output);
     return 0;
   }
   void set_nc(unsigned nc) {
-    std::string output;
-    raw_string_ostream os(output);
-    os << format("%08x", nc);
-    static_cast<T*>(this)->param_set("nc", os.str());
+    static_cast<T*>(this)->param_set("nc", base::StringPrintf("%08x", nc));
   }
 };
 
