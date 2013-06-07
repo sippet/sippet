@@ -35,6 +35,7 @@
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/has_parameters.h"
 #include "sippet/base/format.h"
+#include "net/base/host_port_pair.h"
 
 namespace sippet {
 
@@ -54,10 +55,10 @@ public:
     : protocol_(other.protocol_), sent_by_(other.sent_by_),
       has_parameters(other) {}
   ViaParam(ProtocolType p,
-           const std::string &sent_by)
+           const net::HostPortPair &sent_by)
     : sent_by_(sent_by) { set_protocol(p); }
   ViaParam(const std::string &protocol,
-           const std::string &sent_by)
+           const net::HostPortPair &sent_by)
     : protocol_(protocol), sent_by_(sent_by) {}
 
   ~ViaParam() {}
@@ -76,18 +77,20 @@ public:
     set_protocol(rep[static_cast<int>(p)]);
   }
 
-  std::string sent_by() const { return sent_by_; }
-  void set_sent_by(const std::string &sent_by) {
+  net::HostPortPair sent_by() const { return sent_by_; }
+  void set_sent_by(const net::HostPortPair &sent_by) {
     sent_by_ = sent_by;
   }
 
   void print(raw_ostream &os) const {
-    os << "SIP/2.0/" << protocol_ << " " << sent_by_;
+    os << "SIP/2.0/" << protocol_ << " " << sent_by_.host();
+    if (sent_by_.port() != 0)
+      os << ":" << sent_by_.port();
     has_parameters::print(os);
   }
 private:
   std::string protocol_;
-  std::string sent_by_;
+  net::HostPortPair sent_by_;
 };
 
 inline

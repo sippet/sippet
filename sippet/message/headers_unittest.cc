@@ -170,7 +170,7 @@ TEST(HeaderTest, AcceptLanguage) {
 
 TEST(HeaderTest, AlertInfo) {
   scoped_ptr<AlertInfo> alert_info(new AlertInfo);
-  alert_info->push_back(AlertParam("http://www.example.com/sounds/moo.wav"));
+  alert_info->push_back(AlertParam(GURL("http://www.example.com/sounds/moo.wav")));
 
   Header *h = alert_info.get();
   EXPECT_TRUE(isa<AlertInfo>(h));
@@ -262,9 +262,9 @@ TEST(HeaderTest, CallId) {
 
 TEST(HeaderTest, CallInfo) {
   scoped_ptr<CallInfo> call_info(new CallInfo);
-  call_info->push_back(Info("http://wwww.example.com/alice/photo.jpg"));
+  call_info->push_back(Info(GURL("http://wwww.example.com/alice/photo.jpg")));
   call_info->back().set_purpose(Info::icon);
-  call_info->push_back(Info("http://www.example.com/alice/"));
+  call_info->push_back(Info(GURL("http://www.example.com/alice/")));
   call_info->back().set_purpose(Info::info);
 
   Header *h = call_info.get();
@@ -283,9 +283,9 @@ TEST(HeaderTest, Contact) {
   Header *h = contact.get();
   EXPECT_TRUE(isa<Contact>(h));
 
-  contact->push_back(ContactInfo("sip:foo@bar.com","John Doe"));
+  contact->push_back(ContactInfo(GURL("sip:foo@bar.com"),"John Doe"));
   contact->back().set_qvalue(1.0);
-  contact->push_back(ContactInfo("sip:bar@foo.com"));
+  contact->push_back(ContactInfo(GURL("sip:bar@foo.com")));
   contact->back().set_expires(300);
 
   EXPECT_FALSE(contact->empty());
@@ -402,7 +402,7 @@ TEST(HeaderTest, Date) {
 
 TEST(HeaderTest, ErrorInfo) {
   scoped_ptr<ErrorInfo> error_info(new ErrorInfo);
-  error_info->push_back(ErrorUri("sip:not-in-service-recording@atlanta.com"));
+  error_info->push_back(ErrorUri(GURL("sip:not-in-service-recording@atlanta.com")));
 
   Header *h = error_info.get();
   EXPECT_TRUE(isa<ErrorInfo>(h));
@@ -428,7 +428,7 @@ TEST(HeaderTest, Expires) {
 }
 
 TEST(HeaderTest, From) {
-  scoped_ptr<From> from(new From("sip:agb@bell-telephone.com", "A. G. Bell"));
+  scoped_ptr<From> from(new From(GURL("sip:agb@bell-telephone.com"), "A. G. Bell"));
   from->set_tag("a48s");
 
   Header *h = from.get();
@@ -584,8 +584,8 @@ TEST(HeaderTest, ProxyRequire) {
 }
 
 TEST(HeaderTest, RecordRoute) {
-  scoped_ptr<RecordRoute> record_route(new RecordRoute(RouteParam("sip:p2.example.com;lr")));
-  record_route->push_back(RouteParam("sip:p1.example.com;lr"));
+  scoped_ptr<RecordRoute> record_route(new RecordRoute(RouteParam(GURL("sip:p2.example.com;lr"))));
+  record_route->push_back(RouteParam(GURL("sip:p1.example.com;lr")));
 
   Header *h = record_route.get();
   EXPECT_TRUE(isa<RecordRoute>(h));
@@ -598,7 +598,7 @@ TEST(HeaderTest, RecordRoute) {
 }
 
 TEST(HeaderTest, ReplyTo) {
-  scoped_ptr<ReplyTo> reply_to(new ReplyTo("sip:bob@biloxi.com","Bob"));
+  scoped_ptr<ReplyTo> reply_to(new ReplyTo(GURL("sip:bob@biloxi.com"),"Bob"));
 
   Header *h = reply_to.get();
   EXPECT_TRUE(isa<ReplyTo>(h));
@@ -637,7 +637,7 @@ TEST(HeaderTest, RetryAfter) {
 }
 
 TEST(HeaderTest, Route) {
-  scoped_ptr<Route> route(new Route(RouteParam("sip:alice@atlanta.com")));
+  scoped_ptr<Route> route(new Route(RouteParam(GURL("sip:alice@atlanta.com"))));
 
   Header *h = route.get();
   EXPECT_TRUE(isa<Route>(h));
@@ -689,7 +689,7 @@ TEST(HeaderTest, Timestamp) {
 }
 
 TEST(HeaderTest, To) {
-  scoped_ptr<To> to(new To("sip:operator@cs.columbia.edu","The Operator"));
+  scoped_ptr<To> to(new To(GURL("sip:operator@cs.columbia.edu"),"The Operator"));
   to->set_tag("287447");
 
   Header *h = to.get();
@@ -730,7 +730,7 @@ TEST(HeaderTest, UserAgent) {
 
 TEST(HeaderTest, Via) {
   scoped_ptr<Via> via(new Via);
-  via->push_back(ViaParam(ViaParam::UDP, "pc33.atlanta.com"));
+  via->push_back(ViaParam(ViaParam::UDP, net::HostPortPair("pc33.atlanta.com",0)));
   via->back().set_branch("z9hG4bK776asdhds");
 
   Header *h = via.get();

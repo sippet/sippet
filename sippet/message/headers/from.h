@@ -47,7 +47,7 @@ private:
   }
 public:
   From() : Header(Header::HDR_FROM) {}
-  From(const std::string &address, const std::string &displayName="")
+  From(const GURL &address, const std::string &displayName="")
     : Header(Header::HDR_FROM), ContactBase(address, displayName) {}
 
   scoped_ptr<From> Clone() const {

@@ -36,6 +36,7 @@
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/param_setters.h"
 #include "sippet/base/raw_ostream.h"
+#include "googleurl/src/gurl.h"
 
 namespace sippet {
 
@@ -46,8 +47,8 @@ public:
   ContactBase(const ContactBase &other)
     : has_parameters(other), address_(other.address_),
       displayName_(other.displayName_) {}
-  explicit ContactBase(const std::string &address,
-                        const std::string &displayName="")
+  explicit ContactBase(const GURL &address,
+                       const std::string &displayName="")
     : address_(address), displayName_(displayName) {}
 
   ~ContactBase() {}
@@ -65,11 +66,11 @@ public:
       os.write_escaped(displayName_);
       os << "\" ";
     }
-    os << "<" << address_ << ">";
+    os << "<" << address_.spec() << ">";
     has_parameters::print(os);
   }
 private:
-  std::string address_;
+  GURL address_;
   std::string displayName_;
 };
 
@@ -87,7 +88,7 @@ public:
   ContactInfo() {}
   ContactInfo(const ContactInfo &other)
     : ContactBase(other) {}
-  explicit ContactInfo(const std::string &address,
+  explicit ContactInfo(const GURL &address,
                        const std::string &displayName="")
     : ContactBase(address, displayName) {}
 
