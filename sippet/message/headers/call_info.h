@@ -37,11 +37,12 @@
 #include "sippet/message/headers/bits/single_value.h"
 #include "sippet/message/headers/bits/param_setters.h"
 #include "sippet/base/raw_ostream.h"
+#include "googleurl/src/gurl.h"
 
 namespace sippet {
 
 class Info :
-  public single_value<std::string>,
+  public single_value<GURL>,
   public has_parameters,
   public has_purpose<Info> {
 public:
@@ -60,7 +61,7 @@ public:
   }
 
   void print(raw_ostream &os) const {
-    os << "<" << value() << ">";
+    os << "<" << value().spec() << ">";
     has_parameters::print(os);
   }
 };
