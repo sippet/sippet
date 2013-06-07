@@ -15,6 +15,7 @@ vars = {
   "chromium_revision": "187216",
   "webrtc_revision": "3561",
   "libjingle_revision": "321",
+  "v8_revision": "13671",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -33,8 +34,32 @@ deps = {
   "base":
     Var("chromium_trunk") + "/src/base@" + Var("chromium_revision"),
 
-  "net/third_party/nss":
-    Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
+  "googleurl":
+    (Var("googlecode_url") % "google-url") + "/trunk@183",
+
+  "crypto":
+    Var("chromium_trunk") + "/src/crypto@" + Var("chromium_revision"),
+
+  "net":
+    Var("chromium_trunk") + "/src/net@" + Var("chromium_revision"),
+
+  "sdch":
+    Var("chromium_trunk") + "/src/sdch@" + Var("chromium_revision"),
+
+  "sdch/open-vcdiff":
+    (Var("googlecode_url") % "open-vcdiff") + "/trunk@42",
+
+  "v8":
+    (Var("googlecode_url") % "v8") + "/trunk@" + Var("v8_revision"),
+
+  "chrome/app/policy":
+    Var("chromium_trunk") + "/src/chrome/app/policy@" + Var("chromium_revision"),
+
+  "chrome/browser/policy/proto":
+    Var("chromium_trunk") + "/src/chrome/browser/policy/proto@" + Var("chromium_revision"),
+
+  "chrome/tools/build":
+    Var("chromium_trunk") + "/src/chrome/tools/build@" + Var("chromium_revision"),
 
   "testing":
     Var("chromium_trunk") + "/src/testing@" + Var("chromium_revision"),
@@ -63,6 +88,12 @@ deps = {
   "third_party/jemalloc":
     Var("chromium_trunk") + "/src/third_party/jemalloc@" + Var("chromium_revision"),
 
+  "third_party/protobuf":
+    Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
+
+  "third_party/zlib":
+    Var("chromium_trunk") + "/src/third_party/zlib@" + Var("chromium_revision"),
+
   "tools/clang":
     Var("chromium_trunk") + "/src/tools/clang@" + Var("chromium_revision"),
 
@@ -74,6 +105,15 @@ deps = {
 
   "tools/valgrind":
     Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),
+
+  "tools/grit":
+    (Var("googlecode_url") % "grit-i18n") + "/trunk@107",
+
+  "tools/gritsettings":
+    Var("chromium_trunk") + "/src/tools/gritsettings@" + Var("chromium_revision"),
+
+  "tools/protoc_wrapper":
+    Var("chromium_trunk") + "/src/tools/protoc_wrapper@" + Var("chromium_revision"),
 
   # Needed by build/common.gypi.
   "tools/win/supalink":
@@ -145,8 +185,8 @@ hooks = [
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/build/gyp_chromium",
-               "--depth=" + Var("root_dir"), Var("root_dir") +
-               "/sippet/all.gyp", Var("extra_gyp_flag")],
+               "--depth=" + Var("root_dir"),
+               Var("root_dir") + "/sippet/all.gyp", Var("extra_gyp_flag")],
   },
 ]
 
