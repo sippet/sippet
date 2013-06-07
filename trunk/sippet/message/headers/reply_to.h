@@ -46,7 +46,7 @@ private:
   }
 public:
   ReplyTo() : Header(Header::HDR_REPLY_TO) {}
-  ReplyTo(const std::string &address, const std::string &displayName="")
+  ReplyTo(const GURL &address, const std::string &displayName="")
     : Header(Header::HDR_REPLY_TO), ContactBase(address, displayName) {}
 
   scoped_ptr<ReplyTo> Clone() const {

@@ -36,11 +36,12 @@
 #include "sippet/message/headers/bits/has_parameters.h"
 #include "sippet/message/headers/bits/single_value.h"
 #include "sippet/base/raw_ostream.h"
+#include "googleurl/src/gurl.h"
 
 namespace sippet {
 
 class ErrorUri :
-  public single_value<std::string>,
+  public single_value<GURL>,
   public has_parameters {
 public:
   ErrorUri() {}
@@ -58,7 +59,7 @@ public:
   }
 
   void print(raw_ostream &os) const {
-    os << "<" << value() << ">";
+    os << "<" << value().spec() << ">";
     has_parameters::print(os);
   }
 };

@@ -40,7 +40,7 @@ public:
   RouteParam() {}
   RouteParam(const RouteParam &other)
     : ContactBase(other) {}
-  explicit RouteParam(const std::string &address,
+  explicit RouteParam(const GURL &address,
                       const std::string &displayName="")
     : ContactBase(address, displayName) {}
 

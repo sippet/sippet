@@ -47,7 +47,7 @@ private:
   }
 public:
   To() : Header(Header::HDR_TO) {}
-  To(const std::string &address, const std::string &displayName="")
+  To(const GURL &address, const std::string &displayName="")
     : Header(Header::HDR_TO), ContactBase(address, displayName) {}
 
   scoped_ptr<To> Clone() const {
