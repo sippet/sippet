@@ -35,6 +35,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(DEPTH)/base/base.gyp:base',
+        '<(DEPTH)/net/net.gyp:net',
       ],
       'include_dirs': [
         '<(DEPTH)',
