@@ -103,6 +103,7 @@
         'message/method.cc',
         'message/message.h',
         'message/message.cc',
+        'message/parser/parser.cc',
       ],
     },  # target sippet
   ],

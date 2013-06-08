@@ -42,6 +42,8 @@
 #define SIPPET_BASE_CASTING_H_
 
 #include "sippet/base/type_traits.h"
+#include "base/memory/scoped_ptr.h"
+#include "base/memory/ref_counted.h"
 #include <cassert>
 
 namespace sippet {
@@ -160,6 +162,16 @@ template <class X, class Y>
 inline bool isa(const Y &Val) {
   return isa_impl_wrap<X, const Y,
                        typename simplify_type<const Y>::SimpleType>::doit(Val);
+}
+template <class X, class Y>
+inline bool isa(const scoped_ptr<Y> &Val) {
+  return isa_impl_wrap<X, const Y*,
+                       typename simplify_type<const Y*>::SimpleType>::doit(Val.get());
+}
+template <class X, class Y>
+inline bool isa(const scoped_refptr<Y> &Val) {
+  return isa_impl_wrap<X, const Y*,
+                       typename simplify_type<const Y*>::SimpleType>::doit(Val.get());
 }
 
 //===----------------------------------------------------------------------===//
@@ -292,6 +304,16 @@ inline typename cast_retty<X, const Y>::ret_type dyn_cast(const Y &Val) {
 template <class X, class Y>
 inline typename cast_retty<X, Y>::ret_type dyn_cast(Y &Val) {
   return isa<X>(Val) ? cast<X>(Val) : 0;
+}
+
+template <class X, class Y>
+inline scoped_ptr<X> dyn_cast(scoped_ptr<Y> &Val) {
+  return isa<X>(Val.get()) ? cast<X>(Val.get()) : 0;
+}
+
+template <class X, class Y>
+inline scoped_refptr<X> dyn_cast(scoped_refptr<Y> &Val) {
+  return isa<X>(Val.get()) ? cast<X>(Val.get()) : 0;
 }
 
 template <class X, class Y>
