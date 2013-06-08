@@ -86,7 +86,7 @@ class Header : public ilist_node<Header> {
 public:
   //! An enumeration to indicate the message header type.
   enum Type {
-    HDR_ACCEPT,
+    HDR_ACCEPT = 0,
     HDR_ACCEPT_ENCODING,
     HDR_ACCEPT_LANGUAGE,
     HDR_ALERT_INFO,
