@@ -127,22 +127,24 @@ public:
 
   //! Insert a header before a specific position in the message.
   iterator insert(iterator where, scoped_ptr<Header> header) {
-    return headers_.insert(where, header.release());
+    return header ? headers_.insert(where, header.release()) : where;
   }
 
   //! Insert a header after a specific position in the message.
   iterator insertAfter(iterator where, scoped_ptr<Header> header) {
-    return headers_.insertAfter(where, header.release());
+    return header ? headers_.insertAfter(where, header.release()) : where;
   }
 
   //! Insert a header to the beginning of the message.
   void push_front(scoped_ptr<Header> header) {
-    headers_.push_front(header.release());
+    if (header)
+      headers_.push_front(header.release());
   }
 
   //! Insert a header to the end of the message.
   void push_back(scoped_ptr<Header> header) {
-    headers_.push_back(header.release());
+    if (header)
+      headers_.push_back(header.release());
   }
  
   //! Remove an existing header and return an iterator to the next header.
