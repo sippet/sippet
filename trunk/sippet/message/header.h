@@ -155,275 +155,60 @@ public:
 // isa - Provide some specializations of isa so that we don't have to include
 // the subtype header files to test to see if the value is a subclass...
 //
-template <> struct isa_impl<Accept, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_ACCEPT;
-  }
+#define is_a(H, T)                                   \
+template <> struct isa_impl<H, Header> {             \
+  static inline bool doit(const Header &h) {         \
+    return h.type() == Header::T;                    \
+  }                                                  \
 };
 
-template <> struct isa_impl<AcceptEncoding, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_ACCEPT_ENCODING;
-  }
-};
+is_a(Accept,                HDR_ACCEPT)
+is_a(AcceptEncoding,        HDR_ACCEPT_ENCODING)
+is_a(AcceptLanguage,        HDR_ACCEPT_LANGUAGE)
+is_a(AlertInfo,             HDR_ALERT_INFO)
+is_a(Allow,                 HDR_ALLOW)
+is_a(AuthenticationInfo,    HDR_AUTHENTICATION_INFO)
+is_a(Authorization,         HDR_AUTHORIZATION)
+is_a(CallId,                HDR_CALL_ID)
+is_a(CallInfo,              HDR_CALL_INFO)
+is_a(Contact,               HDR_CONTACT)
+is_a(ContentDisposition,    HDR_CONTENT_DISPOSITION)
+is_a(ContentEncoding,       HDR_CONTENT_ENCODING)
+is_a(ContentLanguage,       HDR_CONTENT_LANGUAGE)
+is_a(ContentLength,         HDR_CONTENT_LENGTH)
+is_a(ContentType,           HDR_CONTENT_TYPE)
+is_a(Cseq,                  HDR_CSEQ)
+is_a(Date,                  HDR_DATE)
+is_a(ErrorInfo,             HDR_ERROR_INFO)
+is_a(Expires,               HDR_EXPIRES)
+is_a(From,                  HDR_FROM)
+is_a(InReplyTo,             HDR_IN_REPLY_TO)
+is_a(MaxForwards,           HDR_MAX_FORWARDS)
+is_a(MinExpires,            HDR_MIN_EXPIRES)
+is_a(MimeVersion,           HDR_MIME_VERSION)
+is_a(Organization,          HDR_ORGANIZATION)
+is_a(Priority,              HDR_PRIORITY)
+is_a(ProxyAuthenticate,     HDR_PROXY_AUTHENTICATE)
+is_a(ProxyAuthorization,    HDR_PROXY_AUTHORIZATION)
+is_a(ProxyRequire,          HDR_PROXY_REQUIRE)
+is_a(RecordRoute,           HDR_RECORD_ROUTE)
+is_a(ReplyTo,               HDR_REPLY_TO)
+is_a(Require,               HDR_REQUIRE)
+is_a(RetryAfter,            HDR_RETRY_AFTER)
+is_a(Route,                 HDR_ROUTE)
+is_a(Server,                HDR_SERVER)
+is_a(Subject,               HDR_SUBJECT)
+is_a(Supported,             HDR_SUPPORTED)
+is_a(Timestamp,             HDR_TIMESTAMP)
+is_a(To,                    HDR_TO)
+is_a(Unsupported,           HDR_UNSUPPORTED)
+is_a(UserAgent,             HDR_USER_AGENT)
+is_a(Via,                   HDR_VIA)
+is_a(Warning,               HDR_WARNING)
+is_a(WwwAuthenticate,       HDR_WWW_AUTHENTICATE)
+is_a(Generic,               HDR_GENERIC)
 
-template <> struct isa_impl<AcceptLanguage, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_ACCEPT_LANGUAGE;
-  }
-};
-
-template <> struct isa_impl<AlertInfo, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_ALERT_INFO;
-  }
-};
-
-template <> struct isa_impl<Allow, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_ALLOW;
-  }
-};
-
-template <> struct isa_impl<AuthenticationInfo, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_AUTHENTICATION_INFO;
-  }
-};
-
-template <> struct isa_impl<Authorization, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_AUTHORIZATION;
-  }
-};
-
-template <> struct isa_impl<CallId, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_CALL_ID;
-  }
-};
-
-template <> struct isa_impl<CallInfo, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_CALL_INFO;
-  }
-};
-
-template <> struct isa_impl<Contact, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_CONTACT;
-  }
-};
-
-template <> struct isa_impl<ContentDisposition, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_CONTENT_DISPOSITION;
-  }
-};
-
-template <> struct isa_impl<ContentEncoding, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_CONTENT_ENCODING;
-  }
-};
-
-template <> struct isa_impl<ContentLanguage, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_CONTENT_LANGUAGE;
-  }
-};
-
-template <> struct isa_impl<ContentLength, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_CONTENT_LENGTH;
-  }
-};
-
-template <> struct isa_impl<ContentType, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_CONTENT_TYPE;
-  }
-};
-
-template <> struct isa_impl<Cseq, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_CSEQ;
-  }
-};
-
-template <> struct isa_impl<Date, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_DATE;
-  }
-};
-
-template <> struct isa_impl<ErrorInfo, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_ERROR_INFO;
-  }
-};
-
-template <> struct isa_impl<Expires, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_EXPIRES;
-  }
-};
-
-template <> struct isa_impl<From, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_FROM;
-  }
-};
-
-template <> struct isa_impl<InReplyTo, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_IN_REPLY_TO;
-  }
-};
-
-template <> struct isa_impl<MaxForwards, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_MAX_FORWARDS;
-  }
-};
-
-template <> struct isa_impl<MinExpires, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_MIN_EXPIRES;
-  }
-};
-
-template <> struct isa_impl<MimeVersion, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_MIME_VERSION;
-  }
-};
-
-template <> struct isa_impl<Organization, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_ORGANIZATION;
-  }
-};
-
-template <> struct isa_impl<Priority, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_PRIORITY;
-  }
-};
-
-template <> struct isa_impl<ProxyAuthenticate, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_PROXY_AUTHENTICATE;
-  }
-};
-
-template <> struct isa_impl<ProxyAuthorization, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_PROXY_AUTHORIZATION;
-  }
-};
-
-template <> struct isa_impl<ProxyRequire, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_PROXY_REQUIRE;
-  }
-};
-
-template <> struct isa_impl<RecordRoute, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_RECORD_ROUTE;
-  }
-};
-
-template <> struct isa_impl<ReplyTo, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_REPLY_TO;
-  }
-};
-
-template <> struct isa_impl<Require, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_REQUIRE;
-  }
-};
-
-template <> struct isa_impl<RetryAfter, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_RETRY_AFTER;
-  }
-};
-
-template <> struct isa_impl<Route, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_ROUTE;
-  }
-};
-
-template <> struct isa_impl<Server, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_SERVER;
-  }
-};
-
-template <> struct isa_impl<Subject, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_SUBJECT;
-  }
-};
-
-template <> struct isa_impl<Supported, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_SUPPORTED;
-  }
-};
-
-template <> struct isa_impl<Timestamp, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_TIMESTAMP;
-  }
-};
-
-template <> struct isa_impl<To, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_TO;
-  }
-};
-
-template <> struct isa_impl<Unsupported, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_UNSUPPORTED;
-  }
-};
-
-template <> struct isa_impl<UserAgent, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_USER_AGENT;
-  }
-};
-
-template <> struct isa_impl<Via, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_VIA;
-  }
-};
-
-template <> struct isa_impl<Warning, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_WARNING;
-  }
-};
-
-template <> struct isa_impl<WwwAuthenticate, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_WWW_AUTHENTICATE;
-  }
-};
-
-template <> struct isa_impl<Generic, Header> {
-  static inline bool doit(const Header &h) {
-    return h.type() == Header::HDR_GENERIC;
-  }
-};
+#undef is_a
 
 } // End of sippet namespace
 

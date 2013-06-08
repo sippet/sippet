@@ -28,6 +28,8 @@
  */
 
 #include "sippet/message/message.h"
+#include "sippet/message/request.h"
+#include "sippet/message/response.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -103,4 +105,26 @@ TEST_F(MessageTest, Basic) {
 
   message_->clear();
   EXPECT_TRUE(message_->empty());
+}
+
+TEST(RequestTest, Basic) {
+  const char *raw_message = "INVITE sip:alice@biloxi.com SIP/2.0\n\n";
+  scoped_refptr<Message> message = Message::Parse(raw_message);
+  
+  ASSERT_TRUE(isa<Request>(message));
+  ASSERT_TRUE(message->IsRequest());
+  ASSERT_FALSE(message->IsResponse());
+
+  scoped_refptr<Request> request = dyn_cast<Request>(message);
+}
+
+TEST(ResponseTest, Basic) {
+  const char *raw_message = "SIP/2.0 200 OK\n\n";
+  scoped_refptr<Message> message = Message::Parse(raw_message);
+
+  ASSERT_TRUE(isa<Response>(message));
+  ASSERT_FALSE(message->IsRequest());
+  ASSERT_TRUE(message->IsResponse());
+
+  scoped_refptr<Response> response = dyn_cast<Response>(message);
 }

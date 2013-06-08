@@ -69,7 +69,8 @@ class raw_ostream;
 class Request;
 class Response;
 
-class Message : public base::RefCounted<Message> {
+class Message
+  : public base::RefCountedThreadSafe<Message> {
 public:
   typedef iplist<Header> HeaderListType;
 
@@ -91,10 +92,12 @@ private:
 protected:
   Message(bool isRequest) : isRequest_(isRequest) {}
 
-  friend class base::RefCounted<Message>;
+  friend class base::RefCountedThreadSafe<Message>;
   virtual ~Message() {}
 
 public:
+  static scoped_refptr<Message> Parse(const std::string &raw_message);
+
   //! Returns true if the current message is a request.
   bool IsRequest() const { return isRequest_; }
 
