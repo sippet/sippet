@@ -296,13 +296,134 @@ void ParseParameters(std::string::const_iterator value_begin,
   }
 }
 
+template<class HeaderType, class ElemType>
+struct ParseMultiToken {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    scoped_ptr<HeaderType> header(new HeaderType);
+    if (!ParseMultipleValues(values_begin, values_end, header, Parse))
+      return scoped_ptr<Header>();
+    return header.Pass();
+  }
+private:
+  static bool Parse(std::string::const_iterator value_begin,
+                    std::string::const_iterator value_end,
+                    scoped_ptr<HeaderType> &header) {
+    Tokenizer tok(value_begin, value_end);
+    std::string::const_iterator token_start = tok.Skip(HTTP_LWS);
+    if (tok.End()) {
+      // empty header is OK
+      return true;
+    }
+    std::string token(token_start, tok.SkipNotIn(HTTP_LWS ";"));
+    if (!net::HttpUtil::IsToken(token)) {
+      DVLOG(1) << "invalid token";
+      return false;
+    }
+
+    header->push_back(ElemType(token));
+    return true;
+  }
+};
+
+template<class HeaderType, class ElemType>
+struct ParseSingleTokenParams {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    scoped_ptr<HeaderType> header(new HeaderType);
+    if (!ParseMultipleValues(values_begin, values_end, header, Parse))
+      return scoped_ptr<Header>();
+    return header.Pass();
+  }
+private:
+  static bool Parse(std::string::const_iterator value_begin,
+                    std::string::const_iterator value_end,
+                    scoped_ptr<HeaderType> &header) {
+    Tokenizer tok(value_begin, value_end);
+    std::string::const_iterator token_start = tok.Skip(HTTP_LWS);
+    if (tok.End()) {
+      // empty header is OK
+      return true;
+    }
+    std::string token(token_start, tok.SkipNotIn(HTTP_LWS ";"));
+    if (!net::HttpUtil::IsToken(token)) {
+      DVLOG(1) << "invalid token";
+      return false;
+    }
+
+    header->push_back(ElemType(token));
+
+    std::string::const_iterator param_start = tok.SkipTo(';');
+    if (tok.End())
+      return true;
+
+    tok.Skip();
+    ParseParameters(tok.Current(), value_end, header);
+    return true;
+  }
+};
+
+template<class HeaderType, class ElemType>
+struct ParseMultiTokenParams {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    scoped_ptr<HeaderType> header(new HeaderType);
+    if (!ParseMultipleValues(values_begin, values_end, header, Parse))
+      return scoped_ptr<Header>();
+    return header.Pass();
+  }
+private:
+  static bool Parse(std::string::const_iterator value_begin,
+                    std::string::const_iterator value_end,
+                    scoped_ptr<HeaderType> &header) {
+    Tokenizer tok(value_begin, value_end);
+    std::string::const_iterator token_start = tok.Skip(HTTP_LWS);
+    if (tok.End()) {
+      // empty header is OK
+      return true;
+    }
+    std::string token(token_start, tok.SkipNotIn(HTTP_LWS ";"));
+    if (!net::HttpUtil::IsToken(token)) {
+      DVLOG(1) << "invalid token";
+      return false;
+    }
+
+    header->push_back(ElemType(token));
+
+    std::string::const_iterator param_start = tok.SkipTo(';');
+    if (tok.End())
+      return true;
+
+    tok.Skip();
+    ParseParameters(tok.Current(), value_end, header);
+    return true;
+  }
+};
+
+template<class HeaderType>
+struct ParseSingleInteger {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    Tokenizer tok(values_begin, values_end);
+    std::string::const_iterator token_start = tok.Skip(HTTP_LWS);
+    std::string digits(token_start, tok.SkipNotIn(HTTP_LWS));
+    int output = 0;
+    if (!base::StringToInt(digits, &output)) {
+      DVLOG(1) << "invalid digits";
+      return scoped_ptr<Header>();
+    }
+    scoped_ptr<HeaderType> header(new HeaderType(static_cast<unsigned>(output)));
+    return header.Pass();
+  }
+};
+
 template<class HeaderType>
 struct ParserTraits;
 
 template<>
 struct ParserTraits<Accept> {
   static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
-                                              std::string::const_iterator values_end) {
+                                      std::string::const_iterator values_end) {
     scoped_ptr<Accept> accept(new Accept);
     if (!ParseMultipleValues(values_begin, values_end, accept, Parse))
       return scoped_ptr<Header>();
@@ -319,6 +440,10 @@ private:
       return true;
     }
     std::string type(type_start, tok.SkipNotIn(HTTP_LWS "/"));
+    if (!net::HttpUtil::IsToken(type)) {
+      DVLOG(1) << "invalid token";
+      return false;
+    }
 
     tok.SkipTo('/');
     tok.Skip();
@@ -329,74 +454,21 @@ private:
       return false;
     }
     std::string subtype(subtype_start, tok.SkipNotIn(HTTP_LWS ";"));
+    if (!net::HttpUtil::IsToken(subtype)) {
+      DVLOG(1) << "invalid token";
+      return false;
+    }
 
     accept->push_back(MediaRange(type, subtype));
 
     std::string::const_iterator param_start = tok.SkipTo(';');
-    if (tok.End())
+    if (tok.End()) {
+      // no parameters is OK
       return true;
+    }
 
     tok.Skip();
     ParseParameters(tok.Current(), value_end, accept);
-    return true;
-  }
-};
-
-template<class HeaderType, class ElemType>
-struct ParseMultiToken {
-  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
-                                              std::string::const_iterator values_end) {
-    scoped_ptr<HeaderType> header(new HeaderType);
-    if (!ParseMultipleValues(values_begin, values_end, header, Parse))
-      return scoped_ptr<Header>();
-    return header.Pass();
-  }
-private:
-  static bool Parse(std::string::const_iterator value_begin,
-                    std::string::const_iterator value_end,
-                    scoped_ptr<HeaderType> &header) {
-    Tokenizer tok(value_begin, value_end);
-    std::string::const_iterator token_start = tok.Skip(HTTP_LWS);
-    if (tok.End()) {
-      // empty header is OK
-      return true;
-    }
-    std::string token(token_start, tok.SkipNotIn(HTTP_LWS ";"));
-
-    header->push_back(ElemType(token));
-    return true;
-  }
-};
-
-template<class HeaderType, class ElemType>
-struct ParseMultiTokenParams {
-  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
-                                              std::string::const_iterator values_end) {
-    scoped_ptr<HeaderType> header(new HeaderType);
-    if (!ParseMultipleValues(values_begin, values_end, header, Parse))
-      return scoped_ptr<Header>();
-    return header.Pass();
-  }
-private:
-  static bool Parse(std::string::const_iterator value_begin,
-                    std::string::const_iterator value_end,
-                    scoped_ptr<HeaderType> &header) {
-    Tokenizer tok(value_begin, value_end);
-    std::string::const_iterator token_start = tok.Skip(HTTP_LWS);
-    if (tok.End()) {
-      // empty header is OK
-      return true;
-    }
-    std::string token(token_start, tok.SkipNotIn(HTTP_LWS ";"));
-
-    header->push_back(ElemType(token));
-
-    std::string::const_iterator param_start = tok.SkipTo(';');
-    if (tok.End())
-      return true;
-
-    tok.Skip();
-    ParseParameters(tok.Current(), value_end, header);
     return true;
   }
 };
@@ -442,6 +514,38 @@ struct ParserTraits<ContentLanguage> {
 };
 
 template<>
+struct ParserTraits<ContentLength> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseSingleInteger<ContentLength>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<Expires> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseSingleInteger<Expires>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<MaxForwards> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseSingleInteger<MaxForwards>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<MinExpires> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseSingleInteger<MinExpires>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
 struct ParserTraits<InReplyTo> {
   static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
                                       std::string::const_iterator values_end) {
@@ -481,270 +585,6 @@ struct ParserTraits<Unsupported> {
   }
 };
 
-scoped_ptr<Header>
-  ParseAccept(std::string::const_iterator values_begin,
-              std::string::const_iterator values_end) {
-  return ParserTraits<Accept>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseAcceptEncoding(std::string::const_iterator values_begin,
-                      std::string::const_iterator values_end) {
-  return ParserTraits<AcceptEncoding>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseAcceptLanguage(std::string::const_iterator values_begin,
-                      std::string::const_iterator values_end) {
-  return ParserTraits<AcceptLanguage>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseAlertInfo(std::string::const_iterator values_begin,
-                 std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseAllow(std::string::const_iterator values_begin,
-             std::string::const_iterator values_end) {
-  return ParserTraits<Allow>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseAuthenticationInfo(std::string::const_iterator values_begin,
-                          std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseAuthorization(std::string::const_iterator values_begin,
-                     std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseCallId(std::string::const_iterator values_begin,
-              std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseCallInfo(std::string::const_iterator values_begin,
-                std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseContact(std::string::const_iterator values_begin,
-               std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseContentDisposition(std::string::const_iterator values_begin,
-                          std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseContentEncoding(std::string::const_iterator values_begin,
-                       std::string::const_iterator values_end) {
-  return ParserTraits<ContentEncoding>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseContentLanguage(std::string::const_iterator values_begin,
-                       std::string::const_iterator values_end) {
-  return ParserTraits<ContentLanguage>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseContentLength(std::string::const_iterator values_begin,
-                     std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseContentType(std::string::const_iterator values_begin,
-                   std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseCseq(std::string::const_iterator values_begin,
-            std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseDate(std::string::const_iterator values_begin,
-            std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseErrorInfo(std::string::const_iterator values_begin,
-                 std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseExpires(std::string::const_iterator values_begin,
-               std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseFrom(std::string::const_iterator values_begin,
-            std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseInReplyTo(std::string::const_iterator values_begin,
-                 std::string::const_iterator values_end) {
-  return ParserTraits<InReplyTo>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseMaxForwards(std::string::const_iterator values_begin,
-                   std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseMinExpires(std::string::const_iterator values_begin,
-                  std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseMimeVersion(std::string::const_iterator values_begin,
-                   std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseOrganization(std::string::const_iterator values_begin,
-                    std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParsePriority(std::string::const_iterator values_begin,
-                std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseProxyAuthenticate(std::string::const_iterator values_begin,
-                         std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseProxyAuthorization(std::string::const_iterator values_begin,
-                          std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseProxyRequire(std::string::const_iterator values_begin,
-                    std::string::const_iterator values_end) {
-  return ParserTraits<ProxyRequire>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseRecordRoute(std::string::const_iterator values_begin,
-                   std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseReplyTo(std::string::const_iterator values_begin,
-               std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseRequire(std::string::const_iterator values_begin,
-               std::string::const_iterator values_end) {
-  return ParserTraits<Require>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseRetryAfter(std::string::const_iterator values_begin,
-                  std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseRoute(std::string::const_iterator values_begin,
-             std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseServer(std::string::const_iterator values_begin,
-              std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseSubject(std::string::const_iterator values_begin,
-               std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseSupported(std::string::const_iterator values_begin,
-                 std::string::const_iterator values_end) {
-  return ParserTraits<Supported>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseTimestamp(std::string::const_iterator values_begin,
-                 std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseTo(std::string::const_iterator values_begin,
-          std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseUnsupported(std::string::const_iterator values_begin,
-                   std::string::const_iterator values_end) {
-  return ParserTraits<Unsupported>::Interpret(values_begin, values_end);
-}
-
-scoped_ptr<Header>
-  ParseUserAgent(std::string::const_iterator values_begin,
-                 std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseVia(std::string::const_iterator values_begin,
-           std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseWarning(std::string::const_iterator values_begin,
-               std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
-scoped_ptr<Header>
-  ParseWwwAuthenticate(std::string::const_iterator values_begin,
-                       std::string::const_iterator values_end) {
-  return scoped_ptr<Header>();
-}
-
 typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,
                                                     std::string::const_iterator);
 
@@ -759,223 +599,223 @@ const HeaderMap headers[] = {
   {
     "accept",
     Header::HDR_ACCEPT,
-    &ParseAccept
+    &ParserTraits<Accept>::Interpret,
   },
   {
     "accept-encoding",
     Header::HDR_ACCEPT_ENCODING,
-    &ParseAcceptEncoding
+    &ParserTraits<AcceptEncoding>::Interpret,
   },
   {
     "accept-language",
     Header::HDR_ACCEPT_LANGUAGE,
-    &ParseAcceptLanguage
+    &ParserTraits<AcceptLanguage>::Interpret,
   },
-  {
-    "alert-info",
-    Header::HDR_ALERT_INFO,
-    &ParseAlertInfo
-  },
+//  {
+//    "alert-info",
+//    Header::HDR_ALERT_INFO,
+//    &ParserTraits<AlertInfo>::Interpret,
+//  },
   {
     "allow",
     Header::HDR_ALLOW,
-    &ParseAllow
+    &ParserTraits<Allow>::Interpret,
   },
-  {
-    "authentication-info",
-    Header::HDR_AUTHENTICATION_INFO,
-    &ParseAuthenticationInfo
-  },
-  {
-    "authorization",
-    Header::HDR_AUTHORIZATION,
-    &ParseAuthorization
-  },
-  {
-    "call-id",
-    Header::HDR_CALL_ID,
-    &ParseCallId
-  },
-  {
-    "call-info",
-    Header::HDR_CALL_INFO,
-    &ParseCallInfo
-  },
-  {
-    "contact",
-    Header::HDR_CONTACT,
-    &ParseContact
-  },
-  {
-    "content-disposition",
-    Header::HDR_CONTENT_DISPOSITION,
-    &ParseContentDisposition
-  },
+//  {
+//    "authentication-info",
+//    Header::HDR_AUTHENTICATION_INFO,
+//    &ParserTraits<AuthenticationInfo>::Interpret,
+//  },
+//  {
+//    "authorization",
+//    Header::HDR_AUTHORIZATION,
+//    &ParserTraits<Authorization>::Interpret,
+//  },
+//  {
+//    "call-id",
+//    Header::HDR_CALL_ID,
+//    &ParserTraits<CallId>::Interpret,
+//  },
+//  {
+//    "call-info",
+//    Header::HDR_CALL_INFO,
+//    &ParserTraits<CallInfo>::Interpret,
+//  },
+//  {
+//    "contact",
+//    Header::HDR_CONTACT,
+//    &ParserTraits<Contact>::Interpret,
+//  },
+//  {
+//    "content-disposition",
+//    Header::HDR_CONTENT_DISPOSITION,
+//    &ParserTraits<ContentDisposition>::Interpret,
+//  },
   {
     "content-encoding",
     Header::HDR_CONTENT_ENCODING,
-    &ParseContentEncoding
+    &ParserTraits<ContentEncoding>::Interpret,
   },
   {
     "content-language",
     Header::HDR_CONTENT_LANGUAGE,
-    &ParseContentLanguage
+    &ParserTraits<ContentLanguage>::Interpret,
   },
   {
     "content-length",
     Header::HDR_CONTENT_LENGTH,
-    &ParseContentLength
+    &ParserTraits<ContentLength>::Interpret,
   },
-  {
-    "content-type",
-    Header::HDR_CONTENT_TYPE,
-    &ParseContentType
-  },
-  {
-    "cseq",
-    Header::HDR_CSEQ,
-    &ParseCseq
-  },
-  {
-    "date",
-    Header::HDR_DATE,
-    &ParseDate
-  },
-  {
-    "error-info",
-    Header::HDR_ERROR_INFO,
-    &ParseErrorInfo
-  },
+//  {
+//    "content-type",
+//    Header::HDR_CONTENT_TYPE,
+//    &ParserTraits<ContentType>::Interpret,
+//  },
+//  {
+//    "cseq",
+//    Header::HDR_CSEQ,
+//    &ParserTraits<Cseq>::Interpret,
+//  },
+//  {
+//    "date",
+//    Header::HDR_DATE,
+//    &ParserTraits<Date>::Interpret,
+//  },
+//  {
+//    "error-info",
+//    Header::HDR_ERROR_INFO,
+//    &ParserTraits<ErrorInfo>::Interpret,
+//  },
   {
     "expires",
     Header::HDR_EXPIRES,
-    &ParseExpires
+    &ParserTraits<Expires>::Interpret,
   },
-  {
-    "from",
-    Header::HDR_FROM,
-    &ParseFrom
-  },
+//  {
+//    "from",
+//    Header::HDR_FROM,
+//    &ParserTraits<From>::Interpret,
+//  },
   {
     "in-reply-to",
     Header::HDR_IN_REPLY_TO,
-    &ParseInReplyTo
+    &ParserTraits<InReplyTo>::Interpret,
   },
   {
     "max-forwards",
     Header::HDR_MAX_FORWARDS,
-    &ParseMaxForwards
+    &ParserTraits<MaxForwards>::Interpret,
   },
-  {
-    "mime-version",
-    Header::HDR_MIME_VERSION,
-    &ParseMimeVersion
-  },
+//  {
+//    "mime-version",
+//    Header::HDR_MIME_VERSION,
+//    &ParserTraits<MimeVersion>::Interpret,
+//  },
   {
     "min-expires",
     Header::HDR_MIN_EXPIRES,
-    &ParseMinExpires
+    &ParserTraits<MinExpires>::Interpret,
   },
-  {
-    "organization",
-    Header::HDR_ORGANIZATION,
-    &ParseOrganization
-  },
-  {
-    "priority",
-    Header::HDR_PRIORITY,
-    &ParsePriority
-  },
-  {
-    "proxy-authenticate",
-    Header::HDR_PROXY_AUTHENTICATE,
-    &ParseProxyAuthenticate
-  },
-  {
-    "proxy-authorization",
-    Header::HDR_PROXY_AUTHORIZATION,
-    &ParseProxyAuthorization
-  },
+//  {
+//    "organization",
+//    Header::HDR_ORGANIZATION,
+//    &ParserTraits<Organization>::Interpret,
+//  },
+//  {
+//    "priority",
+//    Header::HDR_PRIORITY,
+//    &ParserTraits<Priority>::Interpret,
+//  },
+//  {
+//    "proxy-authenticate",
+//    Header::HDR_PROXY_AUTHENTICATE,
+//    &ParserTraits<ProxyAuthenticate>::Interpret,
+//  },
+//  {
+//    "proxy-authorization",
+//    Header::HDR_PROXY_AUTHORIZATION,
+//    &ParserTraits<ProxyAuthorization>::Interpret,
+//  },
   {
     "proxy-require",
     Header::HDR_PROXY_REQUIRE,
-    &ParseProxyRequire
+    &ParserTraits<ProxyRequire>::Interpret,
   },
-  {
-    "record-route",
-    Header::HDR_RECORD_ROUTE,
-    &ParseRecordRoute
-  },
-  {
-    "reply-to",
-    Header::HDR_REPLY_TO,
-    &ParseReplyTo
-  },
+//  {
+//    "record-route",
+//    Header::HDR_RECORD_ROUTE,
+//    &ParserTraits<RecordRoute>::Interpret,
+//  },
+//  {
+//    "reply-to",
+//    Header::HDR_REPLY_TO,
+//    &ParserTraits<ReplyTo>::Interpret,
+//  },
   {
     "require",
     Header::HDR_REQUIRE,
-    &ParseRequire
+    &ParserTraits<Require>::Interpret,
   },
-  {
-    "retry-after",
-    Header::HDR_RETRY_AFTER,
-    &ParseRetryAfter
-  },
-  {
-    "route",
-    Header::HDR_ROUTE,
-    &ParseRoute
-  },
-  {
-    "server",
-    Header::HDR_SERVER,
-    &ParseServer
-  },
-  {
-    "subject",
-    Header::HDR_SUBJECT,
-    &ParseSubject
-  },
+//  {
+//    "retry-after",
+//    Header::HDR_RETRY_AFTER,
+//    &ParserTraits<RetryAfter>::Interpret,
+//  },
+//  {
+//    "route",
+//    Header::HDR_ROUTE,
+//    &ParserTraits<Route>::Interpret,
+//  },
+//  {
+//    "server",
+//    Header::HDR_SERVER,
+//    &ParserTraits<Server>::Interpret,
+//  },
+//  {
+//    "subject",
+//    Header::HDR_SUBJECT,
+//    &ParserTraits<Subject>::Interpret,
+//  },
   {
     "supported",
     Header::HDR_SUPPORTED,
-    &ParseSupported
+    &ParserTraits<Supported>::Interpret,
   },
-  {
-    "timestamp",
-    Header::HDR_TIMESTAMP,
-    &ParseTimestamp
-  },
-  {
-    "to",
-    Header::HDR_TO,
-    &ParseTo
-  },
+//  {
+//    "timestamp",
+//    Header::HDR_TIMESTAMP,
+//    &ParserTraits<Timestamp>::Interpret,
+//  },
+//  {
+//    "to",
+//    Header::HDR_TO,
+//    &ParserTraits<To>::Interpret,
+//  },
   {
     "unsupported",
     Header::HDR_UNSUPPORTED,
-    &ParseUnsupported
+    &ParserTraits<Unsupported>::Interpret,
   },
-  {
-    "user-agent",
-    Header::HDR_USER_AGENT,
-    &ParseUserAgent
-  },
-  {
-    "via",
-    Header::HDR_VIA,
-    &ParseVia
-  },
-  {
-    "warning",
-    Header::HDR_WARNING,
-    &ParseWarning
-  },
-  {
-    "www-authenticate",
-    Header::HDR_WWW_AUTHENTICATE,
-    &ParseWwwAuthenticate
-  },
+//  {
+//    "user-agent",
+//    Header::HDR_USER_AGENT,
+//    &ParserTraits<UserAgent>::Interpret,
+//  },
+//  {
+//    "via",
+//    Header::HDR_VIA,
+//    &ParserTraits<Via>::Interpret,
+//  },
+//  {
+//    "warning",
+//    Header::HDR_WARNING,
+//    &ParserTraits<Warning>::Interpret,
+//  },
+//  {
+//    "www-authenticate",
+//    Header::HDR_WWW_AUTHENTICATE,
+//    &ParserTraits<WwwAuthenticate>::Interpret,
+//  },
 };
 
 const int headers_size = sizeof(headers) / sizeof(headers[0]);
