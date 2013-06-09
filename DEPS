@@ -148,11 +148,23 @@ deps_os = {
   },
 
   "unix": {
+    "dbus":
+      Var("chromium_trunk") + "/src/dbus@" + Var("chromium_revision"),
+
     "third_party/gold":
       From("chromium_deps", "src/third_party/gold"),
 
     "third_party/openssl":
       From("chromium_deps", "src/third_party/openssl"),
+
+    "third_party/libevent":
+      Var("chromium_trunk") + "/src/third_party/libevent@" + Var("chromium_revision"),
+
+    "tools/xdisplaycheck":
+      Var("chromium_trunk") + "/src/tools/xdisplaycheck@" + Var("chromium_revision"),
+
+    "tools/generate_library_loader":
+      Var("chromium_trunk") + "/src/tools/generate_library_loader@" + Var("chromium_revision"),
   },
 
   "android": {
