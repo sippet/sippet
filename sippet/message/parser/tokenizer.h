@@ -31,6 +31,7 @@
 #define SIPPET_MESSAGE_PARSER_TOKENIZER_H_
 
 #include <string>
+#include "base/string_piece.h"
 
 namespace sippet {
 
@@ -40,7 +41,7 @@ public:
             std::string::const_iterator string_end)
     : cursor_(string_begin), end_(string_end) {}
 
-  std::string::const_iterator Skip(const std::string &chars) {
+  std::string::const_iterator Skip(const base::StringPiece &chars) {
     for (; cursor_ != end_; ++cursor_) {
       if (chars.find(*cursor_) == std::string::npos)
         break;
@@ -48,7 +49,7 @@ public:
     return cursor_;
   }
 
-  std::string::const_iterator SkipNotIn(const std::string &chars) {
+  std::string::const_iterator SkipNotIn(const base::StringPiece &chars) {
     for (; cursor_ != end_; ++cursor_) {
       if (chars.find(*cursor_) != std::string::npos)
         break;
