@@ -108,7 +108,10 @@ TEST_F(MessageTest, Basic) {
 }
 
 TEST(RequestTest, Basic) {
-  const char *raw_message = "INVITE sip:alice@biloxi.com SIP/2.0\n\n";
+  const char *raw_message =
+    "INVITE sip:alice@biloxi.com SIP/2.0\n"
+    "Accept: text /  html;q=1.0, application/sdp ;q=0.9, text/plain   \n"
+    "\n\n";
   scoped_refptr<Message> message = Message::Parse(raw_message);
   
   ASSERT_TRUE(isa<Request>(message));
