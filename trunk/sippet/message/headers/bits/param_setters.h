@@ -84,8 +84,8 @@ public:
     raw_string_ostream os(buffer);
     os << format("%.3f", q);
     os.flush();
-    while (buffer.size() > 3 && buffer.back() == '0')
-      buffer.pop_back();
+    while (buffer.size() > 3 && *buffer.rbegin() == '0')
+      buffer.resize(buffer.size()-1);
     static_cast<T*>(this)->param_set("q", buffer);
   }
 };
@@ -130,7 +130,7 @@ public:
     const std::string &value =
       static_cast<const T*>(this)->param_find("expires")->second;
     int ret;
-    if (StringToInt(value, &ret))
+    if (base::StringToInt(value, &ret))
       return static_cast<unsigned>(ret);
     return 0;
   }
@@ -156,7 +156,7 @@ public:
     const std::string &value =
       static_cast<const T*>(this)->param_find("ttl")->second;
     int ret;
-    if (StringToInt(value, &ret))
+    if (base::StringToInt(value, &ret))
       return static_cast<unsigned>(ret);
     return 0;
   }
@@ -182,7 +182,7 @@ public:
   }
 
   std::string handling() const {
-    assert(HasTag() && "Cannot read handling");
+    assert(HasHandling() && "Cannot read handling");
     return static_cast<const T*>(this)->param_find("handling")->second;
   }
 
