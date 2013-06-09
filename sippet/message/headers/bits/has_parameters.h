@@ -74,26 +74,10 @@ public:
 
   // find an existing parameter
   param_iterator param_find(const std::string &key) {
-    struct _pred {
-      _pred(const std::string &key) : key_(key) {}
-      bool operator ()(const param_type &pair) {
-        return pair.first == key_;
-      }
-     private:
-      const std::string &key_;
-    };
-    return std::find_if(param_begin(), param_end(), _pred(key));
+    return std::find_if(param_begin(), param_end(), first_equals(key));
   }
   const_param_iterator param_find(const std::string &key) const {
-    struct _pred {
-      _pred(const std::string &key) : key_(key) {}
-      bool operator ()(const param_type &pair) {
-        return pair.first == key_;
-      }
-     private:
-      const std::string &key_;
-    };
-    return std::find_if(param_begin(), param_end(), _pred(key));
+    return std::find_if(param_begin(), param_end(), first_equals(key));
   }
 
   // set a parameter, or create one if it does not exist
@@ -118,6 +102,15 @@ public:
   }
 private:
   std::vector<param_type> params_;
+
+  struct first_equals : std::unary_function<const std::string&,bool> {
+    first_equals(const std::string &key) : key_(key) {}
+    bool operator ()(const param_type &pair) {
+      return pair.first == key_;
+    }
+   private:
+    const std::string &key_;
+  };
 };
 
 } // End of sippet namespace
