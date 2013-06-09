@@ -33,7 +33,9 @@
 
 #include "sippet/message/request.h"
 #include "sippet/message/response.h"
+#include "sippet/message/parser/tokenizer.h"
 #include "base/basictypes.h"
+#include "base/strings/string_split.h"
 #include "base/logging.h"
 #include "base/string_number_conversions.h"
 #include "base/string_util.h"
@@ -88,6 +90,8 @@
 #include "sippet/message/headers/www_authenticate.h"
 #include "sippet/message/headers/generic.h"
 
+namespace sippet {
+
 namespace {
 
 bool IsStatusLine(
@@ -117,7 +121,7 @@ std::string::const_iterator FindLineEnd(
   return begin + i;
 }
 
-sippet::Version ParseVersion(
+Version ParseVersion(
     std::string::const_iterator line_begin,
     std::string::const_iterator line_end) {
   std::string::const_iterator p = line_begin;
@@ -126,20 +130,20 @@ sippet::Version ParseVersion(
 
   if ((line_end - p < 3) || !LowerCaseEqualsASCII(p, p + 3, "sip")) {
     DVLOG(1) << "missing status line";
-    return sippet::Version();
+    return Version();
   }
 
   p += 3;
 
   if (p >= line_end || *p != '/') {
     DVLOG(1) << "missing version";
-    return sippet::Version();
+    return Version();
   }
 
   std::string::const_iterator dot = std::find(p, line_end, '.');
   if (dot == line_end) {
     DVLOG(1) << "malformed version";
-    return sippet::Version();
+    return Version();
   }
 
   ++p;  // from / to first digit.
@@ -147,31 +151,31 @@ sippet::Version ParseVersion(
 
   if (!(*p >= '0' && *p <= '9' && *dot >= '0' && *dot <= '9')) {
     DVLOG(1) << "malformed version number";
-    return sippet::Version();
+    return Version();
   }
 
   uint16 major = *p - '0';
   uint16 minor = *dot - '0';
 
-  return sippet::Version(major, minor);
+  return Version(major, minor);
 }
 
 bool ParseStatusLine(
     std::string::const_iterator line_begin,
     std::string::const_iterator line_end,
-    sippet::Version *version,
+    Version *version,
     int *response_code,
     std::string *reason_phrase) {
   // Extract the version number
   *version = ParseVersion(line_begin, line_end);
-  if (*version == sippet::Version()) {
+  if (*version == Version()) {
     DVLOG(1) << "invalid response";
     return false;
   }
 
   // Clamp the version number to {2.0}
-  if (*version != sippet::Version(2, 0)) {
-    *version = sippet::Version(2, 0);
+  if (*version != Version(2, 0)) {
+    *version = Version(2, 0);
     DVLOG(1) << "assuming SIP/2.0";
   }
 
@@ -217,9 +221,9 @@ bool ParseStatusLine(
 bool ParseRequestLine(
     std::string::const_iterator line_begin,
     std::string::const_iterator line_end,
-    sippet::Method *method,
+    Method *method,
     GURL *request_uri,
-    sippet::Version *version) {
+    Version *version) {
 
   // Skip any leading whitespace.
   while (line_begin != line_end &&
@@ -256,7 +260,7 @@ bool ParseRequestLine(
 
   // Extract the version number
   *version = ParseVersion(p, line_end);
-  if (*version == sippet::Version()) {
+  if (*version == Version()) {
     DVLOG(1) << "invalid response";
     return false;
   }
@@ -264,276 +268,489 @@ bool ParseRequestLine(
   return true;
 }
 
-scoped_ptr<sippet::Header>
+template<class HeaderType, class ParseValue>
+bool ParseMultipleValues(std::string::const_iterator values_begin,
+                         std::string::const_iterator values_end,
+                         scoped_ptr<HeaderType> &header,
+                         ParseValue parse) {
+  bool retval = true;
+  net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
+  while (it.GetNext()) {
+    if (!parse(it.value_begin(), it.value_end(), header)) {
+      retval = false;
+      break;
+    }
+  }
+  return retval;
+}
+
+template<class HeaderType>
+void ParseParameters(std::string::const_iterator value_begin,
+                     std::string::const_iterator value_end,
+                     scoped_ptr<HeaderType> &header) {
+  net::HttpUtil::NameValuePairsIterator it(value_begin, value_end, ';');
+  while (it.GetNext()) {
+    std::string name(it.name_begin(), it.name_end());
+    std::string value(it.value_begin(), it.value_end());
+    header->back().param_set(name, value);
+  }
+}
+
+template<class HeaderType>
+struct ParserTraits;
+
+template<>
+struct ParserTraits<Accept> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                              std::string::const_iterator values_end) {
+    scoped_ptr<Accept> accept(new Accept);
+    if (!ParseMultipleValues(values_begin, values_end, accept, Parse))
+      return scoped_ptr<Header>();
+    return accept.Pass();
+  }
+private:
+  static bool Parse(std::string::const_iterator value_begin,
+                    std::string::const_iterator value_end,
+                    scoped_ptr<Accept> &accept) {
+    Tokenizer tok(value_begin, value_end);
+    std::string::const_iterator type_start = tok.Skip(HTTP_LWS);
+    if (tok.End()) {
+      // empty header is OK
+      return true;
+    }
+    std::string type(type_start, tok.SkipNotIn(HTTP_LWS "/"));
+
+    tok.SkipTo('/');
+    tok.Skip();
+    
+    std::string::const_iterator subtype_start = tok.Skip(HTTP_LWS);
+    if (tok.End()) {
+      DVLOG(1) << "missing subtype";
+      return false;
+    }
+    std::string subtype(subtype_start, tok.SkipNotIn(HTTP_LWS ";"));
+
+    accept->push_back(MediaRange(type, subtype));
+
+    std::string::const_iterator param_start = tok.SkipTo(';');
+    if (tok.End())
+      return true;
+
+    tok.Skip();
+    ParseParameters(tok.Current(), value_end, accept);
+    return true;
+  }
+};
+
+template<class HeaderType, class ElemType>
+struct ParseMultiToken {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                              std::string::const_iterator values_end) {
+    scoped_ptr<HeaderType> header(new HeaderType);
+    if (!ParseMultipleValues(values_begin, values_end, header, Parse))
+      return scoped_ptr<Header>();
+    return header.Pass();
+  }
+private:
+  static bool Parse(std::string::const_iterator value_begin,
+                    std::string::const_iterator value_end,
+                    scoped_ptr<HeaderType> &header) {
+    Tokenizer tok(value_begin, value_end);
+    std::string::const_iterator token_start = tok.Skip(HTTP_LWS);
+    if (tok.End()) {
+      // empty header is OK
+      return true;
+    }
+    std::string token(token_start, tok.SkipNotIn(HTTP_LWS ";"));
+
+    header->push_back(ElemType(token));
+    return true;
+  }
+};
+
+template<class HeaderType, class ElemType>
+struct ParseMultiTokenParams {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                              std::string::const_iterator values_end) {
+    scoped_ptr<HeaderType> header(new HeaderType);
+    if (!ParseMultipleValues(values_begin, values_end, header, Parse))
+      return scoped_ptr<Header>();
+    return header.Pass();
+  }
+private:
+  static bool Parse(std::string::const_iterator value_begin,
+                    std::string::const_iterator value_end,
+                    scoped_ptr<HeaderType> &header) {
+    Tokenizer tok(value_begin, value_end);
+    std::string::const_iterator token_start = tok.Skip(HTTP_LWS);
+    if (tok.End()) {
+      // empty header is OK
+      return true;
+    }
+    std::string token(token_start, tok.SkipNotIn(HTTP_LWS ";"));
+
+    header->push_back(ElemType(token));
+
+    std::string::const_iterator param_start = tok.SkipTo(';');
+    if (tok.End())
+      return true;
+
+    tok.Skip();
+    ParseParameters(tok.Current(), value_end, header);
+    return true;
+  }
+};
+
+template<>
+struct ParserTraits<AcceptEncoding> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                              std::string::const_iterator values_end) {
+    return ParseMultiTokenParams<AcceptEncoding, Encoding>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<AcceptLanguage> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                              std::string::const_iterator values_end) {
+    return ParseMultiTokenParams<AcceptLanguage, LanguageRange>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<Allow> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseMultiToken<Allow, Method>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<ContentEncoding> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseMultiToken<ContentEncoding, std::string>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<ContentLanguage> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseMultiToken<ContentLanguage, std::string>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<InReplyTo> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseMultiToken<InReplyTo, std::string>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<ProxyRequire> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseMultiToken<ProxyRequire, std::string>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<Require> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseMultiToken<Require, std::string>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<Supported> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseMultiToken<Supported, std::string>::Interpret(values_begin, values_end);
+  }
+};
+
+template<>
+struct ParserTraits<Unsupported> {
+  static scoped_ptr<Header> Interpret(std::string::const_iterator values_begin,
+                                      std::string::const_iterator values_end) {
+    return ParseMultiToken<Unsupported, std::string>::Interpret(values_begin, values_end);
+  }
+};
+
+scoped_ptr<Header>
   ParseAccept(std::string::const_iterator values_begin,
               std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<Accept>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseAcceptEncoding(std::string::const_iterator values_begin,
                       std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<AcceptEncoding>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseAcceptLanguage(std::string::const_iterator values_begin,
                       std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<AcceptLanguage>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseAlertInfo(std::string::const_iterator values_begin,
                  std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseAllow(std::string::const_iterator values_begin,
              std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<Allow>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseAuthenticationInfo(std::string::const_iterator values_begin,
                           std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseAuthorization(std::string::const_iterator values_begin,
                      std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseCallId(std::string::const_iterator values_begin,
               std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseCallInfo(std::string::const_iterator values_begin,
                 std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseContact(std::string::const_iterator values_begin,
                std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseContentDisposition(std::string::const_iterator values_begin,
                           std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseContentEncoding(std::string::const_iterator values_begin,
                        std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<ContentEncoding>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseContentLanguage(std::string::const_iterator values_begin,
                        std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<ContentLanguage>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseContentLength(std::string::const_iterator values_begin,
                      std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseContentType(std::string::const_iterator values_begin,
                    std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseCseq(std::string::const_iterator values_begin,
             std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseDate(std::string::const_iterator values_begin,
             std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseErrorInfo(std::string::const_iterator values_begin,
                  std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseExpires(std::string::const_iterator values_begin,
                std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseFrom(std::string::const_iterator values_begin,
             std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseInReplyTo(std::string::const_iterator values_begin,
                  std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<InReplyTo>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseMaxForwards(std::string::const_iterator values_begin,
                    std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseMinExpires(std::string::const_iterator values_begin,
                   std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseMimeVersion(std::string::const_iterator values_begin,
                    std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseOrganization(std::string::const_iterator values_begin,
                     std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParsePriority(std::string::const_iterator values_begin,
                 std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseProxyAuthenticate(std::string::const_iterator values_begin,
                          std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseProxyAuthorization(std::string::const_iterator values_begin,
                           std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseProxyRequire(std::string::const_iterator values_begin,
                     std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<ProxyRequire>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseRecordRoute(std::string::const_iterator values_begin,
                    std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseReplyTo(std::string::const_iterator values_begin,
                std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseRequire(std::string::const_iterator values_begin,
                std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<Require>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseRetryAfter(std::string::const_iterator values_begin,
                   std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseRoute(std::string::const_iterator values_begin,
              std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseServer(std::string::const_iterator values_begin,
               std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseSubject(std::string::const_iterator values_begin,
                std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseSupported(std::string::const_iterator values_begin,
                  std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<Supported>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseTimestamp(std::string::const_iterator values_begin,
                  std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseTo(std::string::const_iterator values_begin,
           std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseUnsupported(std::string::const_iterator values_begin,
                    std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return ParserTraits<Unsupported>::Interpret(values_begin, values_end);
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseUserAgent(std::string::const_iterator values_begin,
                  std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseVia(std::string::const_iterator values_begin,
            std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseWarning(std::string::const_iterator values_begin,
                std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-scoped_ptr<sippet::Header>
+scoped_ptr<Header>
   ParseWwwAuthenticate(std::string::const_iterator values_begin,
                        std::string::const_iterator values_end) {
-  return scoped_ptr<sippet::Header>();
+  return scoped_ptr<Header>();
 }
 
-typedef scoped_ptr<sippet::Header> (*ParseFunction)(std::string::const_iterator,
+typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,
                                                     std::string::const_iterator);
 
 struct HeaderMap {
   const char *header_name;
-  sippet::Header::Type header_type;
+  Header::Type header_type;
   ParseFunction parse_function;
 };
 
@@ -541,222 +758,222 @@ struct HeaderMap {
 const HeaderMap headers[] = {
   {
     "accept",
-    sippet::Header::HDR_ACCEPT,
+    Header::HDR_ACCEPT,
     &ParseAccept
   },
   {
     "accept-encoding",
-    sippet::Header::HDR_ACCEPT_ENCODING,
+    Header::HDR_ACCEPT_ENCODING,
     &ParseAcceptEncoding
   },
   {
     "accept-language",
-    sippet::Header::HDR_ACCEPT_LANGUAGE,
+    Header::HDR_ACCEPT_LANGUAGE,
     &ParseAcceptLanguage
   },
   {
     "alert-info",
-    sippet::Header::HDR_ALERT_INFO,
+    Header::HDR_ALERT_INFO,
     &ParseAlertInfo
   },
   {
     "allow",
-    sippet::Header::HDR_ALLOW,
+    Header::HDR_ALLOW,
     &ParseAllow
   },
   {
     "authentication-info",
-    sippet::Header::HDR_AUTHENTICATION_INFO,
+    Header::HDR_AUTHENTICATION_INFO,
     &ParseAuthenticationInfo
   },
   {
     "authorization",
-    sippet::Header::HDR_AUTHORIZATION,
+    Header::HDR_AUTHORIZATION,
     &ParseAuthorization
   },
   {
     "call-id",
-    sippet::Header::HDR_CALL_ID,
+    Header::HDR_CALL_ID,
     &ParseCallId
   },
   {
     "call-info",
-    sippet::Header::HDR_CALL_INFO,
+    Header::HDR_CALL_INFO,
     &ParseCallInfo
   },
   {
     "contact",
-    sippet::Header::HDR_CONTACT,
+    Header::HDR_CONTACT,
     &ParseContact
   },
   {
     "content-disposition",
-    sippet::Header::HDR_CONTENT_DISPOSITION,
+    Header::HDR_CONTENT_DISPOSITION,
     &ParseContentDisposition
   },
   {
     "content-encoding",
-    sippet::Header::HDR_CONTENT_ENCODING,
+    Header::HDR_CONTENT_ENCODING,
     &ParseContentEncoding
   },
   {
     "content-language",
-    sippet::Header::HDR_CONTENT_LANGUAGE,
+    Header::HDR_CONTENT_LANGUAGE,
     &ParseContentLanguage
   },
   {
     "content-length",
-    sippet::Header::HDR_CONTENT_LENGTH,
+    Header::HDR_CONTENT_LENGTH,
     &ParseContentLength
   },
   {
     "content-type",
-    sippet::Header::HDR_CONTENT_TYPE,
+    Header::HDR_CONTENT_TYPE,
     &ParseContentType
   },
   {
     "cseq",
-    sippet::Header::HDR_CSEQ,
+    Header::HDR_CSEQ,
     &ParseCseq
   },
   {
     "date",
-    sippet::Header::HDR_DATE,
+    Header::HDR_DATE,
     &ParseDate
   },
   {
     "error-info",
-    sippet::Header::HDR_ERROR_INFO,
+    Header::HDR_ERROR_INFO,
     &ParseErrorInfo
   },
   {
     "expires",
-    sippet::Header::HDR_EXPIRES,
+    Header::HDR_EXPIRES,
     &ParseExpires
   },
   {
     "from",
-    sippet::Header::HDR_FROM,
+    Header::HDR_FROM,
     &ParseFrom
   },
   {
     "in-reply-to",
-    sippet::Header::HDR_IN_REPLY_TO,
+    Header::HDR_IN_REPLY_TO,
     &ParseInReplyTo
   },
   {
     "max-forwards",
-    sippet::Header::HDR_MAX_FORWARDS,
+    Header::HDR_MAX_FORWARDS,
     &ParseMaxForwards
   },
   {
     "mime-version",
-    sippet::Header::HDR_MIME_VERSION,
+    Header::HDR_MIME_VERSION,
     &ParseMimeVersion
   },
   {
     "min-expires",
-    sippet::Header::HDR_MIN_EXPIRES,
+    Header::HDR_MIN_EXPIRES,
     &ParseMinExpires
   },
   {
     "organization",
-    sippet::Header::HDR_ORGANIZATION,
+    Header::HDR_ORGANIZATION,
     &ParseOrganization
   },
   {
     "priority",
-    sippet::Header::HDR_PRIORITY,
+    Header::HDR_PRIORITY,
     &ParsePriority
   },
   {
     "proxy-authenticate",
-    sippet::Header::HDR_PROXY_AUTHENTICATE,
+    Header::HDR_PROXY_AUTHENTICATE,
     &ParseProxyAuthenticate
   },
   {
     "proxy-authorization",
-    sippet::Header::HDR_PROXY_AUTHORIZATION,
+    Header::HDR_PROXY_AUTHORIZATION,
     &ParseProxyAuthorization
   },
   {
     "proxy-require",
-    sippet::Header::HDR_PROXY_REQUIRE,
+    Header::HDR_PROXY_REQUIRE,
     &ParseProxyRequire
   },
   {
     "record-route",
-    sippet::Header::HDR_RECORD_ROUTE,
+    Header::HDR_RECORD_ROUTE,
     &ParseRecordRoute
   },
   {
     "reply-to",
-    sippet::Header::HDR_REPLY_TO,
+    Header::HDR_REPLY_TO,
     &ParseReplyTo
   },
   {
     "require",
-    sippet::Header::HDR_REQUIRE,
+    Header::HDR_REQUIRE,
     &ParseRequire
   },
   {
     "retry-after",
-    sippet::Header::HDR_RETRY_AFTER,
+    Header::HDR_RETRY_AFTER,
     &ParseRetryAfter
   },
   {
     "route",
-    sippet::Header::HDR_ROUTE,
+    Header::HDR_ROUTE,
     &ParseRoute
   },
   {
     "server",
-    sippet::Header::HDR_SERVER,
+    Header::HDR_SERVER,
     &ParseServer
   },
   {
     "subject",
-    sippet::Header::HDR_SUBJECT,
+    Header::HDR_SUBJECT,
     &ParseSubject
   },
   {
     "supported",
-    sippet::Header::HDR_SUPPORTED,
+    Header::HDR_SUPPORTED,
     &ParseSupported
   },
   {
     "timestamp",
-    sippet::Header::HDR_TIMESTAMP,
+    Header::HDR_TIMESTAMP,
     &ParseTimestamp
   },
   {
     "to",
-    sippet::Header::HDR_TO,
+    Header::HDR_TO,
     &ParseTo
   },
   {
     "unsupported",
-    sippet::Header::HDR_UNSUPPORTED,
+    Header::HDR_UNSUPPORTED,
     &ParseUnsupported
   },
   {
     "user-agent",
-    sippet::Header::HDR_USER_AGENT,
+    Header::HDR_USER_AGENT,
     &ParseUserAgent
   },
   {
     "via",
-    sippet::Header::HDR_VIA,
+    Header::HDR_VIA,
     &ParseVia
   },
   {
     "warning",
-    sippet::Header::HDR_WARNING,
+    Header::HDR_WARNING,
     &ParseWarning
   },
   {
     "www-authenticate",
-    sippet::Header::HDR_WWW_AUTHENTICATE,
+    Header::HDR_WWW_AUTHENTICATE,
     &ParseWwwAuthenticate
   },
 };
@@ -768,7 +985,7 @@ bool HeaderMapLess(const HeaderMap &a, const HeaderMap &b) {
   return LowerCaseEqualsASCII(a.header_name, end, b.header_name);
 }
 
-sippet::Header::Type HeaderNameToType(
+Header::Type HeaderNameToType(
     std::string::const_iterator name_begin,
     std::string::const_iterator name_end) {
   // Perform a simple binary search
@@ -778,21 +995,19 @@ sippet::Header::Type HeaderNameToType(
   const HeaderMap *last = headers + headers_size;
 
   first = std::lower_bound(first, last, elem, HeaderMapLess);
-  return first != last ? first->header_type : sippet::Header::HDR_GENERIC;
+  return first != last ? first->header_type : Header::HDR_GENERIC;
 }
       
-scoped_ptr<sippet::Header> ParseHeader(
-    sippet::Header::Type t,
+scoped_ptr<Header> ParseHeader(
+    Header::Type t,
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  int index = static_cast<sippet::Header::Type>(t);
+  int index = static_cast<Header::Type>(t);
   const HeaderMap &elem = headers[index];
   return (*elem.parse_function)(values_begin, values_end);
 }
 
 } // End of empty namespace
-
-namespace sippet {
 
 scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
   scoped_refptr<Message> message;
