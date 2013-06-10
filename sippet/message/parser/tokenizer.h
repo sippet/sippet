@@ -39,46 +39,47 @@ class Tokenizer {
 public:
   Tokenizer(std::string::const_iterator string_begin,
             std::string::const_iterator string_end)
-    : cursor_(string_begin), end_(string_end) {}
+    : current_(string_begin), end_(string_end) {}
 
   std::string::const_iterator Skip(const base::StringPiece &chars) {
-    for (; cursor_ != end_; ++cursor_) {
-      if (chars.find(*cursor_) == std::string::npos)
+    for (; current_ != end_; ++current_) {
+      if (chars.find(*current_) == std::string::npos)
         break;
     }
-    return cursor_;
+    return current_;
   }
 
   std::string::const_iterator SkipNotIn(const base::StringPiece &chars) {
-    for (; cursor_ != end_; ++cursor_) {
-      if (chars.find(*cursor_) != std::string::npos)
+    for (; current_ != end_; ++current_) {
+      if (chars.find(*current_) != std::string::npos)
         break;
     }
-    return cursor_;
+    return current_;
   }
 
   std::string::const_iterator SkipTo(char c) {
-    for (; cursor_ != end_; ++cursor_) {
-      if (c == *cursor_)
+    for (; current_ != end_; ++current_) {
+      if (c == *current_)
         break;
     }
-    return cursor_;
+    return current_;
   }
 
   std::string::const_iterator Skip() {
-    if (cursor_ != end_)
-      ++cursor_;
-    return cursor_;
+    if (current_ != end_)
+      ++current_;
+    return current_;
   }
 
-  bool End() const {
-    return cursor_ == end_;
+  bool EndOfInput() const {
+    return current_ == end_;
   }
 
-  std::string::const_iterator Current() const { return cursor_; }
+  std::string::const_iterator current() const { return current_; }
+  std::string::const_iterator end() const { return end_; }
 
 private:
-  std::string::const_iterator cursor_;
+  std::string::const_iterator current_;
   std::string::const_iterator end_;
 };
 

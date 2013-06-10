@@ -77,7 +77,6 @@ public:
     for (const_param_iterator i = param_begin(), ie = param_end(); i != ie; ++i) {
       if (i != param_begin())
         os << ", ";
-      // TODO: value should be escaped
       os << i->first << "=" << i->second;
     }
   }
