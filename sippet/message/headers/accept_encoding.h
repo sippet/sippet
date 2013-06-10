@@ -90,6 +90,10 @@ public:
     return scoped_ptr<AcceptEncoding>(DoClone());
   }
 
+  bool AllowsAll() const {
+    return !empty() && front().AllowsAll();
+  }
+
   virtual void print(raw_ostream &os) const {
     os.write_hname("Accept-Encoding");
     has_multiple::print(os);
