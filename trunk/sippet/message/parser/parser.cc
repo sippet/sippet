@@ -273,8 +273,8 @@ bool ParseToken(Tokenizer &tok, scoped_ptr<HeaderType> &header,
                 void (*build)(scoped_ptr<HeaderType> &, const std::string &)) {
   std::string::const_iterator token_start = tok.Skip(HTTP_LWS);
   if (tok.EndOfInput()) {
-    // empty header is OK
-    return true;
+    DVLOG(1) << "empty value";
+    return false;
   }
   std::string token(token_start, tok.SkipNotIn(HTTP_LWS ";"));
   if (!net::HttpUtil::IsToken(token)) {
@@ -439,7 +439,7 @@ scoped_ptr<Header> ParseSingleToken(
     std::string::const_iterator values_end) {
   scoped_ptr<HeaderType> retval;
   Tokenizer tok(values_begin, values_end);
-  if (!ParseToken(tok, header, &SingleBuilder<HeaderType>))
+  if (!ParseToken(tok, retval, &SingleBuilder<HeaderType>))
     return scoped_ptr<Header>();
   return retval.Pass();
 }
