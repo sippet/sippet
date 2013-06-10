@@ -76,7 +76,14 @@ public:
   }
 
   std::string::const_iterator current() const { return current_; }
+  void set_current(std::string::const_iterator current) {
+    current_ = current;
+  }
+
   std::string::const_iterator end() const { return end_; }
+  void set_end(std::string::const_iterator end) {
+    end_ = end;
+  }
 
 private:
   std::string::const_iterator current_;
