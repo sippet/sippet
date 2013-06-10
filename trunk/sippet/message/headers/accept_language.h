@@ -59,7 +59,7 @@ public:
     return *this;
   }
 
-  bool AllowsAll() { return value() == "*"; }
+  bool AllowsAll() const { return value() == "*"; }
 
   void print(raw_ostream &os) const {
     os << value();
@@ -88,6 +88,10 @@ public:
 
   scoped_ptr<AcceptLanguage> Clone() const {
     return scoped_ptr<AcceptLanguage>(DoClone());
+  }
+
+  bool AllowsAll() const {
+    return !empty() && front().AllowsAll();
   }
 
   virtual void print(raw_ostream &os) const {
