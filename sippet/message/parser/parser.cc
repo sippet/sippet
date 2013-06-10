@@ -375,23 +375,84 @@ bool ParseUri(Tokenizer &tok, scoped_ptr<HeaderType> &header) {
   return true;
 }
 
-/*
 template<class HeaderType>
-bool ParseContact(Tokenizer &tok, scoped_ptr<HeaderType> &header) {
-
-  std::string::const_iterator param_start = tok.SkipTo(';');
-  if (tok.EndOfInput())
-    return true;
-  tok.Skip();
-  net::HttpUtil::NameValuePairsIterator it(tok.Current(), tok.End(), ';');
-  while (it.GetNext()) {
-    std::string name(it.name_begin(), it.name_end());
-    std::string value(it.value_begin(), it.value_end());
-    header->back().param_set(name, value);
+bool ParseContact(Tokenizer &tok, scoped_ptr<HeaderType> &header,
+                  void (*builder)(scoped_ptr<HeaderType> &,
+                                  const GURL &,
+                                  const std::string &)) {
+  std::string display_name;
+  GURL address;
+  tok.Skip(HTTP_LWS);
+  if (net::HttpUtil::IsQuote(*tok.current())) {
+    // contact-param = quoted-string LAQUOT addr-spec RAQUOT
+    std::string::const_iterator display_name_start = tok.current();
+    tok.Skip();
+    for (; !tok.EndOfInput(); tok.Skip()) {
+      if (*tok.current() == '\\') {
+        tok.Skip();
+        continue;
+      }
+      if (net::HttpUtil::IsQuote(*tok.current()))
+        break;
+    }
+    if (tok.EndOfInput()) {
+      DVLOG(1) << "unclosed quoted-string";
+      return false;
+    }
+    display_name.assign(display_name_start, tok.Skip());
+    tok.SkipTo('<');
+    if (tok.EndOfInput()) {
+      DVLOG(1) << "missing address";
+      return false;
+    }
+    std::string::const_iterator address_start = tok.Skip();
+    tok.SkipTo('>');
+    if (tok.EndOfInput()) {
+      DVLOG(1) << "unclosed '<'";
+      return false;
+    }
+    address = GURL(std::string(address_start, tok.current()));
   }
+  else if (net::HttpUtil::IsToken(tok.current(), tok.current()+1)) {
+    Tokenizer laquot(tok.current(), tok.end());
+    laquot.SkipTo('<');
+    if (!laquot.EndOfInput()) {
+      // contact-param = *(token LWS) LAQUOT addr-spec RAQUOT
+      display_name.assign(tok.current(), laquot.current());
+      TrimString(display_name, HTTP_LWS, &display_name);
+      std::string::const_iterator address_start = laquot.Skip();
+      laquot.SkipTo('>');
+      if (laquot.EndOfInput()) {
+        DVLOG(1) << "unclosed '<'";
+        return false;
+      }
+      address = GURL(std::string(address_start, laquot.current()));
+      tok.set_current(laquot.Skip());
+    }
+    else {
+      std::string::const_iterator address_start = tok.current();
+      address = GURL(std::string(address_start, tok.SkipNotIn(HTTP_LWS ";")));
+    }
+  }
+  else {
+    DVLOG(1) << "invalid char found";
+    return false;
+  }
+  builder(header, address, display_name);
   return true;
 }
-*/
+
+template<class HeaderType>
+bool ParseStar(Tokenizer &tok, scoped_ptr<HeaderType> &header) {
+  Tokenizer star(tok.current(), tok.end());
+  star.Skip(HTTP_LWS);
+  if (star.EndOfInput())
+    return false;
+  if (*star.current() != '*')
+    return false;
+  header.reset(new HeaderType(HeaderType::All));
+  return true;
+}
 
 template<class HeaderType>
 void SingleBuilder(scoped_ptr<HeaderType> &header,
@@ -402,6 +463,13 @@ void SingleBuilder(scoped_ptr<HeaderType> &header,
 template<class HeaderType>
 void SingleBuilder(scoped_ptr<HeaderType> &header,
                    const std::string &p1,
+                   const std::string &p2) {
+  header.reset(new HeaderType(p1, p2));
+}
+
+template<class HeaderType>
+void SingleBuilder(scoped_ptr<HeaderType> &header,
+                   const GURL &p1,
                    const std::string &p2) {
   header.reset(new HeaderType(p1, p2));
 }
@@ -422,6 +490,13 @@ void MultipleBuilder(scoped_ptr<HeaderType> &header,
 template<class HeaderType>
 void MultipleBuilder(scoped_ptr<HeaderType> &header,
                      const std::string &p1,
+                     const std::string &p2) {
+  header->push_back(HeaderType::value_type(p1, p2));
+}
+
+template<class HeaderType>
+void MultipleBuilder(scoped_ptr<HeaderType> &header,
+                     const GURL &p1,
                      const std::string &p2) {
   header->push_back(HeaderType::value_type(p1, p2));
 }
@@ -566,6 +641,59 @@ scoped_ptr<Header> ParseSchemeAndAuthParams(
   return header.Pass();
 }
 
+template<class HeaderType>
+scoped_ptr<Header> ParseSingleContactParams(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval;
+  Tokenizer tok(values_begin, values_end);
+  if (!ParseContact(tok, retval, &SingleBuilder<HeaderType>)
+      || !ParseParameters(tok, retval, &SingleParamSetter<HeaderType>))
+    return scoped_ptr<Header>();
+  return retval.Pass();
+}
+
+template<class HeaderType>
+scoped_ptr<Header> ParseMultipleContactParams(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval(new HeaderType);
+  net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
+  while (it.GetNext()) {
+    Tokenizer tok(it.value_begin(), it.value_end());
+    if (!ParseContact(tok, retval, &MultipleBuilder<HeaderType>)
+        || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
+      return scoped_ptr<Header>();
+  }
+  return retval.Pass();
+}
+
+template<class HeaderType>
+scoped_ptr<Header> ParseStarOrMultipleContactParams(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval(new HeaderType);
+  net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
+  while (it.GetNext()) {
+    Tokenizer tok(it.value_begin(), it.value_end());
+    if (!ParseStar(tok, retval)) {
+      if (!ParseContact(tok, retval, &MultipleBuilder<HeaderType>)
+          || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
+        return scoped_ptr<Header>();
+    }
+  }
+  return retval.Pass();
+}
+
+template<class HeaderType>
+scoped_ptr<Header> ParseTrimmedUtf8(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  std::string value(values_begin, values_end);
+  TrimString(value, HTTP_LWS, &value);
+  return scoped_ptr<HeaderType>(new HeaderType(value));
+}
+
 typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,
                                             std::string::const_iterator);
 
@@ -622,11 +750,11 @@ const HeaderMap headers[] = {
     Header::HDR_CALL_INFO,
     &ParseMultipleUriParams<CallInfo>,
   },
-//  {
-//    "contact",
-//    Header::HDR_CONTACT,
-//    &ParserTraits<Contact>::Interpret,
-//  },
+  {
+    "contact",
+    Header::HDR_CONTACT,
+    &ParseStarOrMultipleContactParams<Contact>,
+  },
   {
     "content-disposition",
     Header::HDR_CONTENT_DISPOSITION,
@@ -672,11 +800,11 @@ const HeaderMap headers[] = {
     Header::HDR_EXPIRES,
     &ParseSingleInteger<Expires>,
   },
-//  {
-//    "from",
-//    Header::HDR_FROM,
-//    &ParserTraits<From>::Interpret,
-//  },
+  {
+    "from",
+    Header::HDR_FROM,
+    &ParseSingleContactParams<From>,
+  },
   {
     "in-reply-to",
     Header::HDR_IN_REPLY_TO,
@@ -697,11 +825,11 @@ const HeaderMap headers[] = {
     Header::HDR_MIN_EXPIRES,
     &ParseSingleInteger<MinExpires>,
   },
-//  {
-//    "organization",
-//    Header::HDR_ORGANIZATION,
-//    &ParserTraits<Organization>::Interpret,
-//  },
+  {
+    "organization",
+    Header::HDR_ORGANIZATION,
+    &ParseTrimmedUtf8<Organization>,
+  },
   {
     "priority",
     Header::HDR_PRIORITY,
@@ -727,11 +855,11 @@ const HeaderMap headers[] = {
 //    Header::HDR_RECORD_ROUTE,
 //    &ParserTraits<RecordRoute>::Interpret,
 //  },
-//  {
-//    "reply-to",
-//    Header::HDR_REPLY_TO,
-//    &ParserTraits<ReplyTo>::Interpret,
-//  },
+  {
+    "reply-to",
+    Header::HDR_REPLY_TO,
+    &ParseSingleContactParams<ReplyTo>,
+  },
   {
     "require",
     Header::HDR_REQUIRE,
@@ -747,16 +875,16 @@ const HeaderMap headers[] = {
 //    Header::HDR_ROUTE,
 //    &ParserTraits<Route>::Interpret,
 //  },
-//  {
-//    "server",
-//    Header::HDR_SERVER,
-//    &ParserTraits<Server>::Interpret,
-//  },
-//  {
-//    "subject",
-//    Header::HDR_SUBJECT,
-//    &ParserTraits<Subject>::Interpret,
-//  },
+  {
+    "server",
+    Header::HDR_SERVER,
+    &ParseTrimmedUtf8<Server>,
+  },
+  {
+    "subject",
+    Header::HDR_SUBJECT,
+    &ParseTrimmedUtf8<Subject>,
+  },
   {
     "supported",
     Header::HDR_SUPPORTED,
@@ -767,11 +895,11 @@ const HeaderMap headers[] = {
 //    Header::HDR_TIMESTAMP,
 //    &ParserTraits<Timestamp>::Interpret,
 //  },
-//  {
-//    "to",
-//    Header::HDR_TO,
-//    &ParserTraits<To>::Interpret,
-//  },
+  {
+    "to",
+    Header::HDR_TO,
+    &ParseSingleContactParams<To>,
+  },
   {
     "unsupported",
     Header::HDR_UNSUPPORTED,
