@@ -277,10 +277,6 @@ bool ParseToken(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     return false;
   }
   std::string token(token_start, tok.SkipNotIn(HTTP_LWS ";"));
-  if (!net::HttpUtil::IsToken(token)) {
-    DVLOG(1) << "invalid token";
-    return false;
-  }
   build(header, token);
   return true;
 }
@@ -413,7 +409,7 @@ bool ParseContact(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     }
     address = GURL(std::string(address_start, tok.current()));
   }
-  else if (net::HttpUtil::IsToken(tok.current(), tok.current()+1)) {
+  else {
     Tokenizer laquot(tok.current(), tok.end());
     laquot.SkipTo('<');
     if (!laquot.EndOfInput()) {
@@ -429,15 +425,16 @@ bool ParseContact(Tokenizer &tok, scoped_ptr<HeaderType> &header,
       address = GURL(std::string(address_start, laquot.current()));
       tok.set_current(laquot.Skip());
     }
-    else {
+    else if (net::HttpUtil::IsToken(tok.current(), tok.current()+1)) {
       std::string::const_iterator address_start = tok.current();
       address = GURL(std::string(address_start, tok.SkipNotIn(HTTP_LWS ";")));
     }
+    else {
+      DVLOG(1) << "invalid char found";
+      return false;
+    }
   }
-  else {
-    DVLOG(1) << "invalid char found";
-    return false;
-  }
+
   display_name = net::HttpUtil::Unquote(display_name);
   builder(header, address, display_name);
   return true;
@@ -513,14 +510,20 @@ bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
               void (*builder)(scoped_ptr<HeaderType> &,
                               const std::string &,
                               const net::HostPortPair &)) {
-  tok.Skip(HTTP_LWS);
+  std::string::const_iterator version_start = tok.Skip(HTTP_LWS);
   if ((tok.end() - tok.current() < 3)
       || !LowerCaseEqualsASCII(tok.current(), tok.current() + 3, "sip")) {
-    DVLOG(1) << "unknown sent-protocol";
+    DVLOG(1) << "unknown SIP-version";
     return false;
   }
   tok.SkipTo('/');
-  std::string::const_iterator protocol_start = tok.Skip(HTTP_LWS);
+  tok.Skip();
+  if (tok.EndOfInput()
+      || ParseVersion(version_start, tok.SkipTo('/')) != Version(2,0)) {
+    DVLOG(1) << "invalid SIP-version";
+    return false;
+  }
+  std::string::const_iterator protocol_start = tok.Skip();
   if (tok.EndOfInput()) {
     DVLOG(1) << "missing sent-protocol";
     return false;
