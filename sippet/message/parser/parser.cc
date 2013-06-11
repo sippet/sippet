@@ -438,6 +438,7 @@ bool ParseContact(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     DVLOG(1) << "invalid char found";
     return false;
   }
+  display_name = net::HttpUtil::Unquote(display_name);
   builder(header, address, display_name);
   return true;
 }
@@ -451,6 +452,92 @@ bool ParseStar(Tokenizer &tok, scoped_ptr<HeaderType> &header) {
   if (*star.current() != '*')
     return false;
   header.reset(new HeaderType(HeaderType::All));
+  return true;
+}
+
+template<class HeaderType>
+bool ParseWarning(Tokenizer &tok, scoped_ptr<HeaderType> &header,
+                  void (*builder)(scoped_ptr<HeaderType> &,
+                                  unsigned,
+                                  const std::string &,
+                                  const std::string &)) {
+  std::string::const_iterator code_start = tok.Skip(HTTP_LWS);
+  if (tok.EndOfInput()) {
+    DVLOG(1) << "empty input";
+    return false;
+  }
+  std::string code_string(code_start, tok.SkipNotIn(HTTP_LWS));
+  int code = 0;
+  if (!base::StringToInt(code_string, &code)
+      || code < 100 || code > 999) {
+    DVLOG(1) << "invalid code";
+    return false;
+  }
+  std::string::const_iterator agent_start = tok.Skip(HTTP_LWS);
+  if (tok.EndOfInput()) {
+    DVLOG(1) << "empty warn-agent";
+    return false;
+  }
+  std::string agent(agent_start, tok.SkipNotIn(HTTP_LWS));
+  tok.Skip(HTTP_LWS);
+  if (tok.EndOfInput()) {
+    DVLOG(1) << "missing warn-text";
+    return false;
+  }
+  if (!net::HttpUtil::IsQuote(*tok.current())) {
+    DVLOG(1) << "invalid warn-text";
+    return false;
+  }
+  std::string::const_iterator text_start = tok.current();
+  tok.Skip();
+  for (; !tok.EndOfInput(); tok.Skip()) {
+    if (*tok.current() == '\\') {
+      tok.Skip();
+      continue;
+    }
+    if (net::HttpUtil::IsQuote(*tok.current()))
+      break;
+  }
+  if (tok.EndOfInput()) {
+    DVLOG(1) << "unclosed quoted-string";
+    return false;
+  }
+  std::string text(text_start, tok.Skip());
+  text = net::HttpUtil::Unquote(text);
+  builder(header, static_cast<unsigned>(code), agent, text);
+  return true;
+}
+
+template<class HeaderType>
+bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
+              void (*builder)(scoped_ptr<HeaderType> &,
+                              const std::string &,
+                              const net::HostPortPair &)) {
+  tok.Skip(HTTP_LWS);
+  if ((tok.end() - tok.current() < 3)
+      || !LowerCaseEqualsASCII(tok.current(), tok.current() + 3, "sip")) {
+    DVLOG(1) << "unknown sent-protocol";
+    return false;
+  }
+  tok.SkipTo('/');
+  std::string::const_iterator protocol_start = tok.Skip(HTTP_LWS);
+  if (tok.EndOfInput()) {
+    DVLOG(1) << "missing sent-protocol";
+    return false;
+  }
+  std::string protocol(protocol_start, tok.SkipNotIn(HTTP_LWS));
+  std::string::const_iterator sentby_start = tok.Skip(HTTP_LWS);
+  if (tok.EndOfInput()) {
+    DVLOG(1) << "missing sent-by";
+    return false;
+  }
+  std::string sentby_string(sentby_start, tok.SkipTo(';'));
+  net::HostPortPair sentby(net::HostPortPair::FromString(sentby_string));
+  if (sentby.IsEmpty()) {
+    DVLOG(1) << "invalid sent-by";
+    return false;
+  }
+  builder(header, protocol, sentby);
   return true;
 }
 
@@ -498,6 +585,21 @@ template<class HeaderType>
 void MultipleBuilder(scoped_ptr<HeaderType> &header,
                      const GURL &p1,
                      const std::string &p2) {
+  header->push_back(HeaderType::value_type(p1, p2));
+}
+
+template<class HeaderType>
+void MultipleBuilder(scoped_ptr<HeaderType> &header,
+                     unsigned p1,
+                     const std::string &p2,
+                     const std::string &p3) {
+  header->push_back(HeaderType::value_type(p1, p2, p3));
+}
+
+template<class HeaderType>
+void MultipleBuilder(scoped_ptr<HeaderType> &header,
+                     const std::string &p1,
+                     const net::HostPortPair &p2) {
   header->push_back(HeaderType::value_type(p1, p2));
 }
 
@@ -835,6 +937,37 @@ scoped_ptr<Header> ParseRetryAfter(
   return retval.Pass();
 }
 
+template<class HeaderType>
+scoped_ptr<Header> ParseMultipleWarnings(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval(new HeaderType);
+  net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
+  while (it.GetNext()) {
+    Tokenizer tok(it.value_begin(), it.value_end());
+    if (!ParseWarning(tok, retval, &MultipleBuilder<HeaderType>)) {
+      return scoped_ptr<Header>();
+    }
+  }
+  return retval.Pass();
+}
+
+template<class HeaderType>
+scoped_ptr<Header> ParseMultipleVias(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval(new HeaderType);
+  net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
+  while (it.GetNext()) {
+    Tokenizer tok(it.value_begin(), it.value_end());
+    if (!ParseVia(tok, retval, &MultipleBuilder<HeaderType>)
+        || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>)) {
+      return scoped_ptr<Header>();
+    }
+  }
+  return retval.Pass();
+}
+
 typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,
                                             std::string::const_iterator);
 
@@ -1051,16 +1184,16 @@ const HeaderMap headers[] = {
     Header::HDR_USER_AGENT,
     &ParseTrimmedUtf8<UserAgent>,
   },
-//  {
-//    "via",
-//    Header::HDR_VIA,
-//    &ParserTraits<Via>::Interpret,
-//  },
-//  {
-//    "warning",
-//    Header::HDR_WARNING,
-//    &ParserTraits<Warning>::Interpret,
-//  },
+  {
+    "via",
+    Header::HDR_VIA,
+    &ParseMultipleVias<Via>,
+  },
+  {
+    "warning",
+    Header::HDR_WARNING,
+    &ParseMultipleWarnings<Warning>,
+  },
   {
     "www-authenticate",
     Header::HDR_WWW_AUTHENTICATE,
