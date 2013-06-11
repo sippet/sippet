@@ -694,6 +694,147 @@ scoped_ptr<Header> ParseTrimmedUtf8(
   return scoped_ptr<HeaderType>(new HeaderType(value));
 }
 
+template<class HeaderType>
+scoped_ptr<Header> ParseCseq(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval;
+  Tokenizer tok(values_begin, values_end);
+  do {
+    std::string::const_iterator integer_start = tok.Skip(HTTP_LWS);
+    if (tok.EndOfInput()) {
+      DVLOG(1) << "missing sequence";
+      break;
+    }
+    std::string integer_string(integer_start, tok.SkipNotIn(HTTP_LWS));
+    int sequence = 0;
+    if (!base::StringToInt(integer_string, &sequence)) {
+      DVLOG(1) << "invalid sequence";
+      break;
+    }
+    std::string::const_iterator method_start = tok.Skip(HTTP_LWS);
+    if (tok.EndOfInput()) {
+      DVLOG(1) << "missing method";
+      break;
+    }
+    std::string method_name(method_start, tok.SkipNotIn(HTTP_LWS));
+    Method method(method_name);
+    retval.reset(new HeaderType(sequence, method));
+  } while (false);
+  return retval.Pass();
+}
+
+template<class HeaderType>
+scoped_ptr<Header> ParseDate(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval;
+  do {
+    std::string date(values_begin, values_end);
+    base::Time parsed_time;
+    if (!base::Time::FromString(date.c_str(), &parsed_time)) {
+      DVLOG(1) << "invalid date spec";
+      break;
+    }
+    retval.reset(new HeaderType(parsed_time));
+  } while(false);
+  return retval.Pass();
+}
+
+template<class HeaderType>
+scoped_ptr<Header> ParseTimestamp(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval;
+  Tokenizer tok(values_begin, values_end);
+  do {
+    std::string::const_iterator timestamp_start = tok.Skip(HTTP_LWS);
+    if (tok.EndOfInput()) {
+      DVLOG(1) << "missing timestamp";
+      break;
+    }
+    std::string timestamp_string(timestamp_start, tok.SkipNotIn(HTTP_LWS));
+    double timestamp = .0;
+    if (!base::StringToDouble(timestamp_string, &timestamp)) {
+      DVLOG(1) << "invalid timestamp";
+      break;
+    }
+    // delay is optional
+    double delay = .0;
+    std::string::const_iterator delay_start = tok.Skip(HTTP_LWS);
+    if (!tok.EndOfInput()) {
+      std::string delay_string(delay_start, tok.SkipNotIn(HTTP_LWS));
+      base::StringToDouble(delay_string, &delay);
+      // ignore errors parsing the optional delay
+    }
+    retval.reset(new HeaderType(timestamp, delay));
+  } while(false);
+  return retval.Pass();
+}
+
+template<class HeaderType>
+scoped_ptr<Header> ParseMimeVersion(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval;
+  Tokenizer tok(values_begin, values_end);
+  do {
+    std::string::const_iterator major_start = tok.Skip(HTTP_LWS);
+    if (tok.EndOfInput()) {
+      DVLOG(1) << "missing major";
+      break;
+    }
+    std::string major_string(major_start, tok.SkipTo('.'));
+    int major = 0;
+    if (major_string.empty()
+        || !base::StringToInt(major_string, &major)) {
+      DVLOG(1) << "missing or invalid major";
+      break;
+    }
+    tok.Skip();
+    std::string::const_iterator minor_start = tok.Skip(HTTP_LWS);
+    std::string minor_string(minor_start, tok.end());
+    int minor = 0;
+    if (minor_string.empty()
+        || !base::StringToInt(minor_string, &minor)) {
+      DVLOG(1) << "invalid minor";
+      break;
+    }
+    retval.reset(new HeaderType(static_cast<unsigned>(major),
+                                static_cast<unsigned>(minor)));
+  } while(false);
+  return retval.Pass();
+}
+
+template<class HeaderType>
+scoped_ptr<Header> ParseRetryAfter(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  scoped_ptr<HeaderType> retval;
+  Tokenizer tok(values_begin, values_end);
+  do {
+    std::string::const_iterator delta_start = tok.Skip(HTTP_LWS);
+    if (tok.EndOfInput()) {
+      DVLOG(1) << "missing delta-seconds";
+      break;
+    }
+    std::string delta_string(delta_start, tok.SkipNotIn(HTTP_LWS "(;"));
+    int delta_seconds = 0;
+    if (delta_string.empty()
+        || !base::StringToInt(delta_string, &delta_seconds)) {
+      DVLOG(1) << "missing or invalid delta-seconds";
+      break;
+    }
+    retval.reset(new HeaderType(static_cast<unsigned>(delta_seconds)));
+    // ignoring comments
+    tok.SkipTo(';');
+    if (!tok.EndOfInput()) {
+      ParseParameters(tok, retval, &SingleParamSetter<HeaderType>);
+    }
+  } while(false);
+  return retval.Pass();
+}
+
 typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,
                                             std::string::const_iterator);
 
@@ -780,16 +921,16 @@ const HeaderMap headers[] = {
     Header::HDR_CONTENT_TYPE,
     &ParseSingleTypeSubtypeParams<ContentType>,
   },
-//  {
-//    "cseq",
-//    Header::HDR_CSEQ,
-//    &ParserTraits<Cseq>::Interpret,
-//  },
-//  {
-//    "date",
-//    Header::HDR_DATE,
-//    &ParserTraits<Date>::Interpret,
-//  },
+  {
+    "cseq",
+    Header::HDR_CSEQ,
+    &ParseCseq<Cseq>,
+  },
+  {
+    "date",
+    Header::HDR_DATE,
+    &ParseDate<Date>,
+  },
   {
     "error-info",
     Header::HDR_ERROR_INFO,
@@ -815,11 +956,11 @@ const HeaderMap headers[] = {
     Header::HDR_MAX_FORWARDS,
     &ParseSingleInteger<MaxForwards>,
   },
-//  {
-//    "mime-version",
-//    Header::HDR_MIME_VERSION,
-//    &ParserTraits<MimeVersion>::Interpret,
-//  },
+  {
+    "mime-version",
+    Header::HDR_MIME_VERSION,
+    &ParseMimeVersion<MimeVersion>,
+  },
   {
     "min-expires",
     Header::HDR_MIN_EXPIRES,
@@ -850,11 +991,11 @@ const HeaderMap headers[] = {
     Header::HDR_PROXY_REQUIRE,
     &ParseMultipleTokens<ProxyRequire>,
   },
-//  {
-//    "record-route",
-//    Header::HDR_RECORD_ROUTE,
-//    &ParserTraits<RecordRoute>::Interpret,
-//  },
+  {
+    "record-route",
+    Header::HDR_RECORD_ROUTE,
+    &ParseMultipleContactParams<RecordRoute>,
+  },
   {
     "reply-to",
     Header::HDR_REPLY_TO,
@@ -865,16 +1006,16 @@ const HeaderMap headers[] = {
     Header::HDR_REQUIRE,
     &ParseMultipleTokens<Require>,
   },
-//  {
-//    "retry-after",
-//    Header::HDR_RETRY_AFTER,
-//    &ParserTraits<RetryAfter>::Interpret,
-//  },
-//  {
-//    "route",
-//    Header::HDR_ROUTE,
-//    &ParserTraits<Route>::Interpret,
-//  },
+  {
+    "retry-after",
+    Header::HDR_RETRY_AFTER,
+    &ParseRetryAfter<RetryAfter>,
+  },
+  {
+    "route",
+    Header::HDR_ROUTE,
+    &ParseMultipleContactParams<Route>,
+  },
   {
     "server",
     Header::HDR_SERVER,
@@ -890,11 +1031,11 @@ const HeaderMap headers[] = {
     Header::HDR_SUPPORTED,
     &ParseMultipleTokens<Supported>,
   },
-//  {
-//    "timestamp",
-//    Header::HDR_TIMESTAMP,
-//    &ParserTraits<Timestamp>::Interpret,
-//  },
+  {
+    "timestamp",
+    Header::HDR_TIMESTAMP,
+    &ParseTimestamp<Timestamp>,
+  },
   {
     "to",
     Header::HDR_TO,
@@ -905,11 +1046,11 @@ const HeaderMap headers[] = {
     Header::HDR_UNSUPPORTED,
     &ParseMultipleTokens<Unsupported>,
   },
-//  {
-//    "user-agent",
-//    Header::HDR_USER_AGENT,
-//    &ParserTraits<UserAgent>::Interpret,
-//  },
+  {
+    "user-agent",
+    Header::HDR_USER_AGENT,
+    &ParseTrimmedUtf8<UserAgent>,
+  },
 //  {
 //    "via",
 //    Header::HDR_VIA,
