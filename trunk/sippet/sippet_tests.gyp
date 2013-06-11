@@ -45,6 +45,7 @@
       'sources': [
         'message/message_unittest.cc',
         'message/headers_unittest.cc',
+        'message/parser_unittest.cc',
       ],
     },  # target sippet_unittest
   ],

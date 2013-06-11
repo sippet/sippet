@@ -46,24 +46,38 @@ public:
   ContactBase() {}
   ContactBase(const ContactBase &other)
     : has_parameters(other), address_(other.address_),
-      displayName_(other.displayName_) {}
+      display_name_(other.display_name_) {}
   explicit ContactBase(const GURL &address,
                        const std::string &displayName="")
-    : address_(address), displayName_(displayName) {}
+    : address_(address), display_name_(displayName) {}
 
   ~ContactBase() {}
 
   ContactBase &operator=(const ContactBase &other) {
     address_ = other.address_;
-    displayName_ = other.displayName_;
+    display_name_ = other.display_name_;
     has_parameters::operator=(other);
     return *this;
   }
 
+  std::string display_name() const {
+    return display_name_;
+  }
+  void set_display_name(const std::string &display_name) {
+    display_name_ = display_name;
+  }
+
+  GURL address() const {
+    return address_;
+  }
+  void set_address(const GURL &address) {
+    address_ = address;
+  }
+
   void print(raw_ostream &os) const {
-    if (!displayName_.empty()) {
+    if (!display_name_.empty()) {
       os << "\"";
-      os.write_escaped(displayName_);
+      os.write_escaped(display_name_);
       os << "\" ";
     }
     os << "<" << address_.spec() << ">";
@@ -71,7 +85,7 @@ public:
   }
 private:
   GURL address_;
-  std::string displayName_;
+  std::string display_name_;
 };
 
 inline
