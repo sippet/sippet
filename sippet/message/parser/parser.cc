@@ -1204,8 +1204,7 @@ const HeaderMap headers[] = {
 const int headers_size = sizeof(headers) / sizeof(headers[0]);
 
 bool HeaderMapLess(const HeaderMap &a, const HeaderMap &b) {
-  const char *end = a.header_name + strlen(a.header_name);
-  return LowerCaseEqualsASCII(a.header_name, end, b.header_name);
+  return base::strcasecmp(a.header_name, b.header_name) < 0;
 }
 
 Header::Type HeaderNameToType(
@@ -1257,6 +1256,14 @@ scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
       message = new Request(method, request_uri, version);
     }
   } while (false);
+
+  // Jump over next CRLF
+  if (i != end) {
+    if (*i == '\r')
+      ++i;
+    if (i != end && *i == '\n')
+      ++i;
+  }
 
   if (message) {
     net::HttpUtil::HeadersIterator it(i, end, "\r\n");

@@ -30,6 +30,7 @@
 #ifndef SIPPET_MESSAGE_MESSAGE_H_
 #define SIPPET_MESSAGE_MESSAGE_H_
 
+#include <algorithm>
 #include "sippet/base/ilist.h"
 #include "sippet/base/casting.h"
 #include "base/memory/ref_counted.h"
@@ -185,8 +186,56 @@ public:
     headers_.erase_if(pred);
   }
 
+  // Find first header of given type.
+  template<class HeaderType>
+  iterator find_first() {
+    return std::find_if(headers_.begin(), headers_.end(),
+      equals<HeaderType>());
+  }
+  template<class HeaderType>
+  const_iterator find_first() const {
+    return std::find_if(headers_.begin(), headers_.end(),
+      equals<HeaderType>());
+  }
+
+  // Find next header of given type.
+  template<class HeaderType>
+  iterator find_next(iterator where) {
+    if (where == end())
+      return where;
+    return std::find_if(++where, headers_.end(),
+      equals<HeaderType>());
+  }
+  template<class HeaderType>
+  const_iterator find_next(iterator where) const {
+    if (where == end())
+      return where;
+    return std::find_if(++where, headers_.end(),
+      equals<HeaderType>());
+  }
+
+  // Find next header of given type.
+  template<class HeaderType>
+  HeaderType *get() {
+    iterator it = find_first<HeaderType>();
+    return it != end() ? dyn_cast<HeaderType>(it) : 0;
+  }
+  template<class HeaderType>
+  const HeaderType *find_next(iterator where) const {
+    const_iterator it = find_first<HeaderType>();
+    return it != end() ? dyn_cast<HeaderType>(it) : 0;
+  }
+
   //! Print this message to the output.
   virtual void print(raw_ostream &os) const;
+
+private:
+  template<class HeaderType>
+  struct equals : public std::unary_function<const Header &, bool> {
+    bool operator()(const Header &header) {
+      return isa<HeaderType>(header);
+    }
+  };
 };
 
 // isa - Provide some specializations of isa so that we don't have to include
