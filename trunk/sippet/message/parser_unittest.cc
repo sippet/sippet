@@ -109,8 +109,7 @@ TEST(SimpleMessages, Message1) {
   EXPECT_NE(request->end(), via_it);
   Via *via = dyn_cast<Via>(via_it);
   EXPECT_FALSE(via->empty());
-  // TODO:
-  //EXPECT_EQ("UDP", via->front().protocol());
+  EXPECT_EQ("UDP", via->front().protocol());
   EXPECT_TRUE(net::HostPortPair::FromString("bobspc.biloxi.com:5060")
     .Equals(via->front().sent_by()));
   EXPECT_EQ("z9hG4bKnashds7", via->front().branch());
@@ -129,18 +128,16 @@ TEST(SimpleMessages, Message1) {
   EXPECT_EQ(GURL("sip:bob@biloxi.com"), from->address());
   EXPECT_EQ("456248", from->tag());
 
-  // TODO:
-  //CallId *callid = request->get<CallId>();
-  //EXPECT_EQ("843817637684230@998sdasdh09", callid->value());
+  CallId *callid = request->get<CallId>();
+  EXPECT_EQ("843817637684230@998sdasdh09", callid->value());
 
   Cseq *cseq = request->get<Cseq>();
   EXPECT_EQ(1826, cseq->sequence());
   EXPECT_EQ(Method::REGISTER, cseq->method());
 
-  // TODO:
-  //Contact *contact = request->get<Contact>();
-  //ASSERT_FALSE(!contact->empty());
-  //EXPECT_EQ(GURL("sip:bob@192.0.2.4"), contact->front().address());
+  Contact *contact = request->get<Contact>();
+  ASSERT_FALSE(contact->empty());
+  EXPECT_EQ(GURL("sip:bob@192.0.2.4"), contact->front().address());
 
   Expires *expires = request->get<Expires>();
   EXPECT_FALSE(0 == expires);
