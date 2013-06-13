@@ -27,29 +27,15 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#include "sippet/message/method.h"
+#include "sippet/message/protocol.h"
 
 namespace sippet {
 
-const char *AtomTraits<Method>::names[] = {
-  "INVITE",
-  "ACK",
-  "CANCEL",
-  "PRACK",
-  "BYE",
-  "REFER",
-  "INFO",
-  "UPDATE",
-  "OPTIONS",
-  "REGISTER",
-  "MESSAGE",
-  "SUBSCRIBE",
-  "NOTIFY",
-  "PUBLISH",
-  "PULL",
-  "PUSH",
-  "STORE",
+const char *AtomTraits<Protocol>::names[] = {
+  "UDP",
+  "TCP",
+  "TLS",
   ""
 };
 
-} // End of sippet namespace
+} // End of empty namespace

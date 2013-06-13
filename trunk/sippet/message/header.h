@@ -145,6 +145,8 @@ protected:
   virtual Header *DoClone() const = 0;
 
 public:
+  static scoped_ptr<Header> Parse(const std::string &raw_header);
+
   Type type() const { return type_; }
 
   scoped_ptr<Header> Clone() const { return scoped_ptr<Header>(DoClone()); }

@@ -30,15 +30,12 @@
 #ifndef SIPPET_MESSAGE_METHOD_H_
 #define SIPPET_MESSAGE_METHOD_H_
 
-#include <string>
-#include <memory>
-#include "base/memory/scoped_ptr.h"
-#include "sippet/base/raw_ostream.h"
+#include "sippet/message/atom.h"
+#include "base/string_util.h"
 
 namespace sippet {
 
-class Method {
-public:
+struct Method {
   enum Type {
     INVITE = 0,
     ACK,
@@ -59,87 +56,24 @@ public:
     STORE,
     Unknown
   };
-
-  Method() : method_(&NullMethod::instance) {}
-  Method(const Method &other)
-    : method_(other.method_->clone()) {}
-  Method(const Type &m) : method_(new KnownMethod(m)) {}
-  explicit Method(const char *m) : method_(coerce(m)) {}
-  explicit Method(const std::string &m) : method_(coerce(m.c_str())) {}
-  ~Method() {}
-
-  Method &operator=(const Method &other) {
-    method_.reset(other.method_->clone());
-    return *this;
-  }
-
-  bool operator==(Method::Type t) const {
-    return type() == t;
-  }
-
-  Type type() const { return method_->type(); }
-  void set_type(Type t) { method_.reset(new KnownMethod(t)); }
-
-  const char *str() const { return method_->str(); }
-  void set_str(const char *str) { method_.reset(coerce(str)); }
-  void set_str(const std::string &str) { method_.reset(coerce(str.c_str())); }
-
-  void print(raw_ostream &os) const {
-    os << str();
-  }
-private:
-  struct MethodImp {
-    virtual Type type() = 0;
-    virtual const char *str() = 0;
-    virtual MethodImp *clone() = 0;
-    virtual void release() = 0;
-  };
-
-  struct NullMethod : public MethodImp {
-    virtual Type type() { return Unknown; }
-    virtual const char *str() { return ""; }
-    virtual NullMethod *clone() { return this; }
-    virtual void release() {}
-    static NullMethod instance;
-  };
-  
-  struct KnownMethod : public MethodImp {
-    Type method_;
-    KnownMethod(Type method) : method_(method) {}
-    virtual Type type() { return method_; }
-    virtual const char *str();
-    virtual KnownMethod *clone() { return new KnownMethod(*this); }
-    virtual void release() { delete this; }
-  };
-  
-  struct UnknownMethod : public MethodImp {
-    std::string method_;
-    UnknownMethod(const char *m) : method_(m) {}
-    virtual Type type() { return Unknown; }
-    virtual const char *str() { return method_.c_str(); }
-    virtual UnknownMethod *clone() { return new UnknownMethod(*this); }
-    virtual void release() { delete this; }
-  };
-
-  struct MethodRelease {
-    inline void operator()(MethodImp* ptr) const { ptr->release(); }
-  };
-
-  scoped_ptr<MethodImp, MethodRelease> method_;
-
-  MethodImp *coerce(const char *str);
 };
 
-inline
-raw_ostream &operator << (raw_ostream &os, const Method &m) {
-  m.print(os);
-  return os;
-}
-
-inline
-bool operator==(Method::Type t, const Method &m) {
-  return m == t;
-}
+template<>
+struct AtomTraits<Method> {
+  typedef Method::Type type;
+  static const type unknown_type = Method::Unknown;
+  static const char *string_of(type t) {
+    return names[static_cast<int>(t)];
+  }
+  static type coerce(const char *str) {
+    for (int i = 0; names[i][0] != '\0'; ++i) {
+      if (base::strcasecmp(str, names[i]) == 0)
+        return static_cast<type>(i);
+    }
+    return Method::Unknown;
+  }
+  static const char *names[];
+};
 
 } // End of sippet namespace
 
