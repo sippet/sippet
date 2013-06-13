@@ -307,7 +307,7 @@ inline typename cast_retty<X, Y>::ret_type dyn_cast(Y &Val) {
 }
 
 template <class X, class Y>
-inline scoped_ptr<X> dyn_cast(scoped_ptr<Y> &Val) {
+inline X* dyn_cast(scoped_ptr<Y> &Val) {
   return isa<X>(Val.get()) ? cast<X>(Val.get()) : 0;
 }
 

@@ -82,15 +82,15 @@
 using namespace sippet;
 
 TEST(HeaderTest, Method) {
-  Method null;
+  Atom<Method> null;
   EXPECT_EQ(Method::Unknown, null.type());
   EXPECT_STREQ("", null.str());
 
-  Method invite(Method::INVITE);
+  Atom<Method> invite(Method::INVITE);
   EXPECT_EQ(Method::INVITE, invite.type());
   EXPECT_STREQ("INVITE", invite.str());
 
-  Method foobar("FOOBAR");
+  Atom<Method> foobar("FOOBAR");
   EXPECT_EQ(Method::Unknown, foobar.type());
   EXPECT_STREQ("FOOBAR", foobar.str());
 
@@ -100,7 +100,7 @@ TEST(HeaderTest, Method) {
   foobar = null;
   EXPECT_EQ(Method::Unknown, foobar.type());
 
-  Method coerce("INVITE"); // coersion test
+  Atom<Method> coerce("INVITE"); // coersion test
   EXPECT_EQ(Method::INVITE, coerce.type());
   EXPECT_STREQ("INVITE", coerce.str());
 }
@@ -184,7 +184,7 @@ TEST(HeaderTest, AlertInfo) {
 
 TEST(HeaderTest, Allow) {
   scoped_ptr<Allow> allow(new Allow);
-  allow->push_back(Method("INVITE"));
+  allow->push_back(Atom<Method>("INVITE"));
   allow->push_back(Method::ACK);
   allow->push_back(Method::BYE);
 
@@ -197,10 +197,10 @@ TEST(HeaderTest, Allow) {
 
   EXPECT_EQ("Allow: INVITE, ACK, BYE", os.str());
 
-  Method myarray[] = {
+  Atom<Method> myarray[] = {
     Method::REGISTER,
     Method::CANCEL,
-    Method("Invite"),
+    Atom<Method>("Invite"),
     Method::ACK,
     Method::BYE,
   };

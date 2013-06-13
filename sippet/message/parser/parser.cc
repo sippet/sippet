@@ -41,6 +41,7 @@
 #include "base/string_util.h"
 #include "base/string_piece.h"
 #include "net/http/http_util.h"
+#include "net/base/net_util.h"
 
 #include "sippet/message/headers/accept.h"
 #include "sippet/message/headers/accept_encoding.h"
@@ -221,7 +222,7 @@ bool ParseStatusLine(
 bool ParseRequestLine(
     std::string::const_iterator line_begin,
     std::string::const_iterator line_end,
-    Method *method,
+    Atom<Method> *method,
     GURL *request_uri,
     Version *version) {
 
@@ -529,17 +530,33 @@ bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     return false;
   }
   std::string protocol(protocol_start, tok.SkipNotIn(HTTP_LWS));
+  StringToUpperASCII(&protocol);
   std::string::const_iterator sentby_start = tok.Skip(HTTP_LWS);
   if (tok.EndOfInput()) {
     DVLOG(1) << "missing sent-by";
     return false;
   }
   std::string sentby_string(sentby_start, tok.SkipTo(';'));
-  net::HostPortPair sentby(net::HostPortPair::FromString(sentby_string));
-  if (sentby.IsEmpty()) {
+  TrimString(sentby_string, HTTP_LWS, &sentby_string);
+  if (sentby_string.empty()) {
+    DVLOG(1) << "missing sent-by";
+    return false;
+  }
+  std::string host;
+  int port;
+  if (!net::ParseHostAndPort(sentby_string, &host, &port)) {
     DVLOG(1) << "invalid sent-by";
     return false;
   }
+  if (port == -1) {
+    if (protocol == "UDP" || protocol == "TCP")
+      port = 5060;
+    else if (protocol == "TLS")
+      port = 5061;
+    else
+      port = 0;
+  }
+  net::HostPortPair sentby(host, port);
   builder(header, protocol, sentby);
   return true;
 }
@@ -823,7 +840,7 @@ scoped_ptr<Header> ParseCseq(
       break;
     }
     std::string method_name(method_start, tok.SkipNotIn(HTTP_LWS));
-    Method method(method_name);
+    Atom<Method> method(method_name);
     retval.reset(new HeaderType(sequence, method));
   } while (false);
   return retval.Pass();
@@ -1234,6 +1251,24 @@ scoped_ptr<Header> ParseHeader(
 
 } // End of empty namespace
 
+scoped_ptr<Header> Header::Parse(const std::string &raw_header) {
+  scoped_ptr<Header> header;
+  net::HttpUtil::HeadersIterator it(raw_header.begin(),
+    raw_header.end(), "\r\n");
+  if (it.GetNext()) {
+    Header::Type t = HeaderNameToType(it.name_begin(), it.name_end());
+    if (t == sippet::Header::HDR_GENERIC) {
+      std::string header_name(it.name_begin(), it.name_end());
+      std::string header_value(it.values_begin(), it.values_end());
+      header.reset(new sippet::Generic(header_name, header_value));
+    }
+    else {
+      header = ParseHeader(t, it.values_begin(), it.values_end());
+    }
+  }
+  return header.Pass();
+}
+
 scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
   scoped_refptr<Message> message;
 
@@ -1252,7 +1287,7 @@ scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
       message = new Response(code, reason_phrase, version);
     }
     else {
-      Method method;
+      Atom<Method> method;
       GURL request_uri;
       if (!ParseRequestLine(start, i, &method, &request_uri, &version))
         break;

@@ -27,29 +27,40 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#include "sippet/message/method.h"
+#ifndef SIPPET_MESSAGE_PROTOCOL_H_
+#define SIPPET_MESSAGE_PROTOCOL_H_
+
+#include "sippet/message/atom.h"
+#include "base/string_util.h"
 
 namespace sippet {
 
-const char *AtomTraits<Method>::names[] = {
-  "INVITE",
-  "ACK",
-  "CANCEL",
-  "PRACK",
-  "BYE",
-  "REFER",
-  "INFO",
-  "UPDATE",
-  "OPTIONS",
-  "REGISTER",
-  "MESSAGE",
-  "SUBSCRIBE",
-  "NOTIFY",
-  "PUBLISH",
-  "PULL",
-  "PUSH",
-  "STORE",
-  ""
+struct Protocol {
+  enum Type {
+    UDP = 0,
+    TCP,
+    TLS,
+    Unknown
+  };
+};
+
+template<>
+struct AtomTraits<Protocol> {
+  typedef Protocol::Type type;
+  static const type unknown_type = Protocol::Unknown;
+  static const char *string_of(type t) {
+    return names[static_cast<int>(t)];
+  }
+  static type coerce(const char *str) {
+    for (int i = 0; names[i][0] != '\0'; ++i) {
+      if (base::strcasecmp(str, names[i]) == 0)
+        return static_cast<type>(i);
+    }
+    return Protocol::Unknown;
+  }
+  static const char *names[];
 };
 
 } // End of sippet namespace
+
+#endif // SIPPET_MESSAGE_PROTOCOL_H_
