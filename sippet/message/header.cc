@@ -27,7 +27,8 @@
  * either expressed or implied, of the FreeBSD Project.
  */
 
-#include "sippet/message/method.h"
+#include "sippet/message/header.h"
+#include "sippet/message/headers/generic.h"
 
 #include <cstring>
 #include <algorithm>
@@ -37,33 +38,64 @@
 namespace sippet {
 
 namespace {
-  const char *names[] = {
-#define X(method) \
-  #method,
-  #include "sippet/message/known_methods.h"
+  static const char *names[] = {
+#define X(class_name, compact_form, header_name, enum_name, format) \
+    #header_name,
+#include "sippet/message/known_headers.h"
 #undef X
-    "", // for Unknown
   };
 
-  bool string_less(const char *a, const char *b) {
+  static const char compact_forms[] = {
+#define X(class_name, compact_form, header_name, enum_name, format) \
+    compact_form,
+#include "sippet/message/known_headers.h"
+#undef X
+  };
+
+  bool HeaderNameLess(const char *a, const char *b) {
     return base::strcasecmp(a, b) < 0;
   }
 }
 
-const char *AtomTraits<Method>::string_of(type t) {
+const char *Header::name() const {
+  if (isa<Generic>(this))
+    return dyn_cast<Generic>(this)->header_name_.c_str();
+  return AtomTraits<Header::Type>::string_of(type());
+}
+
+const char Header::compact_form() const {
+  return compact_forms[static_cast<int>(type_)];
+}
+
+const char *AtomTraits<Header::Type>::string_of(type t) {
   return names[static_cast<int>(t)];
 }
 
-AtomTraits<Method>::type
-AtomTraits<Method>::coerce(const char *str) {
-  Method::Type type = Method::Unknown;
-  const char **first = names;
-  const char **last = names + ARRAYSIZE(names) - 1; // don't include the last
-  const char **found = std::lower_bound(first, last, str, string_less);
-  if (found != last
-      && base::strcasecmp(*found, str) == 0) {
-    type = static_cast<Method::Type>(found - first);
+AtomTraits<Header::Type>::type
+AtomTraits<Header::Type>::coerce(const char *str) {
+  Header::Type type = Header::HDR_GENERIC;
+  size_t len = strlen(str);
+
+  if (strlen(str) == 1) {
+    char h = tolower(str[0]);
+    for (int i = 0; i < ARRAYSIZE(compact_forms); ++i) {
+      if (h == compact_forms[i]) {
+        type = static_cast<Header::Type>(i);
+        break;
+      }
+    }
   }
+  else {
+    // Perform a simple binary search
+    const char **first = names;
+    const char **last = names + ARRAYSIZE(names);
+    const char **found = std::lower_bound(first, last, str, HeaderNameLess);
+    if (found != last
+        && base::strcasecmp(*found, str) == 0) {
+      type = static_cast<Header::Type>(found - first);
+    }
+  }
+
   return type;
 }
 

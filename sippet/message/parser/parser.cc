@@ -125,38 +125,40 @@ std::string::const_iterator FindLineEnd(
 Version ParseVersion(
     std::string::const_iterator line_begin,
     std::string::const_iterator line_end) {
-  std::string::const_iterator p = line_begin;
+  Tokenizer tok(line_begin, line_end);
 
-  // RFC3261: SIP-Version = "SIP" "/" 1*DIGIT "." 1*DIGIT
-
-  if ((line_end - p < 3) || !LowerCaseEqualsASCII(p, p + 3, "sip")) {
+  if ((line_end - line_begin < 3) ||
+      !LowerCaseEqualsASCII(line_begin, line_begin + 3, "sip")) {
     DVLOG(1) << "missing status line";
     return Version();
   }
 
-  p += 3;
+  tok.Skip(3);
+  tok.Skip(HTTP_LWS);
 
-  if (p >= line_end || *p != '/') {
+  if (tok.EndOfInput()
+      || *tok.current() != '/') {
     DVLOG(1) << "missing version";
     return Version();
   }
 
-  std::string::const_iterator dot = std::find(p, line_end, '.');
-  if (dot == line_end) {
+  tok.Skip();
+  std::string::const_iterator major_start = tok.Skip(HTTP_LWS);
+  tok.SkipTo('.');
+  tok.Skip();
+  std::string::const_iterator minor_start = tok.Skip(HTTP_LWS);
+  if (tok.EndOfInput()) {
     DVLOG(1) << "malformed version";
     return Version();
   }
 
-  ++p;  // from / to first digit.
-  ++dot;  // from . to second digit.
-
-  if (!(*p >= '0' && *p <= '9' && *dot >= '0' && *dot <= '9')) {
+  if (!isdigit(*major_start) || !isdigit(*minor_start)) {
     DVLOG(1) << "malformed version number";
     return Version();
   }
 
-  uint16 major = *p - '0';
-  uint16 minor = *dot - '0';
+  uint16 major = *major_start - '0';
+  uint16 minor = *minor_start - '0';
 
   return Version(major, minor);
 }
@@ -509,6 +511,7 @@ bool ParseWarning(Tokenizer &tok, scoped_ptr<HeaderType> &header,
 template<class HeaderType>
 bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
               void (*builder)(scoped_ptr<HeaderType> &,
+                              const Version &,
                               const std::string &,
                               const net::HostPortPair &)) {
   std::string::const_iterator version_start = tok.Skip(HTTP_LWS);
@@ -519,8 +522,12 @@ bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
   }
   tok.SkipTo('/');
   tok.Skip();
-  if (tok.EndOfInput()
-      || ParseVersion(version_start, tok.SkipTo('/')) != Version(2,0)) {
+  if (tok.EndOfInput()) {
+    DVLOG(1) << "missing SIP-version";
+    return false;
+  }
+  Version version = ParseVersion(version_start, tok.SkipTo('/'));
+  if (version < Version(2,0)) {
     DVLOG(1) << "invalid SIP-version";
     return false;
   }
@@ -556,8 +563,10 @@ bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     else
       port = 0;
   }
+  if (host[0] == '[') // remove brackets from IPv6 addresses
+    host = host.substr(1, host.size()-2);
   net::HostPortPair sentby(host, port);
-  builder(header, protocol, sentby);
+  builder(header, version, protocol, sentby);
   return true;
 }
 
@@ -618,9 +627,10 @@ void MultipleBuilder(scoped_ptr<HeaderType> &header,
 
 template<class HeaderType>
 void MultipleBuilder(scoped_ptr<HeaderType> &header,
-                     const std::string &p1,
-                     const net::HostPortPair &p2) {
-  header->push_back(HeaderType::value_type(p1, p2));
+                     const Version &p1,
+                     const std::string &p2,
+                     const net::HostPortPair &p3) {
+  header->push_back(HeaderType::value_type(p1, p2, p3));
 }
 
 template<class HeaderType>
@@ -991,262 +1001,62 @@ scoped_ptr<Header> ParseMultipleVias(
 typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,
                                             std::string::const_iterator);
 
-struct HeaderMap {
-  const char *header_name;
-  Header::Type header_type;
-  ParseFunction parse_function;
-};
-
 // Attention here: those headers should be sorted
-const HeaderMap headers[] = {
-  {
-    "accept",
-    Header::HDR_ACCEPT,
-    &ParseMultipleTypeSubtypeParams<Accept>,
-  },
-  {
-    "accept-encoding",
-    Header::HDR_ACCEPT_ENCODING,
-    &ParseMultipleTokenParams<AcceptEncoding>,
-  },
-  {
-    "accept-language",
-    Header::HDR_ACCEPT_LANGUAGE,
-    &ParseMultipleTokenParams<AcceptLanguage>,
-  },
-  {
-    "alert-info",
-    Header::HDR_ALERT_INFO,
-    &ParseMultipleUriParams<AlertInfo>,
-  },
-  {
-    "allow",
-    Header::HDR_ALLOW,
-    &ParseMultipleTokens<Allow>,
-  },
-  {
-    "authentication-info",
-    Header::HDR_AUTHENTICATION_INFO,
-    &ParseOnlyAuthParams<AuthenticationInfo>,
-  },
-  {
-    "authorization",
-    Header::HDR_AUTHORIZATION,
-    &ParseSchemeAndAuthParams<Authorization>,
-  },
-  {
-    "call-id",
-    Header::HDR_CALL_ID,
-    &ParseSingleToken<CallId>,
-  },
-  {
-    "call-info",
-    Header::HDR_CALL_INFO,
-    &ParseMultipleUriParams<CallInfo>,
-  },
-  {
-    "contact",
-    Header::HDR_CONTACT,
-    &ParseStarOrMultipleContactParams<Contact>,
-  },
-  {
-    "content-disposition",
-    Header::HDR_CONTENT_DISPOSITION,
-    &ParseSingleTokenParams<ContentDisposition>,
-  },
-  {
-    "content-encoding",
-    Header::HDR_CONTENT_ENCODING,
-    &ParseMultipleTokens<ContentEncoding>,
-  },
-  {
-    "content-language",
-    Header::HDR_CONTENT_LANGUAGE,
-    &ParseMultipleTokens<ContentLanguage>,
-  },
-  {
-    "content-length",
-    Header::HDR_CONTENT_LENGTH,
-    &ParseSingleInteger<ContentLength>,
-  },
-  {
-    "content-type",
-    Header::HDR_CONTENT_TYPE,
-    &ParseSingleTypeSubtypeParams<ContentType>,
-  },
-  {
-    "cseq",
-    Header::HDR_CSEQ,
-    &ParseCseq<Cseq>,
-  },
-  {
-    "date",
-    Header::HDR_DATE,
-    &ParseDate<Date>,
-  },
-  {
-    "error-info",
-    Header::HDR_ERROR_INFO,
-    &ParseMultipleUriParams<ErrorInfo>,
-  },
-  {
-    "expires",
-    Header::HDR_EXPIRES,
-    &ParseSingleInteger<Expires>,
-  },
-  {
-    "from",
-    Header::HDR_FROM,
-    &ParseSingleContactParams<From>,
-  },
-  {
-    "in-reply-to",
-    Header::HDR_IN_REPLY_TO,
-    &ParseMultipleTokens<InReplyTo>,
-  },
-  {
-    "max-forwards",
-    Header::HDR_MAX_FORWARDS,
-    &ParseSingleInteger<MaxForwards>,
-  },
-  {
-    "mime-version",
-    Header::HDR_MIME_VERSION,
-    &ParseMimeVersion<MimeVersion>,
-  },
-  {
-    "min-expires",
-    Header::HDR_MIN_EXPIRES,
-    &ParseSingleInteger<MinExpires>,
-  },
-  {
-    "organization",
-    Header::HDR_ORGANIZATION,
-    &ParseTrimmedUtf8<Organization>,
-  },
-  {
-    "priority",
-    Header::HDR_PRIORITY,
-    &ParseSingleToken<Priority>,
-  },
-  {
-    "proxy-authenticate",
-    Header::HDR_PROXY_AUTHENTICATE,
-    &ParseSchemeAndAuthParams<ProxyAuthenticate>,
-  },
-  {
-    "proxy-authorization",
-    Header::HDR_PROXY_AUTHORIZATION,
-    &ParseSchemeAndAuthParams<ProxyAuthorization>,
-  },
-  {
-    "proxy-require",
-    Header::HDR_PROXY_REQUIRE,
-    &ParseMultipleTokens<ProxyRequire>,
-  },
-  {
-    "record-route",
-    Header::HDR_RECORD_ROUTE,
-    &ParseMultipleContactParams<RecordRoute>,
-  },
-  {
-    "reply-to",
-    Header::HDR_REPLY_TO,
-    &ParseSingleContactParams<ReplyTo>,
-  },
-  {
-    "require",
-    Header::HDR_REQUIRE,
-    &ParseMultipleTokens<Require>,
-  },
-  {
-    "retry-after",
-    Header::HDR_RETRY_AFTER,
-    &ParseRetryAfter<RetryAfter>,
-  },
-  {
-    "route",
-    Header::HDR_ROUTE,
-    &ParseMultipleContactParams<Route>,
-  },
-  {
-    "server",
-    Header::HDR_SERVER,
-    &ParseTrimmedUtf8<Server>,
-  },
-  {
-    "subject",
-    Header::HDR_SUBJECT,
-    &ParseTrimmedUtf8<Subject>,
-  },
-  {
-    "supported",
-    Header::HDR_SUPPORTED,
-    &ParseMultipleTokens<Supported>,
-  },
-  {
-    "timestamp",
-    Header::HDR_TIMESTAMP,
-    &ParseTimestamp<Timestamp>,
-  },
-  {
-    "to",
-    Header::HDR_TO,
-    &ParseSingleContactParams<To>,
-  },
-  {
-    "unsupported",
-    Header::HDR_UNSUPPORTED,
-    &ParseMultipleTokens<Unsupported>,
-  },
-  {
-    "user-agent",
-    Header::HDR_USER_AGENT,
-    &ParseTrimmedUtf8<UserAgent>,
-  },
-  {
-    "via",
-    Header::HDR_VIA,
-    &ParseMultipleVias<Via>,
-  },
-  {
-    "warning",
-    Header::HDR_WARNING,
-    &ParseMultipleWarnings<Warning>,
-  },
-  {
-    "www-authenticate",
-    Header::HDR_WWW_AUTHENTICATE,
-    &ParseSchemeAndAuthParams<WwwAuthenticate>,
-  },
+const ParseFunction parsers[] = {
+#define X(class_name, compact_form, header_name, enum_name, format) \
+  &Parse##format<class_name>,
+#include "sippet/message/known_headers.h"
+#undef X
 };
 
-const int headers_size = sizeof(headers) / sizeof(headers[0]);
-
-bool HeaderMapLess(const HeaderMap &a, const HeaderMap &b) {
-  return base::strcasecmp(a.header_name, b.header_name) < 0;
-}
-
-Header::Type HeaderNameToType(
-    std::string::const_iterator name_begin,
-    std::string::const_iterator name_end) {
-  // Perform a simple binary search
-  std::string header(name_begin, name_end);
-  const HeaderMap elem = { header.c_str() };
-  const HeaderMap *first = headers;
-  const HeaderMap *last = headers + headers_size;
-
-  first = std::lower_bound(first, last, elem, HeaderMapLess);
-  return first != last ? first->header_type : Header::HDR_GENERIC;
-}
-      
 scoped_ptr<Header> ParseHeader(
-    Header::Type t,
+    std::string::const_iterator name_begin,
+    std::string::const_iterator name_end,
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  int index = static_cast<Header::Type>(t);
-  const HeaderMap &elem = headers[index];
-  return (*elem.parse_function)(values_begin, values_end);
+  scoped_ptr<Header> retval;
+  std::string header_name(name_begin, name_end);
+  Header::Type t = AtomTraits<Header::Type>::coerce(header_name.c_str());
+  if (t == sippet::Header::HDR_GENERIC) {
+    std::string header_name(name_begin, name_end);
+    std::string header_value(values_begin, values_end);
+    retval.reset(new sippet::Generic(header_name, header_value));
+  }
+  else {
+    ParseFunction f = parsers[static_cast<Header::Type>(t)];
+    return (*f)(values_begin, values_end);
+  }
+  return retval.Pass();
+}
+
+bool AssembleRawHeaders(const std::string &input, std::string *output) {
+  Tokenizer tok(input.begin(), input.end());
+  std::string::const_iterator line_start, line_end;
+  
+  output->reserve(input.size());
+  for (;;) {
+    line_start = tok.current();
+    line_end = tok.SkipNotIn("\r\n");
+    if (line_start != line_end)
+      output->append(line_start, line_end);
+    if (tok.EndOfInput())
+      break;
+    if (*tok.current() == '\n')
+      tok.Skip(); // accept single LF
+    else if (*tok.current() == '\r') {
+      tok.Skip();
+      if (*tok.current() == '\n')
+        tok.Skip(); // default CRLF sequence
+      else
+        return false; // invalid CRLF sequence
+    }
+    if (tok.EndOfInput())
+      break;
+    if (!net::HttpUtil::IsLWS(*tok.current()))
+      output->append(1, '\n'); // not line folding
+  }
+  
+  return true;
 }
 
 } // End of empty namespace
@@ -1256,24 +1066,19 @@ scoped_ptr<Header> Header::Parse(const std::string &raw_header) {
   net::HttpUtil::HeadersIterator it(raw_header.begin(),
     raw_header.end(), "\r\n");
   if (it.GetNext()) {
-    Header::Type t = HeaderNameToType(it.name_begin(), it.name_end());
-    if (t == sippet::Header::HDR_GENERIC) {
-      std::string header_name(it.name_begin(), it.name_end());
-      std::string header_value(it.values_begin(), it.values_end());
-      header.reset(new sippet::Generic(header_name, header_value));
-    }
-    else {
-      header = ParseHeader(t, it.values_begin(), it.values_end());
-    }
+    header = ParseHeader(it.name_begin(), it.name_end(),
+      it.values_begin(), it.values_end());
   }
   return header.Pass();
 }
 
 scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
-  scoped_refptr<Message> message;
+  std::string input;
+  AssembleRawHeaders(raw_message, &input);
 
-  std::string::const_iterator i = raw_message.begin();
-  std::string::const_iterator end = raw_message.end();
+  scoped_refptr<Message> message;
+  std::string::const_iterator i = input.begin();
+  std::string::const_iterator end = input.end();
   std::string::const_iterator start = i;
 
   i = FindLineEnd(start, end);
@@ -1306,19 +1111,11 @@ scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
   if (message) {
     net::HttpUtil::HeadersIterator it(i, end, "\r\n");
     while (it.GetNext()) {
-      scoped_ptr<Header> header;
-      Header::Type t = HeaderNameToType(it.name_begin(), it.name_end());
-      if (t == sippet::Header::HDR_GENERIC) {
-        std::string header_name(it.name_begin(), it.name_end());
-        std::string header_value(it.values_begin(), it.values_end());
-        header.reset(new sippet::Generic(header_name, header_value));
-      }
-      else {
-        header = ParseHeader(t, it.values_begin(), it.values_end());
-      }
-      if (header) {
+      scoped_ptr<Header> header =
+        ParseHeader(it.name_begin(), it.name_end(),
+                    it.values_begin(), it.values_end());
+      if (header)
         message->push_back(header.Pass());
-      }
     }
   }
 
