@@ -48,7 +48,7 @@ private:
   }
 public:
   Cseq() : Header(Header::HDR_CSEQ) {}
-  Cseq(unsigned sequence, const Method &method)
+  Cseq(unsigned sequence, const Atom<Method> &method)
     : Header(Header::HDR_CSEQ), sequence_(sequence), method_(method) {}
 
   scoped_ptr<Cseq> Clone() const {
@@ -58,8 +58,8 @@ public:
   unsigned sequence() const { return sequence_; }
   void set_sequence(unsigned sequence) { sequence_ = sequence; }
 
-  Method method() const { return method_; }
-  void set_method(const Method &method) { method_ = method; }
+  Atom<Method> method() const { return method_; }
+  void set_method(const Atom<Method> &method) { method_ = method; }
 
   virtual void print(raw_ostream &os) const {
     os.write_hname("CSeq");
@@ -67,7 +67,7 @@ public:
   }
 private:
   unsigned sequence_;
-  Method method_;
+  Atom<Method> method_;
 };
 
 } // End of sippet namespace

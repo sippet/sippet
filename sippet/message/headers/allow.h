@@ -40,7 +40,7 @@ namespace sippet {
 
 class Allow :
   public Header,
-  public has_multiple<Method> {
+  public has_multiple<Atom<Method> > {
 private:
   DISALLOW_ASSIGN(Allow);
   Allow(const Allow &other)
