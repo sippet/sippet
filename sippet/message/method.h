@@ -37,23 +37,9 @@ namespace sippet {
 
 struct Method {
   enum Type {
-    INVITE = 0,
-    ACK,
-    CANCEL,
-    PRACK,
-    BYE,
-    REFER,
-    INFO,
-    UPDATE,
-    OPTIONS,
-    REGISTER,
-    MESSAGE,
-    SUBSCRIBE,
-    NOTIFY,
-    PUBLISH,
-    PULL,
-    PUSH,
-    STORE,
+#define X(method) method,
+#include "sippet/message/known_methods.h"
+#undef X
     Unknown
   };
 };
@@ -62,17 +48,8 @@ template<>
 struct AtomTraits<Method> {
   typedef Method::Type type;
   static const type unknown_type = Method::Unknown;
-  static const char *string_of(type t) {
-    return names[static_cast<int>(t)];
-  }
-  static type coerce(const char *str) {
-    for (int i = 0; names[i][0] != '\0'; ++i) {
-      if (base::strcasecmp(str, names[i]) == 0)
-        return static_cast<type>(i);
-    }
-    return Method::Unknown;
-  }
-  static const char *names[];
+  static const char *string_of(type t);
+  static type coerce(const char *str);
 };
 
 } // End of sippet namespace

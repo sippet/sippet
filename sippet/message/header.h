@@ -31,105 +31,27 @@
 #define SIPPET_MESSAGE_HEADER_H_
 
 #include "sippet/base/ilist_node.h"
+#include "sippet/base/casting.h"
 #include "base/memory/scoped_ptr.h"
+#include "sippet/message/atom.h"
 
 namespace sippet {
 
 class raw_ostream;
-class Accept;
-class AcceptEncoding;
-class AcceptLanguage;
-class AlertInfo;
-class Allow;
-class AuthenticationInfo;
-class Authorization;
-class CallId;
-class CallInfo;
-class Contact;
-class ContentDisposition;
-class ContentEncoding;
-class ContentLanguage;
-class ContentLength;
-class ContentType;
-class Cseq;
-class Date;
-class ErrorInfo;
-class Expires;
-class From;
-class InReplyTo;
-class MaxForwards;
-class MinExpires;
-class MimeVersion;
-class Organization;
-class Priority;
-class ProxyAuthenticate;
-class ProxyAuthorization;
-class ProxyRequire;
-class RecordRoute;
-class ReplyTo;
-class Require;
-class RetryAfter;
-class Route;
-class Server;
-class Subject;
-class Supported;
-class Timestamp;
-class To;
-class Unsupported;
-class UserAgent;
-class Via;
-class Warning;
-class WwwAuthenticate;
+#define X(class_name, compact_form, header_name, enum_name, format) \
+class class_name;
+#include "sippet/message/known_headers.h"
+#undef X
 class Generic;
 
 class Header : public ilist_node<Header> {
 public:
   //! An enumeration to indicate the message header type.
   enum Type {
-    HDR_ACCEPT = 0,
-    HDR_ACCEPT_ENCODING,
-    HDR_ACCEPT_LANGUAGE,
-    HDR_ALERT_INFO,
-    HDR_ALLOW,
-    HDR_AUTHENTICATION_INFO,
-    HDR_AUTHORIZATION,
-    HDR_CALL_ID,
-    HDR_CALL_INFO,
-    HDR_CONTACT,
-    HDR_CONTENT_DISPOSITION,
-    HDR_CONTENT_ENCODING,
-    HDR_CONTENT_LANGUAGE,
-    HDR_CONTENT_LENGTH,
-    HDR_CONTENT_TYPE,
-    HDR_CSEQ,
-    HDR_DATE,
-    HDR_ERROR_INFO,
-    HDR_EXPIRES,
-    HDR_FROM,
-    HDR_IN_REPLY_TO,
-    HDR_MAX_FORWARDS,
-    HDR_MIN_EXPIRES,
-    HDR_MIME_VERSION,
-    HDR_ORGANIZATION,
-    HDR_PRIORITY,
-    HDR_PROXY_AUTHENTICATE,
-    HDR_PROXY_AUTHORIZATION,
-    HDR_PROXY_REQUIRE,
-    HDR_RECORD_ROUTE,
-    HDR_REPLY_TO,
-    HDR_REQUIRE,
-    HDR_RETRY_AFTER,
-    HDR_ROUTE,
-    HDR_SERVER,
-    HDR_SUBJECT,
-    HDR_SUPPORTED,
-    HDR_TIMESTAMP,
-    HDR_TO,
-    HDR_UNSUPPORTED,
-    HDR_USER_AGENT,
-    HDR_VIA,
-    HDR_WARNING,
-    HDR_WWW_AUTHENTICATE,
+    #define X(class_name, compact_form, header_name, enum_name, format) \
+    HDR_##enum_name,
+    #include "sippet/message/known_headers.h"
+    #undef X
     HDR_GENERIC
   };
 
@@ -148,6 +70,8 @@ public:
   static scoped_ptr<Header> Parse(const std::string &raw_header);
 
   Type type() const { return type_; }
+  const char *name() const;
+  const char compact_form() const;
 
   scoped_ptr<Header> Clone() const { return scoped_ptr<Header>(DoClone()); }
 
@@ -157,60 +81,28 @@ public:
 // isa - Provide some specializations of isa so that we don't have to include
 // the subtype header files to test to see if the value is a subclass...
 //
-#define is_a(H, T)                                   \
-template <> struct isa_impl<H, Header> {             \
-  static inline bool doit(const Header &h) {         \
-    return h.type() == Header::T;                    \
-  }                                                  \
+#define X(class_name, compact_form, header_name, enum_name, format) \
+template <> struct isa_impl<class_name, Header> {                   \
+  static inline bool doit(const Header &h) {                        \
+    return h.type() == Header::HDR_##enum_name;                     \
+  }                                                                 \
+};
+#include "sippet/message/known_headers.h"
+#undef X
+
+template <> struct isa_impl<Generic, Header> {
+  static inline bool doit(const Header &h) {
+    return h.type() == Header::HDR_GENERIC;
+  }
 };
 
-is_a(Accept,                HDR_ACCEPT)
-is_a(AcceptEncoding,        HDR_ACCEPT_ENCODING)
-is_a(AcceptLanguage,        HDR_ACCEPT_LANGUAGE)
-is_a(AlertInfo,             HDR_ALERT_INFO)
-is_a(Allow,                 HDR_ALLOW)
-is_a(AuthenticationInfo,    HDR_AUTHENTICATION_INFO)
-is_a(Authorization,         HDR_AUTHORIZATION)
-is_a(CallId,                HDR_CALL_ID)
-is_a(CallInfo,              HDR_CALL_INFO)
-is_a(Contact,               HDR_CONTACT)
-is_a(ContentDisposition,    HDR_CONTENT_DISPOSITION)
-is_a(ContentEncoding,       HDR_CONTENT_ENCODING)
-is_a(ContentLanguage,       HDR_CONTENT_LANGUAGE)
-is_a(ContentLength,         HDR_CONTENT_LENGTH)
-is_a(ContentType,           HDR_CONTENT_TYPE)
-is_a(Cseq,                  HDR_CSEQ)
-is_a(Date,                  HDR_DATE)
-is_a(ErrorInfo,             HDR_ERROR_INFO)
-is_a(Expires,               HDR_EXPIRES)
-is_a(From,                  HDR_FROM)
-is_a(InReplyTo,             HDR_IN_REPLY_TO)
-is_a(MaxForwards,           HDR_MAX_FORWARDS)
-is_a(MinExpires,            HDR_MIN_EXPIRES)
-is_a(MimeVersion,           HDR_MIME_VERSION)
-is_a(Organization,          HDR_ORGANIZATION)
-is_a(Priority,              HDR_PRIORITY)
-is_a(ProxyAuthenticate,     HDR_PROXY_AUTHENTICATE)
-is_a(ProxyAuthorization,    HDR_PROXY_AUTHORIZATION)
-is_a(ProxyRequire,          HDR_PROXY_REQUIRE)
-is_a(RecordRoute,           HDR_RECORD_ROUTE)
-is_a(ReplyTo,               HDR_REPLY_TO)
-is_a(Require,               HDR_REQUIRE)
-is_a(RetryAfter,            HDR_RETRY_AFTER)
-is_a(Route,                 HDR_ROUTE)
-is_a(Server,                HDR_SERVER)
-is_a(Subject,               HDR_SUBJECT)
-is_a(Supported,             HDR_SUPPORTED)
-is_a(Timestamp,             HDR_TIMESTAMP)
-is_a(To,                    HDR_TO)
-is_a(Unsupported,           HDR_UNSUPPORTED)
-is_a(UserAgent,             HDR_USER_AGENT)
-is_a(Via,                   HDR_VIA)
-is_a(Warning,               HDR_WARNING)
-is_a(WwwAuthenticate,       HDR_WWW_AUTHENTICATE)
-is_a(Generic,               HDR_GENERIC)
-
-#undef is_a
+template<>
+struct AtomTraits<Header::Type> {
+  typedef Header::Type type;
+  static const type unknown_type = Header::HDR_GENERIC;
+  static const char *string_of(type t);
+  static type coerce(const char *str);
+};
 
 } // End of sippet namespace
 

@@ -109,7 +109,7 @@ TEST(SimpleMessages, Message1) {
   EXPECT_NE(request->end(), via_it);
   Via *via = dyn_cast<Via>(via_it);
   EXPECT_FALSE(via->empty());
-  EXPECT_EQ("UDP", via->front().protocol());
+  EXPECT_EQ(Protocol::UDP, via->front().protocol());
   EXPECT_TRUE(net::HostPortPair::FromString("bobspc.biloxi.com:5060")
     .Equals(via->front().sent_by()));
   EXPECT_EQ("z9hG4bKnashds7", via->front().branch());
@@ -188,6 +188,35 @@ TEST(SimpleMessages, TortuousMessage1) {
   EXPECT_EQ(GURL("sip:vivekg@chair-dnrc.example.com;unknownparam"), request->request_uri());
   EXPECT_EQ(Version(2,0), request->version());
 
+  To *to = request->get<To>();
+  EXPECT_EQ("", to->display_name());
+  EXPECT_EQ(GURL("sip:vivekg@chair-dnrc.example.com"), to->address());
+  EXPECT_EQ("1918181833n", to->tag());
+
+  From *from = request->get<From>();
+  EXPECT_EQ("J Rosenberg \\\"", from->display_name());
+  EXPECT_EQ(GURL("sip:jdrosen@example.com"), from->address());
+  EXPECT_EQ("98asjd8", from->tag());
+
+  MaxForwards *maxfw = request->get<MaxForwards>();
+  EXPECT_EQ(68, maxfw->value());
+
+  ContentLength *clen = request->get<ContentLength>();
+  EXPECT_EQ(150, clen->value());
+
+  Cseq *cseq = request->get<Cseq>();
+  EXPECT_EQ(9, cseq->sequence());
+  EXPECT_EQ(Method::INVITE, cseq->method());
+
+  Via *via = request->get<Via>();
+  EXPECT_EQ(Version(2,0), via->front().version());
+  EXPECT_EQ(Protocol::UDP, via->front().protocol());
+  EXPECT_EQ("192.0.2.2", via->front().sent_by().host());
+  EXPECT_EQ(5060, via->front().sent_by().port());
+  EXPECT_EQ("390skdjuw", via->front().branch());
+
+  Subject *subject = request->get<Subject>();
+  EXPECT_EQ("", subject->value());
 }
 
 TEST(Headers, Contact) {
@@ -219,20 +248,23 @@ TEST(Headers, Contact) {
 TEST(Headers, Via) {
   struct {
     const char *input;
-    const char *protocol;
+    Version version;
+    Protocol::Type protocol;
     const char *host;
     int port;
     const char *hostport;
     const char *branch;
   } cases[] = {
-    { "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7",
-      "UDP", "bobspc.biloxi.com", 5060, "bobspc.biloxi.com:5060", "z9hG4bKnashds7" },
-    { "Via: sip/2.0/udp 127.0.0.1    ; branch=z9hG4bKnashds7",
-      "UDP", "127.0.0.1", 5060, "127.0.0.1:5060", "z9hG4bKnashds7" },
-    { "Via: SiP/2.0/TLS hostname; branch = \"z9hG4bKnashds7\"",
-      "TLS", "hostname", 5061, "hostname:5060", "z9hG4bKnashds7" },
-    { "Via: SIP/2.0/TLS [::1]; branch = \"z9hG4bKnashds7\"",
-      "TLS", "::1", 5061, "[::1]:5060", "z9hG4bKnashds7" },
+    { "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7", Version(2,0),
+      Protocol::UDP, "bobspc.biloxi.com", 5060, "bobspc.biloxi.com:5060", "z9hG4bKnashds7" },
+    { "Via: sip/2.0/udp 127.0.0.1    ; branch=z9hG4bKnashds7", Version(2,0),
+      Protocol::UDP, "127.0.0.1", 5060, "127.0.0.1:5060", "z9hG4bKnashds7" },
+    { "Via: SiP/2.0/TLS hostname; branch = \"z9hG4bKnashds7\"", Version(2,0),
+      Protocol::TLS, "hostname", 5061, "hostname:5060", "z9hG4bKnashds7" },
+    { "Via: SIP/2.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(2,0),
+      Protocol::TLS, "::1", 5061, "[::1]:5060", "z9hG4bKnashds7" },
+    { "Via: SIP/3.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(3,0),
+      Protocol::TLS, "::1", 5061, "[::1]:5060", "z9hG4bKnashds7" },
   };
 
   for (size_t i = 0; i < ARRAYSIZE(cases); ++i) {
@@ -240,6 +272,7 @@ TEST(Headers, Via) {
     ASSERT_TRUE(isa<Via>(header));
     Via *via = dyn_cast<Via>(header);
     ASSERT_FALSE(via->empty());
+    EXPECT_EQ(cases[i].version, via->front().version());
     EXPECT_EQ(cases[i].protocol, via->front().protocol());
     EXPECT_EQ(cases[i].host, via->front().sent_by().host());
     EXPECT_EQ(cases[i].port, via->front().sent_by().port());
