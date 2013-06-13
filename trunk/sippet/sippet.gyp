@@ -52,6 +52,7 @@
         'base/string_extras.h',
         'base/type_traits.h',
         'message/header.h',
+        'message/header.cc',
         'message/headers/accept.h',
         'message/headers/accept_encoding.h',
         'message/headers/accept_language.h',

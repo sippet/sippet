@@ -73,6 +73,7 @@ public:
     os << header_value_;
   }
 private:
+  friend class Header;
   std::string header_name_;
   std::string header_value_;
 };

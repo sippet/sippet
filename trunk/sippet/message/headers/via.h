@@ -34,6 +34,8 @@
 #include "sippet/message/headers/bits/param_setters.h"
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/has_parameters.h"
+#include "sippet/message/protocol.h"
+#include "sippet/message/version.h"
 #include "sippet/base/format.h"
 #include "net/base/host_port_pair.h"
 
@@ -46,36 +48,36 @@ class ViaParam :
   public has_received<ViaParam>,
   public has_branch<ViaParam> {
 public:
-  enum ProtocolType {
-    UDP = 0, TCP, TLS, SCTP
-  };
-
-  ViaParam() {}
+  ViaParam() : version_(2,0) {}
   ViaParam(const ViaParam &other)
-    : protocol_(other.protocol_), sent_by_(other.sent_by_),
-      has_parameters(other) {}
-  ViaParam(ProtocolType p,
+    : version_(other.version_), protocol_(other.protocol_),
+      sent_by_(other.sent_by_), has_parameters(other) {}
+  ViaParam(const Atom<Protocol> &p,
            const net::HostPortPair &sent_by)
-    : sent_by_(sent_by) { set_protocol(p); }
+    : version_(2,0), protocol_(p), sent_by_(sent_by) {}
   ViaParam(const std::string &protocol,
            const net::HostPortPair &sent_by)
-    : protocol_(protocol), sent_by_(sent_by) {}
+    : version_(2,0), protocol_(protocol), sent_by_(sent_by) {}
+  ViaParam(const Version &version,
+           const std::string &protocol,
+           const net::HostPortPair &sent_by)
+    : version_(version), protocol_(protocol), sent_by_(sent_by) {}
 
   ~ViaParam() {}
 
   ViaParam &operator=(const ViaParam &other) {
+    version_ = other.version_;
     protocol_ = other.protocol_;
     sent_by_ = other.sent_by_;
     has_parameters::operator=(other);
     return *this;
   }
 
-  std::string protocol() const { return protocol_; }
-  void set_protocol(const std::string &protocol) { protocol_ = protocol; }
-  void set_protocol(ProtocolType p) {
-    const char *rep[] = { "UDP", "TCP", "TLS", "SCTP" };
-    set_protocol(rep[static_cast<int>(p)]);
-  }
+  Version version() const { return version_; }
+  void set_version(const Version &version) { version_ = version; }
+
+  Atom<Protocol> protocol() const { return protocol_; }
+  void set_protocol(const Atom<Protocol> &protocol) { protocol_ = protocol; }
 
   net::HostPortPair sent_by() const { return sent_by_; }
   void set_sent_by(const net::HostPortPair &sent_by) {
@@ -83,13 +85,22 @@ public:
   }
 
   void print(raw_ostream &os) const {
-    os << "SIP/2.0/" << protocol_ << " " << sent_by_.host();
+    os << "SIP/"
+       << version_.major_value() << "."
+       << version_.minor_value() << "/"
+       << protocol_
+       << " ";
+    if (sent_by_.host().find(':') != std::string::npos)
+      os << "[" << sent_by_.host() << "]";
+    else
+      os << sent_by_.host();
     if (sent_by_.port() != 0)
       os << ":" << sent_by_.port();
     has_parameters::print(os);
   }
 private:
-  std::string protocol_;
+  Version version_;
+  Atom<Protocol> protocol_;
   net::HostPortPair sent_by_;
 };
 

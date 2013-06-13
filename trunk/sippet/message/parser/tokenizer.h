@@ -71,6 +71,12 @@ public:
     return current_;
   }
 
+  std::string::const_iterator Skip(int n) {
+    for (; current_ != end_ && n > 0; --n)
+      ++current_;
+    return current_;
+  }
+
   bool EndOfInput() const {
     return current_ == end_;
   }

@@ -730,7 +730,7 @@ TEST(HeaderTest, UserAgent) {
 
 TEST(HeaderTest, Via) {
   scoped_ptr<Via> via(new Via);
-  via->push_back(ViaParam(ViaParam::UDP, net::HostPortPair("pc33.atlanta.com",0)));
+  via->push_back(ViaParam(Protocol::UDP, net::HostPortPair("pc33.atlanta.com",0)));
   via->back().set_branch("z9hG4bK776asdhds");
 
   Header *h = via.get();

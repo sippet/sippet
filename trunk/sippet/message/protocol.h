@@ -37,9 +37,9 @@ namespace sippet {
 
 struct Protocol {
   enum Type {
-    UDP = 0,
-    TCP,
-    TLS,
+#define X(protocol) protocol,
+#include "sippet/message/known_protocols.h"
+#undef X
     Unknown
   };
 };
@@ -48,17 +48,8 @@ template<>
 struct AtomTraits<Protocol> {
   typedef Protocol::Type type;
   static const type unknown_type = Protocol::Unknown;
-  static const char *string_of(type t) {
-    return names[static_cast<int>(t)];
-  }
-  static type coerce(const char *str) {
-    for (int i = 0; names[i][0] != '\0'; ++i) {
-      if (base::strcasecmp(str, names[i]) == 0)
-        return static_cast<type>(i);
-    }
-    return Protocol::Unknown;
-  }
-  static const char *names[];
+  static const char *string_of(type t);
+  static type coerce(const char *str);
 };
 
 } // End of sippet namespace
