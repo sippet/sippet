@@ -107,6 +107,10 @@
         'message/protocol.h',
         'message/protocol.cc',
         'message/parser/parser.cc',
+        'transport/end_point.h',
+        'transport/end_point.cc',
+        'transport/network_layer.h',
+        'transport/network_layer_delegate.h',
       ],
     },  # target sippet
   ],
