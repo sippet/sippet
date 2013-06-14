@@ -13,7 +13,7 @@
 namespace sippet {
 
 template<typename T>
-struct AtomTraits {};
+struct AtomTraits;
 
 template<typename T>
 class Atom {
@@ -36,6 +36,9 @@ public:
 
   bool operator==(Type t) const {
     return type() == t;
+  }
+  bool operator!=(Type t) const {
+    return !operator==(t);
   }
 
   Type type() const { return atom_->type(); }

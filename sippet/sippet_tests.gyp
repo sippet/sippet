@@ -46,6 +46,7 @@
         'message/message_unittest.cc',
         'message/headers_unittest.cc',
         'message/parser_unittest.cc',
+        'transport/end_point_unittest.cc',
       ],
     },  # target sippet_unittest
   ],
