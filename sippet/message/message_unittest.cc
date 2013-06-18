@@ -3,8 +3,6 @@
 // found in the LICENSE file.
 
 #include "sippet/message/message.h"
-#include "sippet/message/request.h"
-#include "sippet/message/response.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 

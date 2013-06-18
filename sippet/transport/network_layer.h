@@ -10,6 +10,7 @@
 #include "base/synchronization/lock.h"
 #include "base/memory/ref_counted.h"
 #include "net/base/completion_callback.h"
+#include "net/base/client_socket_factory.h"
 #include "net/base/net_log.h"
 #include "sippet/message/protocol.h"
 #include "sippet/message/message.h"
@@ -20,6 +21,7 @@ namespace sippet {
 class Connection;
 class ConnectionFactory;
 
+
 class NetworkLayer :
   public base::SystemMonitor::PowerObserver,
   public base::RefCountedThreadSafe<NetworkLayer> {
@@ -29,13 +31,12 @@ class NetworkLayer :
     virtual void OnIncomingMessage(Message *incoming_message) = 0;
   };
 
-  // After this number of seconds, connections will be closed.
-  static const int kReuseDelay;
-
   // Construct a NetworkLayer with an existing NetworkSession which
   // contains a valid ProxyService.
-  explicit NetworkLayer(Delegate *delegate,
-                        net::NetLog *netlog);
+  NetworkLayer(
+    net::ClientSocketFactory* client_socket_factory,
+    const net::SSLConfig &ssl_config,
+    const scoped_refptr<net::URLRequestContextGetter>& request_context_getter);
   virtual ~NetworkLayer();
 
   // Register a ConnectionFactory, responsible for opening client connections
