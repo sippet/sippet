@@ -14,7 +14,6 @@
 #include "sippet/message/protocol.h"
 #include "sippet/message/message.h"
 #include "sippet/transport/end_point.h"
-#include "sippet/transport/connection_observer.h"
 
 namespace sippet {
 
