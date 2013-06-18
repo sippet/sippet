@@ -36,6 +36,8 @@
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
         '<(DEPTH)/testing/gtest.gyp:gtest_main',
+        '<(DEPTH)/net/net.gyp:net',
+        '<(DEPTH)/net/net.gyp:net_test_support',
         'sippet.gyp:sippet',
       ],
       'include_dirs': [
@@ -47,6 +49,7 @@
         'message/headers_unittest.cc',
         'message/parser_unittest.cc',
         'transport/end_point_unittest.cc',
+        'transport/channel_base_unittest.cc',
       ],
     },  # target sippet_unittest
   ],

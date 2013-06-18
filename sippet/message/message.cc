@@ -11,7 +11,16 @@ void Message::print(raw_ostream &os) const
   const_iterator i = headers_.begin(), ie = headers_.end();
   for (; i != ie; ++i) {
     i->print(os);
+    os << "\r\n";
   }
+  os << "\r\n";
+}
+
+std::string Message::ToString() const {
+  std::string output;
+  raw_string_ostream os(output);
+  print(os);
+  return os.str();
 }
 
 }
