@@ -46,6 +46,15 @@ public:
     version_ = version;
   }
 
+  virtual void print(raw_ostream &os) const {
+    os << "SIP/" << version_.major_value()
+       << "." << version_.minor_value()
+       << " " << response_code_
+       << reason_phrase_
+       << "\r\n";
+    Message::print(os);
+  }
+
 private:
   Version version_;
   int response_code_;

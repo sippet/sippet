@@ -69,6 +69,15 @@ public:
     version_ = version;
   }
 
+  virtual void print(raw_ostream &os) const {
+    os << method_.str() << " "
+       << request_uri_.spec() << " "
+       << "SIP/" << version_.major_value()
+       << "." << version_.minor_value()
+       << "\r\n";
+    Message::print(os);
+  }
+
 private:
   Atom<Method> method_;
   GURL request_uri_;

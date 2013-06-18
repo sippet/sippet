@@ -106,6 +106,15 @@ public:
     : Header(Header::HDR_CONTACT), star_(false) {}
   Contact(_All)
     : Header(Header::HDR_CONTACT), star_(true) {}
+  explicit Contact(const ContactInfo &info)
+    : Header(Header::HDR_CONTACT), star_(false) {
+    push_back(info);
+  }
+  Contact(const GURL &address,
+          const std::string &displayName="")
+    : Header(Header::HDR_CONTACT), star_(false) {
+    push_back(ContactInfo(address, displayName));
+  }
 
   scoped_ptr<Contact> Clone() const {
     return scoped_ptr<Contact>(DoClone());

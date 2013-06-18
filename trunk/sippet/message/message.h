@@ -204,6 +204,9 @@ public:
   //! Print this message to the output.
   virtual void print(raw_ostream &os) const;
 
+  //! Print the message on a string.
+  std::string ToString() const;
+
 private:
   template<class HeaderType>
   struct equals : public std::unary_function<const Header &, bool> {
@@ -229,5 +232,9 @@ template <> struct isa_impl<Response, Message> {
 };
 
 } // End of sippet namespace
+
+#include "sippet/message/request.h"
+#include "sippet/message/response.h"
+#include "sippet/message/headers.h"
 
 #endif // SIPPET_MESSAGE_MESSAGE_H_
