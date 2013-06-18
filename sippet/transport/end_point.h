@@ -35,6 +35,11 @@ class EndPoint {
 
   bool Equals(const EndPoint &other) const;
 
+  // XXX: broken Google style, but doesn't matter now
+  bool operator==(const EndPoint &other) const {
+    return Equals(other);
+  }
+
   const std::string& host() const {
     return hostport_.host();
   }
