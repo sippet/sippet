@@ -33,7 +33,7 @@ AtomTraits<Method>::type
 AtomTraits<Method>::coerce(const char *str) {
   Method::Type type = Method::Unknown;
   const char **first = names;
-  const char **last = names + ARRAYSIZE(names) - 1; // don't include the last
+  const char **last = names + ARRAYSIZE_UNSAFE(names) - 1; // don't include the last
   const char **found = std::lower_bound(first, last, str, string_less);
   if (found != last
       && base::strcasecmp(*found, str) == 0) {
