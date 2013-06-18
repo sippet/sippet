@@ -21,7 +21,8 @@ class ViaParam :
   public has_ttl<ViaParam>,
   public has_maddr<ViaParam>,
   public has_received<ViaParam>,
-  public has_branch<ViaParam> {
+  public has_branch<ViaParam>,
+  public has_rport<ViaParam> {
 public:
   ViaParam() : version_(2,0) {}
   ViaParam(const ViaParam &other)

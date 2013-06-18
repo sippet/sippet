@@ -6,6 +6,7 @@
 #define SIPPET_MESSAGE_HEADERS_BITS_PARAM_SETTERS_H_
 
 #include <string>
+#include "base/basictypes.h"
 #include "base/string_number_conversions.h"
 #include "sippet/base/format.h"
 #include "sippet/base/raw_ostream.h"
@@ -35,6 +36,38 @@ string_token_param_template(has_received,   received,   Received    )
 string_token_param_template(has_branch,     branch,     Branch      )
 
 #undef string_token_param_template
+
+
+#define integer_token_param_template(cls, Name, Capitalized, type)  \
+template<class T>                                                   \
+class cls {                                                         \
+public:                                                             \
+  bool Has##Capitalized() const {                                   \
+    return static_cast<const T*>(this)->param_find(#Name) !=        \
+           static_cast<const T*>(this)->param_end();                \
+  }                                                                 \
+  type Name() const {                                               \
+    assert(Has##Capitalized() && "Cannot read " #Name);             \
+    const std::string &value =                                      \
+      static_cast<const T*>(this)->param_find(#Name)->second;       \
+    int ret;                                                        \
+    if (base::StringToInt(value, &ret))                             \
+      return static_cast<type>(ret);                                \
+    return 0;                                                       \
+  }                                                                 \
+  void set_##Name(type Name) {                                      \
+    std::string buffer;                                             \
+    raw_string_ostream os(buffer);                                  \
+    os << Name;                                                     \
+    static_cast<T*>(this)->param_set(#Name, os.str());              \
+  }                                                                 \
+};
+
+integer_token_param_template(has_ttl,     ttl,     Ttl,     unsigned)
+integer_token_param_template(has_expires, expires, Expires, unsigned)
+integer_token_param_template(has_rport,   rport,   Rport,   uint16  )
+
+#undef integer_token_param_template
 
 
 template<class T>
@@ -89,58 +122,6 @@ public:
 
   void set_purpose(const std::string &purpose) {
     static_cast<T*>(this)->param_set("purpose", purpose);
-  }
-};
-
-template<class T>
-class has_expires {
-public:
-  bool HasExpires() const {
-    return static_cast<const T*>(this)->param_find("expires") !=
-           static_cast<const T*>(this)->param_end();
-  }
-
-  unsigned expires() const {
-    assert(HasExpires() && "Cannot read expires");
-    const std::string &value =
-      static_cast<const T*>(this)->param_find("expires")->second;
-    int ret;
-    if (base::StringToInt(value, &ret))
-      return static_cast<unsigned>(ret);
-    return 0;
-  }
-
-  void set_expires(unsigned seconds) {
-    std::string buffer;
-    raw_string_ostream os(buffer);
-    os << seconds;
-    static_cast<T*>(this)->param_set("expires", os.str());
-  }
-};
-
-template<class T>
-class has_ttl {
-public:
-  bool HasTtl() const {
-    return static_cast<const T*>(this)->param_find("ttl") !=
-           static_cast<const T*>(this)->param_end();
-  }
-
-  unsigned ttl() const {
-    assert(HasTtl() && "Cannot read ttl");
-    const std::string &value =
-      static_cast<const T*>(this)->param_find("ttl")->second;
-    int ret;
-    if (base::StringToInt(value, &ret))
-      return static_cast<unsigned>(ret);
-    return 0;
-  }
-
-  void set_ttl(unsigned seconds) {
-    std::string buffer;
-    raw_string_ostream os(buffer);
-    os << seconds;
-    static_cast<T*>(this)->param_set("ttl", os.str());
   }
 };
 
