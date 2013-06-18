@@ -110,6 +110,7 @@
         'transport/end_point.h',
         'transport/end_point.cc',
         'transport/network_layer.h',
+        'transport/network_layer.cc',
         'transport/network_layer_delegate.h',
       ],
     },  # target sippet

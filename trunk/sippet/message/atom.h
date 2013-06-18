@@ -7,6 +7,8 @@
 
 #include <string>
 #include <memory>
+#include <functional>
+#include <cstring>
 #include "base/memory/scoped_ptr.h"
 #include "sippet/base/raw_ostream.h"
 
@@ -39,6 +41,12 @@ public:
   }
   bool operator!=(Type t) const {
     return !operator==(t);
+  }
+
+  bool Equals(const Atom<T> &other) const {
+    if (other.type() == Traits::unknown_type)
+      return false; // always return false for unknown atoms
+    return operator==(other.type());
   }
 
   Type type() const { return atom_->type(); }
@@ -117,6 +125,13 @@ inline
 bool operator==(typename Atom<T>::Type t, const Atom<T> &a) {
   return a == t;
 }
+
+template<typename T>
+struct AtomLess : std::binary_function<Atom<T>, Atom<T>, bool> {
+  bool operator()(const Atom<T> &a, const Atom<T> &b) {
+    return strcmp(a.str(), b.str()) < 0;
+  }
+};
 
 } // End of sippet namespace
 
