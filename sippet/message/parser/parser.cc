@@ -345,7 +345,7 @@ bool ParseUri(Tokenizer &tok, scoped_ptr<HeaderType> &header) {
   }
   tok.Skip();
   std::string uri(uri_start, uri_end);  
-  header->push_back(HeaderType::value_type(GURL(uri)));
+  header->push_back(typename HeaderType::value_type(GURL(uri)));
   return true;
 }
 
@@ -575,21 +575,21 @@ void SingleParamSetter(scoped_ptr<HeaderType> &header,
 template<class HeaderType>
 void MultipleBuilder(scoped_ptr<HeaderType> &header,
                      const std::string &p1) {
-  header->push_back(HeaderType::value_type(p1));
+  header->push_back(typename HeaderType::value_type(p1));
 }
 
 template<class HeaderType>
 void MultipleBuilder(scoped_ptr<HeaderType> &header,
                      const std::string &p1,
                      const std::string &p2) {
-  header->push_back(HeaderType::value_type(p1, p2));
+  header->push_back(typename HeaderType::value_type(p1, p2));
 }
 
 template<class HeaderType>
 void MultipleBuilder(scoped_ptr<HeaderType> &header,
                      const GURL &p1,
                      const std::string &p2) {
-  header->push_back(HeaderType::value_type(p1, p2));
+  header->push_back(typename HeaderType::value_type(p1, p2));
 }
 
 template<class HeaderType>
@@ -597,7 +597,7 @@ void MultipleBuilder(scoped_ptr<HeaderType> &header,
                      unsigned p1,
                      const std::string &p2,
                      const std::string &p3) {
-  header->push_back(HeaderType::value_type(p1, p2, p3));
+  header->push_back(typename HeaderType::value_type(p1, p2, p3));
 }
 
 template<class HeaderType>
@@ -605,7 +605,7 @@ void MultipleBuilder(scoped_ptr<HeaderType> &header,
                      const Version &p1,
                      const std::string &p2,
                      const net::HostPortPair &p3) {
-  header->push_back(HeaderType::value_type(p1, p2, p3));
+  header->push_back(typename HeaderType::value_type(p1, p2, p3));
 }
 
 template<class HeaderType>
@@ -623,7 +623,7 @@ scoped_ptr<Header> ParseSingleToken(
   Tokenizer tok(values_begin, values_end);
   if (!ParseToken(tok, retval, &SingleBuilder<HeaderType>))
     return scoped_ptr<Header>();
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -634,7 +634,7 @@ scoped_ptr<Header> ParseSingleTokenParams(
   Tokenizer tok(values_begin, values_end);
   if (!ParseToken(tok, retval, &SingleBuilder<HeaderType>))
     return scoped_ptr<Header>();
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -648,7 +648,7 @@ scoped_ptr<Header> ParseMultipleTokens(
     if (!ParseToken(tok, retval, &MultipleBuilder<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -663,7 +663,7 @@ scoped_ptr<Header> ParseMultipleTokenParams(
         || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -675,7 +675,7 @@ scoped_ptr<Header> ParseSingleTypeSubtypeParams(
   if (!ParseTypeSubtype(tok, retval, &SingleBuilder<HeaderType>)
       || !ParseParameters(tok, retval, &SingleParamSetter<HeaderType>))
     return scoped_ptr<Header>();
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -690,7 +690,7 @@ scoped_ptr<Header> ParseMultipleTypeSubtypeParams(
         || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -705,7 +705,7 @@ scoped_ptr<Header> ParseMultipleUriParams(
         || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -722,7 +722,7 @@ scoped_ptr<Header> ParseSingleInteger(
   }
   unsigned integer = static_cast<unsigned>(output);
   scoped_ptr<HeaderType> header(new HeaderType(integer));
-  return header.Pass();
+  return header.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -733,7 +733,7 @@ scoped_ptr<Header> ParseOnlyAuthParams(
   Tokenizer tok(values_begin, values_end);
   if (!ParseAuthParams(tok, header))
       return scoped_ptr<Header>();
-  return header.Pass();
+  return header.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -745,7 +745,7 @@ scoped_ptr<Header> ParseSchemeAndAuthParams(
   if (!ParseAuthScheme(tok, header)
       || !ParseAuthParams(tok, header))
       return scoped_ptr<Header>();
-  return header.Pass();
+  return header.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -757,7 +757,7 @@ scoped_ptr<Header> ParseSingleContactParams(
   if (!ParseContact(tok, retval, &SingleBuilder<HeaderType>)
       || !ParseParameters(tok, retval, &SingleParamSetter<HeaderType>))
     return scoped_ptr<Header>();
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -772,7 +772,7 @@ scoped_ptr<Header> ParseMultipleContactParams(
         || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -789,7 +789,7 @@ scoped_ptr<Header> ParseStarOrMultipleContactParams(
         return scoped_ptr<Header>();
     }
   }
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -798,7 +798,8 @@ scoped_ptr<Header> ParseTrimmedUtf8(
     std::string::const_iterator values_end) {
   std::string value(values_begin, values_end);
   TrimString(value, HTTP_LWS, &value);
-  return scoped_ptr<HeaderType>(new HeaderType(value));
+  return scoped_ptr<HeaderType>(new HeaderType(value))
+         .template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -828,7 +829,7 @@ scoped_ptr<Header> ParseCseq(
     Atom<Method> method(method_name);
     retval.reset(new HeaderType(sequence, method));
   } while (false);
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -845,7 +846,7 @@ scoped_ptr<Header> ParseDate(
     }
     retval.reset(new HeaderType(parsed_time));
   } while(false);
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -876,7 +877,7 @@ scoped_ptr<Header> ParseTimestamp(
     }
     retval.reset(new HeaderType(timestamp, delay));
   } while(false);
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -910,7 +911,7 @@ scoped_ptr<Header> ParseMimeVersion(
     retval.reset(new HeaderType(static_cast<unsigned>(major),
                                 static_cast<unsigned>(minor)));
   } while(false);
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -939,7 +940,7 @@ scoped_ptr<Header> ParseRetryAfter(
       ParseParameters(tok, retval, &SingleParamSetter<HeaderType>);
     }
   } while(false);
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -954,7 +955,7 @@ scoped_ptr<Header> ParseMultipleWarnings(
       return scoped_ptr<Header>();
     }
   }
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 template<class HeaderType>
@@ -970,7 +971,7 @@ scoped_ptr<Header> ParseMultipleVias(
       return scoped_ptr<Header>();
     }
   }
-  return retval.Pass();
+  return retval.template PassAs<Header>();
 }
 
 typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,

@@ -26,7 +26,7 @@ TEST(EndPoint, FromString) {
     { "[::1]:123/", false },
   };
 
-  for (int i = 0; i < ARRAYSIZE(cases); ++i) {
+  for (int i = 0; i < ARRAYSIZE_UNSAFE(cases); ++i) {
     EndPoint parsed = EndPoint::FromString(cases[i].input);
     if (!cases[i].valid) {
       EXPECT_TRUE(parsed.IsEmpty());
@@ -51,7 +51,7 @@ TEST(EndPoint, ToString) {
     { "host.name", 1024, Protocol::TLS, "host.name:1024/TLS" },
   };
 
-  for (int i = 0; i < ARRAYSIZE(cases); ++i) {
+  for (int i = 0; i < ARRAYSIZE_UNSAFE(cases); ++i) {
     EndPoint endpoint(cases[i].host, cases[i].port, cases[i].protocol);
     std::string str = endpoint.ToString();
     EXPECT_EQ(cases[i].output, str);

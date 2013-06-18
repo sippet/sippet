@@ -210,7 +210,7 @@ TEST(Headers, Contact) {
     { "Contact: < sip:bob@192.0.2.4 >", "sip:bob@192.0.2.4", "" },
   };
 
-  for (size_t i = 0; i < ARRAYSIZE(cases); ++i) {
+  for (size_t i = 0; i < ARRAYSIZE_UNSAFE(cases); ++i) {
     scoped_ptr<Header> header(Header::Parse(cases[i].input));
     ASSERT_TRUE(isa<Contact>(header));
     Contact *contact = dyn_cast<Contact>(header);
@@ -242,7 +242,7 @@ TEST(Headers, Via) {
       Protocol::TLS, "::1", 5061, "[::1]:5060", "z9hG4bKnashds7" },
   };
 
-  for (size_t i = 0; i < ARRAYSIZE(cases); ++i) {
+  for (size_t i = 0; i < ARRAYSIZE_UNSAFE(cases); ++i) {
     scoped_ptr<Header> header(Header::Parse(cases[i].input));
     ASSERT_TRUE(isa<Via>(header));
     Via *via = dyn_cast<Via>(header);
