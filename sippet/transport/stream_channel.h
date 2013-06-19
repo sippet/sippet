@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_TRANSPORT_CHANNEL_BASE_H_
-#define SIPPET_TRANSPORT_CHANNEL_BASE_H_
+#ifndef SIPPET_TRANSPORT_STREAM_CHANNEL_H_
+#define SIPPET_TRANSPORT_STREAM_CHANNEL_H_
 
 #include <deque>
 #include "sippet/transport/channel.h"
@@ -15,11 +15,11 @@ namespace net {
 
 namespace sippet {
 
-class NET_EXPORT_PRIVATE ChannelBase :
+class NET_EXPORT_PRIVATE StreamChannel :
   public Channel {
  public:
-  ChannelBase(net::Socket *socket);
-  virtual ~ChannelBase();
+  StreamChannel(net::Socket *socket);
+  virtual ~StreamChannel();
 
   // Channel methods:
   virtual int Send(const Message& message,
@@ -42,8 +42,9 @@ class NET_EXPORT_PRIVATE ChannelBase :
   void DidWrite(int result);
   void DidConsume(int result);
   void Pop(int result);
+  int Drain(net::DrainableIOBuffer* buf);
 };
 
 } // End of sippet namespace
 
-#endif // SIPPET_TRANSPORT_CHANNEL_BASE_H_
+#endif // SIPPET_TRANSPORT_STREAM_CHANNEL_H_
