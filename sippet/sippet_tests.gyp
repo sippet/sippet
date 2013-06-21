@@ -26,7 +26,7 @@
         'message/headers_unittest.cc',
         'message/parser_unittest.cc',
         'transport/end_point_unittest.cc',
-        'transport/stream_channel_unittest.cc',
+        'transport/framed_write_stream_socket_unittest.cc',
       ],
     },  # target sippet_unittest
   ],

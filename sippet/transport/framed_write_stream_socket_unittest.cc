@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/transport/stream_channel.h"
+#include "sippet/transport/framed_write_stream_socket.h"
 
 #include "sippet/message/message.h"
 #include "net/socket/socket_test_util.h"
@@ -26,11 +26,11 @@ class StreamChannelTest : public testing::Test {
     if (writes_count) {
       data_->StopAfter(writes_count);
     }
-    wrapped_socket_.reset(
-        new net::DeterministicMockTCPClientSocket(net_log_.net_log(), data_.get()));
-    data_->set_socket(wrapped_socket_->AsWeakPtr());
-    channel_ = new StreamChannel(wrapped_socket_->AsWeakPtr());
-    wrapped_socket_->Connect(callback_.callback());
+    net::DeterministicMockTCPClientSocket* wrapped_socket =
+        new net::DeterministicMockTCPClientSocket(net_log_.net_log(), data_.get());
+    data_->set_socket(wrapped_socket->AsWeakPtr());
+    socket_.reset(new FramedWriteStreamSocket(wrapped_socket));
+    socket_->Connect(callback_.callback());
   }
 
   static scoped_refptr<Request> CreateRegisterRequest() {
@@ -61,9 +61,18 @@ class StreamChannelTest : public testing::Test {
     return request;
   }
 
+  int WriteMessage(const net::CompletionCallback &callback) {
+    scoped_refptr<Request> request(CreateRegisterRequest());
+
+    std::string data(request->ToString());
+    scoped_refptr<net::IOBuffer> buf(new net::IOBuffer(data.size()));
+    memcpy(buf->data(), data.data(), data.size());
+
+    return socket_->Write(buf, data.size(), callback);
+  }
+
   scoped_ptr<net::DeterministicSocketData> data_;
-  scoped_ptr<net::DeterministicMockTCPClientSocket> wrapped_socket_;
-  scoped_refptr<Channel> channel_;
+  scoped_ptr<net::StreamSocket> socket_;
   net::BoundNetLog net_log_;
   net::TestCompletionCallback callback_;
 };
@@ -88,9 +97,8 @@ TEST_F(StreamChannelTest, SyncSend) {
   };
 
   Initialize(writes, arraysize(writes));
-  scoped_refptr<Request> request(CreateRegisterRequest());
-
-  int rv = channel_->Send(*request.get(), callback_.callback());
+  
+  int rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::OK, rv);
 
   Finish();
@@ -116,9 +124,8 @@ TEST_F(StreamChannelTest, AsyncSend) {
   };
 
   Initialize(writes, arraysize(writes));
-  scoped_refptr<Request> request(CreateRegisterRequest());
 
-  int rv = channel_->Send(*request.get(), callback_.callback());
+  int rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
   // For the first time, just a part of the message is sent.
@@ -145,13 +152,12 @@ TEST_F(StreamChannelTest, OverlappedSend) {
   };
 
   Initialize(writes, arraysize(writes));
-  scoped_refptr<Request> request(CreateRegisterRequest());
 
-  int rv = channel_->Send(*request.get(), callback_.callback());
+  int rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
   // Send the same message again, should be enqueued.
-  rv = channel_->Send(*request.get(), callback_.callback());
+  rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
   // First message is sent.
@@ -176,9 +182,8 @@ TEST_F(StreamChannelTest, SyncSendError) {
   };
 
   Initialize(writes, arraysize(writes));
-  scoped_refptr<Request> request(CreateRegisterRequest());
 
-  int rv = channel_->Send(*request.get(), callback_.callback());
+  int rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::ERR_CONNECTION_ABORTED, rv);
 
   Finish();
@@ -196,9 +201,8 @@ TEST_F(StreamChannelTest, AsyncSendError) {
   };
 
   Initialize(writes, arraysize(writes));
-  scoped_refptr<Request> request(CreateRegisterRequest());
 
-  int rv = channel_->Send(*request.get(), callback_.callback());
+  int rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
   // The connection will be reset while sending the message.
@@ -223,9 +227,8 @@ TEST_F(StreamChannelTest, AsyncConnReset) {
   };
 
   Initialize(writes, arraysize(writes));
-  scoped_refptr<Request> request(CreateRegisterRequest());
 
-  int rv = channel_->Send(*request.get(), callback_.callback());
+  int rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
   // There will be a result = 0 while sending data.

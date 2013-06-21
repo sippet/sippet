@@ -103,8 +103,8 @@
         #'transport/network_layer.cc',
         #'transport/network_layer_delegate.h',
         'transport/channel.h',
-        'transport/stream_channel.h',
-        'transport/stream_channel.cc',
+        'transport/framed_write_stream_socket.h',
+        'transport/framed_write_stream_socket.cc',
       ],
     },  # target sippet
   ],
