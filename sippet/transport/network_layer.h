@@ -15,6 +15,7 @@
 #include "sippet/message/protocol.h"
 #include "sippet/message/message.h"
 #include "sippet/transport/end_point.h"
+#include "sippet/transport/aliases_map.h"
 
 namespace sippet {
 
@@ -133,16 +134,17 @@ class NetworkLayer :
 
   typedef std::map<Atom<Protocol>, ConnectionFactory*, AtomLess<Protocol> >
     FactoriesMap;
-  typedef std::map<EndPoint, OpenedConnection*, EndPointLess>
-    ConnectionsMap;
+  typedef std::map<EndPoint, scoped_refptr<Channel>, EndPointLess>
+    ChannelsMap;
   typedef std::map<EndPoint, PendingConnection, EndPointLess>
     PendingConnectionsMap;
 
   base::Lock critical_section_;
+  AliasesMap aliases_map_;
   Delegate *delegate_;
   FactoriesMap factories_;
   std::vector<EndPoint> listening_;
-  ConnectionsMap connections_;
+  ChannelsMap connections_;
   PendingConnectionsMap pending_connections_;
   bool suspended_;
   net::NetLog *netlog_;
