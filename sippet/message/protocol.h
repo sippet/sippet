@@ -10,6 +10,7 @@
 
 namespace sippet {
 
+namespace details {
 struct Protocol {
   enum Type {
 #define X(protocol) protocol,
@@ -18,14 +19,17 @@ struct Protocol {
     Unknown
   };
 };
+} // End of details namespace
 
 template<>
-struct AtomTraits<Protocol> {
-  typedef Protocol::Type type;
-  static const type unknown_type = Protocol::Unknown;
+struct AtomTraits<details::Protocol> {
+  typedef details::Protocol::Type type;
+  static const type unknown_type = details::Protocol::Unknown;
   static const char *string_of(type t);
   static type coerce(const char *str);
 };
+
+typedef Atom<details::Protocol> Protocol;
 
 } // End of sippet namespace
 

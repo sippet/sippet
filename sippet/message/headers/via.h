@@ -28,7 +28,7 @@ public:
   ViaParam(const ViaParam &other)
     : version_(other.version_), protocol_(other.protocol_),
       sent_by_(other.sent_by_), has_parameters(other) {}
-  ViaParam(const Atom<Protocol> &p,
+  ViaParam(const Protocol &p,
            const net::HostPortPair &sent_by)
     : version_(2,0), protocol_(p), sent_by_(sent_by) {}
   ViaParam(const std::string &protocol,
@@ -52,8 +52,8 @@ public:
   Version version() const { return version_; }
   void set_version(const Version &version) { version_ = version; }
 
-  Atom<Protocol> protocol() const { return protocol_; }
-  void set_protocol(const Atom<Protocol> &protocol) { protocol_ = protocol; }
+  Protocol protocol() const { return protocol_; }
+  void set_protocol(const Protocol &protocol) { protocol_ = protocol; }
 
   net::HostPortPair sent_by() const { return sent_by_; }
   void set_sent_by(const net::HostPortPair &sent_by) {
@@ -76,7 +76,7 @@ public:
   }
 private:
   Version version_;
-  Atom<Protocol> protocol_;
+  Protocol protocol_;
   net::HostPortPair sent_by_;
 };
 

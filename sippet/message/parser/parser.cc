@@ -150,7 +150,7 @@ bool ParseStatusLine(
 bool ParseRequestLine(
     std::string::const_iterator line_begin,
     std::string::const_iterator line_end,
-    Atom<Method> *method,
+    Method *method,
     GURL *request_uri,
     Version *version) {
 
@@ -777,7 +777,7 @@ scoped_ptr<Header> ParseCseq(
       break;
     }
     std::string method_name(method_start, tok.SkipNotIn(HTTP_LWS));
-    Atom<Method> method(method_name);
+    Method method(method_name);
     retval.reset(new HeaderType(sequence, method));
   } while (false);
   return retval.template PassAs<Header>();
@@ -1019,7 +1019,7 @@ scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
       message = new Response(code, reason_phrase, version);
     }
     else {
-      Atom<Method> method;
+      Method method;
       GURL request_uri;
       if (!ParseRequestLine(start, i, &method, &request_uri, &version))
         break;

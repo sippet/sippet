@@ -18,7 +18,7 @@ template<typename T>
 struct AtomTraits;
 
 template<typename T>
-class Atom {
+class Atom : public T {
 public:
   typedef AtomTraits<T> Traits;
   typedef typename Traits::type Type;

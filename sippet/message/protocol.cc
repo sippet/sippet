@@ -25,19 +25,19 @@ namespace {
   }
 }
 
-const char *AtomTraits<Protocol>::string_of(type t) {
+const char *AtomTraits<details::Protocol>::string_of(type t) {
   return names[static_cast<int>(t)];
 }
 
-AtomTraits<Protocol>::type
-AtomTraits<Protocol>::coerce(const char *str) {
-  Protocol::Type type = Protocol::Unknown;
+AtomTraits<details::Protocol>::type
+AtomTraits<details::Protocol>::coerce(const char *str) {
+  details::Protocol::Type type = details::Protocol::Unknown;
   const char **first = names;
-  const char **last = names + ARRAYSIZE_UNSAFE(names) - 1; // don't include the last
+  const char **last = names + arraysize(names) - 1; // don't include the last
   const char **found = std::lower_bound(first, last, str, string_less);
   if (found != last
       && base::strcasecmp(*found, str) == 0) {
-    type = static_cast<Protocol::Type>(found - first);
+    type = static_cast<details::Protocol::Type>(found - first);
   }
   return type;
 }
