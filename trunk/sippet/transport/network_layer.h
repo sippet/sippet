@@ -46,13 +46,6 @@ class NetworkLayer :
   void RegisterConnectionFactory(const Atom<Protocol> &protocol,
                                  ConnectionFactory *factory);
 
-  // Starts listening on a local address, delegating to one of the existing
-  // registered ConnectionFactory.  Returns a network error code.
-  int Listen(const EndPoint &local);
-
-  // Stops listening on a local address.
-  void StopListen(const EndPoint &local);
-
   // Requests a connection for an endpoint.
   //
   // There are five possible results from calling this function:
@@ -94,15 +87,13 @@ class NetworkLayer :
            const EndPoint &destination,
            const net::CompletionCallback& callback);
 
-  // This function is intended to be used by the |ConnectionFactory|, after
-  // accepting and creating a new incoming connection.
-  void HandleIncomingConnection(const EndPoint &destination,
-                                Connection *incoming_connection);
-
   // This function is intended to be used by the |Connection|, after receiving
   // a new incoming message.
   void HandleIncomingMessage(const EndPoint &destination,
                              Message *incoming_message);
+
+  // Add an alias to an existing connection endpoint.
+  void AddAlias(const EndPoint &destination, const EndPoint &alias);
 
   // base::SystemMonitor::PowerObserver methods:
   virtual void OnSuspend() OVERRIDE;
