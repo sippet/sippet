@@ -48,7 +48,7 @@ class EndPoint {
     return hostport_.port();
   }
 
-  Atom<Protocol> protocol() const {
+  Protocol protocol() const {
     return protocol_;
   }
 
@@ -64,7 +64,7 @@ class EndPoint {
     hostport_.set_port(port);
   }
 
-  void set_protocol(const Atom<Protocol> &protocol) {
+  void set_protocol(const Protocol &protocol) {
     protocol_ = protocol;
   }
 
@@ -80,7 +80,7 @@ private:
   friend struct EndPointEquals;
   friend struct EndPointLess;
   net::HostPortPair hostport_;
-  Atom<Protocol> protocol_;
+  Protocol protocol_;
 };
 
 // To be used in std::find

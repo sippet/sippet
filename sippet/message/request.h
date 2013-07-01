@@ -49,13 +49,13 @@ private:
   virtual ~Request() {}
 
 public:
-  Request(const Atom<Method> &method,
+  Request(const Method &method,
           const GURL &request_uri,
           const Version &version = Version(2,0)) 
     : Message(true), method_(method), request_uri_(request_uri), version_(version) {}
 
-  Atom<Method> method() const { return method_; }
-  void set_method(const Atom<Method> &method) {
+  Method method() const { return method_; }
+  void set_method(const Method &method) {
     method_ = method;
   }
 
@@ -79,7 +79,7 @@ public:
   }
 
 private:
-  Atom<Method> method_;
+  Method method_;
   GURL request_uri_;
   Version version_;
 };
