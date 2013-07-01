@@ -8,6 +8,7 @@
 #include "net/base/completion_callback.h"
 #include "net/base/net_export.h"
 #include "net/base/net_log.h"
+#include "net/base/address_list.h"
 #include "net/base/io_buffer.h"
 #include "net/base/net_log.h"
 #include "net/socket_stream/socket_stream_metrics.h"
@@ -49,10 +50,10 @@ class NET_EXPORT_PRIVATE Channel :
   virtual bool is_secure() const = 0;
 
   // The channel resolved address list.
-  virtual const AddressList& address_list() const = 0;
+  virtual const net::AddressList& address_list() const = 0;
 
   // The attached NetLog.
-  BoundNetLog* net_log() { return &net_log_; }
+  net::BoundNetLog* net_log() { return &net_log_; }
 
   // Opens the connection on the IO thread.
   // Once the connection is established, calls delegate's OnConnected.
