@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/transport/framed_write_stream_socket.h"
+#include "sippet/transport/sequenced_write_stream_socket.h"
 
 #include "sippet/message/message.h"
 #include "net/socket/socket_test_util.h"
@@ -11,7 +11,7 @@
 
 using namespace sippet;
 
-class DatagramChannelTest : public testing::Test {
+class StreamChannelTest : public testing::Test {
  public:
   void Finish() {
     MessageLoop::current()->RunUntilIdle();
@@ -29,7 +29,7 @@ class DatagramChannelTest : public testing::Test {
     net::DeterministicMockTCPClientSocket* wrapped_socket =
         new net::DeterministicMockTCPClientSocket(net_log_.net_log(), data_.get());
     data_->set_socket(wrapped_socket->AsWeakPtr());
-    socket_.reset(new FramedWriteStreamSocket(wrapped_socket));
+    socket_.reset(new SequencedWriteStreamSocket(wrapped_socket));
     socket_->Connect(callback_.callback());
   }
 
@@ -90,7 +90,7 @@ static char RegisterRequest[] =
   "Content-Length: 0\r\n"
   "\r\n";
 
-TEST_F(DatagramChannelTest, SyncSend) {
+TEST_F(StreamChannelTest, SyncSend) {
   // Covering the normal case when the message is sent synchronously.
   net::MockWrite writes[] = {
     net::MockWrite(net::SYNCHRONOUS, 0, RegisterRequest),
@@ -104,18 +104,51 @@ TEST_F(DatagramChannelTest, SyncSend) {
   Finish();
 }
 
-TEST_F(DatagramChannelTest, OverlappedSend) {
-  // This test covers the case where two requests are enqueue and sent
-  // asynchrously. Messages are always truncated.
+TEST_F(StreamChannelTest, AsyncSend) {
+  // During congestion or due to system limits, the message can be written
+  // in two separated data blocks.
   net::MockWrite writes[] = {
     net::MockWrite(net::ASYNC, 0,
-      "REGISTER sip:registrar.biloxi.com SIP/2.0\r\n"
-      "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7\r\n"
-      "Max-Forwards: 70\r\n"),
+       "REGISTER sip:registrar.biloxi.com SIP/2.0\r\n"
+       "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7\r\n"
+       "Max-Forwards: 70\r\n"),
     net::MockWrite(net::ASYNC, 1,
-      "REGISTER sip:registrar.biloxi.com SIP/2.0\r\n"
-      "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7\r\n"
-      "Max-Forwards: 70\r\n"),
+       "To: \"Bob\" <sip:bob@biloxi.com>\r\n"
+       "From: \"Bob\" <sip:bob@biloxi.com>;tag=456248\r\n"
+       "Call-ID: 843817637684230@998sdasdh09\r\n"
+       "CSeq: 1826 REGISTER\r\n"
+       "Contact: <sip:bob@192.0.2.4>\r\n"
+       "Expires: 7200\r\n"
+       "Content-Length: 0\r\n"
+       "\r\n"),
+  };
+
+  Initialize(writes, arraysize(writes));
+
+  int rv = WriteMessage(callback_.callback());
+  ASSERT_EQ(net::ERR_IO_PENDING, rv);
+
+  // For the first time, just a part of the message is sent.
+  data_->RunFor(1);
+  ASSERT_FALSE(callback_.have_result());
+
+  // Send the second part and finish
+  data_->RunFor(1);
+  ASSERT_TRUE(callback_.have_result());
+
+  // The result should be OK now.
+  rv = callback_.WaitForResult();
+  ASSERT_EQ(net::OK, rv);
+
+  Finish();
+}
+
+TEST_F(StreamChannelTest, OverlappedSend) {
+  // This test covers the case where two requests are enqueue and sent
+  // asynchrously.
+  net::MockWrite writes[] = {
+    net::MockWrite(net::ASYNC, 0, RegisterRequest),
+    net::MockWrite(net::ASYNC, 1, RegisterRequest),
   };
 
   Initialize(writes, arraysize(writes));
@@ -142,7 +175,7 @@ TEST_F(DatagramChannelTest, OverlappedSend) {
   Finish();
 }
 
-TEST_F(DatagramChannelTest, SyncSendError) {
+TEST_F(StreamChannelTest, SyncSendError) {
   // Synchronous error while sending data.
   net::MockWrite writes[] = {
     net::MockWrite(net::SYNCHRONOUS, net::ERR_CONNECTION_ABORTED),
@@ -156,7 +189,7 @@ TEST_F(DatagramChannelTest, SyncSendError) {
   Finish();
 }
 
-TEST_F(DatagramChannelTest, AsyncSendError) {
+TEST_F(StreamChannelTest, AsyncSendError) {
   // This test simulates the case when an error occurs while sending
   // data, asynchronously.
   net::MockWrite writes[] = {
@@ -172,10 +205,6 @@ TEST_F(DatagramChannelTest, AsyncSendError) {
   int rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
-  // Write a second message, as the first message will be truncated
-  rv = WriteMessage(callback_.callback());
-  ASSERT_EQ(net::ERR_IO_PENDING, rv);
-
   // The connection will be reset while sending the message.
   data_->RunFor(2); // there will be a second write attempt
   ASSERT_TRUE(callback_.have_result());
@@ -185,7 +214,7 @@ TEST_F(DatagramChannelTest, AsyncSendError) {
   Finish();
 }
 
-TEST_F(DatagramChannelTest, AsyncConnReset) {
+TEST_F(StreamChannelTest, AsyncConnReset) {
   // This test simulates the case when the connection is reset by the peer
   // and the channel tries to send more data. Considering zero bytes sent
   // as a connection reset.
@@ -200,10 +229,6 @@ TEST_F(DatagramChannelTest, AsyncConnReset) {
   Initialize(writes, arraysize(writes));
 
   int rv = WriteMessage(callback_.callback());
-  ASSERT_EQ(net::ERR_IO_PENDING, rv);
-
-  // Write a second message, as the first message will be truncated
-  rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
   // There will be a result = 0 while sending data.

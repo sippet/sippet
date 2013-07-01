@@ -103,6 +103,8 @@
         #'transport/network_layer.cc',
         #'transport/network_layer_delegate.h',
         'transport/channel.h',
+        'transport/sequenced_write_stream_socket.h',
+        'transport/sequenced_write_stream_socket.cc',
         'transport/framed_write_stream_socket.h',
         'transport/framed_write_stream_socket.cc',
       ],
