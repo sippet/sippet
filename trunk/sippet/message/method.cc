@@ -25,19 +25,19 @@ namespace {
   }
 }
 
-const char *AtomTraits<Method>::string_of(type t) {
+const char *AtomTraits<details::Method>::string_of(type t) {
   return names[static_cast<int>(t)];
 }
 
-AtomTraits<Method>::type
-AtomTraits<Method>::coerce(const char *str) {
-  Method::Type type = Method::Unknown;
+AtomTraits<details::Method>::type
+AtomTraits<details::Method>::coerce(const char *str) {
+  details::Method::Type type = details::Method::Unknown;
   const char **first = names;
-  const char **last = names + ARRAYSIZE_UNSAFE(names) - 1; // don't include the last
+  const char **last = names + arraysize(names) - 1; // don't include the last
   const char **found = std::lower_bound(first, last, str, string_less);
   if (found != last
       && base::strcasecmp(*found, str) == 0) {
-    type = static_cast<Method::Type>(found - first);
+    type = static_cast<details::Method::Type>(found - first);
   }
   return type;
 }

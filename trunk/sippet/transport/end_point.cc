@@ -19,7 +19,7 @@ EndPoint EndPoint::FromString(const std::string& str) {
     return EndPoint();
   if (host[0] == '[')
     host.assign(host.substr(1, host.size()-2));
-  Atom<Protocol> protocol(hostport_protocol[1]);
+  Protocol protocol(hostport_protocol[1]);
   if (Protocol::Unknown == protocol)
     return EndPoint();
   EndPoint endpoint;

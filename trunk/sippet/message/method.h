@@ -10,6 +10,7 @@
 
 namespace sippet {
 
+namespace details {
 struct Method {
   enum Type {
 #define X(method) method,
@@ -18,14 +19,17 @@ struct Method {
     Unknown
   };
 };
+} // End of details namespace
 
 template<>
-struct AtomTraits<Method> {
-  typedef Method::Type type;
-  static const type unknown_type = Method::Unknown;
+struct AtomTraits<details::Method> {
+  typedef details::Method::Type type;
+  static const type unknown_type = details::Method::Unknown;
   static const char *string_of(type t);
   static type coerce(const char *str);
 };
+
+typedef Atom<details::Method> Method;
 
 } // End of sippet namespace
 
