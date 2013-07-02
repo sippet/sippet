@@ -9,7 +9,6 @@
 #include "sippet/transport/end_point.h"
 #include "sippet/transport/channel.h"
 #include "net/base/net_log.h"
-#include "net/base/completion_callback.h"
 
 namespace sippet {
 
@@ -17,10 +16,9 @@ class ChannelFactory {
  public:
   // Creates a new channel to the given destination.
   virtual int CreateChannel(
-    const IPEndPoint &endpoint,
+    const GURL &endpoint,
     Channel::Delegate *delegate,
-    scoped_refptr<Channel> *channel,
-    const net::CompletionCallback &callback) = 0;
+    scoped_refptr<Channel> *channel) = 0;
 };
 
 } /// End of sippet namespace

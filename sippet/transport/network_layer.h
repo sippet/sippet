@@ -20,8 +20,7 @@
 namespace sippet {
 
 class Connection;
-class ConnectionFactory;
-
+class ChannelFactory;
 
 class NetworkLayer :
   public base::SystemMonitor::PowerObserver,
@@ -40,11 +39,11 @@ class NetworkLayer :
     const scoped_refptr<net::URLRequestContextGetter>& request_context_getter);
   virtual ~NetworkLayer();
 
-  // Register a ConnectionFactory, responsible for opening client connections
+  // Register a ChannelFactory, responsible for opening client connections
   // and listening to local addresses. Registered managers are not owned
   // and won't be deleted on network layer destruction.
-  void RegisterConnectionFactory(const Atom<Protocol> &protocol,
-                                 ConnectionFactory *factory);
+  void RegisterChannelFactory(const Atom<Protocol> &protocol,
+                                 ChannelFactory *factory);
 
   // Requests a connection for an endpoint.
   //
@@ -84,7 +83,6 @@ class NetworkLayer :
   // |destination| the destination to be used when sending the message.
   // |callback| the callback on completion of the socket Write.
   int Send(scoped_refptr<Message> message,
-           const EndPoint &destination,
            const net::CompletionCallback& callback);
 
   // This function is intended to be used by the |Connection|, after receiving
@@ -123,7 +121,7 @@ class NetworkLayer :
       : connection_(connection), refs_(0) {}
   };
 
-  typedef std::map<Atom<Protocol>, ConnectionFactory*, AtomLess<Protocol> >
+  typedef std::map<Atom<Protocol>, ChannelFactory*, AtomLess<Protocol> >
     FactoriesMap;
   typedef std::map<EndPoint, scoped_refptr<Channel>, EndPointLess>
     ChannelsMap;
@@ -134,7 +132,6 @@ class NetworkLayer :
   AliasesMap aliases_map_;
   Delegate *delegate_;
   FactoriesMap factories_;
-  std::vector<EndPoint> listening_;
   ChannelsMap connections_;
   PendingConnectionsMap pending_connections_;
   bool suspended_;
