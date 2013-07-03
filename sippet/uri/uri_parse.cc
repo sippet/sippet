@@ -262,6 +262,47 @@ void DoParseSipURI(const CHAR* spec, int spec_len, Parsed* parsed) {
   // We can be more strict than GURL here..
 }
 
+// The main parsing function for SIP-URIs.
+template<typename CHAR>
+void DoParseTelURI(const CHAR* spec, int spec_len, Parsed* parsed) {
+  DCHECK(spec_len >= 0);
+
+  // Strip leading & trailing spaces and control characters.
+  int begin = 0;
+  uri_parse::TrimURI(spec, &begin, &spec_len);
+
+  int after_scheme;
+  if (uri_parse::ExtractScheme(spec, spec_len, &parsed->scheme)) {
+    after_scheme = parsed->scheme.end() + 1;  // Skip past the colon.
+
+    // First split into two main parts, the telephone-subscriber
+    // and parameters.
+    Component tel_subscriber;
+    Component parameters;
+
+    int tel_subscriber_end = spec_len;
+    for (int i = after_scheme; i < spec_len; i++) {
+      if (spec[i] == ';') {
+        tel_subscriber_end = i;
+        break;
+      }
+    }
+
+    tel_subscriber = Component(after_scheme, tel_subscriber_end - after_scheme);
+    if (tel_subscriber_end == spec_len)  // No parameters found.
+      parameters = Component();
+    else  // Everything starting from the semicolon to the end are params.
+      parameters = Component(tel_subscriber_end, spec_len - tel_subscriber_end);
+
+    // Now set those two sub-parts.
+    parsed->username = tel_subscriber;
+    parsed->parameters = parameters;
+  }
+
+  // Invalid URIs will lead to invalid results.
+  // We can be more strict than GURL here..
+}
+
 void ParseSipURI(const char* uri, int uri_len, Parsed* parsed) {
   DoParseSipURI(uri, uri_len, parsed);
 }
@@ -271,9 +312,11 @@ void ParseSipURI(const char16* uri, int uri_len, Parsed* parsed) {
 }
 
 void ParseTelURI(const char* uri, int uri_len, Parsed* parsed) {
+  DoParseTelURI(uri, uri_len, parsed);
 }
 
 void ParseTelURI(const char16* uri, int uri_len, Parsed* parsed) {
+  DoParseTelURI(uri, uri_len, parsed);
 }
 
 bool ExtractParametersKeyValue(const char* uri,
