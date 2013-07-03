@@ -66,6 +66,12 @@ TEST(uri, Parser) {
     {"sip:alice@atlanta.com;param=@route66?subject=Project X&priority=urgent", true,
      "atlanta.com", -1, 5060, true, "alice", false, "",
      ";param=%40route66", "subject=Project%20X&priority=urgent" },
+    {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", true,
+     "", -1, -1, true, "+358-555-1234567", false, "",
+     ";pOstd=pP2;isUb=1411", "" },
+    {"tel:+358 (555) 1234567;pOstd=pP2;isUb=1411", true,
+     "", -1, -1, true, "+358%20(555)%201234567", false, "",
+     ";pOstd=pP2;isUb=1411", "" },
     {"*", false},
   };
 
@@ -91,7 +97,4 @@ TEST(uri, Parser) {
     }
   }
 }
-
-//    {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", true
-//    {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", true
 

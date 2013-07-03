@@ -20,19 +20,20 @@ bool DoCanonicalizeTelURI(const URIComponentSource<CHAR>& source,
   bool success = uri_canon::CanonicalizeScheme(source.scheme, parsed.scheme,
                                                output, &new_parsed->scheme);
 
-  // Authority (username)
-  bool have_authority;
   if (parsed.username.is_valid()) {
-    have_authority = true;
-
-    // User info: the canonicalizer will handle the : and @.
+    // User info is the tel-subscriber.
     success &= uri_canon::CanonicalizeUserInfo(
         source.username, parsed.username, source.password, parsed.password,
         output, &new_parsed->username, &new_parsed->password);
+
+    // Parameters
+    uri_canon::CanonicalizeParameters(
+        source.parameters, parsed.parameters, query_converter,
+        output, &new_parsed->parameters);
   } else {
-    // No authority, clear the components.
-    have_authority = false;
+    // No user info, clear the components.
     new_parsed->username.reset();
+    new_parsed->parameters.reset();
     success = false;  // Standard URLs must have an authority.
   }
 
