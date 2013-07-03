@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "googleurl/src/url_util.h"
+#include "sippet/uri/uri_canon.h"
 
 namespace sippet {
 namespace uri_util {
@@ -35,6 +36,28 @@ bool LowerCaseEqualsASCII(const char16* a_begin,
   return url_util::LowerCaseEqualsASCII(a_begin, a_end, b);
 }
 
+// URI library wrappers -------------------------------------------------------
+
+// Parses the given spec according to the extracted scheme type. Normal users
+// should use the URI object, although this may be useful if performance is
+// critical and you don't want to do the heap allocation for the std::string.
+//
+// As with the uri_canon::Canonicalize* functions, the charset converter can
+// be NULL to use UTF-8 (it will be faster in this case).
+//
+// Returns true if a valid URI was produced, false if not. On failure, the
+// output and parsed structures will still be filled and will be consistent,
+// but they will not represent a loadable URI.
+bool Canonicalize(const char* spec,
+                  int spec_len,
+                  uri_canon::CharsetConverter* charset_converter,
+                  uri_canon::CanonOutput* output,
+                  uri_parse::Parsed* output_parsed);
+bool Canonicalize(const char16* spec,
+                  int spec_len,
+                  uri_canon::CharsetConverter* charset_converter,
+                  uri_canon::CanonOutput* output,
+                  uri_parse::Parsed* output_parsed);
 
 } // End of uri_util namespace
 } // End of sippet namespace

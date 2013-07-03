@@ -245,10 +245,12 @@ int DefaultPortForScheme(const char* scheme, int scheme_len);
 // so if something is invalid, it's their problem.
 bool CanonicalizeParameters(const char* spec,
                             const uri_parse::Component& parameters,
+                            CharsetConverter* converter,
                             CanonOutput* output,
                             uri_parse::Component* out_parameters);
 bool CanonicalizeParameters(const char16* spec,
                             const uri_parse::Component& parameters,
+                            CharsetConverter* converter,
                             CanonOutput* output,
                             uri_parse::Component* out_parameters);
 
@@ -284,20 +286,6 @@ void CanonicalizeHeaders(const char16* spec,
 // The output will be ASCII except the reference fragment, which may be UTF-8.
 //
 // The 8-bit versions require UTF-8 encoding.
-
-// Generic versions.
-bool CanonicalizeURI(const char* spec,
-                     int spec_len,
-                     const uri_parse::Parsed& parsed,
-                     CharsetConverter* query_converter,
-                     CanonOutput* output,
-                     uri_parse::Parsed* new_parsed);
-bool CanonicalizeURI(const char16* spec,
-                     int spec_len,
-                     const uri_parse::Parsed& parsed,
-                     CharsetConverter* query_converter,
-                     CanonOutput* output,
-                     uri_parse::Parsed* new_parsed);
 
 // Use for SIP-URIs.
 bool CanonicalizeSipURI(const char* spec,

@@ -10,11 +10,34 @@
 
 namespace sippet {
 
+namespace {
+
+// External template that can handle initialization of either character type.
+// The input spec is given, and the canonical version will be placed in
+// |*canonical|, along with the parsing of the canonical spec in |*parsed|.
+template<typename STR>
+bool InitCanonical(const STR& input_spec,
+                   std::string* canonical,
+                   uri_parse::Parsed* parsed) {
+  // Reserve enough room in the output for the input, plus some extra so that
+  // we have room if we have to escape a few things without reallocating.
+  canonical->reserve(input_spec.size() + 32);
+  url_canon::StdStringCanonOutput output(canonical);
+  bool success = uri_util::Canonicalize(
+      input_spec.data(), static_cast<int>(input_spec.length()),
+      NULL, &output, parsed);
+
+  output.Complete();  // Must be done before using string.
+  return success;
+}
+
+} // End of empty namespace
+
 URI::URI() : is_valid_(false) {
 }
 
 URI::URI(const GURL &other) {
-  is_valid_ = uri_parse::InitCanonical(
+  is_valid_ = InitCanonical(
     other.possibly_invalid_spec(), &spec_, &parsed_);
 }
 
@@ -24,11 +47,11 @@ URI::URI(const URI& other) : spec_(other.spec_),
 }
 
 URI::URI(const std::string& uri_string) {
-  is_valid_ = uri_parse::InitCanonical(uri_string, &spec_, &parsed_);
+  is_valid_ = InitCanonical(uri_string, &spec_, &parsed_);
 }
 
 URI::URI(const string16& uri_string) {
-  is_valid_ = uri_parse::InitCanonical(uri_string, &spec_, &parsed_);
+  is_valid_ = InitCanonical(uri_string, &spec_, &parsed_);
 }
 
 URI::URI(const char* canonical_spec, size_t canonical_spec_len,
@@ -141,21 +164,21 @@ bool URI::HostIsIPAddress() const {
      return false;
 
   url_canon::RawCanonOutputT<char, 128> ignored_output;
-  url_canon::CanonHostInfo host_info;
-  url_canon::CanonicalizeIPAddress(spec_.c_str(), parsed_.host,
+  uri_canon::CanonHostInfo host_info;
+  uri_canon::CanonicalizeIPAddress(spec_.c_str(), parsed_.host,
                                    &ignored_output, &host_info);
   return host_info.IsIPAddress();
 }
 
 int URI::IntPort() const {
   if (parsed_.port.is_nonempty())
-    return url_parse::ParsePort(spec_.data(), parsed_.port);
-  return url_parse::PORT_UNSPECIFIED;
+    return ParsePort(spec_.data(), parsed_.port);
+  return uri_parse::PORT_UNSPECIFIED;
 }
 
 int URI::EffectiveIntPort() const {
   int int_port = IntPort();
-  if (int_port == url_parse::PORT_UNSPECIFIED)
+  if (int_port == uri_parse::PORT_UNSPECIFIED)
     return uri_canon::DefaultPortForScheme(spec_.data() + parsed_.scheme.begin,
                                            parsed_.scheme.len);
   return int_port;
@@ -163,7 +186,7 @@ int URI::EffectiveIntPort() const {
 
 std::string URI::HostNoBrackets() const {
   // If host looks like an IPv6 literal, strip the square brackets.
-  url_parse::Component h(parsed_.host);
+  uri_parse::Component h(parsed_.host);
   if (h.len >= 2 && spec_[h.begin] == '[' && spec_[h.end() - 1] == ']') {
     h.begin++;
     h.len -= 2;
