@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/uri/uri_canon.h"
+#include "sippet/uri/uri_canon_internal.h"
 
 namespace sippet {
 namespace uri_canon {
@@ -96,6 +97,50 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
   return success;
 }
 
+// The username and password components reference ranges in the corresponding
+// *_spec strings. Typically, these specs will be the same (we're
+// canonicalizing a single source string), but may be different when
+// replacing components.
+template<typename CHAR>
+bool DoUserInfo(const CHAR* username_spec,
+                const uri_parse::Component& username,
+                const CHAR* password_spec,
+                const uri_parse::Component& password,
+                CanonOutput* output,
+                uri_parse::Component* out_username,
+                uri_parse::Component* out_password) {
+  if (username.len <= 0 && password.len <= 0) {
+    // Common case: no user info. We strip empty username/passwords.
+    *out_username = uri_parse::Component();
+    *out_password = uri_parse::Component();
+    return true;
+  }
+
+  // Write the username.
+  out_username->begin = output->length();
+  if (username.len > 0) {
+    // This will escape characters not valid for the username.
+    AppendUserInfoString(&username_spec[username.begin], username.len,
+                         output);
+  }
+  out_username->len = output->length() - out_username->begin;
+
+  // When there is a password, we need the separator. Note that we strip
+  // empty but specified passwords.
+  if (password.len > 0) {
+    output->push_back(':');
+    out_password->begin = output->length();
+    AppendUserInfoString(&password_spec[password.begin], password.len,
+                         output);
+    out_password->len = output->length() - out_password->begin;
+  } else {
+    *out_password = url_parse::Component();
+  }
+
+  output->push_back('@');
+  return true;
+}
+
 } // End of empty namespace
 
 bool CanonicalizeUserInfo(const char* username_source,
@@ -105,9 +150,9 @@ bool CanonicalizeUserInfo(const char* username_source,
                           CanonOutput* output,
                           uri_parse::Component* out_username,
                           uri_parse::Component* out_password) {
-  // XXX: should change the escaping method used in the username
-  return url_canon::CanonicalizeUserInfo(username_source, username,
-      password_source, password, output, out_username, out_password);
+  return DoUserInfo(
+      username_source, username, password_source, password,
+      output, out_username, out_password);
 }
 
 bool CanonicalizeUserInfo(const char16* username_source,
@@ -117,9 +162,9 @@ bool CanonicalizeUserInfo(const char16* username_source,
                           CanonOutput* output,
                           uri_parse::Component* out_username,
                           uri_parse::Component* out_password) {
-  // XXX: should change the escaping method used in the username
-  return url_canon::CanonicalizeUserInfo(username_source, username,
-      password_source, password, output, out_username, out_password);
+  return DoUserInfo(
+      username_source, username, password_source, password,
+      output, out_username, out_password);
 }
 
 int DefaultPortForScheme(const char* scheme, int scheme_len) {
