@@ -120,8 +120,8 @@ bool DoUserInfo(const CHAR* username_spec,
   out_username->begin = output->length();
   if (username.len > 0) {
     // This will escape characters not valid for the username.
-    AppendUserInfoString(&username_spec[username.begin], username.len,
-                         output);
+    AppendStringOfType(&username_spec[username.begin], username.len,
+                       CHAR_USERINFO, output);
   }
   out_username->len = output->length() - out_username->begin;
 
@@ -130,8 +130,8 @@ bool DoUserInfo(const CHAR* username_spec,
   if (password.len > 0) {
     output->push_back(':');
     out_password->begin = output->length();
-    AppendUserInfoString(&password_spec[password.begin], password.len,
-                         output);
+    AppendStringOfType(&password_spec[password.begin], password.len,
+                       CHAR_USERINFO, output);
     out_password->len = output->length() - out_password->begin;
   } else {
     *out_password = url_parse::Component();
@@ -139,6 +139,45 @@ bool DoUserInfo(const CHAR* username_spec,
 
   output->push_back('@');
   return true;
+}
+
+template<typename CHAR>
+void DoParameters(const CHAR* spec,
+                  const uri_parse::Component& parameters,
+                  CharsetConverter* converter,
+                  CanonOutput* output,
+                  uri_parse::Component* out_parameters) {
+  if (parameters.len <= 0) {
+    // Common case: no parameters.
+    *out_parameters = uri_parse::Component();
+  }
+  else {
+    // Write the parameters.
+    out_parameters->begin = output->length();
+    AppendStringOfType(&spec[parameters.begin], parameters.len,
+                       CHAR_PARAMETERS, output);
+    out_parameters->len = output->length() - out_parameters->begin;
+  }
+}
+
+template<typename CHAR>
+void DoHeaders(const CHAR* spec,
+               const uri_parse::Component& headers,
+               CharsetConverter* converter,
+               CanonOutput* output,
+               uri_parse::Component* out_headers) {
+  if (headers.len <= 0) {
+    // Common case: no headers.
+    *out_headers = uri_parse::Component();
+  }
+  else {
+    // Write the headers.
+    output->push_back('?');
+    out_headers->begin = output->length();
+    AppendStringOfType(&spec[headers.begin], headers.len,
+                       CHAR_HEADERS, output);
+    out_headers->len = output->length() - out_headers->begin;
+  }
 }
 
 } // End of empty namespace
@@ -182,22 +221,20 @@ int DefaultPortForScheme(const char* scheme, int scheme_len) {
   return default_port;
 }
 
-bool CanonicalizeParameters(const char* spec,
+void CanonicalizeParameters(const char* spec,
                             const uri_parse::Component& parameters,
                             CharsetConverter* converter,
                             CanonOutput* output,
                             uri_parse::Component* out_parameters) {
-  // TODO
-  return false;
+  DoParameters(spec, parameters, converter, output, out_parameters);
 }
 
-bool CanonicalizeParameters(const char16* spec,
+void CanonicalizeParameters(const char16* spec,
                             const uri_parse::Component& parameters,
                             CharsetConverter* converter,
                             CanonOutput* output,
                             uri_parse::Component* out_parameters) {
-  // TODO
-  return false;
+  DoParameters(spec, parameters, converter, output, out_parameters);
 }
 
 void CanonicalizeHeaders(const char* spec,
@@ -205,7 +242,7 @@ void CanonicalizeHeaders(const char* spec,
                          CharsetConverter* converter,
                          CanonOutput* output,
                          uri_parse::Component* out_headers) {
-  // TODO
+  DoHeaders(spec, headers, converter, output, out_headers);
 }
 
 void CanonicalizeHeaders(const char16* spec,
@@ -213,7 +250,7 @@ void CanonicalizeHeaders(const char16* spec,
                          CharsetConverter* converter,
                          CanonOutput* output,
                          uri_parse::Component* out_headers) {
-  // TODO
+  DoHeaders(spec, headers, converter, output, out_headers);
 }
 
 bool CanonicalizeSipURI(const char* spec,
