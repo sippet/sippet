@@ -8,12 +8,65 @@
 namespace sippet {
 namespace uri_canon {
 
+// Character type handling -----------------------------------------------------
+
+// Bits that identify different character types. These types identify different
+// bits that are set for each 8-bit character in the kSharedCharTypeTable.
+enum SharedCharTypes {
+  // Valid in the username/password field.
+  CHAR_USERINFO = 1,
+
+  // Valid in parameters field.
+  CHAR_PARAMETERS = 2,
+
+  // Valid in headers field.
+  CHAR_HEADERS = 4,
+};
+
+// This table contains the flags in SharedCharTypes for each 8-bit character.
+// Some canonicalization functions have their own specialized lookup table.
+// For those with simple requirements, we have collected the flags in one
+// place so there are fewer lookup tables to load into the CPU cache.
+//
+// Using an unsigned char type has a small but measurable performance benefit
+// over using a 32-bit number.
+extern const unsigned char kSharedCharTypeTable[0x100];
+
+// More readable wrappers around the character type lookup table.
+inline bool IsCharOfType(unsigned char c, SharedCharTypes type) {
+  return !!(kSharedCharTypeTable[c] & type);
+}
+inline bool IsQueryChar(unsigned char c) {
+  return url_canon::IsQueryChar(c);
+}
+inline bool IsIPv4Char(unsigned char c) {
+  return url_canon::IsIPv4Char(c);
+}
+inline bool IsHexChar(unsigned char c) {
+  return url_canon::IsHexChar(c);
+}
+inline bool IsComponentChar(unsigned char c) {
+  return url_canon::IsComponentChar(c);
+}
+inline bool IsUserInfoChar(unsigned char c) {
+  return IsCharOfType(c, CHAR_USERINFO);
+}
+inline bool IsParametersChar(unsigned char c) {
+  return IsCharOfType(c, CHAR_PARAMETERS);
+}
+inline bool IsHeadersChar(unsigned char c) {
+  return IsCharOfType(c, CHAR_HEADERS);
+}
+
 // Appends the given string to the output, escaping characters that do not
-// match the userinfo part of the SIP-URI.
-void AppendUserInfoString(const char* source, int length,
-                          CanonOutput* output);
-void AppendUserInfoString(const char16* source, int length,
-                          CanonOutput* output);
+// match the given |type| in SharedCharTypes.
+void AppendStringOfType(const char* source, int length,
+                        SharedCharTypes type,
+                        CanonOutput* output);
+void AppendStringOfType(const char16* source, int length,
+                        SharedCharTypes type,
+                        CanonOutput* output);
+
 
 // UTF-8 functions ------------------------------------------------------------
 

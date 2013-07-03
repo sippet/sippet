@@ -243,12 +243,12 @@ int DefaultPortForScheme(const char* scheme, int scheme_len);
 // an issue. Somebody giving us 8-bit parameters is responsible for generating
 // the parameters that the server expects (we'll escape high-bit characters),
 // so if something is invalid, it's their problem.
-bool CanonicalizeParameters(const char* spec,
+void CanonicalizeParameters(const char* spec,
                             const uri_parse::Component& parameters,
                             CharsetConverter* converter,
                             CanonOutput* output,
                             uri_parse::Component* out_parameters);
-bool CanonicalizeParameters(const char16* spec,
+void CanonicalizeParameters(const char16* spec,
                             const uri_parse::Component& parameters,
                             CharsetConverter* converter,
                             CanonOutput* output,
