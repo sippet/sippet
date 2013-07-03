@@ -103,6 +103,8 @@
         'uri/uri.cc',
         'uri/uri_canon.h',
         'uri/uri_canon.cc',
+        'uri/uri_canon_internal.h',
+        'uri/uri_canon_internal.cc',
         'uri/uri_parse.h',
         'uri/uri_parse.cc',
         'uri/uri_util.h',
