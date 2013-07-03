@@ -14,25 +14,6 @@ namespace uri_parse {
 
 namespace {
 
-// External template that can handle initialization of either character type.
-// The input spec is given, and the canonical version will be placed in
-// |*canonical|, along with the parsing of the canonical spec in |*parsed|.
-template<typename STR>
-bool InitCanonical(const STR& input_spec,
-                   std::string* canonical,
-                   Parsed* parsed) {
-  // Reserve enough room in the output for the input, plus some extra so that
-  // we have room if we have to escape a few things without reallocating.
-  canonical->reserve(input_spec.size() + 32);
-  url_canon::StdStringCanonOutput output(canonical);
-  bool success = Canonicalize(
-      input_spec.data(), static_cast<int>(input_spec.length()),
-      NULL, &output, parsed);
-
-  output.Complete();  // Must be done before using string.
-  return success;
-}
-
 template<typename CHAR>
 bool DoExtractParametersKeyValue(const CHAR* spec,
                                  Component* query,
@@ -67,7 +48,7 @@ bool DoExtractParametersKeyValue(const CHAR* spec,
     cur++;
 
   // Save the new query
-  *query = url_parse::MakeRange(cur, end);
+  *query = uri_parse::MakeRange(cur, end);
   return true;
 }
 
@@ -159,29 +140,6 @@ int Parsed::CountCharactersBefore(ComponentType type,
   return cur;
 }
 
-// It's located on url_parse.cc, so it's not possible to reuse.
-// XXX: Copied here until some other solution comes up.
-template<typename CHAR>
-bool DoExtractScheme(const CHAR* url,
-                     int url_len,
-                     Component* scheme) {
-  // Skip leading whitespace and control characters.
-  int begin = 0;
-  while (begin < url_len && url_parse::ShouldTrimFromURL(url[begin]))
-    begin++;
-  if (begin == url_len)
-    return false;  // Input is empty or all whitespace.
-
-  // Find the first colon character.
-  for (int i = begin; i < url_len; i++) {
-    if (url[i] == ':') {
-      *scheme = url_parse::MakeRange(begin, i);
-      return true;
-    }
-  }
-  return false;  // No colon found: no scheme
-}
-
 // This handles everything that may be an authority terminator.
 bool IsAuthorityTerminator(char16 ch) {
   return ch == ';' || ch == '?';
@@ -206,6 +164,51 @@ int FindNextAuthorityTerminator(const CHAR* spec,
       return i;
   }
   return spec_len;  // Not found.
+}
+
+template<typename CHAR>
+void DoParseAfterAuthority(const CHAR* spec,
+                           const Component& remaining,
+                           Component* parameters,
+                           Component* headers) {
+  // remaining = ;parameters?<headers>
+
+  // Special case when there is no remaining.
+  if (remaining.len == -1) {
+    parameters->reset();
+    headers->reset();
+    return;
+  }
+  DCHECK(remaining.len > 0) << "We should never have 0 length remaining";
+
+  // Search for first occurrence of ?.
+  int remaining_end = remaining.begin + remaining.len;
+
+  int headers_separator = -1;  // Index of the '?'
+  for (int i = remaining.begin; i < remaining_end; i++) {
+    if (spec[i] == '?' && headers_separator < 0) {
+      // Only match the headers string if we haven't found one already.
+      headers_separator = i;
+      break;
+    }
+  }
+
+  int parameters_end = remaining_end;
+
+  // Headers fragment: everything from the ? to the end.
+  if (headers_separator >= 0) {
+    parameters_end = headers_separator;
+    *headers = MakeRange(headers_separator + 1, remaining_end);
+  } else {
+    headers->reset();
+  }
+
+  // Parameters: everything from the ; to the next boundary (headers or
+  // end of input).
+  if (parameters_end != remaining.begin)
+    *parameters = MakeRange(remaining.begin, parameters_end);
+  else
+    parameters->reset();
 }
 
 // Fills in all members of the Parsed structure except for the scheme.
@@ -234,10 +237,10 @@ void DoParseAfterScheme(const CHAR* spec,
     remaining = Component(end_auth, spec_len - end_auth);
 
   // Now parse those two sub-parts.
-  url_parse::ParseAuthority(spec, authority, &parsed->username, &parsed->password,
+  uri_parse::ParseAuthority(spec, authority, &parsed->username, &parsed->password,
                             &parsed->host, &parsed->port);
-
-  //ParsePath(spec, full_path, &parsed->path, &parsed->query, &parsed->ref);
+  uri_parse::ParseAfterAuthorityInternal(spec, remaining, &parsed->parameters,
+                                         &parsed->headers);
 }
 
 // The main parsing function for SIP-URIs.
@@ -250,7 +253,7 @@ void DoParseSipURI(const CHAR* spec, int spec_len, Parsed* parsed) {
   uri_parse::TrimURI(spec, &begin, &spec_len);
 
   int after_scheme;
-  if (DoExtractScheme(spec, spec_len, &parsed->scheme)) {
+  if (uri_parse::ExtractScheme(spec, spec_len, &parsed->scheme)) {
     after_scheme = parsed->scheme.end() + 1;  // Skip past the colon.
     DoParseAfterScheme(spec, spec_len, after_scheme, parsed);
   }
@@ -285,6 +288,34 @@ bool ExtractParametersKeyValue(const char16* uri,
                                Component* key,
                                Component* value) {
   return DoExtractParametersKeyValue(uri, query, key, value);
+}
+
+void ParseAfterAuthorityInternal(const char* spec,
+                                 const Component& remaining,
+                                 Component* parameters,
+                                 Component* headers) {
+  return DoParseAfterAuthority(spec, remaining, parameters, headers);
+}
+
+void ParseAfterAuthorityInternal(const char16* spec,
+                                 const Component& remaining,
+                                 Component* parameters,
+                                 Component* headers) {
+  return DoParseAfterAuthority(spec, remaining, parameters, headers);
+}
+
+void ParseAfterScheme(const char* spec,
+                      int spec_len,
+                      int after_scheme,
+                      Parsed* parsed) {
+  DoParseAfterScheme(spec, spec_len, after_scheme, parsed);
+}
+
+void ParseAfterScheme(const char16* spec,
+                      int spec_len,
+                      int after_scheme,
+                      Parsed* parsed) {
+  DoParseAfterScheme(spec, spec_len, after_scheme, parsed);
 }
 
 } // End of uri_parse namespace

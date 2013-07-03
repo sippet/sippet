@@ -16,8 +16,8 @@ bool DoCanonicalizeTelURI(const URIComponentSource<CHAR>& source,
                           CanonOutput* output,
                           uri_parse::Parsed* new_parsed) {
   // Scheme: this will append the colon.
-  bool success = CanonicalizeScheme(source.scheme, parsed.scheme,
-                                    output, &new_parsed->scheme);
+  bool success = uri_canon::CanonicalizeScheme(source.scheme, parsed.scheme,
+                                               output, &new_parsed->scheme);
 
   // Authority (username)
   bool have_authority;
@@ -25,7 +25,7 @@ bool DoCanonicalizeTelURI(const URIComponentSource<CHAR>& source,
     have_authority = true;
 
     // User info: the canonicalizer will handle the : and @.
-    success &= CanonicalizeUserInfo(
+    success &= uri_canon::CanonicalizeUserInfo(
         source.username, parsed.username, source.password, parsed.password,
         output, &new_parsed->username, &new_parsed->password);
   } else {
@@ -45,8 +45,8 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
                           CanonOutput* output,
                           uri_parse::Parsed* new_parsed) {
   // Scheme: this will append the colon.
-  bool success = CanonicalizeScheme(source.scheme, parsed.scheme,
-                                    output, &new_parsed->scheme);
+  bool success = uri_canon::CanonicalizeScheme(source.scheme, parsed.scheme,
+                                               output, &new_parsed->scheme);
 
   // Authority (username, password, host, port)
   bool have_authority;
@@ -55,12 +55,12 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
     have_authority = true;
 
     // User info: the canonicalizer will handle the : and @.
-    success &= CanonicalizeUserInfo(
+    success &= uri_canon::CanonicalizeUserInfo(
         source.username, parsed.username, source.password, parsed.password,
         output, &new_parsed->username, &new_parsed->password);
 
-    success &= CanonicalizeHost(source.host, parsed.host,
-                                output, &new_parsed->host);
+    success &= uri_canon::CanonicalizeHost(source.host, parsed.host,
+                                           output, &new_parsed->host);
 
     // Host must not be empty for standard URLs.
     if (!parsed.host.is_nonempty())
@@ -69,17 +69,17 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
     // Port: the port canonicalizer will handle the colon.
     int default_port = DefaultPortForScheme(
         &output->data()[new_parsed->scheme.begin], new_parsed->scheme.len);
-    success &= CanonicalizePort(
+    success &= uri_canon::CanonicalizePort(
         source.port, parsed.port, default_port,
         output, &new_parsed->port);
 
     // Parameters
-    CanonicalizeParameters(
+    uri_canon::CanonicalizeParameters(
         source.parameters, parsed.parameters, query_converter,
         output, &new_parsed->parameters);
 
     // Headers
-    url_canon::CanonicalizeHeaders(
+    uri_canon::CanonicalizeHeaders(
         source.headers, parsed.headers, query_converter,
         output, &new_parsed->headers);
 
@@ -93,54 +93,6 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
     success = false;  // Standard URLs must have an authority.
   }
 
-  return success;
-}
-
-// Given a string and a range inside the string, compares it to the given
-// lower-case |compare_to| buffer.
-template<typename CHAR>
-inline bool DoCompareSchemeComponent(const CHAR* spec,
-                                     const uri_parse::Component& component,
-                                     const char* compare_to) {
-  if (!component.is_nonempty())
-    return compare_to[0] == 0;  // When component is empty, match empty scheme.
-  return LowerCaseEqualsASCII(&spec[component.begin],
-                              &spec[component.end()],
-                              compare_to);
-}
-
-template<typename CHAR>
-bool DoCanonicalizeURI(const CHAR* in_spec, int in_spec_len,
-                       CharsetConverter* charset_converter,
-                       CanonOutput* output,
-                       uri_parse::Parsed* output_parsed) {
-  // Remove any whitespace from the middle of the relative URL, possibly
-  // copying to the new buffer.
-  url_canon::RawCanonOutputT<CHAR> whitespace_buffer;
-  int spec_len;
-  const CHAR* spec = RemoveURLWhitespace(in_spec, in_spec_len,
-                                         &whitespace_buffer, &spec_len);
-
-  uri_parse::Parsed parsed_input;
-  uri_parse::Component scheme;
-  if (!uri_parse::ExtractScheme(spec, spec_len, &scheme))
-    return false;
-
-  // This is the parsed version of the input URL, we have to canonicalize it
-  // before storing it in our object.
-  bool success = false;
-  if (DoCompareSchemeComponent(spec, scheme, "sip") ||
-      DoCompareSchemeComponent(spec, scheme, "sips")) {
-    uri_parse::ParseSipURI(spec, spec_len, &parsed_input);
-    success = CanonicalizeSipURI(
-      URIComponentSource<CHAR>(spec), parsed_input,
-      charset_converter, output, output_parsed);
-  } else if (DoCompareSchemeComponent(spec, scheme, "tel")) {
-    uri_parse::ParseTelURI(spec, spec_len, &parsed_input);
-    success = CanonicalizeTelURI(
-        URIComponentSource<CHAR>(spec), parsed_input,
-        charset_converter, output, output_parsed);
-  }
   return success;
 }
 
@@ -187,6 +139,7 @@ int DefaultPortForScheme(const char* scheme, int scheme_len) {
 
 bool CanonicalizeParameters(const char* spec,
                             const uri_parse::Component& parameters,
+                            CharsetConverter* converter,
                             CanonOutput* output,
                             uri_parse::Component* out_parameters) {
   // TODO
@@ -195,6 +148,7 @@ bool CanonicalizeParameters(const char* spec,
 
 bool CanonicalizeParameters(const char16* spec,
                             const uri_parse::Component& parameters,
+                            CharsetConverter* converter,
                             CanonOutput* output,
                             uri_parse::Component* out_parameters) {
   // TODO
@@ -215,26 +169,6 @@ void CanonicalizeHeaders(const char16* spec,
                          CanonOutput* output,
                          uri_parse::Component* out_headers) {
   // TODO
-}
-
-bool CanonicalizeURI(const char* spec,
-                     int spec_len,
-                     const uri_parse::Parsed& parsed,
-                     CharsetConverter* query_converter,
-                     CanonOutput* output,
-                     uri_parse::Parsed* new_parsed) {
-  return DoCanonicalizeURI(spec, spec_len, parsed, query_converter,
-                           output, new_parsed);
-}
-
-bool CanonicalizeURI(const char16* spec,
-                     int spec_len,
-                     const uri_parse::Parsed& parsed,
-                     CharsetConverter* query_converter,
-                     CanonOutput* output,
-                     uri_parse::Parsed* new_parsed) {
-  return DoCanonicalizeURI(spec, spec_len, parsed, query_converter,
-                           output, new_parsed);
 }
 
 bool CanonicalizeSipURI(const char* spec,

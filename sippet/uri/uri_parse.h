@@ -14,6 +14,7 @@ using url_parse::Component;
 using url_parse::SpecialPort;
 using url_parse::PORT_UNSPECIFIED;
 using url_parse::PORT_INVALID;
+using url_parse::MakeRange;
 
 // Part replacer --------------------------------------------------------------
 
@@ -177,6 +178,60 @@ void ParseSipURI(const char16* uri, int uri_len, Parsed* parsed);
 // TelURI is for tel: uris.
 void ParseTelURI(const char* uri, int uri_len, Parsed* parsed);
 void ParseTelURI(const char16* uri, int uri_len, Parsed* parsed);
+
+// Helper functions -----------------------------------------------------------
+
+// Locates the scheme according to the URI parser's rules. This function is
+// designed so the caller can find the scheme and call the correct Init*
+// function according to their known scheme types.
+//
+// It also does not perform any validation on the scheme.
+//
+// This function will return true if the scheme is found and will put the
+// scheme's range into *scheme. False means no scheme could be found. Note
+// that a URL beginning with a colon has a scheme, but it is empty, so this
+// function will return true but *scheme will = (0,0).
+//
+// The scheme is found by skipping spaces and control characters at the
+// beginning, and taking everything from there to the first colon to be the
+// scheme. The character at scheme.end() will be the colon (we may enhance
+// this to handle full width colons or something, so don't count on the
+// actual character value). The character at scheme.end()+1 will be the
+// beginning of the rest of the URL, be it the authority or the path (or the
+// end of the string).
+//
+// The 8-bit version requires UTF-8 encoding.
+inline
+bool ExtractScheme(const char* uri, int uri_len, Component* scheme) {
+  return url_parse::ExtractScheme(uri, uri_len, scheme);
+}
+inline
+bool ExtractScheme(const char16* uri, int uri_len, Component* scheme) {
+  return url_parse::ExtractScheme(uri, uri_len, scheme);
+}
+
+// Does a best effort parse of input |spec|, in range |auth|. If a particular
+// component is not found, it will be set to invalid.
+inline
+void ParseAuthority(const char* spec,
+                    const Component& auth,
+                    Component* username,
+                    Component* password,
+                    Component* hostname,
+                    Component* port_num) {
+  return url_parse::ParseAuthority(spec, auth, username,
+                                   password, hostname, port_num);
+}
+inline
+void ParseAuthority(const char16* spec,
+                    const Component& auth,
+                    Component* username,
+                    Component* password,
+                    Component* hostname,
+                    Component* port_num) {
+  return url_parse::ParseAuthority(spec, auth, username,
+                                   password, hostname, port_num);
+}
 
 // Extract the first key/value from the range defined by |*parameters|. Updates
 // |*parameters| to start at the end of the extracted key/value pair. This is
