@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/uri/uri.h"
+#include "base/basictypes.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -75,7 +76,7 @@ TEST(uri, Parser) {
     {"*", false},
   };
 
-  for (int i = 0; i < arraysize(tests); ++i) {
+  for (int i = 0; i < ARRAYSIZE_UNSAFE(tests); ++i) {
     URI uri(tests[i].input);
     EXPECT_EQ(tests[i].valid, uri.is_valid());
     if (tests[i].valid) {
