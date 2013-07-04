@@ -9,11 +9,7 @@
 
 using namespace sippet;
 
-TEST(uri, Parser) {
-  struct pair {
-    const char *key;
-    const char *value;
-  };
+TEST(SipURI, Parser) {
   struct {
     const char *input;
     bool valid;
@@ -67,17 +63,13 @@ TEST(uri, Parser) {
     {"sip:alice@atlanta.com;param=@route66?subject=Project X&priority=urgent", true,
      "atlanta.com", -1, 5060, true, "alice", false, "",
      ";param=%40route66", "subject=Project%20X&priority=urgent" },
-    {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", true,
-     "", -1, -1, true, "+358-555-1234567", false, "",
-     ";pOstd=pP2;isUb=1411", "" },
-    {"tel:+358 (555) 1234567;pOstd=pP2;isUb=1411", true,
-     "", -1, -1, true, "+358%20(555)%201234567", false, "",
-     ";pOstd=pP2;isUb=1411", "" },
+    {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", false },
+    {"tel:+358 (555) 1234567;pOstd=pP2;isUb=1411", false },
     {"*", false},
   };
 
   for (int i = 0; i < ARRAYSIZE_UNSAFE(tests); ++i) {
-    URI uri(tests[i].input);
+    SipURI uri(tests[i].input);
     EXPECT_EQ(tests[i].valid, uri.is_valid());
     if (tests[i].valid) {
       EXPECT_EQ(tests[i].host, uri.host());
@@ -99,3 +91,47 @@ TEST(uri, Parser) {
   }
 }
 
+TEST(TelURI, Parser) {
+  struct {
+    const char *input;
+    bool valid;
+    const char *telefone_subscriber;
+    const char *parameters;
+  } tests[] = {
+    {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", true,
+     "+358-555-1234567", ";pOstd=pP2;isUb=1411" },
+    {"tel:+358 (555) 1234567;pOstd=pP2;isUb=1411", true,
+     "+358%20(555)%201234567", ";pOstd=pP2;isUb=1411" },
+    {"sip:user@sip.domain.com", false },
+    {"*", false},
+  };
+
+  for (int i = 0; i < ARRAYSIZE_UNSAFE(tests); ++i) {
+    TelURI uri(tests[i].input);
+    EXPECT_EQ(tests[i].valid, uri.is_valid());
+    if (tests[i].valid) {
+      EXPECT_EQ(tests[i].telefone_subscriber, uri.telephone_subscriber());
+      EXPECT_EQ(tests[i].parameters[0] != 0, uri.has_parameters());
+      if (tests[i].parameters[0] != 0)
+        EXPECT_EQ(tests[i].parameters, uri.parameters());
+    }
+  }
+}
+
+TEST(TelURI, ToSipURI) {
+  struct {
+    const char *origin;
+    const char *input;
+    const char *output;
+  } tests[] = {
+    { "sip:foo.com", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com;user=phone" },
+    { "sip:foo.com", "tel:+358-555-1234567;POSTD=PP22", "sip:+358-555-1234567;POSTD=PP22@foo.com;user=phone" },
+    { "sip:foo.com:5555", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
+  };
+
+  for (int i = 0; i < ARRAYSIZE_UNSAFE(tests); ++i) {
+    SipURI origin(tests[i].origin);
+    TelURI uri(tests[i].input);
+    EXPECT_EQ(tests[i].output, uri.ToSipURI(origin).spec());
+  }
+}
