@@ -31,31 +31,70 @@ bool InitCanonical(const STR& input_spec,
   return success;
 }
 
-} // End of empty namespace
-
-URI::URI() : is_valid_(false) {
+bool SchemeIs(const std::string& spec,
+              const uri_parse::Parsed& parsed,
+              const char* lower_ascii_scheme) {
+  return uri_util::LowerCaseEqualsASCII(spec.data() + parsed.scheme.begin,
+                                        spec.data() + parsed.scheme.end(),
+                                        lower_ascii_scheme);
 }
 
-URI::URI(const GURL &other) {
-  is_valid_ = InitCanonical(
+template<typename STR>
+bool InitCanonicalSipURI(const STR& input_spec,
+                         std::string* canonical,
+                         uri_parse::Parsed* parsed) {
+  bool success = true;
+  if (!InitCanonical(input_spec, canonical, parsed)
+      || (!SchemeIs(*canonical, *parsed, "sip")
+          && !SchemeIs(*canonical, *parsed, "sips"))) {
+    canonical->clear();
+    *parsed = uri_parse::Parsed();
+    success = false;
+  }
+  return success;
+}
+
+template<typename STR>
+bool InitCanonicalTelURI(const STR& input_spec,
+                         std::string* canonical,
+                         uri_parse::Parsed* parsed) {
+  bool success = true;
+  if (!InitCanonical(input_spec, canonical, parsed)
+      || !SchemeIs(*canonical, *parsed, "tel")) {
+    canonical->clear();
+    *parsed = uri_parse::Parsed();
+    success = false;
+  }
+  return success;
+}
+
+} // End of empty namespace
+
+// SipURI --------------------------------------------------------------------
+
+SipURI::SipURI() : is_valid_(false) {
+}
+
+SipURI::SipURI(const GURL &other) {
+  is_valid_ = InitCanonicalSipURI(
     other.possibly_invalid_spec(), &spec_, &parsed_);
 }
 
-URI::URI(const URI& other) : spec_(other.spec_),
+SipURI::SipURI(const SipURI& other) : spec_(other.spec_),
   is_valid_(other.is_valid_),
   parsed_(other.parsed_) {
 }
 
-URI::URI(const std::string& uri_string) {
-  is_valid_ = InitCanonical(uri_string, &spec_, &parsed_);
+SipURI::SipURI(const std::string& uri_string) {
+  is_valid_ = InitCanonicalSipURI(uri_string, &spec_, &parsed_);
 }
 
-URI::URI(const string16& uri_string) {
-  is_valid_ = InitCanonical(uri_string, &spec_, &parsed_);
+SipURI::SipURI(const string16& uri_string) {
+  is_valid_ = InitCanonicalSipURI(uri_string, &spec_, &parsed_);
 }
 
-URI::URI(const char* canonical_spec, size_t canonical_spec_len,
-         const uri_parse::Parsed& parsed, bool is_valid)
+SipURI::SipURI(const char* canonical_spec, size_t canonical_spec_len,
+               const uri_parse::Parsed& parsed, bool is_valid)
     : spec_(canonical_spec, canonical_spec_len),
       is_valid_(is_valid),
       parsed_(parsed) {
@@ -66,7 +105,7 @@ URI::URI(const char* canonical_spec, size_t canonical_spec_len,
   if (is_valid_) {
     uri_parse::Component scheme;
     if (scheme.begin == parsed.scheme.begin) {
-      URI test_url(spec_);
+      SipURI test_url(spec_);
 
       DCHECK(test_url.is_valid_ == is_valid_);
       DCHECK(test_url.spec_ == spec_);
@@ -83,22 +122,17 @@ URI::URI(const char* canonical_spec, size_t canonical_spec_len,
 #endif
 }
 
-URI::~URI() {
+SipURI::~SipURI() {
 }
 
-URI& URI::operator=(const URI& other) {
+SipURI& SipURI::operator=(const SipURI& other) {
   spec_ = other.spec_;
   is_valid_ = other.is_valid_;
   parsed_ = other.parsed_;
   return *this;
 }
 
-URI URI::ConvertToSIP() {
-  // TODO
-  return *this;
-}
-
-const std::string& URI::spec() const {
+const std::string& SipURI::spec() const {
   static std::string empty;
   if (is_valid_ || spec_.empty())
     return spec_;
@@ -107,20 +141,20 @@ const std::string& URI::spec() const {
   return empty;
 }
 
-bool URI::Equivalent(const URI& other) {
+bool SipURI::Equivalent(const SipURI& other) {
   // TODO
   return false;
 }
 
-URI URI::GetWithEmptyHeaders() const {
+SipURI SipURI::GetWithEmptyHeaders() const {
   // This doesn't make sense for invalid or nonstandard URIs, so return
   // the empty URL.
-  if (!is_valid_ || !IsStandard())
-    return URI();
+  if (!is_valid_)
+    return SipURI();
 
   // We could optimize this since we know that the URL is canonical, and we are
   // appending a canonical path, so avoiding re-parsing.
-  URI other(*this);
+  SipURI other(*this);
   if (parsed_.headers.len == 0)
     return other;
 
@@ -129,11 +163,11 @@ URI URI::GetWithEmptyHeaders() const {
   return other;
 }
 
-URI URI::GetOrigin() const {
+SipURI SipURI::GetOrigin() const {
   // This doesn't make sense for invalid or nonstandard URLs, so return
   // the empty URL.
-  if (!is_valid_ || !IsStandard())
-    return URI();
+  if (!is_valid_)
+    return SipURI();
 
   std::string spec;
   spec += scheme();
@@ -142,24 +176,16 @@ URI URI::GetOrigin() const {
   if (has_port())
     spec += port();
 
-  return URI(spec);
+  return SipURI(spec);
 }
 
-bool URI::IsStandard() const {
-  return SchemeIs("sip")
-    || SchemeIs("sips")
-    || SchemeIs("tel");
-}
-
-bool URI::SchemeIs(const char* lower_ascii_scheme) const {
+bool SipURI::SchemeIs(const char* lower_ascii_scheme) const {
   if (parsed_.scheme.len <= 0)
     return lower_ascii_scheme == NULL;
-  return uri_util::LowerCaseEqualsASCII(spec_.data() + parsed_.scheme.begin,
-                                        spec_.data() + parsed_.scheme.end(),
-                                        lower_ascii_scheme);
+  return sippet::SchemeIs(spec_, parsed_, lower_ascii_scheme);
 }
 
-bool URI::HostIsIPAddress() const {
+bool SipURI::HostIsIPAddress() const {
   if (!is_valid_ || spec_.empty())
      return false;
 
@@ -170,13 +196,13 @@ bool URI::HostIsIPAddress() const {
   return host_info.IsIPAddress();
 }
 
-int URI::IntPort() const {
+int SipURI::IntPort() const {
   if (parsed_.port.is_nonempty())
     return ParsePort(spec_.data(), parsed_.port);
   return uri_parse::PORT_UNSPECIFIED;
 }
 
-int URI::EffectiveIntPort() const {
+int SipURI::EffectiveIntPort() const {
   int int_port = IntPort();
   if (int_port == uri_parse::PORT_UNSPECIFIED)
     return uri_canon::DefaultPortForScheme(spec_.data() + parsed_.scheme.begin,
@@ -184,7 +210,7 @@ int URI::EffectiveIntPort() const {
   return int_port;
 }
 
-std::string URI::HostNoBrackets() const {
+std::string SipURI::HostNoBrackets() const {
   // If host looks like an IPv6 literal, strip the square brackets.
   uri_parse::Component h(parsed_.host);
   if (h.len >= 2 && spec_[h.begin] == '[' && spec_[h.end() - 1] == ']') {
@@ -194,13 +220,9 @@ std::string URI::HostNoBrackets() const {
   return ComponentString(h);
 }
 
-bool URI::DomainIs(const char* lower_ascii_domain, int domain_len) const {
+bool SipURI::DomainIs(const char* lower_ascii_domain, int domain_len) const {
   // Return false if this URL is not valid or domain is empty.
   if (!is_valid_ || !domain_len)
-    return false;
-
-  // TEL-URIs have empty parsed_.host, so check this first.
-  if (SchemeIsTel())
     return false;
 
   if (!parsed_.host.is_nonempty())
@@ -240,19 +262,158 @@ bool URI::DomainIs(const char* lower_ascii_domain, int domain_len) const {
   return true;
 }
 
-void URI::Swap(URI* other) {
+void SipURI::Swap(SipURI* other) {
   spec_.swap(other->spec_);
   std::swap(is_valid_, other->is_valid_);
   std::swap(parsed_, other->parsed_);
 }
 
-const URI& URI::EmptyURI() {
-  static URI empty;
+const SipURI& SipURI::EmptyURI() {
+  static SipURI empty;
+  return empty;
+}
+
+// TelURI --------------------------------------------------------------------
+
+TelURI::TelURI() : is_valid_(false) {
+}
+
+TelURI::TelURI(const GURL &other) {
+  is_valid_ = InitCanonicalTelURI(
+    other.possibly_invalid_spec(), &spec_, &parsed_);
+}
+
+TelURI::TelURI(const TelURI& other) : spec_(other.spec_),
+  is_valid_(other.is_valid_),
+  parsed_(other.parsed_) {
+}
+
+TelURI::TelURI(const std::string& uri_string) {
+  is_valid_ = InitCanonicalTelURI(uri_string, &spec_, &parsed_);
+}
+
+TelURI::TelURI(const string16& uri_string) {
+  is_valid_ = InitCanonicalTelURI(uri_string, &spec_, &parsed_);
+}
+
+TelURI::TelURI(const char* canonical_spec, size_t canonical_spec_len,
+               const uri_parse::Parsed& parsed, bool is_valid)
+    : spec_(canonical_spec, canonical_spec_len),
+      is_valid_(is_valid),
+      parsed_(parsed) {
+#ifndef NDEBUG
+  // For testing purposes, check that the parsed canonical URI is identical to
+  // what we would have produced. Skip checking for invalid URIs have no meaning
+  // and we can't always canonicalize then reproducabely.
+  if (is_valid_) {
+    uri_parse::Component scheme;
+    if (scheme.begin == parsed.scheme.begin) {
+      TelURI test_url(spec_);
+
+      DCHECK(test_url.is_valid_ == is_valid_);
+      DCHECK(test_url.spec_ == spec_);
+
+      DCHECK(test_url.parsed_.scheme == parsed_.scheme);
+      DCHECK(test_url.parsed_.username == parsed_.username);
+      DCHECK(test_url.parsed_.parameters == parsed_.parameters);
+    }
+  }
+#endif
+}
+
+TelURI::~TelURI() {
+}
+
+TelURI& TelURI::operator=(const TelURI& other) {
+  spec_ = other.spec_;
+  is_valid_ = other.is_valid_;
+  parsed_ = other.parsed_;
+  return *this;
+}
+
+SipURI TelURI::ToSipURI(const SipURI& origin) {
+  if (!origin.is_valid())
+    return SipURI();
+
+  const std::string &origin_spec = origin.spec();
+  const uri_parse::Parsed &origin_parsed =
+    origin.parsed_for_possibly_invalid_spec();
+
+  std::string canonical;
+  uri_parse::Parsed parsed;
+  
+  // Reserve enough room in the output for the input, plus some extra so that
+  // we have room if we have to escape a few things without reallocating.
+  canonical.reserve(origin.spec().size() + 32);
+  url_canon::StdStringCanonOutput output(&canonical);
+
+  // Append the same scheme as the origin
+  parsed.scheme.begin = 0;
+  output.Append(origin_spec.data() + origin_parsed.scheme.begin,
+    origin_parsed.scheme.len);
+  output.Append(":", 1);
+  parsed.scheme.len = origin_parsed.scheme.len;
+
+  // Append the telephone-subscriber and parameters portion
+  parsed.username.begin = output.length();
+  output.Append(spec_.data() + parsed_.username.begin,
+    parsed_.username.len);
+  if (parsed_.parameters.len > 0) {
+    output.Append(spec_.data() + parsed_.parameters.begin,
+      parsed_.parameters.len);
+  }
+  parsed.username.len = output.length() - parsed.username.begin;
+  output.Append("@", 1);
+
+  // Append the host and port portions
+  parsed.host.begin = output.length();
+  output.Append(origin_spec.data() + origin_parsed.host.begin,
+    origin_parsed.host.len);
+  parsed.host.len = origin_parsed.host.len;
+  
+  if (origin_parsed.port.len > 0) {
+    output.Append(":", 1);
+    parsed.port.begin = output.length();
+    output.Append(origin_spec.data() + origin_parsed.port.begin,
+      origin_parsed.port.len);
+    parsed.port.len = origin_parsed.port.len;
+  }
+
+  // Append parameters
+  parsed.parameters.begin = output.length();
+  output.Append(";user=phone", 11);
+  parsed.parameters.len = output.length() - parsed.parameters.begin;
+
+  output.Complete();  // Must be done before using string.
+  return SipURI(canonical.data(), canonical.length(), parsed, true);
+}
+
+const std::string& TelURI::spec() const {
+  static std::string empty;
+  if (is_valid_ || spec_.empty())
+    return spec_;
+
+  DCHECK(false) << "Trying to get the spec of an invalid URL!";
+  return empty;
+}
+
+void TelURI::Swap(TelURI* other) {
+  spec_.swap(other->spec_);
+  std::swap(is_valid_, other->is_valid_);
+  std::swap(parsed_, other->parsed_);
+}
+
+const TelURI& TelURI::EmptyURI() {
+  static TelURI empty;
   return empty;
 }
 
 } // End of sippet namespace
 
-std::ostream& operator<<(std::ostream& out, const sippet::URI& url) {
-  return out << url.possibly_invalid_spec();
+std::ostream& operator<<(std::ostream& out, const sippet::SipURI& uri) {
+  return out << uri.possibly_invalid_spec();
+}
+
+std::ostream& operator<<(std::ostream& out, const sippet::TelURI& uri) {
+  return out << uri.possibly_invalid_spec();
 }
