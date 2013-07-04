@@ -57,7 +57,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Reply-To");
+    Header::print(os);
     ContactBase::print(os);
   }
 };

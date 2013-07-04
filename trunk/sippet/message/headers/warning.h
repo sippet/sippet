@@ -81,7 +81,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Warning");
+    Header::print(os);
     has_multiple::print(os);
   }
 };

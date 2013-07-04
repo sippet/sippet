@@ -30,7 +30,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("To");
+    Header::print(os);
     ContactBase::print(os);
   }
 };

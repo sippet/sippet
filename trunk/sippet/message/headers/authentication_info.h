@@ -34,7 +34,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Authentication-Info");
+    Header::print(os);
     has_auth_params::print(os);
   }
 };

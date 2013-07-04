@@ -50,7 +50,7 @@ public:
 
   scoped_ptr<Header> Clone() const { return scoped_ptr<Header>(DoClone()); }
 
-  virtual void print(raw_ostream &os) const = 0;
+  virtual void print(raw_ostream &os) const;
 };
 
 // isa - Provide some specializations of isa so that we don't have to include

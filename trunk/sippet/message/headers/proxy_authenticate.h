@@ -31,7 +31,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Proxy-Authenticate");
+    Header::print(os);
     Challenge::print(os);
   }
 };

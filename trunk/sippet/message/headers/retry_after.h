@@ -33,7 +33,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Retry-After");
+    Header::print(os);
     single_value::print(os);
     has_parameters::print(os);
   }
