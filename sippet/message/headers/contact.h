@@ -121,7 +121,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Contact");
+    Header::print(os);
     if (star_)
       os << "*";
     else

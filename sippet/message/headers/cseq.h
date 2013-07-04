@@ -37,7 +37,7 @@ public:
   void set_method(const Method &method) { method_ = method; }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("CSeq");
+    Header::print(os);
     os << sequence_ << " " << method_;
   }
 private:

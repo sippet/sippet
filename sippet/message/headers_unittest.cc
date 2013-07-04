@@ -184,7 +184,7 @@ TEST(HeaderTest, CallId) {
   raw_string_ostream os(buffer);
   callid->print(os);
 
-  EXPECT_EQ("Call-ID: f81d4fae-7dec-11d0-a765-00a0c91e6bf6@biloxi.com", os.str());
+  EXPECT_EQ("i: f81d4fae-7dec-11d0-a765-00a0c91e6bf6@biloxi.com", os.str());
 }
 
 TEST(HeaderTest, CallInfo) {
@@ -221,7 +221,7 @@ TEST(HeaderTest, Contact) {
   raw_string_ostream os(buffer);
   contact->print(os);
 
-  EXPECT_EQ("Contact: \"John Doe\" <sip:foo@bar.com>;q=1.0, <sip:bar@foo.com>;expires=300", os.str());
+  EXPECT_EQ("m: \"John Doe\" <sip:foo@bar.com>;q=1.0, <sip:bar@foo.com>;expires=300", os.str());
 }
 
 TEST(HeaderTest, ContentDisposition) {
@@ -249,7 +249,7 @@ TEST(HeaderTest, ContentEncoding) {
   raw_string_ostream os(buffer);
   content_encoding->print(os);
 
-  EXPECT_EQ("Content-Encoding: gzip", os.str());
+  EXPECT_EQ("e: gzip", os.str());
 }
 
 TEST(HeaderTest, ContentLanguage) {
@@ -279,7 +279,7 @@ TEST(HeaderTest, ContentLength) {
   raw_string_ostream os(buffer);
   content_length->print(os);
 
-  EXPECT_EQ("Content-Length: 0", os.str());
+  EXPECT_EQ("l: 0", os.str());
 }
 
 TEST(HeaderTest, ContentType) {
@@ -292,7 +292,7 @@ TEST(HeaderTest, ContentType) {
   raw_string_ostream os(buffer);
   content_type->print(os);
 
-  EXPECT_EQ("Content-Type: application/sdp", os.str());
+  EXPECT_EQ("c: application/sdp", os.str());
 }
 
 TEST(HeaderTest, Cseq) {
@@ -365,7 +365,7 @@ TEST(HeaderTest, From) {
   raw_string_ostream os(buffer);
   from->print(os);
 
-  EXPECT_EQ("From: \"A. G. Bell\" <sip:agb@bell-telephone.com>;tag=a48s", os.str());
+  EXPECT_EQ("f: \"A. G. Bell\" <sip:agb@bell-telephone.com>;tag=a48s", os.str());
 }
 
 TEST(HeaderTest, InReplyTo) {
@@ -586,7 +586,7 @@ TEST(HeaderTest, Subject) {
   raw_string_ostream os(buffer);
   subject->print(os);
 
-  EXPECT_EQ("Subject: Need more boxes", os.str());
+  EXPECT_EQ("s: Need more boxes", os.str());
 }
 
 TEST(HeaderTest, Supported) {
@@ -599,7 +599,7 @@ TEST(HeaderTest, Supported) {
   raw_string_ostream os(buffer);
   supported->print(os);
 
-  EXPECT_EQ("Supported: 100rel", os.str());
+  EXPECT_EQ("k: 100rel", os.str());
 }
 
 TEST(HeaderTest, Timestamp) {
@@ -626,7 +626,7 @@ TEST(HeaderTest, To) {
   raw_string_ostream os(buffer);
   to->print(os);
 
-  EXPECT_EQ("To: \"The Operator\" <sip:operator@cs.columbia.edu>;tag=287447", os.str());
+  EXPECT_EQ("t: \"The Operator\" <sip:operator@cs.columbia.edu>;tag=287447", os.str());
 }
 
 TEST(HeaderTest, Unsupported) {
@@ -667,7 +667,7 @@ TEST(HeaderTest, Via) {
   raw_string_ostream os(buffer);
   via->print(os);
 
-  EXPECT_EQ("Via: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bK776asdhds", os.str());
+  EXPECT_EQ("v: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bK776asdhds", os.str());
 }
 
 TEST(HeaderTest, Warning) {

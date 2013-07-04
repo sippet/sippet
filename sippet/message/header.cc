@@ -43,6 +43,14 @@ const char Header::compact_form() const {
   return compact_forms[static_cast<int>(type_)];
 }
 
+void Header::print(raw_ostream &os) const {
+  if (compact_form() != 0)
+    os << static_cast<signed char>(compact_form());
+  else
+    os << name();
+  os << ": ";
+}
+
 const char *AtomTraits<Header::Type>::string_of(type t) {
   return names[static_cast<int>(t)];
 }

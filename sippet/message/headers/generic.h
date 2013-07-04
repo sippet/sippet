@@ -44,7 +44,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname(header_name_);
+    Header::print(os);
     os << header_value_;
   }
 private:

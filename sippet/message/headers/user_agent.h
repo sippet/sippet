@@ -31,7 +31,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("User-Agent");
+    Header::print(os);
     single_value::print(os);
   }
 };
