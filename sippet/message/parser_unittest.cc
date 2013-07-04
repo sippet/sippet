@@ -11,10 +11,10 @@ using namespace sippet;
 TEST(SimpleMessages, Message1) {
   const char message_string[] =
     "REGISTER sip:registrar.biloxi.com SIP/2.0\r\n"
-    "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7\r\n"
+    "v: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7\r\n"
     "Max-Forwards: 70\r\n"
-    "To: Bob <sip:bob@biloxi.com>\r\n"
-    "From: Bob <sip:bob@biloxi.com>;tag=456248\r\n"
+    "t: Bob <sip:bob@biloxi.com>\r\n"
+    "f: Bob <sip:bob@biloxi.com>;tag=456248\r\n"
     "Call-ID: 843817637684230@998sdasdh09\r\n"
     "CSeq: 1826 REGISTER\r\n"
     "Contact: <sip:bob@192.0.2.4>\r\n"
@@ -180,15 +180,15 @@ TEST(Headers, Via) {
     const char *hostport;
     const char *branch;
   } cases[] = {
-    { "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7", Version(2,0),
+    { "v: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7", Version(2,0),
       Protocol::UDP, "bobspc.biloxi.com", 5060, "bobspc.biloxi.com:5060", "z9hG4bKnashds7" },
-    { "Via: sip/2.0/udp 127.0.0.1    ; branch=z9hG4bKnashds7", Version(2,0),
+    { "v: sip/2.0/udp 127.0.0.1    ; branch=z9hG4bKnashds7", Version(2,0),
       Protocol::UDP, "127.0.0.1", 5060, "127.0.0.1:5060", "z9hG4bKnashds7" },
-    { "Via: SiP/2.0/TLS hostname; branch = \"z9hG4bKnashds7\"", Version(2,0),
+    { "v: SiP/2.0/TLS hostname; branch = \"z9hG4bKnashds7\"", Version(2,0),
       Protocol::TLS, "hostname", 5061, "hostname:5060", "z9hG4bKnashds7" },
-    { "Via: SIP/2.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(2,0),
+    { "v: SIP/2.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(2,0),
       Protocol::TLS, "::1", 5061, "[::1]:5060", "z9hG4bKnashds7" },
-    { "Via: SIP/3.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(3,0),
+    { "v: SIP/3.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(3,0),
       Protocol::TLS, "::1", 5061, "[::1]:5060", "z9hG4bKnashds7" },
   };
 

@@ -35,7 +35,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Content-Encoding");
+    Header::print(os);
     has_multiple::print(os);
   }
 };

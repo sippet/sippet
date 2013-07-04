@@ -32,7 +32,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Call-ID");
+    Header::print(os);
     single_value::print(os);
   }
 };

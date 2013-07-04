@@ -208,11 +208,6 @@ raw_ostream &raw_ostream::write_escaped(const base::StringPiece &Str,
   return *this;
 }
 
-raw_ostream &raw_ostream::write_hname(base::StringPiece Str) {
-  // TODO: add short names
-  return (*this) << Str << ": ";
-}
-
 raw_ostream &raw_ostream::operator<<(double N) {
 #ifdef _WIN32
   // On MSVCRT and compatible, output of %e is incompatible to Posix

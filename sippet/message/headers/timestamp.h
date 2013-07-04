@@ -40,7 +40,7 @@ public:
   double delay() { return delay_; }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Timestamp");
+    Header::print(os);
     print_double(os, timestamp_);
     if (delay_ != 0) {
       os << " ";

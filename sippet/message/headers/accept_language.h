@@ -70,7 +70,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Accept-Language");
+    Header::print(os);
     has_multiple::print(os);
   }
 };

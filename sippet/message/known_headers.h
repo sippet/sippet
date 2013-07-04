@@ -30,7 +30,7 @@ X(Expires,            0,   Expires,             EXPIRES,              SingleInte
 X(From,               'f', From,                FROM,                 SingleContactParams)
 X(InReplyTo,          0,   In-Reply-To,         IN_REPLY_TO,          MultipleTokens)
 X(MaxForwards,        0,   Max-Forwards,        MAX_FORWARDS,         SingleInteger)
-X(MimeVersion,        0,   Mime-Version,        MIME_VERSION,         MimeVersion)
+X(MimeVersion,        0,   MIME-Version,        MIME_VERSION,         MimeVersion)
 X(MinExpires,         0,   Min-Expires,         MIN_EXPIRES,          SingleInteger)
 X(Organization,       0,   Organization,        ORGANIZATION,         TrimmedUtf8)
 X(Priority,           0,   Priority,            PRIORITY,             SingleToken)

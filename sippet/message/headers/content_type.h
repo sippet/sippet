@@ -70,7 +70,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Content-Type");
+    Header::print(os);
     MediaType::print(os);
   }
 };

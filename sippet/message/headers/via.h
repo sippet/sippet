@@ -107,7 +107,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Via");
+    Header::print(os);
     has_multiple::print(os);
   }
 };

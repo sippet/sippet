@@ -39,7 +39,7 @@ public:
   double minor() { return minor_; }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("MIME-Version");
+    Header::print(os);
     os << major_ << "." << minor_;
   }
 

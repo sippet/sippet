@@ -47,7 +47,7 @@ public:
   }
 
   virtual void print(raw_ostream &os) const {
-    os.write_hname("Content-Disposition");
+    Header::print(os);
     os << value();
     has_parameters::print(os);
   }

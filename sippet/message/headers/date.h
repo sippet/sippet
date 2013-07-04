@@ -41,7 +41,7 @@ public:
     base::Time::Exploded exploded;
     value().UTCExplode(&exploded);
 
-    os.write_hname("Date");
+    Header::print(os);
     os << wkday[exploded.day_of_week]
        << ", "
        << format("%.2d %s %d", exploded.day_of_month, month[exploded.month-1], exploded.year)
