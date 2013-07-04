@@ -10,18 +10,18 @@
 
 namespace sippet {
 
-// The URI object accepts sip, sips and tel URI schemes.
-class URI {
+// The SipURI object accepts sip and sips schemes.
+class SipURI {
  public:
   // Creates an empty, invalid SIP-URI.
-  URI();
+  SipURI();
 
   // Creates a SIP-URI from a GURL object.
-  explicit URI(const GURL &other);
+  explicit SipURI(const GURL &other);
 
   // Copy construction is relatively inexpensive, with most of the time going
   // to reallocating the string. It does not re-parse.
-  URI(const URI& other);
+  SipURI(const SipURI& other);
 
   // The narrow version requires the input be UTF-8. Invalid UTF-8 input will
   // result in an invalid URI.
@@ -30,23 +30,18 @@ class URI {
   // encode the query parameters. It is probably sufficient for the narrow
   // version to assume the query parameter encoding should be the same as the
   // input encoding.
-  explicit URI(const std::string& uri_string
-               /*, output_param_encoding*/);
-  explicit URI(const string16& uri_string
-               /*, output_param_encoding*/);
+  explicit SipURI(const std::string& uri_string);
+  explicit SipURI(const string16& uri_string);
 
   // Constructor for URIs that have already been parsed and canonicalized. The
   // caller must supply all information associated with the URI, which must be
   // correct and consistent.
-  URI(const char* canonical_spec, size_t canonical_spec_len,
-      const uri_parse::Parsed& parsed, bool is_valid);
+  SipURI(const char* canonical_spec, size_t canonical_spec_len,
+         const uri_parse::Parsed& parsed, bool is_valid);
 
-  ~URI();
+  ~SipURI();
 
-  URI& operator=(const URI& other);
-
-  // Convert TEL-URI to SIP-URI.
-  URI ConvertToSIP();
+  SipURI& operator=(const SipURI& other);
 
   // Returns true when this object represents a valid parsed URI. When not
   // valid, other functions will still succeed, but you will not get canonical
@@ -103,42 +98,34 @@ class URI {
   }
 
   // Defiant equality operator!
-  bool operator==(const URI& other) const {
+  bool operator==(const SipURI& other) const {
     return spec_ == other.spec_;
   }
-  bool operator!=(const URI& other) const {
+  bool operator!=(const SipURI& other) const {
     return spec_ != other.spec_;
   }
 
   // Allows URI to used as a key in STL (for example, a std::set or std::map).
-  bool operator<(const URI& other) const {
+  bool operator<(const SipURI& other) const {
     return spec_ < other.spec_;
   }
 
   // Performs equality comparison using RFC 3261 standard.  It fails to compare
   // SIP headers, therefore it cannot be used to compare these kind of URIs.
-  bool Equivalent(const URI& other);
+  bool Equivalent(const SipURI& other);
 
   // A helper function that is equivalent to removing all headers
-  URI GetWithEmptyHeaders() const;
+  SipURI GetWithEmptyHeaders() const;
 
   // A helper function to return a URI containing just the scheme, host,
   // and port from a URI.
-  URI GetOrigin() const;
-
-  // Returns true if the scheme for the current URI is a known SIP-URI scheme.
-  bool IsStandard() const;
+  SipURI GetOrigin() const;
 
   // Returns true if the given parameter (should be lower-case ASCII to match
   // the canonicalized scheme) is the scheme for this URI. This call is more
   // efficient than getting the scheme and comparing it because no copies or
   // object constructions are done.
   bool SchemeIs(const char* lower_ascii_scheme) const;
-
-  // We often need to know if this is a TEL URI.
-  bool SchemeIsTel() const {
-    return SchemeIs("tel");
-  }
 
   // If the scheme indicates a secure connection
   bool SchemeIsSecure() const {
@@ -237,12 +224,170 @@ class URI {
 
   // Swaps the contents of this URI object with the argument without doing
   // any memory allocations.
-  void Swap(URI* other);
+  void Swap(SipURI* other);
 
   // Returns a reference to a singleton empty URI. This object is for callers
   // who return references but don't have anything to return in some cases.
   // This function may be called from any thread.
-  static const URI& EmptyURI();
+  static const SipURI& EmptyURI();
+
+ private:
+  // Returns the substring of the input identified by the given component.
+  std::string ComponentString(const uri_parse::Component& comp) const {
+    if (comp.len <= 0)
+      return std::string();
+    return std::string(spec_, comp.begin, comp.len);
+  }
+
+  // The actual text of the URI, in canonical ASCII form.
+  std::string spec_;
+
+  // Set when the given URI is valid. Otherwise, we may still have a spec and
+  // components, but they may not identify valid resources (for example, an
+  // invalid port number, invalid characters in the scheme, etc.).
+  bool is_valid_;
+
+  // Identified components of the canonical spec.
+  uri_parse::Parsed parsed_;
+};
+
+// The TelURI object accepts only TEL-URI schemes.
+class TelURI {
+ public:
+  // Creates an empty, invalid TEL-URI.
+  TelURI();
+
+  // Creates a TEL-URI from a GURL object.
+  explicit TelURI(const GURL &other);
+
+  // Copy construction is relatively inexpensive, with most of the time going
+  // to reallocating the string. It does not re-parse.
+  TelURI(const TelURI& other);
+
+  // The narrow version requires the input be UTF-8. Invalid UTF-8 input will
+  // result in an invalid URI.
+  //
+  // The wide version should also take an encoding parameter so we know how to
+  // encode the query parameters. It is probably sufficient for the narrow
+  // version to assume the query parameter encoding should be the same as the
+  // input encoding.
+  explicit TelURI(const std::string& uri_string);
+  explicit TelURI(const string16& uri_string);
+
+  // Constructor for URIs that have already been parsed and canonicalized. The
+  // caller must supply all information associated with the URI, which must be
+  // correct and consistent.
+  TelURI(const char* canonical_spec, size_t canonical_spec_len,
+         const uri_parse::Parsed& parsed, bool is_valid);
+
+  ~TelURI();
+
+  TelURI& operator=(const TelURI& other);
+
+  // Convert a TEL-URI into SIP-URI using RFC3261, section 19.1.6.
+  SipURI ToSipURI(const SipURI& origin);
+
+  // Returns true when this object represents a valid parsed URI. When not
+  // valid, other functions will still succeed, but you will not get canonical
+  // data out in the format you may be expecting. Instead, we keep something
+  // "reasonable looking" so that the user can see how it's busted if
+  // displayed to them.
+  bool is_valid() const {
+    return is_valid_;
+  }
+
+  // Returns true if the URI is zero-length. Note that empty URIs are also
+  // invalid, and is_valid() will return false for them. This is provided
+  // because some users may want to treat the empty case differently.
+  bool is_empty() const {
+    return spec_.empty();
+  }
+
+  // Returns the raw spec, i.e., the full text of the URI, in canonical UTF-8,
+  // if the URI is valid. If the URI is not valid, this will assert and return
+  // the empty string (for safety in release builds, to keep them from being
+  // misused which might be a security problem).
+  //
+  // The URI will be ASCII except the reference fragment, which may be UTF-8.
+  // It is guaranteed to be valid UTF-8.
+  //
+  // The exception is for empty() URIs (which are !is_valid()) but this will
+  // return the empty string without asserting.
+  //
+  // Used invalid_spec() below to get the unusable spec of an invalid URI. This
+  // separation is designed to prevent errors that may cause security problems
+  // that could result from the mistaken use of an invalid URI.
+  const std::string& spec() const;
+
+  // Returns the potentially invalid spec for a the URI. This spec MUST NOT be
+  // modified or sent over the network. It is designed to be displayed in error
+  // messages to the user, as the apperance of the spec may explain the error.
+  // If the spec is valid, the valid spec will be returned.
+  //
+  // The returned string is guaranteed to be valid UTF-8.
+  const std::string& possibly_invalid_spec() const {
+    return spec_;
+  }
+
+  // Getter for the raw parsed structure. This allows callers to locate parts
+  // of the URI within the spec themselves. Most callers should consider using
+  // the individual component getters below.
+  //
+  // The returned parsed structure will reference into the raw spec, which may
+  // or may not be valid. If you are using this to index into the spec, BE
+  // SURE YOU ARE USING possibly_invalid_spec() to get the spec, and that you
+  // don't do anything "important" with invalid specs.
+  const uri_parse::Parsed& parsed_for_possibly_invalid_spec() const {
+    return parsed_;
+  }
+
+  // Defiant equality operator!
+  bool operator==(const TelURI& other) const {
+    return spec_ == other.spec_;
+  }
+  bool operator!=(const TelURI& other) const {
+    return spec_ != other.spec_;
+  }
+
+  // Allows URI to used as a key in STL (for example, a std::set or std::map).
+  bool operator<(const TelURI& other) const {
+    return spec_ < other.spec_;
+  }
+
+  // Getters for various components of the URI. The returned string will be
+  // empty if the component is empty or is not present.
+  std::string scheme() const {  // Not including the colon. See also SchemeIs.
+    return ComponentString(parsed_.scheme);
+  }
+  std::string telephone_subscriber() const {
+    return ComponentString(parsed_.username);
+  }
+  std::string parameters() const {  // Including first semicolon following host
+    return ComponentString(parsed_.parameters);
+  }
+
+  // Existance querying. These functions will return true if the corresponding
+  // URI component exists in this URI. Note that existance is different than
+  // being nonempty. sip:user@domain.com? has headers that just happens to
+  // be empty, and has_headers() will return true.
+  bool has_scheme() const {
+    return parsed_.scheme.len >= 0;
+  }
+  bool has_telephone_subscriber() const {
+    return parsed_.username.len >= 0;
+  }
+  bool has_parameters() const {
+    return parsed_.parameters.len >= 0;
+  }
+
+  // Swaps the contents of this URI object with the argument without doing
+  // any memory allocations.
+  void Swap(TelURI* other);
+
+  // Returns a reference to a singleton empty URI. This object is for callers
+  // who return references but don't have anything to return in some cases.
+  // This function may be called from any thread.
+  static const TelURI& EmptyURI();
 
  private:
   // Returns the substring of the input identified by the given component.
@@ -267,6 +412,7 @@ class URI {
 } // End of sippet namespace
 
 // Stream operator so URI can be used in assertion statements.
-std::ostream& operator<<(std::ostream& out, const sippet::URI& uri);
+std::ostream& operator<<(std::ostream& out, const sippet::SipURI& uri);
+std::ostream& operator<<(std::ostream& out, const sippet::TelURI& uri);
 
 #endif // SIPPET_MESSAGE_URI_H_
