@@ -124,9 +124,14 @@ TEST(TelURI, ToSipURI) {
     const char *input;
     const char *output;
   } tests[] = {
+    { "sip:foo.com", "tel:+358-555-1234567", "sip:+358-555-1234567@foo.com;user=phone" },
+    { "sip:foo.com", "tel:+358 (555) 1234567", "sip:+358%20(555)%201234567@foo.com;user=phone" },
     { "sip:foo.com", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com;user=phone" },
     { "sip:foo.com", "tel:+358-555-1234567;POSTD=PP22", "sip:+358-555-1234567;POSTD=PP22@foo.com;user=phone" },
     { "sip:foo.com:5555", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
+    { "sip:foo.com:5555;param=abc", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
+    { "sip:foo.com:5555?header=", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
+    { "sip:foo.com:5555;param=abc?header=", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
   };
 
   for (int i = 0; i < ARRAYSIZE_UNSAFE(tests); ++i) {
