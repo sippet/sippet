@@ -22,18 +22,17 @@ class NET_EXPORT_PRIVATE Channel :
  public:
   class Delegate {
    public:
-    Delegate() {}
     virtual ~Delegate() {}
 
     // Called when the channel has been connected.
-    virtual void OnConnected(Channel* channel) = 0;
+    virtual void OnChannelConnected(const scoped_refptr<Channel> &channel) = 0;
 
     // Called when a message is received from the channel.
-    virtual void OnReceived(Channel *channel,
-                            const scoped_refptr<Message> &message) = 0;
+    virtual void OnIncomingMessage(const scoped_refptr<Message> &message) = 0;
 
     // Called when the channel is closed.
-    virtual void OnClosed(Channel *channel, int error) = 0;
+    virtual void OnChannelClosed(const scoped_refptr<Channel> &channel,
+                                 int error) = 0;
   };
 
   virtual ~Channel() {}
@@ -44,8 +43,11 @@ class NET_EXPORT_PRIVATE Channel :
   // Whether this channel is a secure channel.
   virtual bool is_secure() const = 0;
 
+  // Whether this channel is connected.
+  virtual bool is_connected() const = 0;
+
   // Opens the connection on the IO thread.
-  // Once the connection is established, calls delegate's OnConnected.
+  // Once the connection is established, calls delegate's OnChannelConnected.
   virtual void Connect() = 0;
 
   // Writes the message to the underlying socket.
@@ -75,7 +77,7 @@ class NET_EXPORT_PRIVATE Channel :
   virtual void Close() = 0;
 
   // Closes the channel emulating the given error for pending callbacks.
-  // Once the connection is closed, calls delegate's OnClose.
+  // Once the connection is closed, calls delegate's OnChannelClosed.
   virtual void CloseWithError(int err) = 0;
 
   // Detach delegate.  Call before delegate is deleted.  Once delegate

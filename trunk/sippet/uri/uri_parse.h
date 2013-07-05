@@ -247,11 +247,11 @@ void ParseAuthority(const char16* spec,
 // If no key/value are found |*key| and |*value| will be unchanged and it will
 // return false.
 bool ExtractParametersKeyValue(const char* uri,
-                               Component* query,
+                               Component* parameters,
                                Component* key,
                                Component* value);
 bool ExtractParametersKeyValue(const char16* uri,
-                               Component* query,
+                               Component* parameters,
                                Component* key,
                                Component* value);
 
