@@ -30,6 +30,7 @@ struct AtomTraits<details::Protocol> {
 };
 
 typedef Atom<details::Protocol> Protocol;
+typedef AtomLess<details::Protocol> ProtocolLess;
 
 } // End of sippet namespace
 
