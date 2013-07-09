@@ -38,6 +38,9 @@ class NET_EXPORT_PRIVATE Channel :
 
   virtual ~Channel() {}
 
+  // The origin (local address) of this channel.
+  virtual const EndPoint& origin() const = 0;
+
   // The destination of this channel.
   virtual const EndPoint& destination() const = 0;
 

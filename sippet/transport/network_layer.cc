@@ -220,10 +220,10 @@ std::string NetworkLayer::CreateBranch() {
 
 void NetworkLayer::StampClientTopmostVia(scoped_refptr<Request> &request,
         const scoped_refptr<Channel> &channel) {
-  EndPoint destination(channel->destination());
+  EndPoint origin(channel->origin());
   scoped_ptr<Via> via(new Via);
-  net::HostPortPair hostport(destination.host(), destination.port());
-  via->push_back(ViaParam(destination.protocol(), hostport));
+  net::HostPortPair hostport(origin.host(), origin.port());
+  via->push_back(ViaParam(origin.protocol(), hostport));
   via->back().set_branch(CreateBranch());
   request->push_front(via.PassAs<Header>());
 }
