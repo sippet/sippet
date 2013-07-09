@@ -14,10 +14,6 @@ class Response :
   public Message {
 private:
   DISALLOW_COPY_AND_ASSIGN(Response);
-
-private:
-  virtual ~Response() {}
-
 public:
   // This constructor will take a default reason phrase for you
   Response(int response_code,
@@ -30,6 +26,8 @@ public:
            const Version &version = Version(2,0))
     : Message(false), response_code_(response_code),
       reason_phrase_(reason_phrase), version_(version) {}
+
+  virtual ~Response() {}
 
   int response_code() const { return response_code_; }
   void set_response_code(int response_code) {

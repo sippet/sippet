@@ -202,6 +202,20 @@ template<class To, class From> struct cast_retty_impl<To, const From*const> {
   typedef const To* ret_type;   // Constant pointer arg case, return const Ty*
 };
 
+template<class To, class From> struct cast_retty_impl<To, scoped_ptr<From> > {
+  typedef To *ret_type;         // Reference is not passed
+};
+
+template<class To, class From>
+struct cast_retty_impl<To, scoped_refptr<From> > {
+  typedef scoped_refptr<To> ret_type; // Return new ref
+};
+
+template<class To, class From>
+struct cast_retty_impl<To, const scoped_refptr<From> > {
+  typedef scoped_refptr<To> ret_type; // Return new ref
+};
+
 
 template<class To, class From, class SimpleFrom>
 struct cast_retty_wrap {
@@ -277,6 +291,20 @@ inline typename enable_if<
                           typename simplify_type<Y*>::SimpleType>::doit(Val);
 }
 
+template <class X, class Y>
+inline typename cast_retty<X, const scoped_ptr<Y> >::ret_type
+  cast(const scoped_ptr<Y> &Val) {
+  assert(isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
+  return cast<X>(Val.get());
+}
+
+template <class X, class Y>
+inline typename cast_retty<X, const scoped_refptr<Y> >::ret_type
+  cast(const scoped_refptr<Y> &Val) {
+  assert(isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
+  return cast<X>(Val.get());
+}
+
 // cast_or_null<X> - Functionally identical to cast, except that a null value is
 // accepted.
 //
@@ -307,13 +335,21 @@ inline typename cast_retty<X, Y>::ret_type dyn_cast(Y &Val) {
 }
 
 template <class X, class Y>
-inline X* dyn_cast(scoped_ptr<Y> &Val) {
-  return isa<X>(Val.get()) ? cast<X>(Val.get()) : 0;
+inline typename cast_retty<X, scoped_ptr<Y> >::ret_type
+  dyn_cast(scoped_ptr<Y> &Val) {
+  return isa<X>(Val) ? cast<X>(Val.get()) : 0;
 }
 
 template <class X, class Y>
-inline scoped_refptr<X> dyn_cast(scoped_refptr<Y> &Val) {
-  return isa<X>(Val.get()) ? cast<X>(Val.get()) : 0;
+inline typename cast_retty<X, scoped_refptr<Y> >::ret_type
+  dyn_cast(scoped_refptr<Y> &Val) {
+  return isa<X>(Val) ? cast<X>(Val.get()) : 0;
+}
+
+template <class X, class Y>
+inline typename cast_retty<X, scoped_refptr<Y> >::ret_type
+  dyn_cast(const scoped_refptr<Y> &Val) {
+  return isa<X>(Val) ? cast<X>(Val.get()) : 0;
 }
 
 template <class X, class Y>
