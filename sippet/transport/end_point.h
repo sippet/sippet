@@ -10,6 +10,7 @@
 
 #include "net/base/host_port_pair.h"
 #include "sippet/message/protocol.h"
+#include "sippet/uri/uri.h"
 
 namespace sippet {
 
@@ -19,15 +20,25 @@ class EndPoint {
     : protocol_(Protocol::Unknown) {}
   EndPoint(const EndPoint &other)
     : hostport_(other.hostport_), protocol_(other.protocol_) {}
+  EndPoint(const net::HostPortPair &hostport, const Protocol &protocol)
+    : hostport_(hostport), protocol_(protocol) {}
   EndPoint(const net::HostPortPair &hostport, Protocol::Type protocol)
     : hostport_(hostport), protocol_(protocol) {}
 
   // If |host| represents an IPv6 address, it should not bracket the address.
+  EndPoint(const std::string& host, uint16 port, const Protocol &protocol)
+    : hostport_(host, port), protocol_(protocol) {}
   EndPoint(const std::string& host, uint16 port, Protocol::Type protocol)
     : hostport_(host, port), protocol_(protocol) {}
 
   // Creates an EndPoint from a string formatted in same manner as ToString().
   static EndPoint FromString(const std::string& str);
+
+  // Creates an EndPoint from a SIP-URI.
+  static EndPoint FromSipURI(const SipURI& uri);
+
+  // Creates an EndPoint from a GURL.
+  static EndPoint FromGURL(const GURL& url);
 
   bool IsEmpty() const {
     return protocol_ == Protocol::Unknown && hostport_.IsEmpty();

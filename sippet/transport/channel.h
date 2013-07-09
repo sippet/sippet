@@ -10,6 +10,7 @@
 #include "net/base/net_log.h"
 #include "net/base/address_list.h"
 #include "base/memory/ref_counted.h"
+#include "sippet/transport/end_point.h"
 
 namespace sippet {
 
@@ -37,8 +38,8 @@ class NET_EXPORT_PRIVATE Channel :
 
   virtual ~Channel() {}
 
-  // The URL representing the destination entity of this channel.
-  virtual const GURL& url() const = 0;
+  // The destination of this channel.
+  virtual const EndPoint& destination() const = 0;
 
   // Whether this channel is a secure channel.
   virtual bool is_secure() const = 0;
