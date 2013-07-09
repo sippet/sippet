@@ -16,7 +16,7 @@ class ChannelFactory {
  public:
   // Creates a new channel to the given destination.
   virtual int CreateChannel(
-    const GURL &endpoint,
+    const EndPoint &destination,
     Channel::Delegate *delegate,
     scoped_refptr<Channel> *channel) = 0;
 };

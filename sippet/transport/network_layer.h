@@ -14,7 +14,9 @@
 #include "sippet/message/message.h"
 #include "sippet/transport/channel.h"
 #include "sippet/transport/end_point.h"
-#include "sippet/transport/transaction.h"
+#include "sippet/transport/client_transaction.h"
+#include "sippet/transport/server_transaction.h"
+#include "sippet/transport/transaction_delegate.h"
 #include "sippet/transport/aliases_map.h"
 #include "sippet/transport/network_settings.h"
 #include "sippet/uri/uri.h"
@@ -86,7 +88,7 @@ class NetworkLayer :
   public base::SystemMonitor::PowerObserver,
   public base::RefCountedThreadSafe<NetworkLayer>,
   public Channel::Delegate,
-  public Transaction::Delegate {
+  public TransactionDelegate {
  public:
   class Delegate {
    public:
@@ -165,8 +167,8 @@ class NetworkLayer :
     scoped_refptr<Request> initial_request_;
     // Keep the first callback to be called after connected and sent.
     net::CompletionCallback initial_callback_;
-    // Keep any transactions using this channel.
-    std::list<Transaction*> transactions_;
+    // Keep references to transactions using this channel.
+    std::list<std::string> transactions_;
 
     ChannelEntry() : refs_(0) {}
     explicit ChannelEntry(Channel *channel,
@@ -176,20 +178,35 @@ class NetworkLayer :
         initial_callback_(initial_callback) {}
   };
 
-  struct TransactionEntry {
+  struct ClientTransactionEntry {
     // Points to the transaction.
-    scoped_refptr<Transaction> transaction_;
+    scoped_refptr<ClientTransaction> transaction_;
     // Points to the using channel instance.
     Channel* channel_;
 
-    TransactionEntry() : channel_(0) {}
-    explicit TransactionEntry(Transaction* transaction, Channel* channel)
+    explicit ClientTransactionEntry(ClientTransaction* transaction,
+                                    Channel* channel)
+      : transaction_(transaction), channel_(channel) {}
+  };
+
+  struct ServerTransactionEntry {
+    // Points to the transaction.
+    scoped_refptr<ServerTransaction> transaction_;
+    // Points to the using channel instance.
+    Channel* channel_;
+
+    explicit ServerTransactionEntry(ServerTransaction* transaction,
+                                    Channel* channel)
       : transaction_(transaction), channel_(channel) {}
   };
 
   typedef std::map<Protocol, ChannelFactory*, ProtocolLess> FactoriesMap;
-  typedef std::map<EndPoint, ChannelEntry, EndPointLess> ChannelsMap;
-  typedef std::map<std::string, Transaction*, EndPointLess> TransactionsMap;
+  typedef std::map<EndPoint, ChannelEntry*, EndPointLess> ChannelsMap;
+
+  typedef std::map<std::string, ClientTransactionEntry*>
+    ClientTransactionsMap;
+  typedef std::map<std::string, ServerTransactionEntry*>
+    ServerTransactionsMap;
 
   TransactionFactory *transaction_factory_;
   NetworkSettings network_settings_;
@@ -197,8 +214,33 @@ class NetworkLayer :
   Delegate *delegate_;
   FactoriesMap factories_;
   ChannelsMap channels_;
-  TransactionsMap transactions_;
+  ClientTransactionsMap client_transactions_;
+  ServerTransactionsMap server_transactions_;
   bool suspended_;
+
+  static const char kMagicCookie[];
+
+  void RequestChannelInternal(ChannelEntry *entry);
+  void ReleaseChannelInternal(ChannelEntry *entry);
+  int CreateChannel(const EndPoint &destination,
+                    scoped_refptr<Channel> *channel);
+  void CreateClientTransaction(const scoped_refptr<Request> &request,
+                               ChannelEntry *channel_entry);
+  void CreateServerTransaction(const scoped_refptr<Request> &request,
+                               ChannelEntry *channel_entry);
+  static std::string CreateBranch();
+  void StampClientTopmostVia(scoped_refptr<Request> &request,
+                             const scoped_refptr<Channel> &channel);
+  void StampServerTopmostVia(scoped_refptr<Request> &request,
+                             const scoped_refptr<Channel> &channel);
+  static std::string ClientTransactionId(
+                        const scoped_refptr<Request> &request);
+  static std::string ClientTransactionId(
+                        const scoped_refptr<Response> &response);
+  static std::string ServerTransactionId(
+                        const scoped_refptr<Request> &request);
+  static std::string ServerTransactionId(
+                        const scoped_refptr<Response> &response);
 
   // sippet::Channel::Delegate methods:
   virtual void OnChannelConnected(const scoped_refptr<Channel> &channel);
@@ -206,10 +248,9 @@ class NetworkLayer :
   virtual void OnChannelClosed(const scoped_refptr<Channel> &channel,
                                int error);
 
-  // sippet::Transaction::Delegate methods:
+  // sippet::TransactionDelegate methods:
   virtual void OnPassMessage(const scoped_refptr<Message> &);
-  virtual void OnTransactionTerminated(
-      const scoped_refptr<Transaction> &transaction);
+  virtual void OnTransactionTerminated(const std::string &transaction_id);
 
   // Timer callbacks
   void OnIdleChannelTimedOut(const EndPoint &endpoint);
