@@ -5,24 +5,23 @@
 #ifndef SIPPET_TRANSPORT_NETWORK_LAYER_H_
 #define SIPPET_TRANSPORT_NETWORK_LAYER_H_
 
-#include "base/system_monitor/system_monitor.h"
+#include <list>
 #include "base/timer.h"
-#include "base/synchronization/lock.h"
 #include "base/memory/ref_counted.h"
+#include "base/system_monitor/system_monitor.h"
 #include "net/base/completion_callback.h"
-#include "net/base/client_socket_factory.h"
-#include "net/base/net_log.h"
 #include "sippet/message/protocol.h"
 #include "sippet/message/message.h"
+#include "sippet/transport/channel.h"
 #include "sippet/transport/end_point.h"
+#include "sippet/transport/transaction.h"
 #include "sippet/transport/aliases_map.h"
+#include "sippet/transport/network_settings.h"
 #include "sippet/uri/uri.h"
 
 namespace sippet {
 
-class Channel;
 class ChannelFactory;
-class Transaction;
 class TransactionFactory;
 
 // The |NetworkLayer| is the main message dispatcher of sippet. It receives
@@ -87,7 +86,7 @@ class NetworkLayer :
   public base::SystemMonitor::PowerObserver,
   public base::RefCountedThreadSafe<NetworkLayer>,
   public Channel::Delegate,
-  public Transaction::Delegate; {
+  public Transaction::Delegate {
  public:
   class Delegate {
    public:
@@ -102,14 +101,15 @@ class NetworkLayer :
   };
 
   // Construct a |NetworkLayer| with an existing |TransactionFactory|.
-  NetworkLayer(Delegate *delegate, TransactionFactory *transaction_factory);
+  NetworkLayer(Delegate *delegate, TransactionFactory *transaction_factory,
+               const NetworkSettings &network_settings = NetworkSettings());
   virtual ~NetworkLayer();
 
   // Register a ChannelFactory, responsible for opening client channels.
   // Registered managers are not owned and won't be deleted on |NetworkLayer|
   // destruction.
   void RegisterChannelFactory(const Protocol &protocol,
-                              ChannelFactory *factory);
+                              ChannelFactory *channel_factory);
 
   // Requests the use of a channel for a given destination. This will make the
   // channel to live longer than the individual transactions and normal
@@ -144,15 +144,10 @@ class NetworkLayer :
   int Send(const scoped_refptr<Message> &message,
            const net::CompletionCallback& callback);
 
-  // This function is intended to be used by the |Channel|, after receiving
-  // a new incoming message. The message will be owned by the |NetworkLayer|
-  // while routing the message.
-  void HandleIncomingMessage(const EndPoint &destination,
-                             const scoped_refptr<Message> &incoming_message);
-
   // Add an alias to an existing channel endpoint. It is considered an error
-  // to add aliases using different protocols.
-  void AddAlias(const EndPoint &destination, const EndPoint &alias);
+  // to add aliases using different protocols. Return true if the alias has
+  // been successfully created.
+  bool AddAlias(const EndPoint &destination, const EndPoint &alias);
 
  private:
   // base::SystemMonitor::PowerObserver methods:
@@ -165,28 +160,45 @@ class NetworkLayer :
     // Used to count number of current uses.
     int refs_;
     // Used to keep the channel opened so they can be reused.
-    base::OneShotTimer<OpenedConnection> timer_;
-    // Keep the first message to be sent to the channel once opened.
-    scoped_refptr<Message> initial_message_;
+    base::OneShotTimer<NetworkLayer> timer_;
+    // Keep the request used to open the channel.
+    scoped_refptr<Request> initial_request_;
+    // Keep the first callback to be called after connected and sent.
+    net::CompletionCallback initial_callback_;
     // Keep any transactions using this channel.
     std::list<Transaction*> transactions_;
 
-    explicit ChannelEntry(Channel *channel)
-      : channel_(channel), refs_(0) {}
+    ChannelEntry() : refs_(0) {}
+    explicit ChannelEntry(Channel *channel,
+                          const scoped_refptr<Request> &initial_request,
+                          const net::CompletionCallback& initial_callback)
+      : channel_(channel), refs_(0), initial_request_(initial_request),
+        initial_callback_(initial_callback) {}
+  };
+
+  struct TransactionEntry {
+    // Points to the transaction.
+    scoped_refptr<Transaction> transaction_;
+    // Points to the using channel instance.
+    Channel* channel_;
+
+    TransactionEntry() : channel_(0) {}
+    explicit TransactionEntry(Transaction* transaction, Channel* channel)
+      : transaction_(transaction), channel_(channel) {}
   };
 
   typedef std::map<Protocol, ChannelFactory*, ProtocolLess> FactoriesMap;
   typedef std::map<EndPoint, ChannelEntry, EndPointLess> ChannelsMap;
   typedef std::map<std::string, Transaction*, EndPointLess> TransactionsMap;
 
-  base::Lock critical_section_;
+  TransactionFactory *transaction_factory_;
+  NetworkSettings network_settings_;
   AliasesMap aliases_map_;
   Delegate *delegate_;
   FactoriesMap factories_;
   ChannelsMap channels_;
   TransactionsMap transactions_;
   bool suspended_;
-  net::NetLog *netlog_;
 
   // sippet::Channel::Delegate methods:
   virtual void OnChannelConnected(const scoped_refptr<Channel> &channel);
