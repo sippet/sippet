@@ -15,8 +15,8 @@ namespace sippet {
 
 class AliasesMap {
  private:
-  typedef std::map<EndPoint, EndPoint> ReverseMap;
-  typedef std::map<EndPoint, std::vector<EndPoint> > ForwardMap;
+  typedef std::map<EndPoint, EndPoint, EndPointLess> ReverseMap;
+  typedef std::map<EndPoint, std::vector<EndPoint>, EndPointLess> ForwardMap;
   typedef ReverseMap::iterator reverse_iterator;
   typedef ForwardMap::iterator forward_iterator;
 
@@ -33,7 +33,7 @@ class AliasesMap {
   ~AliasesMap() {}
 
   void AddAlias(const EndPoint &target, const EndPoint &alias) {
-    DCHECK(target.protocol() == alias.protocol());
+    DCHECK(target.protocol().Equals(alias.protocol()));
     reverse_map_[alias] = target;
     forward_map_[target].push_back(alias);
   }
@@ -42,13 +42,13 @@ class AliasesMap {
     reverse_iterator it = reverse_map_.find(alias);
     if (it == reverse_map_.end())
       return EndPoint();
-    return *it;
+    return it->second;
   }
 
   void RemoveAliases(const EndPoint &target) {
     forward_iterator fw_it = forward_map_.find(target);
     if (fw_it != forward_map_.end()) {
-      std::for_each(fw_it.second.begin(), fw_it.second.end(),
+      std::for_each(fw_it->second.begin(), fw_it->second.end(),
         remove_from(reverse_map_));
       forward_map_.erase(fw_it);
     }

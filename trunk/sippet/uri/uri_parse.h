@@ -203,11 +203,11 @@ void ParseTelURI(const char16* uri, int uri_len, Parsed* parsed);
 // The 8-bit version requires UTF-8 encoding.
 inline
 bool ExtractScheme(const char* uri, int uri_len, Component* scheme) {
-  return url_parse::ExtractScheme(uri, uri_len, scheme);
+  return uri_parse::ExtractScheme(uri, uri_len, scheme);
 }
 inline
 bool ExtractScheme(const char16* uri, int uri_len, Component* scheme) {
-  return url_parse::ExtractScheme(uri, uri_len, scheme);
+  return uri_parse::ExtractScheme(uri, uri_len, scheme);
 }
 
 // Does a best effort parse of input |spec|, in range |auth|. If a particular
@@ -229,7 +229,7 @@ void ParseAuthority(const char16* spec,
                     Component* password,
                     Component* hostname,
                     Component* port_num) {
-  return url_parse::ParseAuthority(spec, auth, username,
+  return uri_parse::ParseAuthority(spec, auth, username,
                                    password, hostname, port_num);
 }
 
