@@ -43,14 +43,7 @@
 
 #include <cassert>
 #include <cstdio>
-#ifdef _MSC_VER
-// FIXME: This define is wrong:
-//  - _snprintf does not guarantee that trailing null is always added - if
-//    there is no space for null, it does not report any error.
-//  - According to C++ standard, snprintf should be visible in the 'std' 
-//    namespace - this define makes this impossible.
-#define snprintf _snprintf
-#endif
+#include "base/string_util.h"
 
 namespace sippet {
 
@@ -103,7 +96,7 @@ public:
   }
 
   virtual int snprint(char *Buffer, unsigned BufferSize) const {
-    return snprintf(Buffer, BufferSize, Fmt, Val);
+    return base::snprintf(Buffer, BufferSize, Fmt, Val);
   }
 };
 
@@ -121,7 +114,7 @@ public:
   }
 
   virtual int snprint(char *Buffer, unsigned BufferSize) const {
-    return snprintf(Buffer, BufferSize, Fmt, Val1, Val2);
+    return base::snprintf(Buffer, BufferSize, Fmt, Val1, Val2);
   }
 };
 
@@ -140,7 +133,7 @@ public:
   }
 
   virtual int snprint(char *Buffer, unsigned BufferSize) const {
-    return snprintf(Buffer, BufferSize, Fmt, Val1, Val2, Val3);
+    return base::snprintf(Buffer, BufferSize, Fmt, Val1, Val2, Val3);
   }
 };
 
@@ -161,7 +154,7 @@ public:
   }
 
   virtual int snprint(char *Buffer, unsigned BufferSize) const {
-    return snprintf(Buffer, BufferSize, Fmt, Val1, Val2, Val3, Val4);
+    return base::snprintf(Buffer, BufferSize, Fmt, Val1, Val2, Val3, Val4);
   }
 };
 
@@ -184,7 +177,7 @@ public:
   }
 
   virtual int snprint(char *Buffer, unsigned BufferSize) const {
-    return snprintf(Buffer, BufferSize, Fmt, Val1, Val2, Val3, Val4, Val5);
+    return base::snprintf(Buffer, BufferSize, Fmt, Val1, Val2, Val3, Val4, Val5);
   }
 };
 

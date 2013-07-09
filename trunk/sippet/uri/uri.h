@@ -10,8 +10,36 @@
 
 namespace sippet {
 
+namespace uri_details {
+
+// Query parameters
+template<class T>
+struct has_parameters {
+  std::pair<bool, std::string> parameter(const std::string &name) const {
+    const std::string &spec =
+      static_cast<const T*>(this)->spec();
+    const uri_parse::Parsed& parsed =
+      static_cast<const T*>(this)->parsed_for_possibly_invalid_spec();
+    uri_parse::Component parameters = parsed.parameters;
+    uri_parse::Component key, value;
+    while (uri_parse::ExtractParametersKeyValue(
+           spec.data(), &parameters, &key, &value)) {
+        if (key.len != name.length())
+          continue;
+        if (base::strncasecmp(name.data(),
+            spec.data() + key.begin, key.len) == 0)
+          return std::make_pair(true,
+            static_cast<const T*>(this)->ComponentString(value));
+    }
+    return std::make_pair(false, "");
+  }
+};
+
+} // End of uri_details namespace
+
 // The SipURI object accepts sip and sips schemes.
-class SipURI {
+class SipURI :
+  public uri_details::has_parameters<SipURI> {
  public:
   // Creates an empty, invalid SIP-URI.
   SipURI();
@@ -232,6 +260,8 @@ class SipURI {
   static const SipURI& EmptyURI();
 
  private:
+  friend struct uri_details::has_parameters<SipURI>;
+
   // Returns the substring of the input identified by the given component.
   std::string ComponentString(const uri_parse::Component& comp) const {
     if (comp.len <= 0)
@@ -252,7 +282,8 @@ class SipURI {
 };
 
 // The TelURI object accepts only TEL-URI schemes.
-class TelURI {
+class TelURI :
+  public uri_details::has_parameters<SipURI> {
  public:
   // Creates an empty, invalid TEL-URI.
   TelURI();
@@ -390,6 +421,8 @@ class TelURI {
   static const TelURI& EmptyURI();
 
  private:
+  friend struct uri_details::has_parameters<TelURI>;
+
   // Returns the substring of the input identified by the given component.
   std::string ComponentString(const uri_parse::Component& comp) const {
     if (comp.len <= 0)

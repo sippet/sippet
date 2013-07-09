@@ -29,6 +29,25 @@ EndPoint EndPoint::FromString(const std::string& str) {
   return endpoint;
 }
 
+EndPoint EndPoint::FromSipURI(const SipURI& uri) {
+  std::pair<bool, std::string> result =
+    uri.parameter("transport");
+  // The default transport is UDP.
+  Protocol protocol = (!result.first)
+                    ? Protocol::UDP
+                    : Protocol(result.second);
+  // There's no UDP when SIPS
+  if (protocol == Protocol::UDP && uri.SchemeIs("sips"))
+    return EndPoint();
+  return EndPoint(uri.host(), uri.EffectiveIntPort(), protocol);
+}
+
+EndPoint EndPoint::FromGURL(const GURL& url) {
+  if (!url.SchemeIs("sip") && !url.SchemeIs("sips"))
+    return EndPoint();
+  return FromSipURI(SipURI(url));
+}
+
 std::string EndPoint::ToString() const {
   return hostport_.ToString() + "/" + protocol_.str();
 }
