@@ -41,96 +41,35 @@ void NetworkLayer::RegisterChannelFactory(const Protocol &protocol,
 }
 
 bool NetworkLayer::RequestChannel(const EndPoint &destination) {
-  bool success = true;
-  ChannelsMap::iterator chan_it;
-  if ((chan_it = channels_.find(destination)) == channels_.end())
-    success = false;
-  else
-    RequestChannelInternal(chan_it->second);
-  return success;
+  ChannelContext *channel_context = GetChannelContext(destination);
+  if (channel_context)
+    RequestChannelInternal(channel_context);
+  return channel_context ? true : false;
 }
 
 void NetworkLayer::ReleaseChannel(const EndPoint &destination) {
-  ChannelsMap::iterator chan_it = channels_.find(destination);
-  if (chan_it != channels_.end())
-    ReleaseChannelInternal(chan_it->second);
+  ChannelContext *channel_context = GetChannelContext(destination);
+  if (channel_context)
+    ReleaseChannelInternal(channel_context);
 }
 
 int NetworkLayer::Send(const scoped_refptr<Message> &message,
                        const net::CompletionCallback& callback) {
   if (isa<Request>(message)) {
     scoped_refptr<Request> request = dyn_cast<Request>(message);
-
-    EndPoint destination(EndPoint::FromGURL(request->request_uri()));
-    if (destination.IsEmpty()) {
-      DVLOG(1) << "invalid Request-URI";
-      return net::ERR_INVALID_ARGUMENT;
-    }
-
-    ChannelsMap::iterator chan_it = channels_.find(destination);
-    if (chan_it != channels_.end()) {
-      if (!chan_it->second->channel_->is_connected()) {
-        DVLOG(1) << "Cannot send a request yet";
-        return net::ERR_SOCKET_NOT_CONNECTED;
-      }
-      // Send ACKs out of transactions
-      if (Method::ACK != request->method())
-        CreateClientTransaction(request, chan_it->second);
-      return chan_it->second->channel_->Send(request, callback);
-    }
-    else {
-      scoped_refptr<Channel> channel;
-      int result = CreateChannel(destination, &channel);
-      if (result != net::OK)
-        return result;
-      ChannelEntry *entry = new ChannelEntry(channel, request, callback);
-      channels_[destination] = entry;
-      channel->Connect();
-      // Now wait for the asynchronous connect. When using UDP,
-      // the connect event will occur in the next event loop.
-    }
+    return SendRequest(request, callback);
   }
   else {
     scoped_refptr<Response> response = dyn_cast<Response>(message);
-
-    std::string transaction_id(ServerTransactionId(response));
-    ServerTransactionsMap::iterator server_transactions_it =
-      server_transactions_.find(transaction_id);
-    if (server_transactions_it != server_transactions_.end()) {
-      server_transactions_it->second->transaction_->Send(response, callback);
-    }
-    else {
-      // Send the response directly
-      Message::iterator topmost_via = response->find_first<Via>();
-      if (topmost_via == response->end()) {
-        DVLOG(1) << "Impossible to route without Via";
-        return net::ERR_INVALID_ARGUMENT;
-      }
-      Via *via = dyn_cast<Via>(topmost_via);
-      EndPoint destination(via->front().sent_by(), via->front().protocol());
-      if (via->front().HasReceived())
-        destination.set_host(via->front().received());
-      if (via->front().HasRport())
-        destination.set_port(via->front().rport());
-      ChannelsMap::iterator chan_it = channels_.find(destination);
-      if (chan_it == channels_.end()) {
-        DVLOG(1) << "No channel can send the message";
-        return net::ERR_SOCKET_NOT_CONNECTED;
-      }
-      chan_it->second->channel_->Send(response, callback);
-    }
+    return SendResponse(response, callback);
   }
-  return net::OK;
 }
 
 bool NetworkLayer::AddAlias(const EndPoint &destination, const EndPoint &alias) {
-  bool success = false;
-  ChannelsMap::iterator chan_it = channels_.find(destination);
-  if (chan_it != channels_.end()) {
+  ChannelContext *channel_context = GetChannelContext(destination);
+  if (channel_context)
     aliases_map_.AddAlias(destination, alias);
-    success = true;
-  }
-  return success;
+  return channel_context ? true : false;
 }
 
 void NetworkLayer::OnSuspend() {
@@ -147,63 +86,130 @@ void NetworkLayer::OnResume() {
   }
 }
 
-void NetworkLayer::RequestChannelInternal(ChannelEntry *entry) {
-  // While adding an use, don't forget to stop the timer
-  entry->refs_++;
-  if (entry->timer_.IsRunning())
-    entry->timer_.Stop();
+int NetworkLayer::SendRequest(const scoped_refptr<Request> &request,
+                              const net::CompletionCallback& callback) {
+  EndPoint destination(GetMessageEndPoint(request));
+  if (destination.IsEmpty()) {
+    DVLOG(1) << "invalid Request-URI";
+    return net::ERR_INVALID_ARGUMENT;
+  }
+
+  ChannelContext *channel_context = GetChannelContext(destination);
+  if (channel_context) {
+    if (!channel_context->channel_->is_connected()) {
+      DVLOG(1) << "Cannot send a request yet";
+      return net::ERR_SOCKET_NOT_CONNECTED;
+    }
+    // Send ACKs out of transactions
+    if (Method::ACK != request->method()) {
+      // The created transaction will handle the response processing.
+      // Requests don't need to be passed to client transactions.
+      CreateClientTransaction(request, channel_context);
+    }
+    return channel_context->channel_->Send(request, callback);
+  }
+  else {
+    scoped_refptr<Channel> channel;
+    int result = CreateChannel(destination, &channel);
+    if (result != net::OK)
+      return result;
+    ChannelContext *channel_context =
+      new ChannelContext(channel, request, callback);
+    channels_[destination] = channel_context;
+    channel->Connect();
+    // Now wait for the asynchronous connect. When using UDP,
+    // the connect event will occur in the next event loop.
+  }
+
+  return net::OK;
 }
 
-void NetworkLayer::ReleaseChannelInternal(ChannelEntry *entry) {
-  entry->refs_--;
+int NetworkLayer::SendResponse(const scoped_refptr<Response> &response,
+                               const net::CompletionCallback& callback) {
+  scoped_refptr<ServerTransaction> server_transaction =
+    GetServerTransaction(response);
+  if (server_transaction) {
+    server_transaction->Send(response, callback);
+  }
+  else {
+    // When there's no server transaction available, tries to send the
+    // response directly through an available channel.
+    EndPoint destination(GetMessageEndPoint(response));
+    if (destination.IsEmpty()) {
+      DVLOG(1) << "Impossible to route without Via";
+      return net::ERR_INVALID_ARGUMENT;
+    }
+    ChannelContext *channel_context = GetChannelContext(destination);
+    if (!channel_context) {
+      DVLOG(1) << "No channel can send the message";
+      return net::ERR_SOCKET_NOT_CONNECTED;
+    }
+    channel_context->channel_->Send(response, callback);
+  }
+
+  return net::OK;
+}
+
+void NetworkLayer::RequestChannelInternal(ChannelContext *channel_context) {
+  DCHECK(channel_context);
+
+  // While adding an use, don't forget to stop the timer
+  channel_context->refs_++;
+  if (channel_context->timer_.IsRunning())
+    channel_context->timer_.Stop();
+}
+
+void NetworkLayer::ReleaseChannelInternal(ChannelContext *channel_context) {
+  DCHECK(channel_context);
+
+  channel_context->refs_--;
   // When all references reach zero, start the timer.
-  if (entry->refs_ == 0) {
-    entry->timer_.Start(FROM_HERE,
+  if (channel_context->refs_ == 0) {
+    channel_context->timer_.Start(FROM_HERE,
       base::TimeDelta::FromSeconds(network_settings_.reuse_lifetime()),
       base::Bind(&NetworkLayer::OnIdleChannelTimedOut, this,
-        entry->channel_->destination()));
+        channel_context->channel_->destination()));
   }
 }
 
 int NetworkLayer::CreateChannel(const EndPoint &destination,
                                 scoped_refptr<Channel> *channel) {
+  DCHECK(channel);
+
   FactoriesMap::iterator factories_it =
     factories_.find(destination.protocol());
   if (factories_it == factories_.end())
     return net::ERR_ADDRESS_UNREACHABLE;
+  // The 'self' delegate is set here:
   return factories_it->second->CreateChannel(
     destination, this, channel);
 }
 
 void NetworkLayer::CreateClientTransaction(
           const scoped_refptr<Request> &request,
-          ChannelEntry *channel_entry) {
+          ChannelContext *channel_context) {
   scoped_refptr<ClientTransaction> client_transaction =
     transaction_factory_->CreateClientTransaction(request->method(),
       ClientTransactionId(request),
-      channel_entry->channel_,
+      channel_context->channel_,
       this);
-  ClientTransactionEntry *client_transaction_entry =
-    new ClientTransactionEntry(client_transaction, channel_entry->channel_);
-  client_transactions_[client_transaction->id()] = client_transaction_entry;
-  channel_entry->transactions_.push_back(client_transaction->id());
-  RequestChannelInternal(channel_entry);
+  client_transactions_[client_transaction->id()] = client_transaction;
+  channel_context->transactions_.insert(client_transaction->id());
+  RequestChannelInternal(channel_context);
   client_transaction->Start(request);
 }
 
 void NetworkLayer::CreateServerTransaction(
           const scoped_refptr<Request> &request,
-          ChannelEntry *channel_entry) {
+          ChannelContext *channel_context) {
   scoped_refptr<ServerTransaction> server_transaction =
     transaction_factory_->CreateServerTransaction(request->method(),
       ServerTransactionId(request),
-      channel_entry->channel_,
+      channel_context->channel_,
       this);
-  ServerTransactionEntry *server_transaction_entry =
-    new ServerTransactionEntry(server_transaction, channel_entry->channel_);
-  server_transactions_[server_transaction->id()] = server_transaction_entry;
-  channel_entry->transactions_.push_back(server_transaction->id());
-  RequestChannelInternal(channel_entry);
+  server_transactions_[server_transaction->id()] = server_transaction;
+  channel_context->transactions_.insert(server_transaction->id());
+  RequestChannelInternal(channel_context);
   server_transaction->Start(request);
 }
 
@@ -375,36 +381,187 @@ std::string NetworkLayer::ServerTransactionId(
   return id;
 }
 
-void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel) {
-  // TODO: Dispatch the enqueued message, execute the callback if appropriated
-  // and don't forget to cleanup the callback afterwards.
+EndPoint NetworkLayer::GetMessageEndPoint(
+    const scoped_refptr<Message> &message) {
+  if (isa<Request>(message)) {
+    scoped_refptr<Request> request = dyn_cast<Request>(message);
+    return EndPoint::FromGURL(request->request_uri());
+  }
+  else {
+    scoped_refptr<Response> response = dyn_cast<Response>(message);
+    Message::iterator topmost_via = response->find_first<Via>();
+    if (topmost_via == response->end())
+      return EndPoint();
+    Via *via = dyn_cast<Via>(topmost_via);
+    EndPoint result(via->front().sent_by(), via->front().protocol());
+    if (via->front().HasReceived())
+      result.set_host(via->front().received());
+    if (via->front().HasRport())
+      result.set_port(via->front().rport());
+    return result;
+  }
 }
 
-void NetworkLayer::OnIncomingMessage(const scoped_refptr<Message> &message) {
-  // TODO: if request, create a new server transaction and pass to it.
-  // Otherwise, check if it pertains to one of the existing transactions;
-  // if not, then pass directly to the delegate. If it's a request, stamp the
-  // remote address in the topmost Via.
+NetworkLayer::ChannelContext *NetworkLayer::GetChannelContext(
+    const EndPoint &destination) {
+  ChannelsMap::iterator channel_it;
+  channel_it = channels_.find(destination);
+  if (channel_it == channels_.end())
+    return 0;
+  return channel_it->second;
+}
+
+scoped_refptr<ClientTransaction> NetworkLayer::GetClientTransaction(
+                                      const scoped_refptr<Message> &message) {
+  DCHECK(isa<Response>(message));
+
+  scoped_refptr<Response> response = dyn_cast<Response>(message);
+  std::string transaction_id(ClientTransactionId(response));
+  return GetClientTransaction(transaction_id);
+}
+
+scoped_refptr<ServerTransaction> NetworkLayer::GetServerTransaction(
+                                      const scoped_refptr<Message> &message) {
+  std::string transaction_id;
+  if (isa<Request>(message)) {
+    scoped_refptr<Request> request = dyn_cast<Request>(message);
+    transaction_id = ServerTransactionId(request);
+  }
+  else {
+    scoped_refptr<Response> response = dyn_cast<Response>(message);
+    transaction_id = ServerTransactionId(response);
+  }
+  return GetServerTransaction(transaction_id);
+}
+
+scoped_refptr<ClientTransaction> NetworkLayer::GetClientTransaction(
+                      const std::string &transaction_id) {
+  ClientTransactionsMap::iterator client_transactions_it =
+    client_transactions_.find(transaction_id);
+  if (client_transactions_it == client_transactions_.end())
+    return 0;
+  return client_transactions_it->second;
+}
+scoped_refptr<ServerTransaction> NetworkLayer::GetServerTransaction(
+                      const std::string &transaction_id) {
+  ServerTransactionsMap::iterator server_transactions_it =
+    server_transactions_.find(transaction_id);
+  if (server_transactions_it == server_transactions_.end())
+    return 0;
+  return server_transactions_it->second;
+}
+
+void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel,
+                                      int result) {
+  DCHECK_NE(net::ERR_IO_PENDING, result);
+
+  ChannelsMap::iterator channel_it = channels_.find(channel->destination());
+  DCHECK(channel_it != channels_.end());
+  ChannelContext *channel_context = channel_it->second;
+  if (result == net::OK) {
+    result = channel_context->channel_->Send(
+      channel_context->initial_request_, channel_context->initial_callback_);
+    if (result == net::OK) {
+      // Clean channel initial context
+      channel_context->initial_request_ = 0;
+      channel_context->initial_callback_ = net::CompletionCallback();
+    }
+  }
+  if (result != net::OK && result != net::ERR_IO_PENDING) {
+    //DetachContext(channel_context);
+    channel_context->initial_callback_.Run(result);
+    //DestroyContext(channel_context);
+  }
+}
+
+void NetworkLayer::OnIncomingMessage(const scoped_refptr<Channel> &channel,
+                                     const scoped_refptr<Message> &message) {
+  if (isa<Request>(message)) {
+    scoped_refptr<Request> request = dyn_cast<Request>(message);
+    scoped_refptr<ServerTransaction> server_transaction =
+      GetServerTransaction(request);
+    if (server_transaction)
+      server_transaction->HandleIncomingRequest(request);
+    else
+      HandleIncomingRequest(channel, request);
+  }
+  else {
+    scoped_refptr<Response> response = dyn_cast<Response>(message);
+    scoped_refptr<ClientTransaction> client_transaction =
+      GetClientTransaction(response);
+    if (client_transaction)
+      client_transaction->HandleIncomingResponse(response);
+    else
+      HandleIncomingResponse(channel, response);
+  }
+}
+
+void NetworkLayer::HandleIncomingRequest(
+                                 const scoped_refptr<Channel> &channel,
+                                 const scoped_refptr<Request> &request) {
+  ChannelContext *channel_context =
+    GetChannelContext(channel->destination());
+
+  DCHECK(channel_context);
+
+  // Server transactions are created in advance
+  CreateServerTransaction(request, channel_context);
+  delegate_->OnIncomingMessage(request);
+}
+
+void NetworkLayer::HandleIncomingResponse(
+                                 const scoped_refptr<Channel> &channel,
+                                 const scoped_refptr<Response> &response) {
+  ChannelContext *channel_context =
+    GetChannelContext(channel->destination());
+
+  DCHECK(channel_context);
+
+  delegate_->OnIncomingMessage(response);
 }
 
 void NetworkLayer::OnChannelClosed(const scoped_refptr<Channel> &channel,
                                    int error) {
-  // TODO: Remove all available aliases to the connected destination, pass
-  // the error to connected transactions, and finally send the callback to
-  // the delegate.
+  ChannelContext *channel_context = GetChannelContext(channel->destination());
+  DCHECK(channel_context);
+
+  for (std::set<std::string>::iterator i =
+         channel_context->transactions_.begin(),
+       ie = channel_context->transactions_.end();
+       i != ie; ++i) {
+    if (StartsWithASCII(*i, "c:", true)) {
+      scoped_refptr<ClientTransaction> client_transaction =
+        GetClientTransaction(*i);
+      client_transaction->Close();
+      client_transactions_.erase(*i);
+    }
+    else {
+      scoped_refptr<ServerTransaction> server_transaction =
+        GetServerTransaction(*i);
+      server_transaction->Close();
+      server_transactions_.erase(*i);
+    }
+  }
+
+  EndPoint destination(channel->destination());
+  DestroyChannel(channel);
+  delegate_->OnChannelClosed(destination, error);
 }
 
-void NetworkLayer::OnPassMessage(const scoped_refptr<Message> &) {
-  // TODO: Just pass the message to the delegate.
+void NetworkLayer::OnPassMessage(const scoped_refptr<Message> &message) {
+  delegate_->OnIncomingMessage(message);
 }
 
 void NetworkLayer::OnTransactionTerminated(const std::string &transaction_id) {
-  // TODO: Remove the transaction from the existing channel list and from the
-  // transaction map.
+  if (StartsWithASCII(transaction_id, "c:", false))
+    client_transactions_.erase(transaction_id);
+  else
+    server_transactions_.erase(transaction_id);
 }
 
 void NetworkLayer::OnIdleChannelTimedOut(const EndPoint &endpoint) {
-  // TODO: Remove the channel from the channel map and pass to delegate.
+  ChannelContext *channel_context = GetChannelContext(endpoint);
+  OnChannelClosed(channel_context->channel_, net::ERR_TIMED_OUT);
 }
 
 } // End of sippet namespace
