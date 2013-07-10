@@ -72,6 +72,8 @@ public:
       os << sent_by_.host();
     if (sent_by_.port() != 0)
       os << ":" << sent_by_.port();
+    if (!HasRport()) // RFC 3581
+      os << ";rport";
     has_parameters::print(os);
   }
 private:

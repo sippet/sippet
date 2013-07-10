@@ -21,6 +21,11 @@ class ClientTransaction :
   virtual const std::string& id() const = 0;
 
   virtual void Start(const scoped_refptr<Request> &outgoing_request) = 0;
+
+  virtual void HandleIncomingResponse(
+                    const scoped_refptr<Response> &response) = 0;
+
+  virtual void Close() = 0;
 };
 
 } /// End of sippet namespace

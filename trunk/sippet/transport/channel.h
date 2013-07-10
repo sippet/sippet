@@ -26,10 +26,12 @@ class NET_EXPORT_PRIVATE Channel :
     virtual ~Delegate() {}
 
     // Called when the channel has been connected.
-    virtual void OnChannelConnected(const scoped_refptr<Channel> &channel) = 0;
+    virtual void OnChannelConnected(const scoped_refptr<Channel> &channel,
+                                    int error) = 0;
 
     // Called when a message is received from the channel.
-    virtual void OnIncomingMessage(const scoped_refptr<Message> &message) = 0;
+    virtual void OnIncomingMessage(const scoped_refptr<Channel> &channel,
+                                   const scoped_refptr<Message> &message) = 0;
 
     // Called when the channel is closed.
     virtual void OnChannelClosed(const scoped_refptr<Channel> &channel,
