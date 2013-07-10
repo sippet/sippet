@@ -5,7 +5,7 @@
 #ifndef SIPPET_TRANSPORT_NETWORK_LAYER_H_
 #define SIPPET_TRANSPORT_NETWORK_LAYER_H_
 
-#include <list>
+#include <set>
 #include "base/timer.h"
 #include "base/memory/ref_counted.h"
 #include "base/system_monitor/system_monitor.h"
@@ -156,7 +156,7 @@ class NetworkLayer :
   virtual void OnSuspend() OVERRIDE;
   virtual void OnResume() OVERRIDE;
 
-  struct ChannelEntry {
+  struct ChannelContext {
     // Holds the channel instance.
     scoped_refptr<Channel> channel_;
     // Used to count number of current uses.
@@ -168,44 +168,22 @@ class NetworkLayer :
     // Keep the first callback to be called after connected and sent.
     net::CompletionCallback initial_callback_;
     // Keep references to transactions using this channel.
-    std::list<std::string> transactions_;
+    std::set<std::string> transactions_;
 
-    ChannelEntry() : refs_(0) {}
-    explicit ChannelEntry(Channel *channel,
+    ChannelContext() : refs_(0) {}
+    explicit ChannelContext(Channel *channel,
                           const scoped_refptr<Request> &initial_request,
                           const net::CompletionCallback& initial_callback)
       : channel_(channel), refs_(0), initial_request_(initial_request),
         initial_callback_(initial_callback) {}
   };
 
-  struct ClientTransactionEntry {
-    // Points to the transaction.
-    scoped_refptr<ClientTransaction> transaction_;
-    // Points to the using channel instance.
-    Channel* channel_;
-
-    explicit ClientTransactionEntry(ClientTransaction* transaction,
-                                    Channel* channel)
-      : transaction_(transaction), channel_(channel) {}
-  };
-
-  struct ServerTransactionEntry {
-    // Points to the transaction.
-    scoped_refptr<ServerTransaction> transaction_;
-    // Points to the using channel instance.
-    Channel* channel_;
-
-    explicit ServerTransactionEntry(ServerTransaction* transaction,
-                                    Channel* channel)
-      : transaction_(transaction), channel_(channel) {}
-  };
-
   typedef std::map<Protocol, ChannelFactory*, ProtocolLess> FactoriesMap;
-  typedef std::map<EndPoint, ChannelEntry*, EndPointLess> ChannelsMap;
+  typedef std::map<EndPoint, ChannelContext*, EndPointLess> ChannelsMap;
 
-  typedef std::map<std::string, ClientTransactionEntry*>
+  typedef std::map<std::string, scoped_refptr<ClientTransaction> >
     ClientTransactionsMap;
-  typedef std::map<std::string, ServerTransactionEntry*>
+  typedef std::map<std::string, scoped_refptr<ServerTransaction> >
     ServerTransactionsMap;
 
   TransactionFactory *transaction_factory_;
@@ -220,19 +198,26 @@ class NetworkLayer :
 
   static const char kMagicCookie[];
 
-  void RequestChannelInternal(ChannelEntry *entry);
-  void ReleaseChannelInternal(ChannelEntry *entry);
+  int SendRequest(const scoped_refptr<Request> &request,
+                  const net::CompletionCallback& callback);
+  int SendResponse(const scoped_refptr<Response> &message,
+                   const net::CompletionCallback& callback);
+
+  void RequestChannelInternal(ChannelContext *channel_context);
+  void ReleaseChannelInternal(ChannelContext *channel_context);
   int CreateChannel(const EndPoint &destination,
                     scoped_refptr<Channel> *channel);
+  void DestroyChannel(const scoped_refptr<Channel> &channel);
   void CreateClientTransaction(const scoped_refptr<Request> &request,
-                               ChannelEntry *channel_entry);
+                               ChannelContext *channel_context);
   void CreateServerTransaction(const scoped_refptr<Request> &request,
-                               ChannelEntry *channel_entry);
+                               ChannelContext *channel_context);
+
   static std::string CreateBranch();
-  void StampClientTopmostVia(scoped_refptr<Request> &request,
-                             const scoped_refptr<Channel> &channel);
-  void StampServerTopmostVia(scoped_refptr<Request> &request,
-                             const scoped_refptr<Channel> &channel);
+  static void StampClientTopmostVia(scoped_refptr<Request> &request,
+                                    const scoped_refptr<Channel> &channel);
+  static void StampServerTopmostVia(scoped_refptr<Request> &request,
+                                    const scoped_refptr<Channel> &channel);
   static std::string ClientTransactionId(
                         const scoped_refptr<Request> &request);
   static std::string ClientTransactionId(
@@ -241,10 +226,28 @@ class NetworkLayer :
                         const scoped_refptr<Request> &request);
   static std::string ServerTransactionId(
                         const scoped_refptr<Response> &response);
+  static EndPoint GetMessageEndPoint(const scoped_refptr<Message> &message);
+
+  ChannelContext *GetChannelContext(const EndPoint &destination);
+  scoped_refptr<ClientTransaction> GetClientTransaction(
+                        const scoped_refptr<Message> &message);
+  scoped_refptr<ServerTransaction> GetServerTransaction(
+                        const scoped_refptr<Message> &message);
+  scoped_refptr<ClientTransaction> GetClientTransaction(
+                        const std::string &transaction_id);
+  scoped_refptr<ServerTransaction> GetServerTransaction(
+                        const std::string &transaction_id);
+
+  void HandleIncomingRequest(const scoped_refptr<Channel> &channel,
+                             const scoped_refptr<Request> &request);
+  void HandleIncomingResponse(const scoped_refptr<Channel> &channel,
+                              const scoped_refptr<Response> &response);
 
   // sippet::Channel::Delegate methods:
-  virtual void OnChannelConnected(const scoped_refptr<Channel> &channel);
-  virtual void OnIncomingMessage(const scoped_refptr<Message> &message);
+  virtual void OnChannelConnected(const scoped_refptr<Channel> &channel,
+                                  int error);
+  virtual void OnIncomingMessage(const scoped_refptr<Channel> &channel,
+                                 const scoped_refptr<Message> &message);
   virtual void OnChannelClosed(const scoped_refptr<Channel> &channel,
                                int error);
 

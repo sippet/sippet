@@ -20,10 +20,17 @@ class ServerTransaction :
 
   virtual const std::string& id() const = 0;
 
+  virtual Channel *channel() const = 0;
+
   virtual void Start(const scoped_refptr<Request> &incoming_request) = 0;
 
   virtual void Send(const scoped_refptr<Response> &response,
                     const net::CompletionCallback& callback) = 0;
+
+  virtual void HandleIncomingRequest(
+                    const scoped_refptr<Request> &request) = 0;
+
+  virtual void Close() = 0;
 };
 
 } /// End of sippet namespace
