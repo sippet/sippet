@@ -667,7 +667,7 @@ TEST(HeaderTest, Via) {
   raw_string_ostream os(buffer);
   via->print(os);
 
-  EXPECT_EQ("v: SIP/2.0/UDP pc33.atlanta.com;branch=z9hG4bK776asdhds", os.str());
+  EXPECT_EQ("v: SIP/2.0/UDP pc33.atlanta.com;rport;branch=z9hG4bK776asdhds", os.str());
 }
 
 TEST(HeaderTest, Warning) {
