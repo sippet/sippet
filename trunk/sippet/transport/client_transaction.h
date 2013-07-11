@@ -19,6 +19,7 @@ class ClientTransaction :
   virtual ~ClientTransaction() {}
 
   virtual const std::string& id() const = 0;
+  virtual scoped_refptr<Channel> channel() const = 0;
 
   virtual void Start(const scoped_refptr<Request> &outgoing_request) = 0;
 

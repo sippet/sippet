@@ -12,6 +12,7 @@
       'type': 'executable',
       'dependencies': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gmock.gyp:gmock',
         '<(DEPTH)/net/net.gyp:net',
         '<(DEPTH)/net/net.gyp:net_test_support',
         'sippet.gyp:sippet',
@@ -29,6 +30,7 @@
         'transport/end_point_unittest.cc',
         'transport/framed_write_stream_socket_unittest.cc',
         'transport/sequenced_write_stream_socket_unittest.cc',
+        'transport/network_layer_unittest.cc',
       ],
     },  # target sippet_unittest
   ],

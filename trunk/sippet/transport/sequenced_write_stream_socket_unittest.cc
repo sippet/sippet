@@ -79,7 +79,7 @@ class StreamChannelTest : public testing::Test {
 
 static char RegisterRequest[] = 
   "REGISTER sip:registrar.biloxi.com SIP/2.0\r\n"
-  "v: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7\r\n"
+  "v: SIP/2.0/UDP bobspc.biloxi.com:5060;rport;branch=z9hG4bKnashds7\r\n"
   "Max-Forwards: 70\r\n"
   "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
   "f: \"Bob\" <sip:bob@biloxi.com>;tag=456248\r\n"
@@ -110,7 +110,7 @@ TEST_F(StreamChannelTest, AsyncSend) {
   net::MockWrite writes[] = {
     net::MockWrite(net::ASYNC, 0,
        "REGISTER sip:registrar.biloxi.com SIP/2.0\r\n"
-       "v: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7\r\n"
+       "v: SIP/2.0/UDP bobspc.biloxi.com:5060;rport;branch=z9hG4bKnashds7\r\n"
        "Max-Forwards: 70\r\n"),
     net::MockWrite(net::ASYNC, 1,
        "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
@@ -195,7 +195,7 @@ TEST_F(StreamChannelTest, AsyncSendError) {
   net::MockWrite writes[] = {
     net::MockWrite(net::ASYNC, 0,
        "REGISTER sip:registrar.biloxi.com SIP/2.0\r\n"
-       "v: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7\r\n"
+       "v: SIP/2.0/UDP bobspc.biloxi.com:5060;rport;branch=z9hG4bKnashds7\r\n"
        "Max-Forwards: 70\r\n"),
        net::MockWrite(net::SYNCHRONOUS, net::ERR_CONNECTION_CLOSED, 1),
   };
@@ -221,7 +221,7 @@ TEST_F(StreamChannelTest, AsyncConnReset) {
   net::MockWrite writes[] = {
     net::MockWrite(net::ASYNC, 0,
        "REGISTER sip:registrar.biloxi.com SIP/2.0\r\n"
-       "v: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7\r\n"
+       "v: SIP/2.0/UDP bobspc.biloxi.com:5060;rport;branch=z9hG4bKnashds7\r\n"
        "Max-Forwards: 70\r\n"),
     net::MockWrite(net::SYNCHRONOUS, 1, ""),
   };
