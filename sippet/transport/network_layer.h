@@ -89,6 +89,8 @@ class NetworkLayer :
   public base::RefCountedThreadSafe<NetworkLayer>,
   public Channel::Delegate,
   public TransactionDelegate {
+ private:
+  DISALLOW_COPY_AND_ASSIGN(NetworkLayer);
  public:
   class Delegate {
    public:
@@ -152,6 +154,9 @@ class NetworkLayer :
   bool AddAlias(const EndPoint &destination, const EndPoint &alias);
 
  private:
+  // Just for testing purposes
+  friend class NetworkLayerTest;
+
   // base::SystemMonitor::PowerObserver methods:
   virtual void OnSuspend() OVERRIDE;
   virtual void OnResume() OVERRIDE;
@@ -196,27 +201,42 @@ class NetworkLayer :
   ServerTransactionsMap server_transactions_;
   bool suspended_;
 
+  // This is the magic cookie "z9hG4bK" defined in RFC 3261
   static const char kMagicCookie[];
 
-  int SendRequest(const scoped_refptr<Request> &request,
+  int SendRequest(scoped_refptr<Request> &request,
                   const net::CompletionCallback& callback);
   int SendResponse(const scoped_refptr<Response> &message,
                    const net::CompletionCallback& callback);
 
+  // Manage the number of channel references to start/stop the idle timeout
   void RequestChannelInternal(ChannelContext *channel_context);
   void ReleaseChannelInternal(ChannelContext *channel_context);
-  int CreateChannel(const EndPoint &destination,
-                    scoped_refptr<Channel> *channel);
-  void DestroyChannel(const scoped_refptr<Channel> &channel);
-  void CreateClientTransaction(const scoped_refptr<Request> &request,
-                               ChannelContext *channel_context);
-  void CreateServerTransaction(const scoped_refptr<Request> &request,
-                               ChannelContext *channel_context);
 
+  // Create transactions, associating to referencing tables
+  ClientTransaction *CreateClientTransaction(
+                           const scoped_refptr<Request> &request,
+                           ChannelContext *channel_context);
+  ServerTransaction *CreateServerTransaction(
+                           const scoped_refptr<Request> &request,
+                           ChannelContext *channel_context);
+  void DestroyClientTransaction(
+                const scoped_refptr<ClientTransaction> &client_transaction);
+  void DestroyServerTransaction(
+                const scoped_refptr<ServerTransaction> &server_transaction);
+
+  // Create channel contexts, associating to referencing tables
+  int CreateChannelContext(const EndPoint &destination,
+                           const scoped_refptr<Request> &request,
+                           const net::CompletionCallback &callback,
+                           ChannelContext **created_channel_context);
+  void DestroyChannelContext(ChannelContext *channel_context);
+
+  // Set of utility functions used internally
   static std::string CreateBranch();
   static void StampClientTopmostVia(scoped_refptr<Request> &request,
                                     const scoped_refptr<Channel> &channel);
-  static void StampServerTopmostVia(scoped_refptr<Request> &request,
+  static bool StampServerTopmostVia(scoped_refptr<Request> &request,
                                     const scoped_refptr<Channel> &channel);
   static std::string ClientTransactionId(
                         const scoped_refptr<Request> &request);
@@ -228,6 +248,7 @@ class NetworkLayer :
                         const scoped_refptr<Response> &response);
   static EndPoint GetMessageEndPoint(const scoped_refptr<Message> &message);
 
+  // Recover channel and transaction contexts from referencing tables
   ChannelContext *GetChannelContext(const EndPoint &destination);
   scoped_refptr<ClientTransaction> GetClientTransaction(
                         const scoped_refptr<Message> &message);
@@ -238,8 +259,15 @@ class NetworkLayer :
   scoped_refptr<ServerTransaction> GetServerTransaction(
                         const std::string &transaction_id);
 
+  // Handle new incoming requests (not retransmissions). Server transactions
+  // are created in advance while receiving new requests
   void HandleIncomingRequest(const scoped_refptr<Channel> &channel,
                              const scoped_refptr<Request> &request);
+  
+  // Handle responses not matching any of the existing client transactions.
+  // Just pass the response to the delegate; it will be the case for 200 OK
+  // retransmissions after the INVITE transaction has been terminated, and
+  // the UAC will require to send the ACK directly.
   void HandleIncomingResponse(const scoped_refptr<Channel> &channel,
                               const scoped_refptr<Response> &response);
 
