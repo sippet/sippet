@@ -38,6 +38,7 @@ class NET_EXPORT_PRIVATE Channel :
                                  int error) = 0;
   };
 
+  Channel() {}
   virtual ~Channel() {}
 
   // The origin (local address) of this channel.
@@ -66,17 +67,6 @@ class NET_EXPORT_PRIVATE Channel :
   // |callback| the callback to be called on completion.
   virtual int Send(const scoped_refptr<Message> &message,
                    const net::CompletionCallback& callback) = 0;
-
-  // Send a channel keep-alive.  ERR_IO_PENDING is returned if the operation
-  // could not be completed synchronously, in which case the result will be
-  // passed to the callback when available.
-  // |callback| the callback to be called on completion.
-  virtual int SendKeepAlive(const net::CompletionCallback& callback) = 0;
-
-  // Starts receiving messages asynchronously.
-  // Once a message is received or the channel is closed, calls delegate's
-  // OnReceived.
-  virtual void Receive() = 0;
 
   // Requests to close the connection.
   // Once the connection is closed, calls delegate's OnClose.
