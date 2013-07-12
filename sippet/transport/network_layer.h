@@ -6,9 +6,11 @@
 #define SIPPET_TRANSPORT_NETWORK_LAYER_H_
 
 #include <set>
+
 #include "base/timer.h"
 #include "base/memory/ref_counted.h"
 #include "base/system_monitor/system_monitor.h"
+#include "base/gtest_prod_util.h"
 #include "net/base/completion_callback.h"
 #include "sippet/message/protocol.h"
 #include "sippet/message/message.h"
@@ -154,8 +156,11 @@ class NetworkLayer :
   bool AddAlias(const EndPoint &destination, const EndPoint &alias);
 
  private:
+  FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
+
   // Just for testing purposes
   friend class NetworkLayerTest;
+
 
   // base::SystemMonitor::PowerObserver methods:
   virtual void OnSuspend() OVERRIDE;
@@ -236,7 +241,7 @@ class NetworkLayer :
   static std::string CreateBranch();
   static void StampClientTopmostVia(scoped_refptr<Request> &request,
                                     const scoped_refptr<Channel> &channel);
-  static bool StampServerTopmostVia(scoped_refptr<Request> &request,
+  static void StampServerTopmostVia(scoped_refptr<Request> &request,
                                     const scoped_refptr<Channel> &channel);
   static std::string ClientTransactionId(
                         const scoped_refptr<Request> &request);
@@ -246,6 +251,9 @@ class NetworkLayer :
                         const scoped_refptr<Request> &request);
   static std::string ServerTransactionId(
                         const scoped_refptr<Response> &response);
+
+  // This function gets the end point of sending messages. For requests, use
+  // the request-URI; for responses, use the topmost Via header.
   static EndPoint GetMessageEndPoint(const scoped_refptr<Message> &message);
 
   // Recover channel and transaction contexts from referencing tables
