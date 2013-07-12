@@ -8,6 +8,7 @@
 #include "sippet/message/message.h"
 
 #include "base/string_util.h"
+#include "net/socket/socket_test_util.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "testing/gmock/include/gmock/gmock.h"
@@ -16,9 +17,24 @@ namespace sippet {
 
 namespace {
 
+class MockNetworkLayerDelegate : public NetworkLayer::Delegate {
+ public:
+  MOCK_METHOD2(OnChannelClosed, void(const EndPoint&, int));
+  MOCK_METHOD1(OnIncomingMessage, void(Message*));
+};
+
 class MockChannel : public Channel {
  public:
-   MockChannel() : is_secure_(false), is_connected_(false) {}
+  MockChannel(Channel::Delegate *delegate = NULL,
+              net::MockRead* reads = NULL, size_t reads_count = 0,
+              net::MockWrite* writes = NULL, size_t writes_count = 0)
+  : delegate_(delegate), is_secure_(false), is_connected_(false) {
+    data_.reset(new net::DeterministicSocketData(reads, reads_count, writes, writes_count));
+    net::DeterministicMockTCPClientSocket* wrapped_socket =
+      new net::DeterministicMockTCPClientSocket(net_log_.net_log(), data_.get());
+    data_->set_socket(wrapped_socket->AsWeakPtr());
+    socket_.reset(wrapped_socket->AsWeakPtr());
+  }
   ~MockChannel() {}
 
   void set_origin(const EndPoint &value) { origin_ = value; }
@@ -31,26 +47,65 @@ class MockChannel : public Channel {
   virtual bool is_secure() const { return is_secure_; }
   virtual bool is_connected() const { return is_connected_; }
 
-  MOCK_METHOD0(Connect, void());
-  MOCK_METHOD2(Send, int(const scoped_refptr<Message>&, const net::CompletionCallback&));
+  virtual void Connect() {
+    socket_->Connect(base::Bind(&MockChannel::OnConnected, this));
+  }
+
+  virtual int Send(const scoped_refptr<Message>& message,
+                   const net::CompletionCallback& callback) {
+    std::string buffer(message->ToString());
+    scoped_refptr<net::IOBuffer> io_buffer(new net::IOBuffer(buffer.size()));
+    memcpy(io_buffer->data(), buffer.data(), buffer.size());
+    return socket_->Write(io_buffer, buffer.size(), callback);
+  }
+
   MOCK_METHOD0(Close, void());
   MOCK_METHOD1(CloseWithError, void(int));
   MOCK_METHOD0(DetachDelegate, void());
 
  private:
+  Channel::Delegate *delegate_;
   EndPoint origin_;
   EndPoint destination_;
   bool is_secure_;
   bool is_connected_;
+  net::BoundNetLog net_log_;
+  scoped_ptr<net::StreamSocket> socket_;
+  scoped_ptr<net::DeterministicSocketData> data_;
+
+  void OnConnected(int result) {
+    delegate_->OnChannelConnected(this, result);
+  }
 };
 
-class NetworkLayerDelegate : public NetworkLayer::Delegate {
+class MockChannelFactory : public ChannelFactory {
  public:
-  MOCK_METHOD2(OnChannelClosed, void(const EndPoint&, int));
-  MOCK_METHOD1(OnIncomingMessage, void(Message*));
-};
+  MockChannelFactory() {}
+  ~MockChannelFactory() {}
 
-class ChannelFactoryImpl : public ChannelFactory {
+  void ExpectCreateChannel(const EndPoint &destination,
+                           scoped_refptr<MockChannel> channel) {
+    expected_sockets_.push_back(std::make_pair(destination, channel));
+  }
+
+  virtual int CreateChannel(
+          const EndPoint &destination,
+          Channel::Delegate *delegate,
+          scoped_refptr<Channel> *channel) {
+    EXPECT_TRUE(!expected_sockets_.empty());
+    if (expected_sockets_.empty())
+      return net::ERR_ABORTED;
+    EXPECT_EQ(expected_sockets_.front().first, destination);
+    scoped_refptr<MockChannel> result = expected_sockets_.front().second;
+    expected_sockets_.pop_front();
+    *channel = result;
+    return net::OK;
+  }
+
+ private:
+  EndPoint origin_;
+  std::list<std::pair<EndPoint, scoped_refptr<MockChannel> > >
+    expected_sockets_;
 };
 
 class TransactionFactoryImpl : public TransactionFactory {
@@ -84,7 +139,7 @@ class NetworkLayerTest : public testing::Test {
     network_layer_ = new NetworkLayer(&delegate_, &transaction_factory_);
   }
 
-  NetworkLayerDelegate delegate_;
+  MockNetworkLayerDelegate delegate_;
   TransactionFactoryImpl transaction_factory_;
   scoped_refptr<NetworkLayer> network_layer_;
 };
@@ -162,7 +217,6 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
     NetworkLayer::GetMessageEndPoint(single_via_response);
   EXPECT_EQ(EndPoint("189.187.200.23",5002,Protocol::UDP),
     single_via_response_endpoint);
-
 }
 
 } // End of sippet namespace
