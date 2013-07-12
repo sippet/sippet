@@ -288,20 +288,25 @@ void NetworkLayer::StampClientTopmostVia(scoped_refptr<Request> &request,
   request->push_front(via.PassAs<Header>());
 }
 
-bool NetworkLayer::StampServerTopmostVia(scoped_refptr<Request> &request,
+void NetworkLayer::StampServerTopmostVia(scoped_refptr<Request> &request,
         const scoped_refptr<Channel> &channel) {
-  // At this point, the request would have been rejected if there's
-  // no topmost Via.
-  Message::iterator topmost_via = request->find_first<Via>();
-  if (topmost_via == request->end())
-    return false;
   EndPoint destination(channel->destination());
-  Via *via = dyn_cast<Via>(topmost_via);
-  if (via->front().sent_by().host() != destination.host())
-    via->front().set_received(destination.host());
-  if (via->front().sent_by().port() != destination.port())
-    via->front().set_rport(destination.port());
-  return true;
+  Message::iterator topmost_via = request->find_first<Via>();
+  if (topmost_via == request->end()) {
+    // When there's no Via header, we create one
+    // using the channel destination and empty branch
+    scoped_ptr<Via> via(new Via);
+    net::HostPortPair hostport(destination.host(), destination.port());
+    via->push_back(ViaParam(destination.protocol(), hostport));
+    request->push_front(via.PassAs<Header>());
+  }
+  else {
+    Via *via = dyn_cast<Via>(topmost_via);
+    if (via->front().sent_by().host() != destination.host())
+      via->front().set_received(destination.host());
+    if (via->front().sent_by().port() != destination.port())
+      via->front().set_rport(destination.port());
+  }
 }
 
 std::string NetworkLayer::ClientTransactionId(
@@ -540,10 +545,7 @@ void NetworkLayer::OnIncomingMessage(const scoped_refptr<Channel> &channel,
                                      const scoped_refptr<Message> &message) {
   if (isa<Request>(message)) {
     scoped_refptr<Request> request = dyn_cast<Request>(message);
-    if (!StampServerTopmostVia(request, channel)) {
-      DVLOG(1) << "Incoming request doesn't have Via";
-      return;
-    }
+    StampServerTopmostVia(request, channel);
     scoped_refptr<ServerTransaction> server_transaction =
       GetServerTransaction(request);
     if (server_transaction)
