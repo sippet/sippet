@@ -17,7 +17,7 @@ class MaxForwards :
 private:
   DISALLOW_ASSIGN(MaxForwards);
   MaxForwards(const MaxForwards &other) : Header(other), single_value(other) {}
-  virtual MaxForwards *DoClone() const {
+  virtual MaxForwards *DoClone() const OVERRIDE {
     return new MaxForwards(*this);
   }
 public:
@@ -29,7 +29,7 @@ public:
     return scoped_ptr<MaxForwards>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }

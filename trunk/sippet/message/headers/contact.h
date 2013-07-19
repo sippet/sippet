@@ -96,7 +96,7 @@ private:
   DISALLOW_ASSIGN(Contact);
   Contact(const Contact &other)
     : Header(other), has_multiple(other), star_(other.star_) {}
-  virtual Contact *DoClone() const {
+  virtual Contact *DoClone() const OVERRIDE {
     return new Contact(*this);
   }
 public:
@@ -120,7 +120,7 @@ public:
     return scoped_ptr<Contact>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     if (star_)
       os << "*";

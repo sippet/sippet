@@ -53,7 +53,7 @@ class CallInfo :
 private:
   DISALLOW_ASSIGN(CallInfo);
   CallInfo(const CallInfo &other) : Header(other), has_multiple(other) {}
-  virtual CallInfo *DoClone() const {
+  virtual CallInfo *DoClone() const OVERRIDE {
     return new CallInfo(*this);
   }
 public:
@@ -63,7 +63,7 @@ public:
     return scoped_ptr<CallInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

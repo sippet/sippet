@@ -22,7 +22,7 @@ private:
   DISALLOW_ASSIGN(ContentDisposition);
   ContentDisposition(const ContentDisposition &other)
     : Header(other), has_parameters(other), single_value(other) {}
-  virtual ContentDisposition *DoClone() const {
+  virtual ContentDisposition *DoClone() const OVERRIDE {
     return new ContentDisposition(*this);
   }
 public:
@@ -46,7 +46,7 @@ public:
     single_value::set_value(rep[static_cast<int>(t)]);
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     os << value();
     has_parameters::print(os);

@@ -33,7 +33,7 @@ private:
   DISALLOW_ASSIGN(WwwAuthenticate);
   WwwAuthenticate(const WwwAuthenticate &other)
     : Header(other), Challenge(other) {}
-  virtual WwwAuthenticate *DoClone() const {
+  virtual WwwAuthenticate *DoClone() const OVERRIDE {
     return new WwwAuthenticate(*this);
   }
 public:
@@ -47,7 +47,7 @@ public:
     return scoped_ptr<WwwAuthenticate>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     Challenge::print(os);
   }

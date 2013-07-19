@@ -38,7 +38,7 @@ private:
   DISALLOW_ASSIGN(Authorization);
   Authorization(const Authorization &other)
     : Header(other), Credentials(other) {}
-  virtual Authorization *DoClone() const {
+  virtual Authorization *DoClone() const OVERRIDE {
     return new Authorization(*this);
   }
 public:
@@ -52,7 +52,7 @@ public:
     return scoped_ptr<Authorization>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     Credentials::print(os);
   }

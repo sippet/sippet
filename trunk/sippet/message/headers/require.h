@@ -47,7 +47,7 @@ class Require :
 private:
   DISALLOW_ASSIGN(Require);
   Require(const Require &other) : Header(other), has_multiple(other) {}
-  virtual Require *DoClone() const {
+  virtual Require *DoClone() const OVERRIDE {
     return new Require(*this);
   }
 public:
@@ -59,7 +59,7 @@ public:
     return scoped_ptr<Require>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

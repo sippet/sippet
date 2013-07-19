@@ -23,7 +23,7 @@ private:
   DISALLOW_ASSIGN(AuthenticationInfo);
   AuthenticationInfo(const AuthenticationInfo &other)
     : Header(other), has_auth_params(other) {}
-  virtual AuthenticationInfo *DoClone() const {
+  virtual AuthenticationInfo *DoClone() const OVERRIDE {
     return new AuthenticationInfo(*this);
   }
 public:
@@ -33,7 +33,7 @@ public:
     return scoped_ptr<AuthenticationInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_auth_params::print(os);
   }

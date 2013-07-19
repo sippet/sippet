@@ -18,7 +18,7 @@ class UserAgent :
 private:
   DISALLOW_ASSIGN(UserAgent);
   UserAgent(const UserAgent &other) : Header(other), single_value(other) {}
-  virtual UserAgent *DoClone() const {
+  virtual UserAgent *DoClone() const OVERRIDE {
     return new UserAgent(*this);
   }
 public:
@@ -30,7 +30,7 @@ public:
     return scoped_ptr<UserAgent>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }

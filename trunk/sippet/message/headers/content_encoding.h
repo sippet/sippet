@@ -20,7 +20,7 @@ private:
   DISALLOW_ASSIGN(ContentEncoding);
   ContentEncoding(const ContentEncoding &other)
     : Header(other), has_multiple(other) {}
-  virtual ContentEncoding *DoClone() const {
+  virtual ContentEncoding *DoClone() const OVERRIDE {
     return new ContentEncoding(*this);
   }
 public:
@@ -34,7 +34,7 @@ public:
     return scoped_ptr<ContentEncoding>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

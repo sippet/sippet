@@ -55,7 +55,7 @@ private:
   DISALLOW_ASSIGN(AcceptLanguage);
   AcceptLanguage(const AcceptLanguage &other)
     : Header(other), has_multiple(other) {}
-  virtual AcceptLanguage *DoClone() const {
+  virtual AcceptLanguage *DoClone() const OVERRIDE {
     return new AcceptLanguage(*this);
   }
 public:
@@ -69,7 +69,7 @@ public:
     return !empty() && front().AllowsAll();
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

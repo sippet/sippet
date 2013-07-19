@@ -51,7 +51,7 @@ class ErrorInfo :
 private:
   DISALLOW_ASSIGN(ErrorInfo);
   ErrorInfo(const ErrorInfo &other) : Header(other), has_multiple(other) {}
-  virtual ErrorInfo *DoClone() const {
+  virtual ErrorInfo *DoClone() const OVERRIDE {
     return new ErrorInfo(*this);
   }
 public:
@@ -61,7 +61,7 @@ public:
     return scoped_ptr<ErrorInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

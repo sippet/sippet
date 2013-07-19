@@ -55,7 +55,7 @@ class ContentType :
 private:
   DISALLOW_ASSIGN(ContentType);
   ContentType(const ContentType &other) : Header(other), MediaType(other) {}
-  virtual ContentType *DoClone() const {
+  virtual ContentType *DoClone() const OVERRIDE {
     return new ContentType(*this);
   }
 public:
@@ -69,7 +69,7 @@ public:
     return scoped_ptr<ContentType>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     MediaType::print(os);
   }

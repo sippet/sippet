@@ -17,7 +17,7 @@ private:
   DISALLOW_ASSIGN(From);
   From(const From &other)
     : Header(other), ContactBase(other) {}
-  virtual From *DoClone() const {
+  virtual From *DoClone() const OVERRIDE {
     return new From(*this);
   }
 public:
@@ -29,7 +29,7 @@ public:
     return scoped_ptr<From>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     ContactBase::print(os);
   }

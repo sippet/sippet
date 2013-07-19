@@ -67,7 +67,7 @@ private:
   DISALLOW_ASSIGN(Warning);
   Warning(const Warning &other)
     : Header(other), has_multiple(other) {}
-  virtual Warning *DoClone() const {
+  virtual Warning *DoClone() const OVERRIDE {
     return new Warning(*this);
   }
 public:
@@ -80,7 +80,7 @@ public:
     return scoped_ptr<Warning>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

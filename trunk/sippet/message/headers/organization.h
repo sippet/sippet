@@ -18,7 +18,7 @@ class Organization :
 private:
   DISALLOW_ASSIGN(Organization);
   Organization(const Organization &other) : Header(other), single_value(other) {}
-  virtual Organization *DoClone() const {
+  virtual Organization *DoClone() const OVERRIDE {
     return new Organization(*this);
   }
 public:
@@ -30,7 +30,7 @@ public:
     return scoped_ptr<Organization>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }
