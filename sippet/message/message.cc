@@ -6,8 +6,7 @@
 
 namespace sippet {
 
-void Message::print(raw_ostream &os) const
-{
+void Message::print(raw_ostream &os) const {
   const_iterator i = headers_.begin(), ie = headers_.end();
   for (; i != ie; ++i) {
     i->print(os);

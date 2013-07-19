@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "sippet/transport/transport_test_util.h"
+#include "base/string_util.h"
+
+#include "third_party/icu/public/i18n/unicode/regex.h"
 
 namespace sippet {
 
@@ -35,7 +38,27 @@ void MockEvent::OnIncomingMessageImpl::OnChannelClosed(
 }
 
 void MockEvent::OnIncomingMessageImpl::OnIncomingMessage(Message *message) {
-  // TODO: break down the regular expressions and check the message
+  DCHECK(message);
+
+  // Break down the multiple regular expressions separated
+  // by single line break  and match pattern against the
+  // incoming message
+
+  int line = 1;
+  icu::UnicodeString input(
+    icu::UnicodeString::fromUTF8(message->ToString()));
+  std::vector<std::string> regexps;
+  Tokenize(regular_expressions_, "\n", &regexps);
+  for (std::vector<std::string>::iterator i = regexps.begin(),
+       ie = regexps.end(); i != ie; ++i) {
+    UErrorCode status = U_ZERO_ERROR;
+    icu::RegexMatcher matcher(icu::UnicodeString::fromUTF8(*i), 0, status);
+    DCHECK(U_SUCCESS(status));
+    matcher.reset(input);
+    EXPECT_TRUE(matcher.find())
+      << "Failed to match pattern '" << *i << "', line " << line;
+    ++line;
+  }
 }
 
 MockEvent::MockEvent(const MockEvent &other)
