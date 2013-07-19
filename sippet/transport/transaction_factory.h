@@ -16,7 +16,12 @@ class ServerTransaction;
 class TransactionDelegate;
 
 class TransactionFactory {
+ private:
+   DISALLOW_COPY_AND_ASSIGN(TransactionFactory);
  public:
+  TransactionFactory() {}
+  virtual ~TransactionFactory() {}
+
   virtual ClientTransaction *CreateClientTransaction(
       const Method &method,
       const std::string &transaction_id,

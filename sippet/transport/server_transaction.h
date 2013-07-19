@@ -16,11 +16,12 @@ class ServerTransaction :
  private:
   DISALLOW_COPY_AND_ASSIGN(ServerTransaction);
  public:
+  ServerTransaction() {}
   virtual ~ServerTransaction() {}
 
   virtual const std::string& id() const = 0;
 
-  virtual Channel *channel() const = 0;
+  virtual scoped_refptr<Channel> channel() const = 0;
 
   virtual void Start(const scoped_refptr<Request> &incoming_request) = 0;
 
