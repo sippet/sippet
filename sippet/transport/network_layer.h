@@ -96,6 +96,8 @@ class NetworkLayer :
  public:
   class Delegate {
    public:
+    virtual ~Delegate() {}
+
     // Called when one of the opened channels is closed. Normally this function
     // is called only when a stream oriented channel is closed, but it's
     // possible to be called on datagram channels when an ICMP error (such as
