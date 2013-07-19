@@ -16,6 +16,7 @@ class ClientTransaction :
  private:
   DISALLOW_COPY_AND_ASSIGN(ClientTransaction);
  public:
+  ClientTransaction() {}
   virtual ~ClientTransaction() {}
 
   virtual const std::string& id() const = 0;
