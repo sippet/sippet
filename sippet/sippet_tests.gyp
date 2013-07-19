@@ -11,11 +11,7 @@
       'target_name': 'sippet_unittest',
       'type': 'executable',
       'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/testing/gmock.gyp:gmock',
-        '<(DEPTH)/net/net.gyp:net',
-        '<(DEPTH)/net/net.gyp:net_test_support',
-        'sippet.gyp:sippet',
+        'sippet_test_support',
       ],
       'include_dirs': [
         '<(DEPTH)',
@@ -33,5 +29,26 @@
         'transport/network_layer_unittest.cc',
       ],
     },  # target sippet_unittest
+    {
+      'target_name': 'sippet_test_support',
+      'type': 'static_library',
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gmock.gyp:gmock',
+        '<(DEPTH)/net/net.gyp:net',
+        '<(DEPTH)/net/net.gyp:net_test_support',
+        'sippet.gyp:sippet',
+      ],
+      'export_dependent_settings': [
+        '<(DEPTH)/net/net.gyp:net',
+        '<(DEPTH)/net/net.gyp:net_test_support',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gmock.gyp:gmock',
+      ],
+      'sources': [
+        'transport/transport_test_util.h',
+        'transport/transport_test_util.cc',
+      ],
+    },  # target sippet_test_support
   ],
 }
