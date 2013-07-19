@@ -31,7 +31,7 @@ class NetworkLayerTest : public testing::Test {
   scoped_ptr<net::MockClientSocketFactory> socket_factory_;
   scoped_ptr<MockChannelFactory> channel_factory_;
   StaticNetworkLayerDelegate delegate_;
-  TransactionFactoryImpl transaction_factory_;
+  MockTransactionFactory transaction_factory_;
   scoped_refptr<NetworkLayer> network_layer_;
 };
 
