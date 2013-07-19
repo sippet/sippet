@@ -16,7 +16,7 @@ private:
   DISALLOW_ASSIGN(ProxyAuthorization);
   ProxyAuthorization(const ProxyAuthorization &other)
     : Header(other), Credentials(other) {}
-  virtual ProxyAuthorization *DoClone() const {
+  virtual ProxyAuthorization *DoClone() const OVERRIDE {
     return new ProxyAuthorization(*this);
   }
 public:
@@ -30,7 +30,7 @@ public:
     return scoped_ptr<ProxyAuthorization>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     Credentials::print(os);
   }

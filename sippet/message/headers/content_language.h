@@ -19,7 +19,7 @@ private:
   DISALLOW_ASSIGN(ContentLanguage);
   ContentLanguage(const ContentLanguage &other)
     : Header(other), has_multiple(other) {}
-  virtual ContentLanguage *DoClone() const {
+  virtual ContentLanguage *DoClone() const OVERRIDE {
     return new ContentLanguage(*this);
   }
 public:
@@ -34,7 +34,7 @@ public:
     return scoped_ptr<ContentLanguage>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

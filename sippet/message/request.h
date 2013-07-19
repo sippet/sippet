@@ -69,7 +69,7 @@ public:
     version_ = version;
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     os << method_.str() << " "
        << request_uri_.spec() << " "
        << "SIP/" << version_.major_value()

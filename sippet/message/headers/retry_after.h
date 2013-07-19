@@ -20,7 +20,7 @@ private:
   DISALLOW_ASSIGN(RetryAfter);
   RetryAfter(const RetryAfter &other)
     : Header(other), single_value(other), has_parameters(other) {}
-  virtual RetryAfter *DoClone() const {
+  virtual RetryAfter *DoClone() const OVERRIDE {
     return new RetryAfter(*this);
   }
 public:
@@ -32,7 +32,7 @@ public:
     return scoped_ptr<RetryAfter>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
     has_parameters::print(os);

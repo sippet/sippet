@@ -95,7 +95,7 @@ private:
   DISALLOW_ASSIGN(Via);
   Via(const Via &other)
     : Header(other), has_multiple(other) {}
-  virtual Via *DoClone() const {
+  virtual Via *DoClone() const OVERRIDE {
     return new Via(*this);
   }
 public:
@@ -108,7 +108,7 @@ public:
     return scoped_ptr<Via>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

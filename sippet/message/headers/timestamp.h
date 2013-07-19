@@ -21,7 +21,7 @@ private:
   DISALLOW_ASSIGN(Timestamp);
   Timestamp(const Timestamp &other)
     : Header(other), timestamp_(other.timestamp_), delay_(other.delay_) {}
-  virtual Timestamp *DoClone() const {
+  virtual Timestamp *DoClone() const OVERRIDE {
     return new Timestamp(*this);
   }
 public:
@@ -39,7 +39,7 @@ public:
   void set_delay(double delay) { delay_ = delay; }
   double delay() { return delay_; }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     print_double(os, timestamp_);
     if (delay_ != 0) {

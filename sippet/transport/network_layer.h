@@ -282,16 +282,14 @@ class NetworkLayer :
                               const scoped_refptr<Response> &response);
 
   // sippet::Channel::Delegate methods:
-  virtual void OnChannelConnected(const scoped_refptr<Channel> &channel,
-                                  int error);
-  virtual void OnIncomingMessage(const scoped_refptr<Channel> &channel,
-                                 const scoped_refptr<Message> &message);
-  virtual void OnChannelClosed(const scoped_refptr<Channel> &channel,
-                               int error);
+  virtual void OnChannelConnected(const scoped_refptr<Channel>&, int) OVERRIDE;
+  virtual void OnIncomingMessage(const scoped_refptr<Channel> &,
+                                 const scoped_refptr<Message> &) OVERRIDE;
+  virtual void OnChannelClosed(const scoped_refptr<Channel> &, int) OVERRIDE;
 
   // sippet::TransactionDelegate methods:
-  virtual void OnPassMessage(const scoped_refptr<Message> &);
-  virtual void OnTransactionTerminated(const std::string &transaction_id);
+  virtual void OnPassMessage(const scoped_refptr<Message> &) OVERRIDE;
+  virtual void OnTransactionTerminated(const std::string &) OVERRIDE;
 
   // Timer callbacks
   void OnIdleChannelTimedOut(const EndPoint &endpoint);

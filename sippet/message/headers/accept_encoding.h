@@ -55,7 +55,7 @@ private:
   DISALLOW_ASSIGN(AcceptEncoding);
   AcceptEncoding(const AcceptEncoding &other)
     : Header(other), has_multiple(other) {}
-  virtual AcceptEncoding *DoClone() const {
+  virtual AcceptEncoding *DoClone() const OVERRIDE {
     return new AcceptEncoding(*this);
   }
 public:
@@ -69,7 +69,7 @@ public:
     return !empty() && front().AllowsAll();
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

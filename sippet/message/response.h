@@ -44,7 +44,7 @@ public:
     version_ = version;
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     os << "SIP/" << version_.major_value()
        << "." << version_.minor_value()
        << " " << response_code_

@@ -46,7 +46,7 @@ class ProxyRequire :
 private:
   DISALLOW_ASSIGN(ProxyRequire);
   ProxyRequire(const ProxyRequire &other) : Header(other), has_multiple(other) {}
-  virtual ProxyRequire *DoClone() const {
+  virtual ProxyRequire *DoClone() const OVERRIDE {
     return new ProxyRequire(*this);
   }
 public:
@@ -58,7 +58,7 @@ public:
     return scoped_ptr<ProxyRequire>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

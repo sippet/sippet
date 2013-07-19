@@ -16,7 +16,7 @@ private:
   Generic(const Generic &other)
     : Header(other), header_name_(other.header_name_),
       header_value_(other.header_value_) {}
-  virtual Generic *DoClone() const {
+  virtual Generic *DoClone() const OVERRIDE {
     return new Generic(*this);
   }
 public:
@@ -43,7 +43,7 @@ public:
     header_value_ = header_value;
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     os << header_value_;
   }

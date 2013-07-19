@@ -19,7 +19,7 @@ private:
   DISALLOW_ASSIGN(CallId);
   CallId(const CallId &other)
     : Header(other), single_value(other) {}
-  virtual CallId *DoClone() const {
+  virtual CallId *DoClone() const OVERRIDE {
     return new CallId(*this);
   }
 public:
@@ -31,7 +31,7 @@ public:
     return scoped_ptr<CallId>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }

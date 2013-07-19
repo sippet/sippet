@@ -17,7 +17,7 @@ class MinExpires :
 private:
   DISALLOW_ASSIGN(MinExpires);
   MinExpires(const MinExpires &other) : Header(other), single_value(other) {}
-  virtual MinExpires *DoClone() const {
+  virtual MinExpires *DoClone() const OVERRIDE {
     return new MinExpires(*this);
   }
 public:
@@ -29,7 +29,7 @@ public:
     return scoped_ptr<MinExpires>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }

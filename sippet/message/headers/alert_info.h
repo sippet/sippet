@@ -51,7 +51,7 @@ class AlertInfo :
 private:
   DISALLOW_ASSIGN(AlertInfo);
   AlertInfo(const AlertInfo &other) : Header(other), has_multiple(other) {}
-  virtual AlertInfo *DoClone() const {
+  virtual AlertInfo *DoClone() const OVERRIDE {
     return new AlertInfo(*this);
   }
 public:
@@ -61,7 +61,7 @@ public:
     return scoped_ptr<AlertInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

@@ -16,7 +16,7 @@ private:
   DISALLOW_ASSIGN(RecordRoute);
   RecordRoute(const RecordRoute &other)
     : Header(other), has_multiple(other) {}
-  virtual RecordRoute *DoClone() const {
+  virtual RecordRoute *DoClone() const OVERRIDE {
     return new RecordRoute(*this);
   }
 public:
@@ -29,7 +29,7 @@ public:
     return scoped_ptr<RecordRoute>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

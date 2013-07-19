@@ -17,7 +17,7 @@ class ContentLength :
 private:
   DISALLOW_ASSIGN(ContentLength);
   ContentLength(const ContentLength &other) : Header(other), single_value(other) {}
-  virtual ContentLength *DoClone() const {
+  virtual ContentLength *DoClone() const OVERRIDE {
     return new ContentLength(*this);
   }
 public:
@@ -29,7 +29,7 @@ public:
     return scoped_ptr<ContentLength>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }
