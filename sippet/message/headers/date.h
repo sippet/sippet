@@ -19,7 +19,7 @@ class Date :
 private:
   DISALLOW_ASSIGN(Date);
   Date(const Date &other) : Header(other), single_value(other) {}
-  virtual Date *DoClone() const {
+  virtual Date *DoClone() const OVERRIDE {
     return new Date(*this);
   }
 public:
@@ -31,7 +31,7 @@ public:
     return scoped_ptr<Date>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     const char *wkday[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
     const char *month[] = {
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",

@@ -16,7 +16,7 @@ private:
   DISALLOW_ASSIGN(ProxyAuthenticate);
   ProxyAuthenticate(const ProxyAuthenticate &other)
     : Header(other), Challenge(other) {}
-  virtual ProxyAuthenticate *DoClone() const {
+  virtual ProxyAuthenticate *DoClone() const OVERRIDE {
     return new ProxyAuthenticate(*this);
   }
 public:
@@ -30,7 +30,7 @@ public:
     return scoped_ptr<ProxyAuthenticate>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     Challenge::print(os);
   }

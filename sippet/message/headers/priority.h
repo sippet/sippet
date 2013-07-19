@@ -18,7 +18,7 @@ class Priority :
 private:
   DISALLOW_ASSIGN(Priority);
   Priority(const Priority &other) : Header(other), single_value(other) {}
-  virtual Priority *DoClone() const {
+  virtual Priority *DoClone() const OVERRIDE {
     return new Priority(*this);
   }
 public:
@@ -41,7 +41,7 @@ public:
     single_value::set_value(rep[static_cast<int>(l)]);
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }

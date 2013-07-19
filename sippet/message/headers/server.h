@@ -18,7 +18,7 @@ class Server :
 private:
   DISALLOW_ASSIGN(Server);
   Server(const Server &other) : Header(other), single_value(other) {}
-  virtual Server *DoClone() const {
+  virtual Server *DoClone() const OVERRIDE {
     return new Server(*this);
   }
 public:
@@ -30,7 +30,7 @@ public:
     return scoped_ptr<Server>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }

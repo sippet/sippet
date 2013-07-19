@@ -47,7 +47,7 @@ class Supported :
 private:
   DISALLOW_ASSIGN(Supported);
   Supported(const Supported &other) : Header(other), has_multiple(other) {}
-  virtual Supported *DoClone() const {
+  virtual Supported *DoClone() const OVERRIDE {
     return new Supported(*this);
   }
 public:
@@ -59,7 +59,7 @@ public:
     return scoped_ptr<Supported>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

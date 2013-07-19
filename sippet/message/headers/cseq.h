@@ -18,7 +18,7 @@ private:
   DISALLOW_ASSIGN(Cseq);
   Cseq(const Cseq &other)
     : Header(other), sequence_(other.sequence_), method_(other.method_) {}
-  virtual Cseq *DoClone() const {
+  virtual Cseq *DoClone() const OVERRIDE {
     return new Cseq(*this);
   }
 public:
@@ -36,7 +36,7 @@ public:
   Method method() const { return method_; }
   void set_method(const Method &method) { method_ = method; }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     os << sequence_ << " " << method_;
   }

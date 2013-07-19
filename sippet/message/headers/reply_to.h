@@ -44,7 +44,7 @@ private:
   DISALLOW_ASSIGN(ReplyTo);
   ReplyTo(const ReplyTo &other)
     : Header(other), ContactBase(other) {}
-  virtual ReplyTo *DoClone() const {
+  virtual ReplyTo *DoClone() const OVERRIDE {
     return new ReplyTo(*this);
   }
 public:
@@ -56,7 +56,7 @@ public:
     return scoped_ptr<ReplyTo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     ContactBase::print(os);
   }

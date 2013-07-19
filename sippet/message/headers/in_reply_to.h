@@ -18,7 +18,7 @@ class InReplyTo :
 private:
   DISALLOW_ASSIGN(InReplyTo);
   InReplyTo(const InReplyTo &other) : Header(other), has_multiple(other) {}
-  virtual InReplyTo *DoClone() const {
+  virtual InReplyTo *DoClone() const OVERRIDE {
     return new InReplyTo(*this);
   }
 public:
@@ -28,7 +28,7 @@ public:
     return scoped_ptr<InReplyTo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

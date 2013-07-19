@@ -18,7 +18,7 @@ class Subject :
 private:
   DISALLOW_ASSIGN(Subject);
   Subject(const Subject &other) : Header(other), single_value(other) {}
-  virtual Subject *DoClone() const {
+  virtual Subject *DoClone() const OVERRIDE {
     return new Subject(*this);
   }
 public:
@@ -30,7 +30,7 @@ public:
     return scoped_ptr<Subject>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }

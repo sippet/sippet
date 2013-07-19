@@ -34,7 +34,7 @@ private:
   DISALLOW_ASSIGN(Route);
   Route(const Route &other)
     : Header(other), has_multiple(other) {}
-  virtual Route *DoClone() const {
+  virtual Route *DoClone() const OVERRIDE {
     return new Route(*this);
   }
 public:
@@ -47,7 +47,7 @@ public:
     return scoped_ptr<Route>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

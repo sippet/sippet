@@ -17,7 +17,7 @@ private:
   DISALLOW_ASSIGN(To);
   To(const To &other)
     : Header(other), ContactBase(other) {}
-  virtual To *DoClone() const {
+  virtual To *DoClone() const OVERRIDE {
     return new To(*this);
   }
 public:
@@ -29,7 +29,7 @@ public:
     return scoped_ptr<To>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     ContactBase::print(os);
   }

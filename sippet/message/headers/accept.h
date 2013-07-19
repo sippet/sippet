@@ -41,7 +41,7 @@ class Accept :
 private:
   DISALLOW_ASSIGN(Accept);
   Accept(const Accept &other) : Header(other), has_multiple(other) {}
-  virtual Accept *DoClone() const {
+  virtual Accept *DoClone() const OVERRIDE {
     return new Accept(*this);
   }
 public:
@@ -51,7 +51,7 @@ public:
     return scoped_ptr<Accept>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }

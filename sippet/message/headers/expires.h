@@ -17,7 +17,7 @@ class Expires :
 private:
   DISALLOW_ASSIGN(Expires);
   Expires(const Expires &other) : Header(other), single_value(other) {}
-  virtual Expires *DoClone() const {
+  virtual Expires *DoClone() const OVERRIDE {
     return new Expires(*this);
   }
 public:
@@ -29,7 +29,7 @@ public:
     return scoped_ptr<Expires>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     single_value::print(os);
   }

@@ -20,7 +20,7 @@ private:
   DISALLOW_ASSIGN(Allow);
   Allow(const Allow &other)
     : Header(other), has_multiple(other) {}
-  virtual Allow *DoClone() const {
+  virtual Allow *DoClone() const OVERRIDE {
     return new Allow(*this);
   }
 public:
@@ -30,7 +30,7 @@ public:
     return scoped_ptr<Allow>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const {
+  virtual void print(raw_ostream &os) const OVERRIDE {
     Header::print(os);
     has_multiple::print(os);
   }
