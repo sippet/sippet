@@ -100,28 +100,6 @@ MockEvent& MockEvent::operator=(const MockEvent &other) {
   return *this;
 }
 
-MockEvent MockEvent::ChannelClosed(const EndPoint &destination) {
-  return MockEvent(new MockEvent::OnChannelClosedImpl(destination));
-}
-
-MockEvent MockEvent::ChannelClosed(const EndPoint &destination, int error) {
-  return MockEvent(new MockEvent::OnChannelClosedImpl(destination, error));
-}
-
-MockEvent MockEvent::ChannelClosed(const char *destination) {
-  EndPoint endpoint(EndPoint::FromString(destination));
-  return MockEvent(new MockEvent::OnChannelClosedImpl(endpoint));
-}
-
-MockEvent MockEvent::ChannelClosed(const char *destination, int error) {
-  EndPoint endpoint(EndPoint::FromString(destination));
-  return MockEvent(new MockEvent::OnChannelClosedImpl(endpoint, error));
-}
-
-MockEvent MockEvent::IncomingMessage(const char *regular_expressions) {
-  return MockEvent(new MockEvent::OnIncomingMessageImpl(regular_expressions));
-}
-
 void MockEvent::OnChannelClosed(const EndPoint& destination, int error) {
   delegate_->OnChannelClosed(destination, error);
 }
@@ -132,6 +110,20 @@ void MockEvent::OnIncomingMessage(Message *message) {
 
 MockEvent::MockEvent(NetworkLayer::Delegate *delegate)
   : delegate_(delegate) {}
+
+MockEvent ExpectCloseChannel(const char *destination) {
+  EndPoint endpoint(EndPoint::FromString(destination));
+  return MockEvent(new MockEvent::OnChannelClosedImpl(endpoint));
+}
+
+MockEvent ExpectCloseChannel(const char *destination, int error) {
+  EndPoint endpoint(EndPoint::FromString(destination));
+  return MockEvent(new MockEvent::OnChannelClosedImpl(endpoint, error));
+}
+
+MockEvent ExpectIncomingMessage(const char *regular_expressions) {
+  return MockEvent(new MockEvent::OnIncomingMessageImpl(regular_expressions));
+}
 
 StaticNetworkLayerDelegate::StaticNetworkLayerDelegate()
   : events_(NULL), events_count_(0), events_index_(0) {}
@@ -405,9 +397,29 @@ int MockChannelFactory::CreateChannel(const EndPoint &destination,
   return net::ERR_UNEXPECTED;
 }
 
-MockClientTransaction::MockClientTransaction() {
-  // TODO
+StaticTransactionData::StaticTransactionData(MockTransactionEvent *events,
+                                             size_t events_count)
+  : events_(events), events_count_(events_count), events_index_(0) {}
+
+StaticTransactionData::~StaticTransactionData() {}
+
+const MockTransactionEvent& StaticTransactionData::PeekEvent() const {
+  return PeekEvent(events_index_);
 }
+
+const MockTransactionEvent& StaticTransactionData::PeekEvent(size_t index) const {
+  DCHECK_LT(index, events_count_);
+  return events_[index];
+}
+
+MockTransactionEvent StaticTransactionData::GetNextEvent() {
+  DCHECK(!at_events_end());
+  events_[events_index_].set_time_stamp(base::Time::Now());
+  return events_[events_index_++];
+}
+
+MockClientTransaction::MockClientTransaction(
+    StaticTransactionData *static_data) : static_data_(static_data) {}
 
 MockClientTransaction::~MockClientTransaction() {}
 
@@ -437,9 +449,8 @@ void MockClientTransaction::Close() {
   // TODO
 }
 
-MockServerTransaction::MockServerTransaction() {
-  // TODO
-}
+MockServerTransaction::MockServerTransaction(
+    StaticTransactionData *static_data) : static_data_(static_data) {}
 
 MockServerTransaction::~MockServerTransaction() {}
 
@@ -471,29 +482,22 @@ void MockServerTransaction::Close() {
   // TODO
 }
 
-MockTransactionFactory::MockTransactionFactory()
-  : client_transaction_(new MockClientTransaction),
-    server_transaction_(new MockServerTransaction) {}
+MockTransactionFactory::MockTransactionFactory(StaticTransactionData *static_data)
+  : static_data_(static_data) {}
 
 MockTransactionFactory::~MockTransactionFactory() {}
-
-MockClientTransaction *MockTransactionFactory::client_transaction() {
-  return client_transaction_;
-}
-
-MockServerTransaction *MockTransactionFactory::server_transaction() {
-  return server_transaction_;
-}
 
 ClientTransaction *MockTransactionFactory::CreateClientTransaction(
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
       TransactionDelegate *delegate) {
-  client_transaction_->set_id(transaction_id);
-  client_transaction_->set_channel(channel);
-  client_transaction_->set_delegate(delegate);
-  return client_transaction_;
+  MockClientTransaction *client_transaction =
+    new MockClientTransaction(static_data_);
+  client_transaction->set_id(transaction_id);
+  client_transaction->set_channel(channel);
+  client_transaction->set_delegate(delegate);
+  return client_transaction;
 }
 
 ServerTransaction *MockTransactionFactory::CreateServerTransaction(
@@ -501,10 +505,12 @@ ServerTransaction *MockTransactionFactory::CreateServerTransaction(
     const std::string &transaction_id,
     const scoped_refptr<Channel> &channel,
     TransactionDelegate *delegate) {
-  server_transaction_->set_id(transaction_id);
-  server_transaction_->set_channel(channel);
-  server_transaction_->set_delegate(delegate);
-  return server_transaction_;
+  MockServerTransaction *server_transaction =
+    new MockServerTransaction(static_data_);
+  server_transaction->set_id(transaction_id);
+  server_transaction->set_channel(channel);
+  server_transaction->set_delegate(delegate);
+  return server_transaction;
 }
 
 } // End of sippet namespace

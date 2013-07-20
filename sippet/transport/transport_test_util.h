@@ -48,12 +48,6 @@ class MockEvent {
 
   MockEvent &operator=(const MockEvent &other);
 
-  static MockEvent ChannelClosed(const EndPoint &destination);
-  static MockEvent ChannelClosed(const EndPoint &destination, int error);
-  static MockEvent ChannelClosed(const char *destination);
-  static MockEvent ChannelClosed(const char *destination, int error);
-  static MockEvent IncomingMessage(const char *regular_expressions);
-
   void OnChannelClosed(const EndPoint& destination, int error);
   void OnIncomingMessage(Message *message);
 
@@ -61,11 +55,19 @@ class MockEvent {
   void set_time_stamp(const base::Time & t) { time_stamp_ = t; }
 
 private:
+  friend MockEvent ExpectCloseChannel(const char *);
+  friend MockEvent ExpectCloseChannel(const char *, int);
+  friend MockEvent ExpectIncomingMessage(const char *);
+
   MockEvent(NetworkLayer::Delegate *delegate);
 
   linked_ptr<NetworkLayer::Delegate> delegate_;
   base::Time time_stamp_; // The time stamp at which the operation occurred.
 };
+
+MockEvent ExpectCloseChannel(const char *destination);
+MockEvent ExpectCloseChannel(const char *destination, int error);
+MockEvent ExpectIncomingMessage(const char *regular_expressions);
 
 // NetworkLayer::Delegate which checks callbacks based on static tables of
 // mock events.
@@ -239,9 +241,144 @@ class MockChannelFactory : public ChannelFactory {
   net::BoundNetLog net_log_;
 };
 
+class MockTransactionEvent {
+ private:
+  class Expect {
+   public:
+    virtual ~Expect() {}
+    virtual void Start(const scoped_refptr<Request>&) = 0;
+    virtual void Send(const scoped_refptr<Response>&,
+                      const net::CompletionCallback&) = 0;
+    virtual void HandleIncomingResponse(
+                      const scoped_refptr<Response>&) = 0;
+    virtual void HandleIncomingRequest(
+                      const scoped_refptr<Request>&) = 0;
+    virtual void Close() = 0;
+  };
+
+  class ExpectStart {
+   public:
+    ExpectStart(const char *regular_expressions);
+    virtual ~ExpectStart();
+    virtual void Start(const scoped_refptr<Request>&) OVERRIDE;
+    virtual void Send(const scoped_refptr<Response>&,
+                      const net::CompletionCallback&) OVERRIDE;
+    virtual void HandleIncomingResponse(
+                      const scoped_refptr<Response>&) OVERRIDE;
+    virtual void HandleIncomingRequest(
+                      const scoped_refptr<Request>&) OVERRIDE;
+    virtual void Close() OVERRIDE;
+   private:
+    const char *regular_expressions_;
+  };
+
+  class ExpectIncomingResponse {
+   public:
+    ExpectIncomingResponse(const char *regular_expressions);
+    virtual ~ExpectIncomingResponse();
+    virtual void Start(const scoped_refptr<Request>&) OVERRIDE;
+    virtual void Send(const scoped_refptr<Response>&,
+                      const net::CompletionCallback&) OVERRIDE;
+    virtual void HandleIncomingResponse(
+                      const scoped_refptr<Response>&) OVERRIDE;
+    virtual void HandleIncomingRequest(
+                      const scoped_refptr<Request>&) OVERRIDE;
+    virtual void Close() OVERRIDE;
+   private:
+    const char *regular_expressions_;
+  };
+
+  class ExpectIncomingRequest {
+   public:
+    ExpectIncomingRequest(const char *regular_expressions);
+    virtual ~ExpectIncomingRequest();
+    virtual void Start(const scoped_refptr<Request>&) OVERRIDE;
+    virtual void Send(const scoped_refptr<Response>&,
+                      const net::CompletionCallback&) OVERRIDE;
+    virtual void HandleIncomingRequest(
+                      const scoped_refptr<Response>&) OVERRIDE;
+    virtual void HandleIncomingRequest(
+                      const scoped_refptr<Request>&) OVERRIDE;
+    virtual void Close() OVERRIDE;
+   private:
+    const char *regular_expressions_;
+  };
+
+  class ExpectClose {
+   public:
+    ExpectClose();
+    virtual ~ExpectClose();
+    virtual void Start(const scoped_refptr<Request>&) OVERRIDE;
+    virtual void Send(const scoped_refptr<Response>&,
+                      const net::CompletionCallback&) OVERRIDE;
+    virtual void HandleIncomingResponse(
+                      const scoped_refptr<Response>&) OVERRIDE;
+    virtual void HandleIncomingRequest(
+                      const scoped_refptr<Request>&) OVERRIDE;
+    virtual void Close() OVERRIDE;
+  };
+
+ public:
+  MockTransactionEvent(const MockTransactionEvent &other);
+  ~MockTransactionEvent();
+
+  MockTransactionEvent &operator=(const MockTransactionEvent &other);
+
+  base::Time time_stamp() const { return time_stamp_; }
+  void set_time_stamp(const base::Time & t) { time_stamp_ = t; }
+
+  void Start(const scoped_refptr<Request>& starting_request);
+  void Send(const scoped_refptr<Response>& response,
+            const net::CompletionCallback& callback);
+  void HandleIncomingResponse(
+            const scoped_refptr<Response>& incoming_response);
+  void HandleIncomingRequest(
+            const scoped_refptr<Request>& incoming_request);
+  void Close();
+
+ private:
+  friend MockTransactionEvent ExpectStartTransaction(const char *);
+  friend MockTransactionEvent ExpectTransactionSend(const char *);
+  friend MockTransactionEvent ExpectIncomingResponse(const char *);
+  friend MockTransactionEvent ExpectIncomingRequest(const char *);
+  friend MockTransactionEvent ExpectTransactionClose();
+
+  MockTransactionEvent(Expect *expect);
+
+  linked_ptr<Expect> expect_;
+  base::Time time_stamp_;
+};
+
+MockTransactionEvent ExpectStartTransaction(const char *regular_expressions);
+MockTransactionEvent ExpectTransactionSend(const char *regular_expressions);
+MockTransactionEvent ExpectIncomingResponse(const char *regular_expressions);
+MockTransactionEvent ExpectIncomingRequest(const char *regular_expressions);
+MockTransactionEvent ExpectTransactionClose();
+
+class StaticTransactionData {
+ public:
+  StaticTransactionData(MockTransactionEvent *events,
+                        size_t events_count);
+  virtual ~StaticTransactionData();
+
+  const MockTransactionEvent& PeekEvent() const;
+  const MockTransactionEvent& PeekEvent(size_t index) const;
+
+  size_t events_index() const { return events_index_; }
+  size_t events_count() const { return events_count_; }
+
+  bool at_events_end() const { return events_index_ >= events_count_; }
+
+  MockTransactionEvent GetNextEvent();
+ private:
+  MockTransactionEvent *events_;
+  size_t events_index_;
+  size_t events_count_;
+};
+
 class MockClientTransaction : public ClientTransaction {
  public:
-  MockClientTransaction();
+  MockClientTransaction(StaticTransactionData *static_data);
   virtual ~MockClientTransaction();
 
   void set_id(const std::string id) {
@@ -267,11 +404,12 @@ class MockClientTransaction : public ClientTransaction {
   std::string transaction_id_;
   scoped_refptr<Channel> channel_;
   TransactionDelegate *delegate_;
+  StaticTransactionData *static_data_;
 };
 
 class MockServerTransaction : public ServerTransaction {
  public:
-  MockServerTransaction();
+  MockServerTransaction(StaticTransactionData *static_data);
   virtual ~MockServerTransaction();
 
   void set_id(const std::string id) {
@@ -297,15 +435,13 @@ class MockServerTransaction : public ServerTransaction {
   std::string transaction_id_;
   scoped_refptr<Channel> channel_;
   TransactionDelegate *delegate_;
+  StaticTransactionData *static_data_;
 };
 
 class MockTransactionFactory : public TransactionFactory {
  public:
-  MockTransactionFactory();
+  MockTransactionFactory(StaticTransactionData *static_data);
   virtual ~MockTransactionFactory();
-
-  MockClientTransaction *client_transaction();
-  MockServerTransaction *server_transaction();
 
   // sippet::TransactionFactory methods:
   virtual ClientTransaction *CreateClientTransaction(
@@ -319,8 +455,7 @@ class MockTransactionFactory : public TransactionFactory {
       const scoped_refptr<Channel> &channel,
       TransactionDelegate *delegate) OVERRIDE;
  private:
-  scoped_refptr<MockClientTransaction> client_transaction_;
-  scoped_refptr<MockServerTransaction> server_transaction_;
+  StaticTransactionData *static_data_;
 };
 
 } // End of empty namespace
