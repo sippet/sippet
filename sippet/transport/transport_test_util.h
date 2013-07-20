@@ -304,8 +304,8 @@ class MockTransactionFactory : public TransactionFactory {
   MockTransactionFactory();
   virtual ~MockTransactionFactory();
 
-  MockClientTransaction &client_transaction();
-  MockServerTransaction &server_transaction();
+  MockClientTransaction *client_transaction();
+  MockServerTransaction *server_transaction();
 
   // sippet::TransactionFactory methods:
   virtual ClientTransaction *CreateClientTransaction(
@@ -319,8 +319,8 @@ class MockTransactionFactory : public TransactionFactory {
       const scoped_refptr<Channel> &channel,
       TransactionDelegate *delegate) OVERRIDE;
  private:
-  MockClientTransaction client_transaction_;
-  MockServerTransaction server_transaction_;
+  scoped_refptr<MockClientTransaction> client_transaction_;
+  scoped_refptr<MockServerTransaction> server_transaction_;
 };
 
 } // End of empty namespace
