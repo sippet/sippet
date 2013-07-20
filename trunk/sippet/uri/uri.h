@@ -7,6 +7,7 @@
 
 #include "googleurl/src/gurl.h"
 #include "sippet/uri/uri_parse.h"
+#include "base/string_util.h"
 
 namespace sippet {
 

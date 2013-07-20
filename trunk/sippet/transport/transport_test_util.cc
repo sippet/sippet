@@ -471,15 +471,17 @@ void MockServerTransaction::Close() {
   // TODO
 }
 
-MockTransactionFactory::MockTransactionFactory() {}
+MockTransactionFactory::MockTransactionFactory()
+  : client_transaction_(new MockClientTransaction),
+    server_transaction_(new MockServerTransaction) {}
 
 MockTransactionFactory::~MockTransactionFactory() {}
 
-MockClientTransaction &MockTransactionFactory::client_transaction() {
+MockClientTransaction *MockTransactionFactory::client_transaction() {
   return client_transaction_;
 }
 
-MockServerTransaction &MockTransactionFactory::server_transaction() {
+MockServerTransaction *MockTransactionFactory::server_transaction() {
   return server_transaction_;
 }
 
@@ -488,10 +490,10 @@ ClientTransaction *MockTransactionFactory::CreateClientTransaction(
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
       TransactionDelegate *delegate) {
-  client_transaction_.set_id(transaction_id);
-  client_transaction_.set_channel(channel);
-  client_transaction_.set_delegate(delegate);
-  return &client_transaction_;
+  client_transaction_->set_id(transaction_id);
+  client_transaction_->set_channel(channel);
+  client_transaction_->set_delegate(delegate);
+  return client_transaction_;
 }
 
 ServerTransaction *MockTransactionFactory::CreateServerTransaction(
@@ -499,10 +501,10 @@ ServerTransaction *MockTransactionFactory::CreateServerTransaction(
     const std::string &transaction_id,
     const scoped_refptr<Channel> &channel,
     TransactionDelegate *delegate) {
-  server_transaction_.set_id(transaction_id);
-  server_transaction_.set_channel(channel);
-  server_transaction_.set_delegate(delegate);
-  return &server_transaction_;
+  server_transaction_->set_id(transaction_id);
+  server_transaction_->set_channel(channel);
+  server_transaction_->set_delegate(delegate);
+  return server_transaction_;
 }
 
 } // End of sippet namespace
