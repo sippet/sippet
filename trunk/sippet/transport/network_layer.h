@@ -28,6 +28,24 @@ namespace sippet {
 class ChannelFactory;
 class TransactionFactory;
 
+class BranchFactory {
+ public:
+  BranchFactory() {}
+  virtual ~BranchFactory() {}
+  virtual std::string CreateBranch() = 0;
+ private:
+  DISALLOW_COPY_AND_ASSIGN(BranchFactory);
+};
+
+class DefaultBranchFactory : public BranchFactory {
+ public:
+  DefaultBranchFactory();
+  virtual ~DefaultBranchFactory();
+  virtual std::string CreateBranch() OVERRIDE;
+ private:
+  DISALLOW_COPY_AND_ASSIGN(DefaultBranchFactory);
+};
+
 // The |NetworkLayer| is the main message dispatcher of sippet. It receives
 // messages from network and sends them to a delegate object, and is the
 // responsible for delivering messages to network destinations. It holds the
@@ -110,8 +128,12 @@ class NetworkLayer :
 
   // Construct a |NetworkLayer| with an existing |TransactionFactory|.
   NetworkLayer(Delegate *delegate, TransactionFactory *transaction_factory,
-               const NetworkSettings &network_settings = NetworkSettings());
+               const NetworkSettings &network_settings = NetworkSettings(),
+               BranchFactory *branch_factory = new DefaultBranchFactory);
   virtual ~NetworkLayer();
+
+  // This is the magic cookie "z9hG4bK" defined in RFC 3261
+  static const char kMagicCookie[];
 
   // Register a ChannelFactory, responsible for opening client channels.
   // Registered managers are not owned and won't be deleted on |NetworkLayer|
@@ -206,10 +228,8 @@ class NetworkLayer :
   ChannelsMap channels_;
   ClientTransactionsMap client_transactions_;
   ServerTransactionsMap server_transactions_;
+  scoped_ptr<BranchFactory> branch_factory_;
   bool suspended_;
-
-  // This is the magic cookie "z9hG4bK" defined in RFC 3261
-  static const char kMagicCookie[];
 
   int SendRequest(scoped_refptr<Request> &request,
                   const net::CompletionCallback& callback);
@@ -240,11 +260,11 @@ class NetworkLayer :
   void DestroyChannelContext(ChannelContext *channel_context);
 
   // Set of utility functions used internally
-  static std::string CreateBranch();
-  static void StampClientTopmostVia(scoped_refptr<Request> &request,
-                                    const scoped_refptr<Channel> &channel);
-  static void StampServerTopmostVia(scoped_refptr<Request> &request,
-                                    const scoped_refptr<Channel> &channel);
+  std::string CreateBranch();
+  void StampClientTopmostVia(scoped_refptr<Request> &request,
+                             const scoped_refptr<Channel> &channel);
+  void StampServerTopmostVia(scoped_refptr<Request> &request,
+                             const scoped_refptr<Channel> &channel);
   static std::string ClientTransactionId(
                         const scoped_refptr<Request> &request);
   static std::string ClientTransactionId(
