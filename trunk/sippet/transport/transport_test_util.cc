@@ -35,128 +35,215 @@ bool ParseHostPortPair(const net::HostPortPair &destination,
   return true;
 }
 
+class ExpectNothing : public MockEvent::Expect {
+ public:
+  virtual void OnChannelClosed(
+                    const EndPoint& destination, int error) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected a channel close at this time";
+  }
+  virtual void OnIncomingMessage(Message *message) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected to get an incoming message this time";
+  }
+  virtual void Start(const scoped_refptr<Request>&) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected transaction start at this time";
+  }
+  virtual void Send(const scoped_refptr<Response>&) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected to send a response at this time";
+  }
+  virtual void HandleIncomingResponse(
+                    const scoped_refptr<Response>&) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected to handle incoming response";
+  }
+  virtual void HandleIncomingRequest(
+                    const scoped_refptr<Request>&) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected to handle incoming request";
+  }
+  virtual void Close() OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected to close transaction at this time";
+  }
+};
+
+class ChannelClosedImpl : public ExpectNothing {
+ public:
+  ChannelClosedImpl(const EndPoint &destination)
+    : has_error_(false), destination_(destination) {}
+  ChannelClosedImpl(const EndPoint &destination, int error)
+    : has_error_(true), destination_(destination), error_(error) {}
+  virtual ~ChannelClosedImpl() {}
+  void OnChannelClosed(const EndPoint& destination, int error) OVERRIDE {
+    EXPECT_EQ(destination_, destination);
+    if (has_error_)
+      EXPECT_EQ(error_, error);
+  }
+ private:
+  EndPoint destination_;
+  bool has_error_;
+  int error_;
+};
+
+class IncomingMessageImpl : public ExpectNothing {
+ public:
+  IncomingMessageImpl(const char *regular_expressions)
+    : regular_expressions_(regular_expressions) {}
+  virtual ~IncomingMessageImpl() {}
+  virtual void OnIncomingMessage(Message *message) OVERRIDE {
+    DCHECK(message);
+    MatchMessage(message, regular_expressions_);
+  }
+ private:
+  const char *regular_expressions_;
+};
+
+class ExpectStartImpl : public ExpectNothing {
+ public:
+  ExpectStartImpl(const char *regular_expressions)
+    : regular_expressions_(regular_expressions) {}
+  virtual ~ExpectStartImpl() {}
+  virtual void Start(const scoped_refptr<Request>& request) OVERRIDE {
+    DCHECK(request);
+    MatchMessage(request, regular_expressions_);
+  }
+ private:
+  const char *regular_expressions_;
+};
+
+class ExpectSendImpl : public ExpectNothing {
+ public:
+  ExpectSendImpl(const char *regular_expressions)
+    : regular_expressions_(regular_expressions) {}
+  virtual ~ExpectSendImpl() {}
+  virtual void Send(const scoped_refptr<Response>& response) OVERRIDE {
+    DCHECK(response);
+    MatchMessage(response, regular_expressions_);
+  }
+ private:
+  const char *regular_expressions_;
+};
+
+class ExpectIncomingResponseImpl : public ExpectNothing {
+ public:
+  ExpectIncomingResponseImpl(const char *regular_expressions)
+    : regular_expressions_(regular_expressions) {}
+  virtual ~ExpectIncomingResponseImpl() {}
+  virtual void HandleIncomingResponse(
+                    const scoped_refptr<Response>& response) OVERRIDE {
+    DCHECK(response);
+    MatchMessage(response, regular_expressions_);
+  }
+ private:
+  const char *regular_expressions_;
+};
+
+class ExpectIncomingRequestImpl : public ExpectNothing {
+ public:
+  ExpectIncomingRequestImpl(const char *regular_expressions)
+    : regular_expressions_(regular_expressions) {}
+  virtual ~ExpectIncomingRequestImpl() {}
+  virtual void HandleIncomingRequest(
+                    const scoped_refptr<Request>& request) OVERRIDE {
+    DCHECK(request);
+    MatchMessage(request, regular_expressions_);
+  }
+ private:
+  const char *regular_expressions_;
+};
+
+class ExpectCloseImpl : public ExpectNothing {
+ public:
+  ExpectCloseImpl() {}
+  virtual ~ExpectCloseImpl() {}
+  virtual void Close() OVERRIDE {
+    DVLOG(1) << "Transaction closed successfully";
+  }
+};
+
 } // End of empty namespace
 
-MockEvent::OnChannelClosedImpl::OnChannelClosedImpl(
-    const EndPoint &destination)
-  : has_error_(false), destination_(destination) {}
-
-MockEvent::OnChannelClosedImpl::OnChannelClosedImpl(
-    const EndPoint &destination, int error)
-  : has_error_(true), error_(error), destination_(destination) {}
-
-void MockEvent::OnChannelClosedImpl::OnChannelClosed(
-    const EndPoint& destination, int error) {
-  EXPECT_EQ(destination_, destination);
-  if (has_error_)
-    EXPECT_EQ(error_, error);
-}
-
-void MockEvent::OnChannelClosedImpl::OnIncomingMessage(Message *message) {
-  EXPECT_TRUE(false) << "Not expected to get an incoming message this time";
-}
-
-MockEvent::OnIncomingMessageImpl::OnIncomingMessageImpl(
-    const char *regular_expressions)
-  : regular_expressions_(regular_expressions) {}
-
-void MockEvent::OnIncomingMessageImpl::OnChannelClosed(
-    const EndPoint& destination, int error) {
-  EXPECT_TRUE(false) << "Not expected to get a network error this time";
-}
-
-void MockEvent::OnIncomingMessageImpl::OnIncomingMessage(Message *message) {
+bool MatchMessage(const scoped_refptr<Message> &message,
+                  const char *regular_expressions) {
   DCHECK(message);
+  DCHECK(regular_expressions);
 
   // Break down the multiple regular expressions separated
   // by single line break  and match pattern against the
   // incoming message
 
   int line = 1;
+  bool result = true;
   icu::UnicodeString input(
     icu::UnicodeString::fromUTF8(message->ToString()));
   std::vector<std::string> regexps;
-  Tokenize(regular_expressions_, "\n", &regexps);
+  Tokenize(regular_expressions, "\n", &regexps);
   for (std::vector<std::string>::iterator i = regexps.begin(),
        ie = regexps.end(); i != ie; ++i) {
     UErrorCode status = U_ZERO_ERROR;
     icu::RegexMatcher matcher(icu::UnicodeString::fromUTF8(*i), 0, status);
     DCHECK(U_SUCCESS(status));
     matcher.reset(input);
-    EXPECT_TRUE(matcher.find())
-      << "Failed to match pattern '" << *i << "', line " << line;
+    if (!matcher.find()) {
+      EXPECT_TRUE(false)
+        << "Failed to match pattern '" << *i << "', line " << line;
+      result = false;
+    }
     ++line;
   }
+  return result;
 }
-
-MockEvent::MockEvent(const MockEvent &other)
-  : delegate_(other.delegate_), time_stamp_(other.time_stamp_) {}
-
-MockEvent::~MockEvent() {}
-
-MockEvent& MockEvent::operator=(const MockEvent &other) {
-  delegate_ = other.delegate_;
-  time_stamp_ = other.time_stamp_;
-  return *this;
-}
-
-void MockEvent::OnChannelClosed(const EndPoint& destination, int error) {
-  delegate_->OnChannelClosed(destination, error);
-}
-
-void MockEvent::OnIncomingMessage(Message *message) {
-  delegate_->OnIncomingMessage(message);
-}
-
-MockEvent::MockEvent(NetworkLayer::Delegate *delegate)
-  : delegate_(delegate) {}
 
 MockEvent ExpectCloseChannel(const char *destination) {
   EndPoint endpoint(EndPoint::FromString(destination));
-  return MockEvent(new MockEvent::OnChannelClosedImpl(endpoint));
+  return MockEvent(new ChannelClosedImpl(endpoint));
 }
 
 MockEvent ExpectCloseChannel(const char *destination, int error) {
   EndPoint endpoint(EndPoint::FromString(destination));
-  return MockEvent(new MockEvent::OnChannelClosedImpl(endpoint, error));
+  return MockEvent(new ChannelClosedImpl(endpoint, error));
 }
 
 MockEvent ExpectIncomingMessage(const char *regular_expressions) {
-  return MockEvent(new MockEvent::OnIncomingMessageImpl(regular_expressions));
+  return MockEvent(new IncomingMessageImpl(regular_expressions));
 }
 
-StaticNetworkLayerDelegate::StaticNetworkLayerDelegate()
-  : events_(NULL), events_count_(0), events_index_(0) {}
+MockEvent ExpectStartTransaction(const char *regular_expressions,
+                                 std::string *transaction_id) {
+  return MockEvent(new ExpectStartImpl(regular_expressions), transaction_id);
+}
+
+MockEvent ExpectTransactionSend(const char *regular_expressions,
+                                std::string *transaction_id) {
+  return MockEvent(new ExpectSendImpl(regular_expressions), transaction_id);
+}
+
+MockEvent ExpectIncomingResponse(const char *regular_expressions,
+                                 std::string *transaction_id) {
+  return MockEvent(new ExpectIncomingResponseImpl(regular_expressions),
+            transaction_id);
+}
+
+MockEvent ExpectIncomingRequest(const char *regular_expressions,
+                                std::string *transaction_id) {
+  return MockEvent(new ExpectIncomingRequestImpl(regular_expressions),
+            transaction_id);
+}
+
+MockEvent ExpectTransactionClose(std::string *transaction_id) {
+  return MockEvent(new ExpectCloseImpl, transaction_id);
+}
 
 StaticNetworkLayerDelegate::StaticNetworkLayerDelegate(
-    MockEvent* events, size_t events_count)
-  : events_(events), events_count_(events_count), events_index_(0) {}
+              DataProvider *data_provider)
+  : data_provider_(data_provider) {}
 
 StaticNetworkLayerDelegate::~StaticNetworkLayerDelegate() {}
 
-const MockEvent& StaticNetworkLayerDelegate::PeekEvent() const {
-  return PeekEvent(events_index_);
-}
-
-const MockEvent& StaticNetworkLayerDelegate::PeekEvent(size_t index) const {
-  DCHECK_LT(index, events_count_);
-  return events_[index];
-}
-
-MockEvent StaticNetworkLayerDelegate::GetNextEvent() {
-  DCHECK(!at_events_end());
-  events_[events_index_].set_time_stamp(base::Time::Now());
-  return events_[events_index_++];
-}
-
 void StaticNetworkLayerDelegate::OnChannelClosed(const EndPoint& destination, int error) {
-  DCHECK(!at_events_end());
-  GetNextEvent().OnChannelClosed(destination, error);
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->GetNextEvent().OnChannelClosed(destination, error);
 }
 
 void StaticNetworkLayerDelegate::OnIncomingMessage(Message *message) {
-  DCHECK(!at_events_end());
-  GetNextEvent().OnIncomingMessage(message);
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->GetNextEvent().OnIncomingMessage(message);
 }
 
 UDPChannelAdapter::UDPChannelAdapter(net::ClientSocketFactory *socket_factory,
@@ -397,34 +484,14 @@ int MockChannelFactory::CreateChannel(const EndPoint &destination,
   return net::ERR_UNEXPECTED;
 }
 
-StaticTransactionData::StaticTransactionData(MockTransactionEvent *events,
-                                             size_t events_count)
-  : events_(events), events_count_(events_count), events_index_(0) {}
-
-StaticTransactionData::~StaticTransactionData() {}
-
-const MockTransactionEvent& StaticTransactionData::PeekEvent() const {
-  return PeekEvent(events_index_);
-}
-
-const MockTransactionEvent& StaticTransactionData::PeekEvent(size_t index) const {
-  DCHECK_LT(index, events_count_);
-  return events_[index];
-}
-
-MockTransactionEvent StaticTransactionData::GetNextEvent() {
-  DCHECK(!at_events_end());
-  events_[events_index_].set_time_stamp(base::Time::Now());
-  return events_[events_index_++];
-}
-
 MockClientTransaction::MockClientTransaction(
-    StaticTransactionData *static_data) : static_data_(static_data) {}
+    DataProvider *data_provider)
+  : data_provider_(data_provider) {}
 
 MockClientTransaction::~MockClientTransaction() {}
 
 void MockClientTransaction::TimedOut() {
-  // TODO
+  // TODO: create a Request Timeout response
 }
 
 const std::string& MockClientTransaction::id() const {
@@ -437,20 +504,24 @@ scoped_refptr<Channel> MockClientTransaction::channel() const {
 
 void MockClientTransaction::Start(
                     const scoped_refptr<Request> &outgoing_request) {
-  // TODO
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->set_transaction_id(transaction_id_);
+  data_provider_->Start(outgoing_request);
 }
 
 void MockClientTransaction::HandleIncomingResponse(
                     const scoped_refptr<Response> &response) {
-  // TODO
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->HandleIncomingResponse(transaction_id_, response);
 }
 
 void MockClientTransaction::Close() {
-  // TODO
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->Close(transaction_id_);
 }
 
 MockServerTransaction::MockServerTransaction(
-    StaticTransactionData *static_data) : static_data_(static_data) {}
+    DataProvider *data_provider) : data_provider_(data_provider) {}
 
 MockServerTransaction::~MockServerTransaction() {}
 
@@ -464,26 +535,30 @@ scoped_refptr<Channel> MockServerTransaction::channel() const {
 
 void MockServerTransaction::Start(
                 const scoped_refptr<Request> &incoming_request) {
-  // TODO
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->set_transaction_id(transaction_id_);
+  data_provider_->Start(incoming_request);
 }
 
 void MockServerTransaction::Send(
-                    const scoped_refptr<Response> &response,
-                    const net::CompletionCallback& callback) {
-  // TODO
+                    const scoped_refptr<Response> &response) {
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->Send(transaction_id_, response);
 }
 
 void MockServerTransaction::HandleIncomingRequest(
                     const scoped_refptr<Request> &request) {
-  // TODO
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->HandleIncomingRequest(transaction_id_, request);
 }
 
 void MockServerTransaction::Close() {
-  // TODO
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->Close(transaction_id_);
 }
 
-MockTransactionFactory::MockTransactionFactory(StaticTransactionData *static_data)
-  : static_data_(static_data) {}
+MockTransactionFactory::MockTransactionFactory(DataProvider *data_provider)
+  : data_provider_(data_provider) {}
 
 MockTransactionFactory::~MockTransactionFactory() {}
 
@@ -493,7 +568,7 @@ ClientTransaction *MockTransactionFactory::CreateClientTransaction(
       const scoped_refptr<Channel> &channel,
       TransactionDelegate *delegate) {
   MockClientTransaction *client_transaction =
-    new MockClientTransaction(static_data_);
+    new MockClientTransaction(data_provider_);
   client_transaction->set_id(transaction_id);
   client_transaction->set_channel(channel);
   client_transaction->set_delegate(delegate);
@@ -506,7 +581,7 @@ ServerTransaction *MockTransactionFactory::CreateServerTransaction(
     const scoped_refptr<Channel> &channel,
     TransactionDelegate *delegate) {
   MockServerTransaction *server_transaction =
-    new MockServerTransaction(static_data_);
+    new MockServerTransaction(data_provider_);
   server_transaction->set_id(transaction_id);
   server_transaction->set_channel(channel);
   server_transaction->set_delegate(delegate);

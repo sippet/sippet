@@ -25,8 +25,7 @@ class ServerTransaction :
 
   virtual void Start(const scoped_refptr<Request> &incoming_request) = 0;
 
-  virtual void Send(const scoped_refptr<Response> &response,
-                    const net::CompletionCallback& callback) = 0;
+  virtual void Send(const scoped_refptr<Response> &response) = 0;
 
   virtual void HandleIncomingRequest(
                     const scoped_refptr<Request> &request) = 0;

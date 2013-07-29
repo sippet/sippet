@@ -15,10 +15,12 @@ class NetworkLayerTest : public testing::Test {
   }
 
   void Initialize(net::MockRead* reads = NULL, size_t reads_count = 0,
-                  net::MockWrite* writes = NULL, size_t writes_count = 0) {
-    static_data_.reset(new StaticTransactionData(NULL, 0));
-    transaction_factory_.reset(new MockTransactionFactory(static_data_.get()));
-    network_layer_ = new NetworkLayer(&delegate_, transaction_factory_.get());
+                  net::MockWrite* writes = NULL, size_t writes_count = 0,
+                  MockEvent* events = NULL, size_t events_count = 0) {
+    data_provider_.reset(new StaticDataProvider(events, events_count));
+    transaction_factory_.reset(new MockTransactionFactory(data_provider_.get()));
+    delegate_.reset(new StaticNetworkLayerDelegate(data_provider_.get()));
+    network_layer_ = new NetworkLayer(delegate_.get(), transaction_factory_.get());
     data_.reset(new net::DeterministicSocketData(reads, reads_count,
                                                  writes, writes_count));
     data_->set_connect_data(net::MockConnect(net::SYNCHRONOUS, 0));
@@ -29,11 +31,11 @@ class NetworkLayerTest : public testing::Test {
     channel_factory_.reset(new MockChannelFactory(socket_factory_.get()));
   }
 
-  scoped_ptr<StaticTransactionData> static_data_;
+  scoped_ptr<DataProvider> data_provider_;
   scoped_ptr<net::DeterministicSocketData> data_;
   scoped_ptr<net::MockClientSocketFactory> socket_factory_;
   scoped_ptr<MockChannelFactory> channel_factory_;
-  StaticNetworkLayerDelegate delegate_;
+  scoped_ptr<NetworkLayer::Delegate> delegate_;
   scoped_ptr<MockTransactionFactory> transaction_factory_;
   scoped_refptr<NetworkLayer> network_layer_;
 };
