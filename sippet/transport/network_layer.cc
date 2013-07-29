@@ -131,7 +131,7 @@ int NetworkLayer::SendResponse(const scoped_refptr<Response> &response,
   scoped_refptr<ServerTransaction> server_transaction =
     GetServerTransaction(response);
   if (server_transaction) {
-    server_transaction->Send(response, callback);
+    server_transaction->Send(response);
   }
   else {
     // When there's no server transaction available, tries to send the
