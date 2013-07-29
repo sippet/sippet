@@ -19,15 +19,33 @@ namespace sippet {
 
 const char NetworkLayer::kMagicCookie[] = "z9hG4bK";
 
+DefaultBranchFactory::DefaultBranchFactory() {}
+
+DefaultBranchFactory::~DefaultBranchFactory() {}
+
+std::string DefaultBranchFactory::CreateBranch() {
+  // Base64 will generate a shorter string than hex
+  uint64 sixteen_bytes[2] = { base::RandUint64(), base::RandUint64() };
+  // An input of 15 bytes will generate 20 characters on output
+  base::StringPiece part(reinterpret_cast<char*>(sixteen_bytes),
+    sizeof(sixteen_bytes)-1);
+  std::string random_string;
+  base::Base64Encode(part, &random_string);
+  return NetworkLayer::kMagicCookie + random_string;
+}
+
 NetworkLayer::NetworkLayer(Delegate *delegate,
                            TransactionFactory *transaction_factory,
-                           const NetworkSettings &network_settings)
+                           const NetworkSettings &network_settings,
+                           BranchFactory *branch_factory)
   : delegate_(delegate),
     transaction_factory_(transaction_factory),
     network_settings_(network_settings),
-    suspended_(false) {
+    suspended_(false),
+    branch_factory_(branch_factory) {
   DCHECK(delegate);
   DCHECK(transaction_factory);
+  DCHECK(branch_factory);
 }
 
 NetworkLayer::~NetworkLayer() {
@@ -114,6 +132,11 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
     return channel_context->channel_->Send(request, callback);
   }
   else {
+    if (Method::ACK == request->method()) {
+      // ACK requests can't open connections, therefore they will be rejected.
+      DVLOG(1) << "ACK requests can't open connections";
+      return net::ERR_ABORTED;
+    }
     int result = CreateChannelContext(
       destination, request, callback, &channel_context);
     if (result != net::OK)
@@ -268,14 +291,7 @@ void NetworkLayer::DestroyChannelContext(ChannelContext *channel_context) {
 }
 
 std::string NetworkLayer::CreateBranch() {
-  // Base64 will generate a shorter string than hex
-  uint64 sixteen_bytes[2] = { base::RandUint64(), base::RandUint64() };
-  // An input of 15 bytes will generate 20 characters on output
-  base::StringPiece part(reinterpret_cast<char*>(sixteen_bytes),
-    sizeof(sixteen_bytes)-1);
-  std::string random_string;
-  base::Base64Encode(part, &random_string);
-  return kMagicCookie + random_string;
+  return branch_factory_->CreateBranch();
 }
 
 void NetworkLayer::StampClientTopmostVia(scoped_refptr<Request> &request,
@@ -522,6 +538,8 @@ void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel,
   if (result == net::OK) {
     StampClientTopmostVia(channel_context->initial_request_,
       channel_context->channel_);
+    ignore_result(CreateClientTransaction(
+      channel_context->initial_request_, channel_context));
     result = channel_context->channel_->Send(
       channel_context->initial_request_, channel_context->initial_callback_);
     if (result == net::OK) {

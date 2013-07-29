@@ -22,6 +22,19 @@ namespace sippet {
 bool MatchMessage(const scoped_refptr<Message> &message,
                   const char *regular_expressions);
 
+class MockBranchFactory : public BranchFactory {
+ public:
+  MockBranchFactory(const char *branches[], size_t branches_count);
+  virtual ~MockBranchFactory();
+  virtual std::string CreateBranch() OVERRIDE;
+ private:
+  const char **branches_;
+  size_t branches_count_;
+  size_t branches_index_;
+
+  DISALLOW_COPY_AND_ASSIGN(MockBranchFactory);
+};
+
 class MockEvent {
  public:
   class Expect : public NetworkLayer::Delegate {

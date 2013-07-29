@@ -20,7 +20,7 @@ bool ParseHostPortPair(const net::HostPortPair &destination,
   std::string host;
   int port;
   std::string destination_string(destination.ToString());
-  if (net::ParseHostAndPort(destination_string, &host, &port)) {
+  if (!net::ParseHostAndPort(destination_string, &host, &port)) {
     LOG(WARNING) << "Not a supported IP literal: " << destination_string;
     return false;
   }
@@ -188,6 +188,18 @@ bool MatchMessage(const scoped_refptr<Message> &message,
     ++line;
   }
   return result;
+}
+
+MockBranchFactory::MockBranchFactory(
+          const char *branches[], size_t branches_count)
+  : branches_(branches), branches_index_(0),
+    branches_count_(branches_count) {}
+
+MockBranchFactory::~MockBranchFactory() {}
+
+std::string MockBranchFactory::CreateBranch() {
+  DCHECK(branches_index_ < branches_count_);
+  return branches_[branches_index_++];
 }
 
 MockEvent ExpectCloseChannel(const char *destination) {
@@ -370,6 +382,7 @@ MockChannel::MockChannel(MockChannelAdapter *channel_adapter,
                          const EndPoint &destination)
     : channel_adapter_(channel_adapter),
       delegate_(delegate),
+      is_connected_(false),
       ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)),
       destination_(destination),
       origin_(net::HostPortPair("192.0.2.33", 123),
@@ -397,8 +410,14 @@ bool MockChannel::is_connected() const {
 
 void MockChannel::Connect() {
   DCHECK(!is_connected());
-  channel_adapter_->Connect(destination_.hostport(),
+  int result = channel_adapter_->Connect(destination_.hostport(),
     base::Bind(&MockChannel::OnConnected, this));
+  if (result == net::OK) {
+    // When using UDP, the connect event will occur in the next event loop.
+    MessageLoop::current()->PostDelayedTask(FROM_HERE,
+      base::Bind(&MockChannel::OnConnected, this, net::OK),
+      base::TimeDelta::FromSeconds(0));
+  }
 }
 
 int MockChannel::Send(const scoped_refptr<Message>& message,
@@ -407,7 +426,8 @@ int MockChannel::Send(const scoped_refptr<Message>& message,
   std::string buffer(message->ToString());
   scoped_refptr<net::IOBuffer> io_buffer(new net::IOBuffer(buffer.size()));
   memcpy(io_buffer->data(), buffer.data(), buffer.size());
-  return channel_adapter_->Write(io_buffer, buffer.size(), callback);
+  int result = channel_adapter_->Write(io_buffer, buffer.size(), callback);
+  return (result > 0) ? net::OK : result;
 }
 
 void MockChannel::Close() {
@@ -544,6 +564,7 @@ void MockServerTransaction::Send(
                     const scoped_refptr<Response> &response) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
   data_provider_->Send(transaction_id_, response);
+  channel_->Send(response, net::CompletionCallback());
 }
 
 void MockServerTransaction::HandleIncomingRequest(
