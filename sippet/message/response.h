@@ -48,7 +48,7 @@ public:
     os << "SIP/" << version_.major_value()
        << "." << version_.minor_value()
        << " " << response_code_
-       << reason_phrase_
+       << " " << reason_phrase_
        << "\r\n";
     Message::print(os);
   }

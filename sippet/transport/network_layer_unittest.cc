@@ -10,17 +10,22 @@ class NetworkLayerTest : public testing::Test {
  public:
   void Finish() {
     MessageLoop::current()->RunUntilIdle();
-    EXPECT_TRUE(data_->at_read_eof());
-    EXPECT_TRUE(data_->at_write_eof());
   }
 
   void Initialize(net::MockRead* reads = NULL, size_t reads_count = 0,
                   net::MockWrite* writes = NULL, size_t writes_count = 0,
-                  MockEvent* events = NULL, size_t events_count = 0) {
+                  MockEvent* events = NULL, size_t events_count = 0,
+                  const char *branches[] = NULL, size_t branches_count = 0) {
+    BranchFactory *branch_factory;
+    if (branches == NULL)
+      branch_factory = new DefaultBranchFactory;
+    else
+      branch_factory = new MockBranchFactory(branches, branches_count);
     data_provider_.reset(new StaticDataProvider(events, events_count));
     transaction_factory_.reset(new MockTransactionFactory(data_provider_.get()));
     delegate_.reset(new StaticNetworkLayerDelegate(data_provider_.get()));
-    network_layer_ = new NetworkLayer(delegate_.get(), transaction_factory_.get());
+    network_layer_ = new NetworkLayer(delegate_.get(),
+      transaction_factory_.get(), NetworkSettings(), branch_factory);
     data_.reset(new net::DeterministicSocketData(reads, reads_count,
                                                  writes, writes_count));
     data_->set_connect_data(net::MockConnect(net::SYNCHRONOUS, 0));
@@ -28,7 +33,32 @@ class NetworkLayerTest : public testing::Test {
       data_->StopAfter(writes_count);
     }
     socket_factory_.reset(new net::MockClientSocketFactory);
+    socket_factory_->AddSocketDataProvider(data_.get());
     channel_factory_.reset(new MockChannelFactory(socket_factory_.get()));
+    network_layer_->RegisterChannelFactory(Protocol::UDP, channel_factory_.get());
+  }
+
+  static scoped_refptr<Request> CreateRegisterRequest() {
+    scoped_refptr<Request> request(
+      new Request(Method::REGISTER, GURL("sip:192.0.4.42")));
+    scoped_ptr<MaxForwards> maxfw(new MaxForwards(70));
+    request->push_back(maxfw.PassAs<Header>());
+    scoped_ptr<To> to(new To(GURL("sip:bob@biloxi.com"), "Bob"));
+    request->push_back(to.PassAs<Header>());
+    scoped_ptr<From> from(new From(GURL("sip:bob@biloxi.com"), "Bob"));
+    from->set_tag("456248");
+    request->push_back(from.PassAs<Header>());
+    scoped_ptr<CallId> callid(new CallId("843817637684230@998sdasdh09"));
+    request->push_back(callid.PassAs<Header>());
+    scoped_ptr<Cseq> cseq(new Cseq(1826, Method::REGISTER));
+    request->push_back(cseq.PassAs<Header>());
+    scoped_ptr<Contact> contact(new Contact(GURL("sip:bob@192.0.2.4")));
+    request->push_back(contact.PassAs<Header>());
+    scoped_ptr<Expires> expires(new Expires(7200));
+    request->push_back(expires.PassAs<Header>());
+    scoped_ptr<ContentLength> content_length(new ContentLength(0));
+    request->push_back(content_length.PassAs<Header>());
+    return request;
   }
 
   scoped_ptr<DataProvider> data_provider_;
@@ -43,7 +73,7 @@ class NetworkLayerTest : public testing::Test {
 TEST_F(NetworkLayerTest, StaticFunctions) {
   Initialize();
 
-  std::string branch = NetworkLayer::CreateBranch();
+  std::string branch = network_layer_->CreateBranch();
   EXPECT_TRUE(StartsWithASCII(branch, NetworkLayer::kMagicCookie, true));
 
   scoped_refptr<Channel> channel;
@@ -53,14 +83,14 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
 
   scoped_refptr<Request> client_request =
     new Request(Method::INVITE, GURL("sip:foo@bar.com"));
-  NetworkLayer::StampClientTopmostVia(client_request, channel);
+  network_layer_->StampClientTopmostVia(client_request, channel);
   EXPECT_TRUE(StartsWithASCII(client_request->ToString(),
     "INVITE sip:foo@bar.com SIP/2.0\r\n"
     "v: SIP/2.0/UDP 192.0.2.33:123;rport;branch=z9", true));
 
   scoped_refptr<Request> empty_via_request =
     new Request(Method::INVITE, GURL("sip:bar@foo.com"));
-  NetworkLayer::StampServerTopmostVia(empty_via_request, channel);
+  network_layer_->StampServerTopmostVia(empty_via_request, channel);
   EXPECT_TRUE(StartsWithASCII(empty_via_request->ToString(),
     "INVITE sip:bar@foo.com SIP/2.0\r\n"
     "v: SIP/2.0/UDP 192.0.2.34:321;rport", true));
@@ -71,7 +101,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   net::HostPortPair hostport("192.168.0.1", 7001);
   via->push_back(ViaParam(Protocol::UDP, hostport));
   single_via_request->push_front(via.PassAs<Header>());
-  NetworkLayer::StampServerTopmostVia(single_via_request, channel);
+  network_layer_->StampServerTopmostVia(single_via_request, channel);
   EXPECT_TRUE(StartsWithASCII(single_via_request->ToString(),
     "INVITE sip:foobar@foo.com SIP/2.0\r\n"
     "v: SIP/2.0/UDP 192.168.0.1:7001;received=192.0.2.34;rport=321", true));
@@ -116,6 +146,60 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
     NetworkLayer::GetMessageEndPoint(single_via_response);
   EXPECT_EQ(EndPoint("189.187.200.23",5002,Protocol::UDP),
     single_via_response_endpoint);
+
+  Finish();
+}
+
+TEST_F(NetworkLayerTest, OutgoingRequest) {
+  const char *branches[] = {
+    "z9hG4bKnashds7"
+  };
+
+  net::MockRead expected_reads[] = {
+    net::MockRead(net::ASYNC, 1,
+      "SIP/2.0 200 OK\r\n"
+      "v: SIP/2.0/UDP 192.0.2.33:123;rport=123;branch=z9hG4bKnashds7\r\n"
+      "Max-Forwards: 70\r\n"
+      "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
+      "f: \"Bob\" <sip:bob@biloxi.com>;tag=456248\r\n"
+      "i: 843817637684230@998sdasdh09\r\n"
+      "CSeq: 1826 REGISTER\r\n"
+      "m: <sip:bob@192.0.2.4>\r\n"
+      "Expires: 7200\r\n"
+      "l: 0\r\n"
+      "\r\n"),
+    net::MockRead(net::ASYNC, 2, "")
+  };
+
+  net::MockWrite expected_writes[] = {
+    net::MockWrite(net::SYNCHRONOUS, 0,
+      "REGISTER sip:192.0.4.42 SIP/2.0\r\n"
+      "v: SIP/2.0/UDP 192.0.2.33:123;rport;branch=z9hG4bKnashds7\r\n"
+      "Max-Forwards: 70\r\n"
+      "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
+      "f: \"Bob\" <sip:bob@biloxi.com>;tag=456248\r\n"
+      "i: 843817637684230@998sdasdh09\r\n"
+      "CSeq: 1826 REGISTER\r\n"
+      "m: <sip:bob@192.0.2.4>\r\n"
+      "Expires: 7200\r\n"
+      "l: 0\r\n"
+      "\r\n"),
+  };
+
+  std::string tid;
+  MockEvent expected_events[] = {
+    ExpectStartTransaction("REGISTER sip:192.0.4.42.*", &tid),
+    ExpectIncomingResponse("SIP/2.0 200 OK.*", &tid),
+    ExpectTransactionClose(&tid),
+  };
+
+  Initialize(expected_reads, ARRAYSIZE_UNSAFE(expected_reads),
+             expected_writes, ARRAYSIZE_UNSAFE(expected_writes),
+             expected_events, ARRAYSIZE_UNSAFE(expected_events),
+             branches, ARRAYSIZE_UNSAFE(branches));
+
+  network_layer_->Send(CreateRegisterRequest(), net::CompletionCallback());
+  data_->RunFor(1);
 
   Finish();
 }
