@@ -190,25 +190,15 @@ public:
       equals<HeaderType>());
   }
 
-  // Find next header of given type.
+  //! Get a specific header.
   template<class HeaderType>
   HeaderType *get() {
     iterator it = find_first<HeaderType>();
     return it != end() ? dyn_cast<HeaderType>(it) : 0;
   }
   template<class HeaderType>
-  HeaderType *find_next(iterator where) {
-    const_iterator it = find_first<HeaderType>();
-    return it != end() ? dyn_cast<HeaderType>(it) : 0;
-  }
-  template<class HeaderType>
   const HeaderType *get() const {
     iterator it = find_first<HeaderType>();
-    return it != end() ? dyn_cast<HeaderType>(it) : 0;
-  }
-  template<class HeaderType>
-  const HeaderType *find_next(iterator where) const {
-    const_iterator it = find_first<HeaderType>();
     return it != end() ? dyn_cast<HeaderType>(it) : 0;
   }
 
