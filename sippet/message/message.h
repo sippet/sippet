@@ -62,6 +62,7 @@ public:
 private:
   bool isRequest_;
   HeaderListType headers_;
+  std::string content_;
 
   DISALLOW_COPY_AND_ASSIGN(Message);
 
@@ -196,6 +197,16 @@ public:
     return it != end() ? dyn_cast<HeaderType>(it) : 0;
   }
   template<class HeaderType>
+  HeaderType *find_next(iterator where) {
+    const_iterator it = find_first<HeaderType>();
+    return it != end() ? dyn_cast<HeaderType>(it) : 0;
+  }
+  template<class HeaderType>
+  const HeaderType *get() const {
+    iterator it = find_first<HeaderType>();
+    return it != end() ? dyn_cast<HeaderType>(it) : 0;
+  }
+  template<class HeaderType>
   const HeaderType *find_next(iterator where) const {
     const_iterator it = find_first<HeaderType>();
     return it != end() ? dyn_cast<HeaderType>(it) : 0;
@@ -206,6 +217,21 @@ public:
 
   //! Print the message on a string.
   std::string ToString() const;
+
+  //! Set the message content.
+  void set_content(const std::string &content) {
+    content_ = content;
+  }
+
+  //! Get the message content.
+  const std::string &content() const {
+    return content_;
+  }
+
+  //! Check if the message has contents.
+  bool has_content() const {
+    return !content_.empty();
+  }
 
 private:
   template<class HeaderType>

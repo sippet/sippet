@@ -53,6 +53,9 @@ class NET_EXPORT_PRIVATE Channel :
   // Whether this channel is connected.
   virtual bool is_connected() const = 0;
 
+  // Whether this channel is a stream channel.
+  virtual bool is_stream() const = 0;
+
   // Opens the connection on the IO thread.
   // Once the connection is established, calls delegate's OnChannelConnected.
   virtual void Connect() = 0;
