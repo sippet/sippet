@@ -36,7 +36,7 @@ void ServerTransactionImpl::Start(
   initial_request_ = incoming_request;
   if (Method::INVITE == incoming_request->method()) {
     mode_ = MODE_INVITE;
-    next_state_ = STATE_PROCEEDING;
+    next_state_ = STATE_PROCEED_CALLING;
     time_delta_provider_.reset(time_delta_factory_->CreateServerInvite());
     ScheduleProvisionalResponse();
   }
@@ -54,10 +54,8 @@ void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
     return;
   }
 
-  if (MODE_INVITE == mode_
-      && STATE_PROCEEDING == next_state_) {
+  if (STATE_PROCEED_CALLING == next_state_)
     StopProvisionalResponse();
-  }
 
   latest_response_ = response;
   channel_->Send(response, net::CompletionCallback());
@@ -92,7 +90,10 @@ void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
       ScheduleTimeout();
     }
     else {
-      ScheduleTerminate();
+      if (channel_->is_stream())
+        next_state_ = STATE_TERMINATED;
+      else
+        ScheduleTerminate();
     }
   }
   if (STATE_TERMINATED == next_state_) {
@@ -125,7 +126,13 @@ void ServerTransactionImpl::HandleIncomingRequest(
   if (STATE_CONFIRMED == next_state_
       && next_state_ != state) {
     StopTimers();
-    ScheduleTerminate();
+    if (channel_->is_stream())
+      next_state_ = STATE_TERMINATED;
+    else
+      ScheduleTerminate();
+  }
+  if (STATE_TERMINATED == next_state_) {
+    Terminate();
   }
 }
 
