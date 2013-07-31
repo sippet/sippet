@@ -58,6 +58,51 @@ class ClientInvite : public TimeDeltaProvider {
   int multiply_;
 };
 
+class ServerNonInvite : public TimeDeltaProvider {
+ public:
+  ServerNonInvite() {}
+  virtual ~ServerNonInvite() {}
+  virtual base::TimeDelta GetNextRetryDelay() OVERRIDE {
+    // There's no retry on server non-INVITE transactions
+    return base::TimeDelta();
+  }
+  virtual base::TimeDelta GetTimeoutDelay() OVERRIDE {
+    // There's no timeout on server non-INVITE transactions
+    return base::TimeDelta();
+  }
+  virtual base::TimeDelta GetTerminateDelay() OVERRIDE {
+    // Timer J equal to 5s
+    return base::TimeDelta::FromSeconds(32);
+  }
+};
+
+class ServerInvite : public TimeDeltaProvider {
+ public:
+  ServerInvite() : count_(0) {}
+  virtual ~ServerInvite() {}
+  virtual base::TimeDelta GetNextRetryDelay() OVERRIDE {
+    // Timer G: implement the exponential backoff up to 4 seconds
+    int64 seconds;
+    switch (count_++) {
+      case 0: seconds = 500; break;
+      case 1: seconds = 1000; break;
+      case 2: seconds = 2000; break;
+      default: seconds = 4000; break;
+    }
+    return base::TimeDelta::FromMilliseconds(seconds);
+  }
+  virtual base::TimeDelta GetTimeoutDelay() OVERRIDE {
+    // Timer H is 64*T1, where T1 = 500ms
+    return base::TimeDelta::FromSeconds(32);
+  }
+  virtual base::TimeDelta GetTerminateDelay() OVERRIDE {
+    // Timer I equal to 5s
+    return base::TimeDelta::FromSeconds(5);
+  }
+ private:
+  int count_;
+};
+
 } // End of empty namespace
 
 TimeDeltaProvider* DefaultTimeDeltaFactory::CreateClientNonInvite() {
@@ -69,11 +114,11 @@ TimeDeltaProvider* DefaultTimeDeltaFactory::CreateClientInvite() {
 }
 
 TimeDeltaProvider* DefaultTimeDeltaFactory::CreateServerNonInvite() {
-  return 0;
+  return new ServerNonInvite;
 }
 
 TimeDeltaProvider* DefaultTimeDeltaFactory::CreateServerInvite() {
-  return 0;
+  return new ServerInvite;
 }
 
 } // End of sippet namespace
