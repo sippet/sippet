@@ -9,6 +9,7 @@
 #include "sippet/message/method.h"
 #include "sippet/message/version.h"
 #include "googleurl/src/gurl.h"
+#include "base/time.h"
 
 namespace sippet {
 
@@ -16,44 +17,30 @@ class Request :
   public Message {
 private:
   DISALLOW_COPY_AND_ASSIGN(Request);
-
-private:
-  virtual ~Request() {}
-
+  virtual ~Request();
 public:
   Request(const Method &method,
           const GURL &request_uri,
-          const Version &version = Version(2,0)) 
-    : Message(true), method_(method), request_uri_(request_uri), version_(version) {}
+          const Version &version = Version(2,0));
 
-  Method method() const { return method_; }
-  void set_method(const Method &method) {
-    method_ = method;
-  }
+  Method method() const;
+  void set_method(const Method &method);
 
-  GURL request_uri() const { return request_uri_; }
-  void set_request_uri(const GURL &request_uri) {
-    request_uri_ = request_uri;
-  }
+  GURL request_uri() const;
+  void set_request_uri(const GURL &request_uri);
 
-  Version version() const { return version_; }
-  void set_version(const Version &version) {
-    version_ = version;
-  }
+  Version version() const;
+  void set_version(const Version &version);
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    os << method_.str() << " "
-       << request_uri_.spec() << " "
-       << "SIP/" << version_.major_value()
-       << "." << version_.minor_value()
-       << "\r\n";
-    Message::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 
+  scoped_refptr<Response> MakeResponse(int response_code,
+                                       const std::string &to_tag = "");
 private:
   Method method_;
   GURL request_uri_;
   Version version_;
+  base::Time time_stamp_;
 };
 
 } // End of sippet namespace

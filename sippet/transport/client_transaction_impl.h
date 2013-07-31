@@ -24,15 +24,13 @@ class ClientTransactionImpl : public ClientTransaction {
         TimeDeltaFactory *time_delta_factory);
   virtual ~ClientTransactionImpl();
 
+  // ClientTransaction methods:
   virtual const std::string& id() const OVERRIDE;
   virtual scoped_refptr<Channel> channel() const OVERRIDE;
-
   virtual void Start(
       const scoped_refptr<Request> &outgoing_request) OVERRIDE;
-
   virtual void HandleIncomingResponse(
       const scoped_refptr<Response> &response) OVERRIDE;
-
   virtual void Close() OVERRIDE;
  private:
   enum Mode {

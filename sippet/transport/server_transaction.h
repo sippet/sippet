@@ -8,6 +8,7 @@
 #include "base/memory/scoped_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "sippet/message/response.h"
+#include "sippet/transport/channel.h"
 
 namespace sippet {
 

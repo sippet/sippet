@@ -102,9 +102,11 @@ void ClientTransactionImpl::HandleIncomingResponse(
       && STATE_PROCEED_CALLING == next_state_) {
     StopTimers();
   }
-  if (next_state_ != state
-      && STATE_COMPLETED == next_state_) {
-    ScheduleTerminate();
+  if (STATE_COMPLETED == next_state_) {
+    if (channel_->is_stream())
+      next_state_ = STATE_TERMINATED;
+    else if (next_state_ != state)
+      ScheduleTerminate();
   }
   if (STATE_TERMINATED == next_state_) {
     Terminate();
@@ -130,12 +132,14 @@ void ClientTransactionImpl::OnTimedOut() {
     DCHECK(STATE_CALLING == next_state_);
   else
     DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
+  next_state_ = STATE_TERMINATED;
   Terminate();
 }
 
 void ClientTransactionImpl::OnTerminated() {
   DCHECK(!channel_->is_stream());
   DCHECK(STATE_COMPLETED == next_state_);
+  next_state_ = STATE_TERMINATED;
   Terminate();
 }
 
