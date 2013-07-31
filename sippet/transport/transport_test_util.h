@@ -5,6 +5,7 @@
 #ifndef SIPPET_TRANSPORT_TRANSPORT_TEST_UTIL_H_
 #define SIPPET_TRANSPORT_TRANSPORT_TEST_UTIL_H_
 
+#include <vector>
 #include "sippet/transport/network_layer.h"
 #include "sippet/transport/transaction_factory.h"
 #include "sippet/transport/channel_factory.h"
@@ -346,6 +347,7 @@ class TLSChannelAdapter : public MockChannelAdapter {
 class MockChannel : public Channel {
  public:
   MockChannel(MockChannelAdapter *channel_adapter,
+              bool is_stream,
               Channel::Delegate *delegate,
               const EndPoint &destination);
   virtual ~MockChannel();
@@ -357,6 +359,7 @@ class MockChannel : public Channel {
   virtual const EndPoint& destination() const OVERRIDE;
   virtual bool is_secure() const OVERRIDE;
   virtual bool is_connected() const OVERRIDE;
+  virtual bool is_stream() const OVERRIDE;
   virtual void Connect() OVERRIDE;
   virtual int Send(const scoped_refptr<Message>& message,
                    const net::CompletionCallback& callback) OVERRIDE;
@@ -369,6 +372,7 @@ class MockChannel : public Channel {
   EndPoint destination_;
   EndPoint origin_;
   bool is_connected_;
+  bool is_stream_;
   net::BoundNetLog net_log_;
   scoped_ptr<MockChannelAdapter> channel_adapter_;
   scoped_ptr<net::DeterministicSocketData> data_;
@@ -413,7 +417,9 @@ class MockClientTransaction : public ClientTransaction {
     delegate_ = delegate;
   }
 
-  void TimedOut();
+  void Terminate() {
+    delegate_->OnTransactionTerminated(transaction_id_);
+  }
 
   // sippet::ClientTransaction methods:
   virtual const std::string& id() const OVERRIDE;
@@ -444,6 +450,10 @@ class MockServerTransaction : public ServerTransaction {
     delegate_ = delegate;
   }
 
+  void Terminate() {
+    delegate_->OnTransactionTerminated(transaction_id_);
+  }
+
   // sippet::ServerTransaction methods:
   virtual const std::string& id() const OVERRIDE;
   virtual scoped_refptr<Channel> channel() const OVERRIDE;
@@ -464,6 +474,9 @@ class MockTransactionFactory : public TransactionFactory {
   MockTransactionFactory(DataProvider *data_provider);
   virtual ~MockTransactionFactory();
 
+  MockClientTransaction* client_transaction(size_t index) const;
+  MockServerTransaction* server_transaction(size_t index) const;
+
   // sippet::TransactionFactory methods:
   virtual ClientTransaction *CreateClientTransaction(
       const Method &method,
@@ -477,6 +490,8 @@ class MockTransactionFactory : public TransactionFactory {
       TransactionDelegate *delegate) OVERRIDE;
  private:
   DataProvider *data_provider_;
+  std::vector<scoped_refptr<MockClientTransaction> > client_transactions_;
+  std::vector<scoped_refptr<MockServerTransaction> > server_transactions_;
 };
 
 } // End of empty namespace

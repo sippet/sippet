@@ -126,6 +126,12 @@
         'transport/tls_channel_factory.h',
         'transport/ws_channel_factory.h',
         'transport/ws_channel_factory.h',
+        'transport/client_transaction_impl.h',
+        'transport/client_transaction_impl.cc',
+        'transport/time_delta_factory.h',
+        'transport/time_delta_provider.h',
+        'transport/default_time_delta_factory.h',
+        'transport/default_time_delta_factory.cc',
       ],
     },  # target sippet
   ],

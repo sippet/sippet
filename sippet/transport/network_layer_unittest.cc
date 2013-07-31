@@ -68,6 +68,7 @@ class NetworkLayerTest : public testing::Test {
   scoped_ptr<NetworkLayer::Delegate> delegate_;
   scoped_ptr<MockTransactionFactory> transaction_factory_;
   scoped_refptr<NetworkLayer> network_layer_;
+  net::TestCompletionCallback callback_;
 };
 
 TEST_F(NetworkLayerTest, StaticFunctions) {
@@ -168,7 +169,7 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
       "Expires: 7200\r\n"
       "l: 0\r\n"
       "\r\n"),
-    net::MockRead(net::ASYNC, 2, "")
+    net::MockRead(net::ASYNC, 2, "\r\n")
   };
 
   net::MockWrite expected_writes[] = {
@@ -188,8 +189,9 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
 
   std::string tid;
   MockEvent expected_events[] = {
-    ExpectStartTransaction("REGISTER sip:192.0.4.42.*", &tid),
-    ExpectIncomingResponse("SIP/2.0 200 OK.*", &tid),
+    ExpectStartTransaction("^REGISTER sip:192.0.4.42.*", &tid),
+    ExpectIncomingResponse("^SIP/2.0 200 OK.*", &tid),
+    ExpectIncomingMessage("^SIP/2.0 200 OK.*"),
     ExpectTransactionClose(&tid),
   };
 
@@ -198,10 +200,24 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
              expected_events, ARRAYSIZE_UNSAFE(expected_events),
              branches, ARRAYSIZE_UNSAFE(branches));
 
-  network_layer_->Send(CreateRegisterRequest(), net::CompletionCallback());
-  data_->RunFor(1);
+  int rv = network_layer_->Send(CreateRegisterRequest(),
+    callback_.callback());
+  EXPECT_EQ(net::ERR_IO_PENDING, rv);
+  
+  rv = callback_.WaitForResult();
+  EXPECT_EQ(net::OK, rv);
+
+  MockClientTransaction *client_transaction =
+    transaction_factory_->client_transaction(0);
+  client_transaction->Terminate();
 
   Finish();
+
+  EXPECT_TRUE(data_provider_->at_events_end());
+  EXPECT_TRUE(data_->at_write_eof());
+
+  // The read stream won't be at the end, as the channel is kept alive
+  // even after the transaction has finished.
 }
 
 } // End of sippet namespace

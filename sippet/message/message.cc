@@ -13,6 +13,9 @@ void Message::print(raw_ostream &os) const {
     os << "\r\n";
   }
   os << "\r\n";
+  if (has_content()) {
+    os.write(content_.data(), content_.length());
+  }
 }
 
 std::string Message::ToString() const {
