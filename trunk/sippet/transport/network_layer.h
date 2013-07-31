@@ -229,6 +229,7 @@ class NetworkLayer :
   ClientTransactionsMap client_transactions_;
   ServerTransactionsMap server_transactions_;
   scoped_ptr<BranchFactory> branch_factory_;
+  base::WeakPtrFactory<NetworkLayer> weak_factory_;
   bool suspended_;
 
   int SendRequest(scoped_refptr<Request> &request,

@@ -378,11 +378,13 @@ void TLSChannelAdapter::OnConnected(int result) {
 }
 
 MockChannel::MockChannel(MockChannelAdapter *channel_adapter,
+                         bool is_stream,
                          Channel::Delegate *delegate,
                          const EndPoint &destination)
     : channel_adapter_(channel_adapter),
       delegate_(delegate),
       is_connected_(false),
+      is_stream_(is_stream),
       ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)),
       destination_(destination),
       origin_(net::HostPortPair("192.0.2.33", 123),
@@ -408,15 +410,18 @@ bool MockChannel::is_connected() const {
   return is_connected_;
 }
 
+bool MockChannel::is_stream() const {
+  return is_stream_;
+}
+
 void MockChannel::Connect() {
   DCHECK(!is_connected());
   int result = channel_adapter_->Connect(destination_.hostport(),
     base::Bind(&MockChannel::OnConnected, this));
   if (result == net::OK) {
     // When using UDP, the connect event will occur in the next event loop.
-    MessageLoop::current()->PostDelayedTask(FROM_HERE,
-      base::Bind(&MockChannel::OnConnected, this, net::OK),
-      base::TimeDelta::FromSeconds(0));
+    MessageLoop::current()->PostTask(FROM_HERE,
+      base::Bind(&MockChannel::OnConnected, this, net::OK));
   }
 }
 
@@ -466,7 +471,8 @@ void MockChannel::OnConnected(int result) {
   if (delegate_)
     delegate_->OnChannelConnected(this, result);
   io_buffer_ = new net::IOBufferWithSize(kBufferSize);
-  Read();
+  MessageLoop::current()->PostTask(FROM_HERE,
+    base::Bind(&MockChannel::Read, this));
 }
 
 void MockChannel::OnRead(int result) {
@@ -474,7 +480,8 @@ void MockChannel::OnRead(int result) {
     delegate_->OnChannelClosed(this, result);
   else {
     HandleMessage(result);
-    Read();
+    MessageLoop::current()->PostTask(FROM_HERE,
+      base::Bind(&MockChannel::Read, this));
   }
 }
 
@@ -489,15 +496,18 @@ MockChannelFactory::~MockChannelFactory() {}
 int MockChannelFactory::CreateChannel(const EndPoint &destination,
                                       Channel::Delegate *delegate,
                                       scoped_refptr<Channel> *channel) {
+  bool is_stream = true;
   MockChannelAdapter *channel_adapter = 0;
-  if (destination.protocol() == Protocol::UDP)
+  if (destination.protocol() == Protocol::UDP) {
     channel_adapter = new UDPChannelAdapter(socket_factory_, net_log_.net_log());
+    is_stream = false;
+  }
   else if (destination.protocol() == Protocol::TCP)
     channel_adapter = new TCPChannelAdapter(socket_factory_, net_log_.net_log());
   else if (destination.protocol() == Protocol::TLS)
     channel_adapter = new TCPChannelAdapter(socket_factory_, net_log_.net_log());
   if (channel_adapter) {
-    *channel = new MockChannel(channel_adapter, delegate, destination);
+    *channel = new MockChannel(channel_adapter, is_stream, delegate, destination);
     return net::OK;
   }
   NOTREACHED();
@@ -509,10 +519,6 @@ MockClientTransaction::MockClientTransaction(
   : data_provider_(data_provider) {}
 
 MockClientTransaction::~MockClientTransaction() {}
-
-void MockClientTransaction::TimedOut() {
-  // TODO: create a Request Timeout response
-}
 
 const std::string& MockClientTransaction::id() const {
   return transaction_id_;
@@ -533,6 +539,7 @@ void MockClientTransaction::HandleIncomingResponse(
                     const scoped_refptr<Response> &response) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
   data_provider_->HandleIncomingResponse(transaction_id_, response);
+  delegate_->OnPassMessage(response);
 }
 
 void MockClientTransaction::Close() {
@@ -583,6 +590,18 @@ MockTransactionFactory::MockTransactionFactory(DataProvider *data_provider)
 
 MockTransactionFactory::~MockTransactionFactory() {}
 
+MockClientTransaction*
+      MockTransactionFactory::client_transaction(size_t index) const {
+  DCHECK(index < client_transactions_.size());
+  return client_transactions_[index];
+}
+
+MockServerTransaction*
+      MockTransactionFactory::server_transaction(size_t index) const {
+  DCHECK(index < server_transactions_.size());
+  return server_transactions_[index];
+}
+
 ClientTransaction *MockTransactionFactory::CreateClientTransaction(
       const Method &method,
       const std::string &transaction_id,
@@ -593,6 +612,7 @@ ClientTransaction *MockTransactionFactory::CreateClientTransaction(
   client_transaction->set_id(transaction_id);
   client_transaction->set_channel(channel);
   client_transaction->set_delegate(delegate);
+  client_transactions_.push_back(client_transaction);
   return client_transaction;
 }
 
@@ -606,6 +626,7 @@ ServerTransaction *MockTransactionFactory::CreateServerTransaction(
   server_transaction->set_id(transaction_id);
   server_transaction->set_channel(channel);
   server_transaction->set_delegate(delegate);
+  server_transactions_.push_back(server_transaction);
   return server_transaction;
 }
 

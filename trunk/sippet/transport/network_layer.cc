@@ -42,7 +42,8 @@ NetworkLayer::NetworkLayer(Delegate *delegate,
     transaction_factory_(transaction_factory),
     network_settings_(network_settings),
     suspended_(false),
-    branch_factory_(branch_factory) {
+    branch_factory_(branch_factory),
+    ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)) {
   DCHECK(delegate);
   DCHECK(transaction_factory);
   DCHECK(branch_factory);
@@ -144,9 +145,8 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
     channel_context->channel_->Connect();
     // Now wait for the asynchronous connect. When using UDP,
     // the connect event will occur in the next event loop.
+    return net::ERR_IO_PENDING;
   }
-
-  return net::OK;
 }
 
 int NetworkLayer::SendResponse(const scoped_refptr<Response> &response,
@@ -192,7 +192,7 @@ void NetworkLayer::ReleaseChannelInternal(ChannelContext *channel_context) {
   if (channel_context->refs_ == 0) {
     channel_context->timer_.Start(FROM_HERE,
       base::TimeDelta::FromSeconds(network_settings_.reuse_lifetime()),
-      base::Bind(&NetworkLayer::OnIdleChannelTimedOut, this,
+      base::Bind(&NetworkLayer::OnIdleChannelTimedOut, weak_factory_.GetWeakPtr(),
         channel_context->channel_->destination()));
   }
 }
@@ -543,9 +543,16 @@ void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel,
     result = channel_context->channel_->Send(
       channel_context->initial_request_, channel_context->initial_callback_);
     if (result == net::OK) {
-      // Clean channel initial context
-      channel_context->initial_request_ = 0;
-      channel_context->initial_callback_ = net::CompletionCallback();
+      if (!channel_context->initial_callback_.is_null()) {
+        // Complete the pending send callback now
+        channel_context->initial_callback_.Run(net::OK);
+      }
+    }
+    if (result == net::OK || result == net::ERR_IO_PENDING) {
+      // Clean channel initial context, the channel will be
+      // responsible for the callback now.
+      channel_context->initial_request_ = NULL;
+      channel_context->initial_callback_.Reset();
     }
   }
   if (result != net::OK && result != net::ERR_IO_PENDING) {
