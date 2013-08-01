@@ -67,6 +67,11 @@ class ServerTransactionImpl : public ServerTransaction {
   void OnTimedOut();
   void OnTerminated();
   void OnSendProvisionalResponse();
+  
+  void OnSendWriteComplete(scoped_refptr<Response> response, int result);
+  void OnRepeatResponseWriteComplete(scoped_refptr<Request> request, int result);
+  void OnRetransmitWriteComplete(int result);
+  void OnSendProvisionalResponseWriteComplete(int result);
 
   void StopTimers();
   void StopProvisionalResponse();
