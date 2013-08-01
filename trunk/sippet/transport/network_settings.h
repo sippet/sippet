@@ -5,23 +5,25 @@
 #ifndef SIPPET_TRANSPORT_NETWORK_SETTINGS_H_
 #define SIPPET_TRANSPORT_NETWORK_SETTINGS_H_
 
+#include "base/memory/ref_counted.h"
+#include "sippet/transport/branch_factory.h"
+#include "sippet/transport/transaction_factory.h"
+
 namespace sippet {
 
 class NetworkSettings {
  private:
   struct Data {
     int reuse_lifetime_;
-    int t1_milliseconds_;
-    int t2_milliseconds_;
-    int t4_milliseconds_;
     bool enable_compact_headers_;
+    BranchFactory *branch_factory_;
+    TransactionFactory *transaction_factory_;
     // Default values
     Data() :
       reuse_lifetime_(60),
-      t1_milliseconds_(500),
-      t2_milliseconds_(4000),
-      t4_milliseconds_(5000),
-      enable_compact_headers_(true) {}
+      enable_compact_headers_(true),
+      branch_factory_(BranchFactory::GetDefaultBranchFactory()),
+      transaction_factory_(TransactionFactory::GetDefaultTransactionFactory()) {}
   };
 
   Data data_;
@@ -35,36 +37,12 @@ class NetworkSettings {
     return *this;
   }
 
-  // Time to keep idle channels
+  // Time to keep idle channels open
   int reuse_lifetime() const {
     return data_.reuse_lifetime_;
   }
   void set_reuse_lifetime(int value) {
     data_.reuse_lifetime_ = value;
-  }
-
-  // RTT estimate
-  int t1_milliseconds() const {
-    return data_.t1_milliseconds_;
-  }
-  void set_t1_milliseconds(int value) {
-    data_.t1_milliseconds_ = value;
-  }
-
-  // Max retransmit interval for non-INVITE requests and INVITE responses
-  int t2_milliseconds() const {
-    return data_.t2_milliseconds_;
-  }
-  void set_t2_milliseconds(int value) {
-    data_.t2_milliseconds_ = value;
-  }
-
-  // Max duration a SIP message will remain in the network
-  int t4_milliseconds() const {
-    return data_.t4_milliseconds_;
-  }
-  void set_t4_milliseconds(int value) {
-    data_.t4_milliseconds_ = value;
   }
 
   // Whether to use compact headers in generated messages
@@ -73,6 +51,24 @@ class NetworkSettings {
   }
   void set_enable_compact_headers(bool value) {
     data_.enable_compact_headers_ = value;
+  }
+
+  // The internal branch factory to use
+  BranchFactory *branch_factory() {
+    return data_.branch_factory_;
+  }
+  void set_branch_factory(BranchFactory *branch_factory) {
+    DCHECK(branch_factory);
+    data_.branch_factory_ = branch_factory;
+  }
+
+  // The internal transaction factory to use
+  TransactionFactory *transaction_factory() {
+    return data_.transaction_factory_;
+  }
+  void set_transaction_factory(TransactionFactory *transaction_factory) {
+    DCHECK(transaction_factory);
+    data_.transaction_factory_ = transaction_factory;
   }
 };
 

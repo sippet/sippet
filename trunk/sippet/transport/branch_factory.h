@@ -6,17 +6,16 @@
 #define SIPPET_TRANSPORT_BRANCH_FACTORY_H_
 
 #include <string>
-#include "base/basictypes.h"
 
 namespace sippet {
 
 class BranchFactory {
  public:
-  BranchFactory() {}
   virtual ~BranchFactory() {}
   virtual std::string CreateBranch() = 0;
- private:
-  DISALLOW_COPY_AND_ASSIGN(BranchFactory);
+
+  // Returns the default BranchFactory.
+  static BranchFactory *GetDefaultBranchFactory();
 };
 
 } // End of sippet namespace

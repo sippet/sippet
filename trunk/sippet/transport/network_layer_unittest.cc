@@ -19,16 +19,16 @@ class NetworkLayerTest : public testing::Test {
                   net::MockWrite* writes = NULL, size_t writes_count = 0,
                   MockEvent* events = NULL, size_t events_count = 0,
                   const char *branches[] = NULL, size_t branches_count = 0) {
-    BranchFactory *branch_factory;
-    if (branches == NULL)
-      branch_factory = new DefaultBranchFactory;
-    else
-      branch_factory = new MockBranchFactory(branches, branches_count);
+    NetworkSettings settings;
+    if (branches != NULL) {
+      branch_factory_.reset(new MockBranchFactory(branches, branches_count));
+      settings.set_branch_factory(branch_factory_.get());
+    }
     data_provider_.reset(new StaticDataProvider(events, events_count));
     transaction_factory_.reset(new MockTransactionFactory(data_provider_.get()));
+    settings.set_transaction_factory(transaction_factory_.get());
     delegate_.reset(new StaticNetworkLayerDelegate(data_provider_.get()));
-    network_layer_ = new NetworkLayer(delegate_.get(),
-      transaction_factory_.get(), NetworkSettings(), branch_factory);
+    network_layer_ = new NetworkLayer(delegate_.get(), settings);
     data_.reset(new net::DeterministicSocketData(reads, reads_count,
                                                  writes, writes_count));
     data_->set_connect_data(net::MockConnect(net::ASYNC, 0));
@@ -68,6 +68,7 @@ class NetworkLayerTest : public testing::Test {
   scoped_ptr<NetworkLayer::Delegate> delegate_;
   scoped_ptr<MockTransactionFactory> transaction_factory_;
   scoped_refptr<NetworkLayer> network_layer_;
+  scoped_ptr<MockBranchFactory> branch_factory_;
   net::TestCompletionCallback callback_;
 };
 

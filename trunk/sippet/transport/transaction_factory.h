@@ -8,6 +8,7 @@
 #include <string>
 #include "base/memory/scoped_ptr.h"
 #include "sippet/message/method.h"
+#include "sippet/transport/channel.h"
 
 namespace sippet {
 
@@ -16,10 +17,7 @@ class ServerTransaction;
 class TransactionDelegate;
 
 class TransactionFactory {
- private:
-   DISALLOW_COPY_AND_ASSIGN(TransactionFactory);
  public:
-  TransactionFactory() {}
   virtual ~TransactionFactory() {}
 
   virtual ClientTransaction *CreateClientTransaction(
@@ -33,6 +31,9 @@ class TransactionFactory {
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
       TransactionDelegate *delegate) = 0;
+
+  // Returns the default TransactionFactory.
+  static TransactionFactory *GetDefaultTransactionFactory();
 };
 
 } /// End of sippet namespace
