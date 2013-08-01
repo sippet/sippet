@@ -4,13 +4,10 @@
 
 #include "sippet/message/message.h"
 
-#include "base/guid.h"
-
 namespace sippet {
 
 Message::Message(bool is_request)
-  : is_request_(is_request),
-    id_(base::GenerateGUID()) {}
+  : is_request_(is_request) {}
 
 Message::~Message() {}
 

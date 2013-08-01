@@ -4,6 +4,8 @@
 
 #include "sippet/transport/server_transaction_impl.h"
 
+#include "net/base/net_errors.h"
+
 namespace sippet {
 
 ServerTransactionImpl::ServerTransactionImpl(
@@ -49,6 +51,8 @@ void ServerTransactionImpl::Start(
 
 void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
   DCHECK(response);
+  DCHECK(response->refer_to() == initial_request_->id());
+
   if (STATE_PROCEED_CALLING < next_state_) {
     DVLOG(1) << "Ignored second final response attempt";
     return;
@@ -58,7 +62,18 @@ void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
     StopProvisionalResponse();
 
   latest_response_ = response;
-  channel_->Send(response, net::CompletionCallback());
+  int result = channel_->Send(response,
+    base::Bind(&ServerTransactionImpl::OnSendWriteComplete, this, response));
+  if (net::ERR_IO_PENDING != result)
+    OnSendWriteComplete(response, result);
+}
+
+void ServerTransactionImpl::OnSendWriteComplete(
+          scoped_refptr<Response> response, int result) {
+  if (net::OK != result) {
+    delegate_->OnTransportError(initial_request_->id(), result);
+    return;
+  }
 
   State state = next_state_;
   int response_code = response->response_code();
@@ -106,19 +121,31 @@ void ServerTransactionImpl::HandleIncomingRequest(
   DCHECK(request);
   DCHECK(next_state_ != STATE_TERMINATED);
 
+  int result = net::OK;
+  if (STATE_PROCEEDING == next_state_
+      || STATE_PROCEED_CALLING == next_state_
+      || (STATE_COMPLETED == next_state_
+          && Method::ACK != request->method())) {
+    result = channel_->Send(latest_response_,
+      base::Bind(&ServerTransactionImpl::OnRepeatResponseWriteComplete,
+        this, request));
+  }
+  if (net::ERR_IO_PENDING != result)
+    OnRepeatResponseWriteComplete(request, result);
+}
+
+void ServerTransactionImpl::OnRepeatResponseWriteComplete(
+          scoped_refptr<Request> request, int result) {
   State state = next_state_;
   switch (state) {
     case STATE_TRYING:
       break;
     case STATE_PROCEEDING:
     case STATE_PROCEED_CALLING:
-      channel_->Send(latest_response_, net::CompletionCallback());
       break;
     case STATE_COMPLETED:
       if (Method::ACK == request->method())
         next_state_ = STATE_CONFIRMED;
-      else
-        channel_->Send(latest_response_, net::CompletionCallback());
       break;
     case STATE_CONFIRMED:
       break;
@@ -144,14 +171,17 @@ void ServerTransactionImpl::OnRetransmit() {
   DCHECK(!channel_->is_stream());
   DCHECK(MODE_INVITE == mode_);
   DCHECK(STATE_COMPLETED == next_state_);
-  channel_->Send(latest_response_, net::CompletionCallback());
-  ScheduleRetry();
+  int result = channel_->Send(latest_response_,
+    base::Bind(&ServerTransactionImpl::OnRetransmitWriteComplete, this));
+  if (net::ERR_IO_PENDING != result)
+    OnRetransmitWriteComplete(result);
 }
 
 void ServerTransactionImpl::OnTimedOut() {
   DCHECK(MODE_INVITE == mode_);
   DCHECK(STATE_COMPLETED == next_state_);
   next_state_ = STATE_TERMINATED;
+  delegate_->OnTimedOut(initial_request_->id());
   Terminate();
 }
 
@@ -168,7 +198,25 @@ void ServerTransactionImpl::OnTerminated() {
 void ServerTransactionImpl::OnSendProvisionalResponse() {
   DCHECK(MODE_INVITE == mode_ && STATE_PROCEEDING == next_state_);
   scoped_refptr<Response> response = initial_request_->MakeResponse(100);
-  channel_->Send(response, net::CompletionCallback());
+  int result = channel_->Send(response,
+    base::Bind(&ServerTransactionImpl::OnSendProvisionalResponseWriteComplete, this));
+  if (net::ERR_IO_PENDING != result)
+    OnSendProvisionalResponseWriteComplete(result);
+}
+
+void ServerTransactionImpl::OnRetransmitWriteComplete(int result) {
+  if (net::OK == result) {
+    ScheduleRetry();
+  }
+  else if (net::ERR_IO_PENDING != result) {
+    delegate_->OnTransportError(initial_request_->id(), result);
+  }
+}
+
+void ServerTransactionImpl::OnSendProvisionalResponseWriteComplete(int result) {
+  if (net::ERR_IO_PENDING != result) {
+    delegate_->OnTransportError(initial_request_->id(), result);
+  }
 }
 
 void ServerTransactionImpl::StopTimers() {

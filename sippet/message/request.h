@@ -23,6 +23,9 @@ public:
           const GURL &request_uri,
           const Version &version = Version(2,0));
 
+  //! Every SIP request has an unique associated ID.
+  const std::string &id() const { return id_; }
+
   Method method() const;
   void set_method(const Method &method);
 
@@ -38,6 +41,7 @@ public:
                                        const std::string &to_tag = "");
 private:
   Method method_;
+  std::string id_;
   GURL request_uri_;
   Version version_;
   base::Time time_stamp_;

@@ -612,6 +612,14 @@ void NetworkLayer::OnPassMessage(const scoped_refptr<Message> &message) {
   delegate_->OnIncomingMessage(message);
 }
 
+void NetworkLayer::OnTimedOut(const std::string &id) {
+  delegate_->OnTimedOut(id);
+}
+
+void NetworkLayer::OnTransportError(const std::string &id, int error) {
+  delegate_->OnTransportError(id, error);
+}
+
 void NetworkLayer::OnTransactionTerminated(const std::string &transaction_id) {
   if (StartsWithASCII(transaction_id, "c:", true)) {
     scoped_refptr<ClientTransaction> client_transaction =

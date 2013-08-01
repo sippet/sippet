@@ -63,7 +63,6 @@ private:
   bool is_request_;
   HeaderListType headers_;
   std::string content_;
-  std::string id_;
 
   DISALLOW_COPY_AND_ASSIGN(Message);
 
@@ -81,9 +80,6 @@ public:
 
   //! Returns true if the current message is a response.
   bool IsResponse() const { return !is_request_; }
-
-  //! Every SIP message has an unique associated ID.
-  const std::string &id() const { return id_; }
 
   //===--------------------------------------------------------------------===//
   /// Header iterator methods

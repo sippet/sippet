@@ -83,6 +83,12 @@ class MockEvent {
   void OnIncomingMessage(Message *message) {
     expect_->OnIncomingMessage(message);
   }
+  void OnTimedOut(const std::string &id) {
+    expect_->OnTimedOut(id);
+  }
+  void OnTransportError(const std::string &id, int error) {
+    expect_->OnTransportError(id, error);
+  }
 
   // Transaction layer events:
   void Start(const scoped_refptr<Request>& starting_request) {
@@ -252,6 +258,8 @@ class StaticNetworkLayerDelegate :
 
   virtual void OnChannelClosed(const EndPoint&, int) OVERRIDE;
   virtual void OnIncomingMessage(Message*) OVERRIDE;
+  virtual void OnTimedOut(const std::string &id) OVERRIDE;
+  virtual void OnTransportError(const std::string &id, int error) OVERRIDE;
 };
 
 class MockChannelAdapter {
