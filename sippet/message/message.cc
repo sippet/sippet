@@ -4,7 +4,15 @@
 
 #include "sippet/message/message.h"
 
+#include "base/guid.h"
+
 namespace sippet {
+
+Message::Message(bool is_request)
+  : is_request_(is_request),
+    id_(base::GenerateGUID()) {}
+
+Message::~Message() {}
 
 void Message::print(raw_ostream &os) const {
   const_iterator i = headers_.begin(), ie = headers_.end();

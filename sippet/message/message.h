@@ -60,26 +60,30 @@ public:
   typedef HeaderListType::size_type size_type;
 
 private:
-  bool isRequest_;
+  bool is_request_;
   HeaderListType headers_;
   std::string content_;
+  std::string id_;
 
   DISALLOW_COPY_AND_ASSIGN(Message);
 
 protected:
-  Message(bool isRequest) : isRequest_(isRequest) {}
-
   friend class base::RefCountedThreadSafe<Message>;
-  virtual ~Message() {}
+
+  Message(bool is_request);
+  virtual ~Message();
 
 public:
   static scoped_refptr<Message> Parse(const std::string &raw_message);
 
   //! Returns true if the current message is a request.
-  bool IsRequest() const { return isRequest_; }
+  bool IsRequest() const { return is_request_; }
 
   //! Returns true if the current message is a response.
-  bool IsResponse() const { return !isRequest_; }
+  bool IsResponse() const { return !is_request_; }
+
+  //! Every SIP message has an unique associated ID.
+  const std::string &id() const { return id_; }
 
   //===--------------------------------------------------------------------===//
   /// Header iterator methods
