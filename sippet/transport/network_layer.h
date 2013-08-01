@@ -21,7 +21,6 @@
 #include "sippet/transport/transaction_delegate.h"
 #include "sippet/transport/aliases_map.h"
 #include "sippet/transport/network_settings.h"
-#include "sippet/transport/default_branch_factory.h"
 #include "sippet/uri/uri.h"
 
 namespace sippet {
@@ -77,7 +76,8 @@ class TransactionFactory;
 //
 //   void MyDelegate::OnIncomingMessage(Message *incoming_message) {
 //     if (isa<Response>(incoming_message)) {
-//       // Handle the response here.
+//       // Handle the response here. You can associate the incoming response
+//       // with the initial request by using the Response::refer_to ID.
 //     }
 //   }
 //
@@ -132,9 +132,8 @@ class NetworkLayer :
   };
 
   // Construct a |NetworkLayer| with an existing |TransactionFactory|.
-  NetworkLayer(Delegate *delegate, TransactionFactory *transaction_factory,
-               const NetworkSettings &network_settings = NetworkSettings(),
-               BranchFactory *branch_factory = new DefaultBranchFactory);
+  NetworkLayer(Delegate *delegate,
+               const NetworkSettings &network_settings = NetworkSettings());
   virtual ~NetworkLayer();
 
   // This is the magic cookie "z9hG4bK" defined in RFC 3261
@@ -225,7 +224,6 @@ class NetworkLayer :
   typedef std::map<std::string, scoped_refptr<ServerTransaction> >
     ServerTransactionsMap;
 
-  TransactionFactory *transaction_factory_;
   NetworkSettings network_settings_;
   AliasesMap aliases_map_;
   Delegate *delegate_;
@@ -233,7 +231,6 @@ class NetworkLayer :
   ChannelsMap channels_;
   ClientTransactionsMap client_transactions_;
   ServerTransactionsMap server_transactions_;
-  scoped_ptr<BranchFactory> branch_factory_;
   base::WeakPtrFactory<NetworkLayer> weak_factory_;
   bool suspended_;
 

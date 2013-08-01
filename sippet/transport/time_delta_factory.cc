@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/transport/default_time_delta_factory.h"
+#include "sippet/transport/time_delta_factory.h"
 #include "sippet/transport/time_delta_provider.h"
+
+#include "base/lazy_instance.h"
+#include "base/compiler_specific.h"
 
 namespace sippet {
 
@@ -103,22 +106,35 @@ class ServerInvite : public TimeDeltaProvider {
   int count_;
 };
 
+class DefaultTimeDeltaFactory : public TimeDeltaFactory {
+ public:
+  DefaultTimeDeltaFactory() {}
+  virtual ~DefaultTimeDeltaFactory() {}
+
+  virtual TimeDeltaProvider* CreateClientNonInvite() OVERRIDE {
+    return new ClientNonInvite;
+  }
+
+  virtual TimeDeltaProvider* CreateClientInvite() OVERRIDE {
+    return new ClientInvite;
+  }
+
+  virtual TimeDeltaProvider* CreateServerNonInvite() OVERRIDE {
+    return new ServerNonInvite;
+  }
+
+  virtual TimeDeltaProvider* CreateServerInvite() OVERRIDE {
+    return new ServerInvite;
+  }
+};
+
+static base::LazyInstance<DefaultTimeDeltaFactory>::Leaky
+  g_default_time_delta_factory = LAZY_INSTANCE_INITIALIZER;
+
 } // End of empty namespace
 
-TimeDeltaProvider* DefaultTimeDeltaFactory::CreateClientNonInvite() {
-  return new ClientNonInvite;
-}
-
-TimeDeltaProvider* DefaultTimeDeltaFactory::CreateClientInvite() {
-  return new ClientInvite;
-}
-
-TimeDeltaProvider* DefaultTimeDeltaFactory::CreateServerNonInvite() {
-  return new ServerNonInvite;
-}
-
-TimeDeltaProvider* DefaultTimeDeltaFactory::CreateServerInvite() {
-  return new ServerInvite;
+TimeDeltaFactory *TimeDeltaFactory::GetDefaultFactory() {
+  return g_default_time_delta_factory.Pointer();
 }
 
 } // End of sippet namespace

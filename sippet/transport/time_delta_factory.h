@@ -22,6 +22,8 @@ class TimeDeltaFactory {
   virtual TimeDeltaProvider* CreateClientInvite() = 0;
   virtual TimeDeltaProvider* CreateServerNonInvite() = 0;
   virtual TimeDeltaProvider* CreateServerInvite() = 0;
+
+  static TimeDeltaFactory *GetDefaultFactory();
 };
 
 } // End of sippet namespace
