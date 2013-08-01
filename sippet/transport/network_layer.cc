@@ -18,18 +18,12 @@ namespace sippet {
 const char NetworkLayer::kMagicCookie[] = "z9hG4bK";
 
 NetworkLayer::NetworkLayer(Delegate *delegate,
-                           TransactionFactory *transaction_factory,
-                           const NetworkSettings &network_settings,
-                           BranchFactory *branch_factory)
+                           const NetworkSettings &network_settings)
   : delegate_(delegate),
-    transaction_factory_(transaction_factory),
     network_settings_(network_settings),
     suspended_(false),
-    branch_factory_(branch_factory),
     ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)) {
   DCHECK(delegate);
-  DCHECK(transaction_factory);
-  DCHECK(branch_factory);
 }
 
 NetworkLayer::~NetworkLayer() {
@@ -184,7 +178,8 @@ ClientTransaction *NetworkLayer::CreateClientTransaction(
           const scoped_refptr<Request> &request,
           ChannelContext *channel_context) {
   scoped_refptr<ClientTransaction> client_transaction =
-    transaction_factory_->CreateClientTransaction(request->method(),
+    network_settings_.transaction_factory()->CreateClientTransaction(
+      request->method(),
       ClientTransactionId(request),
       channel_context->channel_,
       this);
@@ -199,7 +194,8 @@ ServerTransaction *NetworkLayer::CreateServerTransaction(
           const scoped_refptr<Request> &request,
           ChannelContext *channel_context) {
   scoped_refptr<ServerTransaction> server_transaction =
-    transaction_factory_->CreateServerTransaction(request->method(),
+    network_settings_.transaction_factory()->CreateServerTransaction(
+      request->method(),
       ServerTransactionId(request),
       channel_context->channel_,
       this);
@@ -274,7 +270,7 @@ void NetworkLayer::DestroyChannelContext(ChannelContext *channel_context) {
 }
 
 std::string NetworkLayer::CreateBranch() {
-  return branch_factory_->CreateBranch();
+  return network_settings_.branch_factory()->CreateBranch();
 }
 
 void NetworkLayer::StampClientTopmostVia(scoped_refptr<Request> &request,
