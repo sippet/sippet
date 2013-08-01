@@ -6,8 +6,6 @@
 
 #include "base/stl_util.h"
 #include "base/string_util.h"
-#include "base/rand_util.h"
-#include "base/base64.h"
 #include "net/base/net_errors.h"
 #include "sippet/message/headers/via.h"
 #include "sippet/message/headers/cseq.h"
@@ -18,21 +16,6 @@
 namespace sippet {
 
 const char NetworkLayer::kMagicCookie[] = "z9hG4bK";
-
-DefaultBranchFactory::DefaultBranchFactory() {}
-
-DefaultBranchFactory::~DefaultBranchFactory() {}
-
-std::string DefaultBranchFactory::CreateBranch() {
-  // Base64 will generate a shorter string than hex
-  uint64 sixteen_bytes[2] = { base::RandUint64(), base::RandUint64() };
-  // An input of 15 bytes will generate 20 characters on output
-  base::StringPiece part(reinterpret_cast<char*>(sixteen_bytes),
-    sizeof(sixteen_bytes)-1);
-  std::string random_string;
-  base::Base64Encode(part, &random_string);
-  return NetworkLayer::kMagicCookie + random_string;
-}
 
 NetworkLayer::NetworkLayer(Delegate *delegate,
                            TransactionFactory *transaction_factory,
