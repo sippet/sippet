@@ -471,8 +471,7 @@ void MockChannel::OnConnected(int result) {
   if (delegate_)
     delegate_->OnChannelConnected(this, result);
   io_buffer_ = new net::IOBufferWithSize(kBufferSize);
-  MessageLoop::current()->PostTask(FROM_HERE,
-    base::Bind(&MockChannel::Read, this));
+  Read();
 }
 
 void MockChannel::OnRead(int result) {
@@ -480,8 +479,7 @@ void MockChannel::OnRead(int result) {
     delegate_->OnChannelClosed(this, result);
   else {
     HandleMessage(result);
-    MessageLoop::current()->PostTask(FROM_HERE,
-      base::Bind(&MockChannel::Read, this));
+    Read();
   }
 }
 
