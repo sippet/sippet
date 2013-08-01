@@ -21,30 +21,13 @@
 #include "sippet/transport/transaction_delegate.h"
 #include "sippet/transport/aliases_map.h"
 #include "sippet/transport/network_settings.h"
+#include "sippet/transport/default_branch_factory.h"
 #include "sippet/uri/uri.h"
 
 namespace sippet {
 
 class ChannelFactory;
 class TransactionFactory;
-
-class BranchFactory {
- public:
-  BranchFactory() {}
-  virtual ~BranchFactory() {}
-  virtual std::string CreateBranch() = 0;
- private:
-  DISALLOW_COPY_AND_ASSIGN(BranchFactory);
-};
-
-class DefaultBranchFactory : public BranchFactory {
- public:
-  DefaultBranchFactory();
-  virtual ~DefaultBranchFactory();
-  virtual std::string CreateBranch() OVERRIDE;
- private:
-  DISALLOW_COPY_AND_ASSIGN(DefaultBranchFactory);
-};
 
 // The |NetworkLayer| is the main message dispatcher of sippet. It receives
 // messages from network and sends them to a delegate object, and is the
