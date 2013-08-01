@@ -619,8 +619,9 @@ void NetworkLayer::OnChannelClosed(const scoped_refptr<Channel> &channel,
   DCHECK(channel_context);
 
   EndPoint destination(channel->destination());
+  scoped_refptr<Channel> closing_channel(channel);
   DestroyChannelContext(channel_context);
-  channel->CloseWithError(error);
+  closing_channel->CloseWithError(error);
   delegate_->OnChannelClosed(destination, error);
 }
 
