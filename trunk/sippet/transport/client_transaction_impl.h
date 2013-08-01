@@ -54,7 +54,7 @@ class ClientTransactionImpl : public ClientTransaction {
   State next_state_;
   
   TransactionDelegate *delegate_;
-  scoped_refptr<Request> current_request_;
+  scoped_refptr<Request> initial_request_;
   base::OneShotTimer<ClientTransactionImpl> retryTimer_;
   base::OneShotTimer<ClientTransactionImpl> timedOutTimer_;
   base::OneShotTimer<ClientTransactionImpl> terminateTimer_;
@@ -63,6 +63,7 @@ class ClientTransactionImpl : public ClientTransaction {
   void OnRetransmit();
   void OnTimedOut();
   void OnTerminated();
+  void OnWrite(int result);
 
   void StopTimers();
   void SendAck();

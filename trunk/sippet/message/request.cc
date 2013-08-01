@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/message/request.h"
+#include "base/guid.h"
 
 namespace sippet {
 
@@ -10,7 +11,8 @@ Request::Request(const Method &method,
                  const GURL &request_uri,
                  const Version &version)
   : Message(true), method_(method), request_uri_(request_uri),
-    version_(version), time_stamp_(base::Time::Now()) {}
+    version_(version), time_stamp_(base::Time::Now()),
+    id_(base::GenerateGUID()) {}
 
 Request::~Request() {}
 
@@ -77,6 +79,7 @@ scoped_refptr<Response> Request::MakeResponse(int response_code,
       response->push_back(newTimestamp.PassAs<Header>());
     }
   }
+  response->set_refer_to(id_);
   return response;
 }
 

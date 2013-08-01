@@ -4,6 +4,8 @@
 
 #include "sippet/transport/client_transaction_impl.h"
 
+#include "net/base/net_errors.h"
+
 namespace sippet {
 
 ClientTransactionImpl::ClientTransactionImpl(
@@ -33,7 +35,7 @@ scoped_refptr<Channel> ClientTransactionImpl::channel() const {
 void ClientTransactionImpl::Start(
       const scoped_refptr<Request> &outgoing_request) {
   DCHECK(outgoing_request);
-  current_request_ = outgoing_request;
+  initial_request_ = outgoing_request;
   if (Method::INVITE == outgoing_request->method()) {
     mode_ = MODE_INVITE;
     next_state_ = STATE_CALLING;
@@ -57,8 +59,10 @@ void ClientTransactionImpl::HandleIncomingResponse(
   State state = next_state_;
   int response_code = response->response_code();
 
-  if (state != STATE_COMPLETED)
+  if (state != STATE_COMPLETED) {
+    response->set_refer_to(initial_request_->id());
     delegate_->OnPassMessage(response);
+  }
 
   switch (state) {
     case STATE_TRYING:
@@ -123,8 +127,10 @@ void ClientTransactionImpl::OnRetransmit() {
     DCHECK(STATE_CALLING == next_state_);
   else
     DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
-  channel_->Send(current_request_, net::CompletionCallback());
-  ScheduleRetry();
+  int result = channel_->Send(initial_request_,
+    base::Bind(&ClientTransactionImpl::OnWrite, this));
+  if (net::ERR_IO_PENDING != result)
+    OnWrite(result);
 }
 
 void ClientTransactionImpl::OnTimedOut() {
@@ -133,6 +139,7 @@ void ClientTransactionImpl::OnTimedOut() {
   else
     DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
   next_state_ = STATE_TERMINATED;
+  delegate_->OnTimedOut(initial_request_->id());
   Terminate();
 }
 
@@ -141,6 +148,15 @@ void ClientTransactionImpl::OnTerminated() {
   DCHECK(STATE_COMPLETED == next_state_);
   next_state_ = STATE_TERMINATED;
   Terminate();
+}
+
+void ClientTransactionImpl::OnWrite(int result) {
+  if (net::OK == result) {
+    ScheduleRetry();
+  }
+  else if (net::ERR_IO_PENDING != result) {
+    delegate_->OnTransportError(initial_request_->id(), result);
+  }
 }
 
 void ClientTransactionImpl::StopTimers() {

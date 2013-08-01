@@ -44,6 +44,12 @@ class ExpectNothing : public MockEvent::Expect {
   virtual void OnIncomingMessage(Message *message) OVERRIDE {
     EXPECT_TRUE(false) << "Not expected to get an incoming message this time";
   }
+  virtual void OnTimedOut(const std::string &id) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected a timeout at this time";
+  }
+  virtual void OnTransportError(const std::string &id, int error) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected a transport error at this time";
+  }
   virtual void Start(const scoped_refptr<Request>&) OVERRIDE {
     EXPECT_TRUE(false) << "Not expected transaction start at this time";
   }
@@ -256,6 +262,17 @@ void StaticNetworkLayerDelegate::OnChannelClosed(const EndPoint& destination, in
 void StaticNetworkLayerDelegate::OnIncomingMessage(Message *message) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
   data_provider_->GetNextEvent().OnIncomingMessage(message);
+}
+
+void StaticNetworkLayerDelegate::OnTimedOut(const std::string &id) {
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->GetNextEvent().OnTimedOut(id);
+}
+
+void StaticNetworkLayerDelegate::OnTransportError(
+                                  const std::string &id, int error) {
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->GetNextEvent().OnTransportError(id, error);
 }
 
 UDPChannelAdapter::UDPChannelAdapter(net::ClientSocketFactory *socket_factory,

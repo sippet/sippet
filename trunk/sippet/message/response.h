@@ -29,6 +29,15 @@ public:
 
   virtual ~Response() {}
 
+  // Every processed |Response| object should refer to some
+  // previous |Request|.
+  void set_refer_to(const std::string &request_id) {
+    refer_to_ = request_id;
+  }
+  const std::string &refer_to() const {
+    return refer_to_;
+  }
+
   int response_code() const { return response_code_; }
   void set_response_code(int response_code) {
     response_code_ = response_code;
@@ -56,6 +65,7 @@ public:
 private:
   Version version_;
   int response_code_;
+  std::string refer_to_;
   std::string reason_phrase_;
 };
 

@@ -17,6 +17,12 @@ class TransactionDelegate {
   // Called when the transaction wants to deliver a message upside.
   virtual void OnPassMessage(const scoped_refptr<Message> &) = 0;
 
+  // Called when the transaction timed-out.
+  virtual void OnTimedOut(const std::string &id) = 0;
+
+  // Called when the transaction detects a network error.
+  virtual void OnTransportError(const std::string &id, int error) = 0;
+
   // Called when the transaction has ended.
   virtual void OnTransactionTerminated(const std::string &transaction_id) = 0;
 };
