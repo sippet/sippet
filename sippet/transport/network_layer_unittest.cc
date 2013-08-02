@@ -6,6 +6,58 @@
 
 namespace sippet {
 
+namespace {
+
+const char kRegisterRequest[] =
+  "REGISTER sip:192.0.4.42;transport=TCP SIP/2.0\r\n"
+  "v: SIP/2.0/TCP 192.0.2.33:123;rport;branch=z9hG4bKnashds7\r\n"
+  "Max-Forwards: 70\r\n"
+  "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
+  "f: \"Bob\" <sip:bob@biloxi.com>;tag=456248\r\n"
+  "i: 843817637684230@998sdasdh09\r\n"
+  "CSeq: 1826 REGISTER\r\n"
+  "m: <sip:bob@192.0.2.4>\r\n"
+  "Expires: 7200\r\n"
+  "l: 0\r\n"
+  "\r\n";
+
+const char kRegisterResponse[] =
+  "SIP/2.0 200 OK\r\n"
+  "v: SIP/2.0/TCP 192.0.2.33:123;rport=123;branch=z9hG4bKnashds7\r\n"
+  "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
+  "f: \"Bob\" <sip:bob@biloxi.com>;tag=456248\r\n"
+  "i: 843817637684230@998sdasdh09\r\n"
+  "CSeq: 1826 REGISTER\r\n"
+  "m: <sip:bob@192.0.2.4>\r\n"
+  "Expires: 7200\r\n"
+  "l: 0\r\n"
+  "\r\n";
+
+const char kOptionsRequest[] =
+  "OPTIONS sip:192.0.2.33;transport=TCP SIP/2.0\r\n"
+  "v: SIP/2.0/TCP 192.0.4.42:123;branch=z9hG4bK776asdhds\r\n"
+  "Max-Forwards: 70\r\n"
+  "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
+  "f: \"Alice\" <sip:alice@atlanta.com>;tag=1928301774\r\n"
+  "i: a84b4c76e66710@pc33.atlanta.com\r\n"
+  "CSeq: 314159 OPTIONS\r\n"
+  "m: <sip:alice@pc33.atlanta.com>\r\n"
+  "l: 0\r\n"
+  "\r\n";
+
+const char kOptionsResponse[] =
+  "SIP/2.0 200 OK\r\n"
+  "v: SIP/2.0/TCP 192.0.4.42:123;branch=z9hG4bK776asdhds\r\n"
+  "t: Bob <sip:bob@biloxi.com>\r\n"
+  "f: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+  "i: a84b4c76e66710@pc33.atlanta.com\r\n"
+  "CSeq: 314159 OPTIONS\r\n"
+  "m: <sip:alice@pc33.atlanta.com>\r\n"
+  "l: 0\r\n"
+  "\r\n";
+
+}
+
 class NetworkLayerTest : public testing::Test {
  public:
   void Finish() {
@@ -36,29 +88,6 @@ class NetworkLayerTest : public testing::Test {
     socket_factory_->AddSocketDataProvider(data_.get());
     channel_factory_.reset(new MockChannelFactory(socket_factory_.get()));
     network_layer_->RegisterChannelFactory(Protocol::TCP, channel_factory_.get());
-  }
-
-  static scoped_refptr<Request> CreateRegisterRequest() {
-    scoped_refptr<Request> request(
-      new Request(Method::REGISTER, GURL("sip:192.0.4.42;transport=TCP")));
-    scoped_ptr<MaxForwards> maxfw(new MaxForwards(70));
-    request->push_back(maxfw.PassAs<Header>());
-    scoped_ptr<To> to(new To(GURL("sip:bob@biloxi.com"), "Bob"));
-    request->push_back(to.PassAs<Header>());
-    scoped_ptr<From> from(new From(GURL("sip:bob@biloxi.com"), "Bob"));
-    from->set_tag("456248");
-    request->push_back(from.PassAs<Header>());
-    scoped_ptr<CallId> callid(new CallId("843817637684230@998sdasdh09"));
-    request->push_back(callid.PassAs<Header>());
-    scoped_ptr<Cseq> cseq(new Cseq(1826, Method::REGISTER));
-    request->push_back(cseq.PassAs<Header>());
-    scoped_ptr<Contact> contact(new Contact(GURL("sip:bob@192.0.2.4")));
-    request->push_back(contact.PassAs<Header>());
-    scoped_ptr<Expires> expires(new Expires(7200));
-    request->push_back(expires.PassAs<Header>());
-    scoped_ptr<ContentLength> content_length(new ContentLength(0));
-    request->push_back(content_length.PassAs<Header>());
-    return request;
   }
 
   scoped_ptr<DataProvider> data_provider_;
@@ -158,42 +187,27 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
   };
 
   net::MockRead expected_reads[] = {
-    net::MockRead(net::ASYNC, 1,
-      "SIP/2.0 200 OK\r\n"
-      "v: SIP/2.0/TCP 192.0.2.33:123;rport=123;branch=z9hG4bKnashds7\r\n"
-      "Max-Forwards: 70\r\n"
-      "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
-      "f: \"Bob\" <sip:bob@biloxi.com>;tag=456248\r\n"
-      "i: 843817637684230@998sdasdh09\r\n"
-      "CSeq: 1826 REGISTER\r\n"
-      "m: <sip:bob@192.0.2.4>\r\n"
-      "Expires: 7200\r\n"
-      "l: 0\r\n"
-      "\r\n"),
-    net::MockRead(net::ASYNC, 2, "\r\n")
+    net::MockRead(net::ASYNC, 1, kRegisterResponse),
+    net::MockRead(net::ASYNC, 2, kOptionsRequest),
+    net::MockRead(net::ASYNC, net::ERR_CONNECTION_RESET, 4),
   };
 
   net::MockWrite expected_writes[] = {
-    net::MockWrite(net::SYNCHRONOUS, 0,
-      "REGISTER sip:192.0.4.42;transport=TCP SIP/2.0\r\n"
-      "v: SIP/2.0/TCP 192.0.2.33:123;rport;branch=z9hG4bKnashds7\r\n"
-      "Max-Forwards: 70\r\n"
-      "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
-      "f: \"Bob\" <sip:bob@biloxi.com>;tag=456248\r\n"
-      "i: 843817637684230@998sdasdh09\r\n"
-      "CSeq: 1826 REGISTER\r\n"
-      "m: <sip:bob@192.0.2.4>\r\n"
-      "Expires: 7200\r\n"
-      "l: 0\r\n"
-      "\r\n"),
+    net::MockWrite(net::SYNCHRONOUS, 0, kRegisterRequest),
+    net::MockWrite(net::ASYNC, 3, kOptionsResponse),
   };
 
-  std::string tid;
+  std::string client_tid;
+  std::string server_tid;
   MockEvent expected_events[] = {
-    ExpectStartTransaction("^REGISTER sip:192.0.4.42.*", &tid),
-    ExpectIncomingResponse("^SIP/2.0 200 OK.*", &tid),
+    ExpectStartTransaction("^REGISTER sip:192.0.4.42.*", &client_tid),
+    ExpectIncomingResponse("^SIP/2.0 200 OK.*", &client_tid),
     ExpectIncomingMessage("^SIP/2.0 200 OK.*"),
-    ExpectTransactionClose(&tid),
+    ExpectTransactionClose(&client_tid),
+    ExpectStartTransaction("^OPTIONS sip:192.0.2.33.*", &server_tid),
+    ExpectIncomingMessage("^OPTIONS sip:192.0.2.33.*"),
+    ExpectTransactionSend("^SIP/2.0 200 OK.*", &server_tid),
+    ExpectTransactionClose(&server_tid),
   };
 
   Initialize(expected_reads, ARRAYSIZE_UNSAFE(expected_reads),
@@ -201,8 +215,9 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
              expected_events, ARRAYSIZE_UNSAFE(expected_events),
              branches, ARRAYSIZE_UNSAFE(branches));
 
-  int rv = network_layer_->Send(CreateRegisterRequest(),
-    callback_.callback());
+  scoped_refptr<Message> request(Message::Parse(kRegisterRequest));
+  request->erase(request->find_first<Via>());
+  int rv = network_layer_->Send(request, callback_.callback());
   EXPECT_EQ(net::ERR_IO_PENDING, rv);
 
   data_->RunFor(1);
@@ -218,6 +233,14 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
   MockClientTransaction *client_transaction =
     transaction_factory_->client_transaction(0);
   client_transaction->Terminate();
+
+  data_->RunFor(1);
+
+  scoped_refptr<Message> response(Message::Parse(kOptionsResponse));
+  rv = network_layer_->Send(response, callback_.callback());
+  EXPECT_EQ(net::ERR_IO_PENDING, rv);
+
+  data_->RunFor(1);
 
   Finish();
 }

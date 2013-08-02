@@ -338,7 +338,8 @@ std::string NetworkLayer::ServerTransactionId(
   Message::const_iterator topmost_via = request->find_first<Via>();
   if (topmost_via != request->end()) {
     const Via *via = dyn_cast<Via>(topmost_via);
-    if (StartsWithASCII(via->front().branch(), kMagicCookie, false)) {
+    if (via->front().HasBranch()
+        && StartsWithASCII(via->front().branch(), kMagicCookie, false)) {
       std::string id;
       id += "s:"; // Protect against clashes with server transactions
       id += via->front().branch();
@@ -365,9 +366,11 @@ std::string NetworkLayer::ServerTransactionId(
   // to exist clashes, but in practice they will be very rare.
   std::string id;
   id += "s:";
-  id += dyn_cast<To>(to_it)->tag();
+  if (dyn_cast<To>(to_it)->HasTag())
+    id += dyn_cast<To>(to_it)->tag();
   id += ":";
-  id += dyn_cast<From>(from_it)->tag();
+  if (dyn_cast<From>(from_it)->HasTag())
+    id += dyn_cast<From>(from_it)->tag();
   id += ":";
   id += dyn_cast<CallId>(callid_it)->value();
   id += ":";
@@ -382,7 +385,8 @@ std::string NetworkLayer::ServerTransactionId(
     const Via *via = dyn_cast<Via>(topmost_via);
     id += via->front().sent_by().ToString();
     id += ":";
-    id += via->front().branch();
+    if (via->front().HasBranch())
+      id += via->front().branch();
   }
   return id;
 }
@@ -394,7 +398,8 @@ std::string NetworkLayer::ServerTransactionId(
   DCHECK(cseq_it != response->end());
   if (topmost_via != response->end()) {
     const Via *via = dyn_cast<Via>(topmost_via);
-    if (StartsWithASCII(via->front().branch(), kMagicCookie, false)) {
+    if (via->front().HasBranch()
+        && StartsWithASCII(via->front().branch(), kMagicCookie, false)) {
       std::string id;
       id += "s:"; // Protect against clashes with server transactions
       id += via->front().branch();
@@ -415,9 +420,11 @@ std::string NetworkLayer::ServerTransactionId(
   // This is the fallback compatibility with ancient RFC 2543 implementations
   std::string id;
   id += "s:";
-  id += dyn_cast<To>(to_it)->tag();
+  if (dyn_cast<To>(to_it)->HasTag())
+    id += dyn_cast<To>(to_it)->tag();
   id += ":";
-  id += dyn_cast<From>(from_it)->tag();
+  if (dyn_cast<From>(from_it)->HasTag())
+    id += dyn_cast<From>(from_it)->tag();
   id += ":";
   id += dyn_cast<CallId>(callid_it)->value();
   id += ":";
@@ -432,7 +439,8 @@ std::string NetworkLayer::ServerTransactionId(
     const Via *via = dyn_cast<Via>(topmost_via);
     id += via->front().sent_by().ToString();
     id += ":";
-    id += via->front().branch();
+    if (via->front().HasBranch())
+      id += via->front().branch();
   }
   return id;
 }
