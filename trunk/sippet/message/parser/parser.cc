@@ -249,6 +249,7 @@ bool ParseParameters(Tokenizer &tok, scoped_ptr<HeaderType> &header,
                      void (*setter)(scoped_ptr<HeaderType> &,
                                     const std::string &,
                                     const std::string &)) {
+  // TODO: accept generic param such as ";token"
   std::string::const_iterator param_start = tok.SkipTo(';');
   if (tok.EndOfInput())
     return true;
