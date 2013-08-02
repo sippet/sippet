@@ -586,7 +586,7 @@ void MockServerTransaction::Send(
                     const scoped_refptr<Response> &response) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
   data_provider_->Send(transaction_id_, response);
-  channel_->Send(response, net::CompletionCallback());
+  channel_->Send(response, callback_.callback());
 }
 
 void MockServerTransaction::HandleIncomingRequest(

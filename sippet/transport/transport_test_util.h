@@ -462,6 +462,10 @@ class MockServerTransaction : public ServerTransaction {
     delegate_->OnTransactionTerminated(transaction_id_);
   }
 
+  net::TestCompletionCallback &callback() {
+    return callback_;
+  }
+
   // sippet::ServerTransaction methods:
   virtual const std::string& id() const OVERRIDE;
   virtual scoped_refptr<Channel> channel() const OVERRIDE;
@@ -475,6 +479,7 @@ class MockServerTransaction : public ServerTransaction {
   scoped_refptr<Channel> channel_;
   TransactionDelegate *delegate_;
   DataProvider *data_provider_;
+  net::TestCompletionCallback callback_;
 };
 
 class MockTransactionFactory : public TransactionFactory {

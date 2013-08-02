@@ -47,9 +47,9 @@ const char kOptionsRequest[] =
 
 const char kOptionsResponse[] =
   "SIP/2.0 200 OK\r\n"
-  "v: SIP/2.0/TCP 192.0.4.42:123;branch=z9hG4bK776asdhds\r\n"
-  "t: Bob <sip:bob@biloxi.com>\r\n"
-  "f: Alice <sip:alice@atlanta.com>;tag=1928301774\r\n"
+  "v: SIP/2.0/TCP 192.0.4.42:123;rport;branch=z9hG4bK776asdhds\r\n"
+  "t: \"Bob\" <sip:bob@biloxi.com>\r\n"
+  "f: \"Alice\" <sip:alice@atlanta.com>;tag=1928301774\r\n"
   "i: a84b4c76e66710@pc33.atlanta.com\r\n"
   "CSeq: 314159 OPTIONS\r\n"
   "m: <sip:alice@pc33.atlanta.com>\r\n"
@@ -208,6 +208,7 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
     ExpectIncomingMessage("^OPTIONS sip:192.0.2.33.*"),
     ExpectTransactionSend("^SIP/2.0 200 OK.*", &server_tid),
     ExpectTransactionClose(&server_tid),
+    ExpectCloseChannel("192.0.4.42:5060/TCP", net::ERR_CONNECTION_RESET),
   };
 
   Initialize(expected_reads, ARRAYSIZE_UNSAFE(expected_reads),
@@ -238,9 +239,9 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
 
   scoped_refptr<Message> response(Message::Parse(kOptionsResponse));
   rv = network_layer_->Send(response, callback_.callback());
-  EXPECT_EQ(net::ERR_IO_PENDING, rv);
+  EXPECT_EQ(net::OK, rv);
 
-  data_->RunFor(1);
+  data_->RunFor(2);
 
   Finish();
 }

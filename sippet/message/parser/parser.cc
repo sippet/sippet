@@ -21,6 +21,99 @@ namespace sippet {
 
 namespace {
 
+class GenericParametersIterator {
+ public:
+  GenericParametersIterator(std::string::const_iterator begin,
+                            std::string::const_iterator end)
+    : props_(begin, end, ';'),
+      valid_(true),
+      name_begin_(end),
+      name_end_(end),
+      value_begin_(end),
+      value_end_(end),
+      value_is_quoted_(false) {}
+
+  ~GenericParametersIterator() {}
+
+  bool GetNext() {
+    if (!props_.GetNext())
+      return false;
+
+    value_begin_ = props_.value_begin();
+    value_end_ = props_.value_end();
+    name_begin_ = name_end_ = value_end_;
+
+    std::string::const_iterator equals = std::find(value_begin_, value_end_, '=');
+    if (equals != value_end_ && equals != value_begin_) {
+      for (std::string::const_iterator it = value_begin_; it != equals; ++it) {
+        if (net::HttpUtil::IsQuote(*it))
+          return valid_ = false;  // Malformed, quote appears before equals sign
+      }
+
+      name_begin_ = value_begin_;
+      name_end_ = equals;
+      value_begin_ = equals + 1;
+    }
+    else {
+      name_begin_ = value_begin_;
+      name_end_ = value_end_;
+      value_begin_ = value_end_;
+    }
+
+    net::HttpUtil::TrimLWS(&name_begin_, &name_end_);
+    net::HttpUtil::TrimLWS(&value_begin_, &value_end_);
+    value_is_quoted_ = false;
+    unquoted_value_.clear();
+
+    if (value_begin_ != value_end_) {
+      if (net::HttpUtil::IsQuote(*value_begin_)) {
+        if (*value_begin_ != *(value_end_ - 1) || value_begin_ + 1 == value_end_) {
+          ++value_begin_;
+        } else {
+          value_is_quoted_ = true;
+          unquoted_value_ = net::HttpUtil::Unquote(value_begin_, value_end_);
+        }
+      }
+    }
+
+    return true;
+  }
+
+  bool valid() const { return valid_; }
+
+  std::string::const_iterator name_begin() const { return name_begin_; }
+  std::string::const_iterator name_end() const { return name_end_; }
+  std::string name() const { return std::string(name_begin_, name_end_); }
+
+  std::string::const_iterator value_begin() const {
+    return value_is_quoted_ ? unquoted_value_.begin() : value_begin_;
+  }
+  std::string::const_iterator value_end() const {
+    return value_is_quoted_ ? unquoted_value_.end() : value_end_;
+  }
+  std::string value() const {
+    return value_is_quoted_ ? unquoted_value_ : std::string(value_begin_,
+                                                            value_end_);
+  }
+
+  std::string raw_value() const { return std::string(value_begin_,
+                                                      value_end_); }
+
+ private:
+  net::HttpUtil::ValuesIterator props_;
+  bool valid_;
+
+  std::string::const_iterator name_begin_;
+  std::string::const_iterator name_end_;
+
+  std::string::const_iterator value_begin_;
+  std::string::const_iterator value_end_;
+
+  std::string unquoted_value_;
+
+  bool value_is_quoted_;
+};
+
 bool IsStatusLine(
       std::string::const_iterator line_begin,
       std::string::const_iterator line_end) {
@@ -254,7 +347,7 @@ bool ParseParameters(Tokenizer &tok, scoped_ptr<HeaderType> &header,
   if (tok.EndOfInput())
     return true;
   tok.Skip();
-  net::HttpUtil::NameValuePairsIterator it(tok.current(), tok.end(), ';');
+  GenericParametersIterator it(tok.current(), tok.end());
   while (it.GetNext()) {
     setter(header, it.name(), it.value());
   }
