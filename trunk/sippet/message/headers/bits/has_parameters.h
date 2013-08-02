@@ -72,7 +72,9 @@ public:
   void print(raw_ostream &os) const {
     for (const_param_iterator i = param_begin(), ie = param_end(); i != ie; ++i) {
       // TODO: value should be escaped
-      os << ";" << i->first << "=" << i->second;
+      os << ";" << i->first;
+      if (!i->second.empty())
+        os << "=" << i->second;
     }
   }
 private:
