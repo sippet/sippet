@@ -1,0 +1,101 @@
+#summary How to compile
+
+= Requirements =
+
+== Install depot_tools ==
+
+Follow the documentation from Chromium build:
+http://dev.chromium.org/developers/how-tos/install-depot-tools.
+
+
+= Checkout the sources =
+
+== Windows ==
+
+Create a directory to hold your source code. This example assumes c:\chromium_sippet, but other names are fine.
+
+*Important:* Make sure the full directory path has no spaces.
+
+In a shell window, execute the following commands:
+
+<code language="xml">
+cd c:\chromium_sippet
+gclient config http://sippet.googlecode.com/svn/trunk
+</code>
+
+To download the initial code, update your checkout as described below.
+
+== Linux ==
+
+Pick a directory for your build.  We will call this directory $CHROMIUM_SIPPET_ROOT below.
+
+Check out the code:
+
+<code language="xml">
+$ cd $CHROMIUM_SIPPET_ROOT
+$ gclient config http://sippet.googlecode.com/svn/trunk
+</code>
+
+To download the initial code, update your checkout as described in next
+section.
+
+== Mac OSX ==
+
+Create a directory to hold the code.  This example assumes the directory is ~/chromium_sippet, but other names are fine.  Note that if you have FileVault enabled, you'll want to either disable it or put the code in a folder outside the home directory, as otherwise Xcode will be very slow or hang.  You also probably want to disable Spotlight indexing for that folder (System Preferences -> Spotlight -> mark the folder as private).
+
+From a shell in the Terminal, execute the following commands: 
+
+<code language="xml">
+$ cd ~/chromium_sippet
+$ gclient config http://sippet.googlecode.com/svn/trunk
+</code>
+
+To download the initial code, update your checkout as described below.
+
+
+= Update to the latest revision =
+
+The first time you execute gclient, there will be a delay (a minute or so) while it updates the depot tools.
+
+In a shell window, execute the following commands:
+
+<code language="xml">
+cd chromium_sippet
+gclient sync
+</code>
+
+To update to a specific revision, use
+
+<code language="xml">
+gclient sync --revision trunk@####
+</code>
+
+and the DEPS file will make sure you get the other directories in their
+matching forms.
+
+
+= Create the build using GYP =
+
+The build is created using gclient 'runhooks' command:
+
+<code language="xml">
+cd chromium_sippet/trunk
+gclient runhooks
+</code>
+
+This will generate the build using the default GYP generator for your
+platform. It will be GNU Makefiles if you are using Linux, Xcode for Mac OSX, and Visual Studio (auto detected) if Windows.
+
+Now that you have the build set up, just start compiling. Typically, on Linux you would do:
+
+<code language="xml">
+make
+</code>
+
+If you have selected to use Xcode, you can open the workspace using it, or you can just execute the command-line build:
+
+<code language="xml">
+xcodebuild
+</code>
+
+If you have used the Visual Studio generator, just open VS and point it to the solution recently created by GYP.
