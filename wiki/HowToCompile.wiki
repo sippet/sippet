@@ -23,7 +23,7 @@ cd c:\chromium_sippet
 gclient config http://sippet.googlecode.com/svn/trunk
 </code>
 
-To download the initial code, update your checkout as described below.
+To download the initial code, update your checkout as described in next section.
 
 == Linux ==
 
@@ -50,7 +50,7 @@ $ cd ~/chromium_sippet
 $ gclient config http://sippet.googlecode.com/svn/trunk
 </code>
 
-To download the initial code, update your checkout as described below.
+To download the initial code, update your checkout as described in next section.
 
 
 = Update to the latest revision =
