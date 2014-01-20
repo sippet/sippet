@@ -1,6 +1,12 @@
 #summary How to compile
 
-= Requirements =
+= Build environment =
+
+Follow the same instructions given in Chromium documentation:
+http://dev.chromium.org/developers/how-tos/build-instructions-windows
+
+
+= Building Sippet =
 
 == Install depot_tools ==
 
