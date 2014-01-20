@@ -1,9 +1,8 @@
 #summary How to compile
 
-= Build environment =
+= Build instructions =
 
-Follow the same instructions given in Chromium documentation:
-http://dev.chromium.org/developers/how-tos/build-instructions-windows
+Follow the same instructions given in Chromium documentation: [http://dev.chromium.org/developers/how-tos/build-instructions-windows Windows], [http://code.google.com/p/chromium/wiki/MacBuildInstructions Mac OS X], [http://code.google.com/p/chromium/wiki/LinuxBuildInstructions Linux], [http://code.google.com/p/chromium/wiki/AndroidBuildInstructions Android], and [http://dev.chromium.org/developers/how-tos/build-instructions-ios iOS]
 
 
 = Building Sippet =
