@@ -13,7 +13,7 @@ ClientTransactionImpl::ClientTransactionImpl(
                           const scoped_refptr<Channel> &channel,
                           TransactionDelegate *delegate,
                           TimeDeltaFactory *time_delta_factory)
-  : ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)),
+  : weak_factory_(this),
     id_(id), channel_(channel), delegate_(delegate),
     time_delta_factory_(time_delta_factory) {
   DCHECK(id.length());

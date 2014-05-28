@@ -7,7 +7,7 @@
 #include <cstring>
 #include <algorithm>
 
-#include "base/string_util.h"
+#include "base/strings/string_util.h"
 
 namespace sippet {
 

@@ -11,10 +11,10 @@
 #include "sippet/transport/channel_factory.h"
 #include "sippet/message/message.h"
 
-#include "base/string_util.h"
+#include "base/strings/string_util.h"
 #include "base/memory/linked_ptr.h"
 #include "net/socket/socket_test_util.h"
-#include "net/base/mock_cert_verifier.h"
+#include "net/cert/mock_cert_verifier.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 

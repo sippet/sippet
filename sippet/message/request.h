@@ -8,8 +8,8 @@
 #include "sippet/message/message.h"
 #include "sippet/message/method.h"
 #include "sippet/message/version.h"
-#include "googleurl/src/gurl.h"
-#include "base/time.h"
+#include "url/gurl.h"
+#include "base/time/time.h"
 
 namespace sippet {
 

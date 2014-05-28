@@ -5,9 +5,9 @@
 #ifndef SIPPET_MESSAGE_URI_H_
 #define SIPPET_MESSAGE_URI_H_
 
-#include "googleurl/src/gurl.h"
+#include "url/gurl.h"
 #include "sippet/uri/uri_parse.h"
-#include "base/string_util.h"
+#include "base/strings/string_util.h"
 
 namespace sippet {
 
@@ -19,11 +19,11 @@ struct has_parameters {
   std::pair<bool, std::string> parameter(const std::string &name) const {
     const std::string &spec =
       static_cast<const T*>(this)->spec();
-    const uri_parse::Parsed& parsed =
+    const uri::Parsed& parsed =
       static_cast<const T*>(this)->parsed_for_possibly_invalid_spec();
-    uri_parse::Component parameters = parsed.parameters;
-    uri_parse::Component key, value;
-    while (uri_parse::ExtractParametersKeyValue(
+    uri::Component parameters = parsed.parameters;
+    uri::Component key, value;
+    while (uri::ExtractParametersKeyValue(
            spec.data(), &parameters, &key, &value)) {
         if (key.len != name.length())
           continue;
@@ -60,13 +60,13 @@ class SipURI :
   // version to assume the query parameter encoding should be the same as the
   // input encoding.
   explicit SipURI(const std::string& uri_string);
-  explicit SipURI(const string16& uri_string);
+  explicit SipURI(const base::string16& uri_string);
 
   // Constructor for URIs that have already been parsed and canonicalized. The
   // caller must supply all information associated with the URI, which must be
   // correct and consistent.
   SipURI(const char* canonical_spec, size_t canonical_spec_len,
-         const uri_parse::Parsed& parsed, bool is_valid);
+         const uri::Parsed& parsed, bool is_valid);
 
   ~SipURI();
 
@@ -122,7 +122,7 @@ class SipURI :
   // or may not be valid. If you are using this to index into the spec, BE
   // SURE YOU ARE USING possibly_invalid_spec() to get the spec, and that you
   // don't do anything "important" with invalid specs.
-  const uri_parse::Parsed& parsed_for_possibly_invalid_spec() const {
+  const uri::Parsed& parsed_for_possibly_invalid_spec() const {
     return parsed_;
   }
 
@@ -264,7 +264,7 @@ class SipURI :
   friend struct uri_details::has_parameters<SipURI>;
 
   // Returns the substring of the input identified by the given component.
-  std::string ComponentString(const uri_parse::Component& comp) const {
+  std::string ComponentString(const uri::Component& comp) const {
     if (comp.len <= 0)
       return std::string();
     return std::string(spec_, comp.begin, comp.len);
@@ -279,7 +279,7 @@ class SipURI :
   bool is_valid_;
 
   // Identified components of the canonical spec.
-  uri_parse::Parsed parsed_;
+  uri::Parsed parsed_;
 };
 
 // The TelURI object accepts only TEL-URI schemes.
@@ -304,13 +304,13 @@ class TelURI :
   // version to assume the query parameter encoding should be the same as the
   // input encoding.
   explicit TelURI(const std::string& uri_string);
-  explicit TelURI(const string16& uri_string);
+  explicit TelURI(const base::string16& uri_string);
 
   // Constructor for URIs that have already been parsed and canonicalized. The
   // caller must supply all information associated with the URI, which must be
   // correct and consistent.
   TelURI(const char* canonical_spec, size_t canonical_spec_len,
-         const uri_parse::Parsed& parsed, bool is_valid);
+         const uri::Parsed& parsed, bool is_valid);
 
   ~TelURI();
 
@@ -369,7 +369,7 @@ class TelURI :
   // or may not be valid. If you are using this to index into the spec, BE
   // SURE YOU ARE USING possibly_invalid_spec() to get the spec, and that you
   // don't do anything "important" with invalid specs.
-  const uri_parse::Parsed& parsed_for_possibly_invalid_spec() const {
+  const uri::Parsed& parsed_for_possibly_invalid_spec() const {
     return parsed_;
   }
 
@@ -425,7 +425,7 @@ class TelURI :
   friend struct uri_details::has_parameters<TelURI>;
 
   // Returns the substring of the input identified by the given component.
-  std::string ComponentString(const uri_parse::Component& comp) const {
+  std::string ComponentString(const uri::Component& comp) const {
     if (comp.len <= 0)
       return std::string();
     return std::string(spec_, comp.begin, comp.len);
@@ -440,7 +440,7 @@ class TelURI :
   bool is_valid_;
 
   // Identified components of the canonical spec.
-  uri_parse::Parsed parsed_;
+  uri::Parsed parsed_;
 };
 
 } // End of sippet namespace

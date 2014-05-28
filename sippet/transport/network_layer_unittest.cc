@@ -61,7 +61,7 @@ const char kOptionsResponse[] =
 class NetworkLayerTest : public testing::Test {
  public:
   void Finish() {
-    MessageLoop::current()->RunUntilIdle();
+    base::MessageLoop::current()->RunUntilIdle();
     EXPECT_TRUE(data_provider_->at_events_end());
     EXPECT_TRUE(data_->at_write_eof());
     EXPECT_TRUE(data_->at_read_eof());

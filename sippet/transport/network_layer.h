@@ -7,10 +7,11 @@
 
 #include <set>
 
-#include "base/timer.h"
+#include "base/timer/timer.h"
 #include "base/memory/ref_counted.h"
 #include "base/system_monitor/system_monitor.h"
 #include "base/gtest_prod_util.h"
+#include "base/power_monitor/power_observer.h"
 #include "net/base/completion_callback.h"
 #include "sippet/message/protocol.h"
 #include "sippet/message/message.h"
@@ -88,7 +89,7 @@ class TransactionFactory;
 //   }
 //   
 class NetworkLayer :
-  public base::SystemMonitor::PowerObserver,
+  public base::PowerObserver,
   public base::RefCountedThreadSafe<NetworkLayer>,
   public Channel::Delegate,
   public TransactionDelegate {

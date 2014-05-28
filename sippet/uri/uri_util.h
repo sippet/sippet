@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "googleurl/src/url_util.h"
+#include "url/url_util.h"
 #include "sippet/uri/uri_canon.h"
 
 namespace sippet {
-namespace uri_util {
+namespace uri {
 
 // String helper functions ----------------------------------------------------
 
@@ -20,20 +20,20 @@ inline
 bool LowerCaseEqualsASCII(const char* a_begin,
                           const char* a_end,
                           const char* b) {
-  return url_util::LowerCaseEqualsASCII(a_begin, a_end, b);
+  return url::LowerCaseEqualsASCII(a_begin, a_end, b);
 }
 inline
 bool LowerCaseEqualsASCII(const char* a_begin,
                           const char* a_end,
                           const char* b_begin,
                           const char* b_end) {
-  return url_util::LowerCaseEqualsASCII(a_begin, a_end, b_begin, b_end);
+  return url::LowerCaseEqualsASCII(a_begin, a_end, b_begin, b_end);
 }
 inline
-bool LowerCaseEqualsASCII(const char16* a_begin,
-                          const char16* a_end,
+bool LowerCaseEqualsASCII(const base::char16* a_begin,
+                          const base::char16* a_end,
                           const char* b) {
-  return url_util::LowerCaseEqualsASCII(a_begin, a_end, b);
+  return url::LowerCaseEqualsASCII(a_begin, a_end, b);
 }
 
 // URI library wrappers -------------------------------------------------------
@@ -42,7 +42,7 @@ bool LowerCaseEqualsASCII(const char16* a_begin,
 // should use the URI object, although this may be useful if performance is
 // critical and you don't want to do the heap allocation for the std::string.
 //
-// As with the uri_canon::Canonicalize* functions, the charset converter can
+// As with the uri::Canonicalize* functions, the charset converter can
 // be NULL to use UTF-8 (it will be faster in this case).
 //
 // Returns true if a valid URI was produced, false if not. On failure, the
@@ -50,14 +50,14 @@ bool LowerCaseEqualsASCII(const char16* a_begin,
 // but they will not represent a loadable URI.
 bool Canonicalize(const char* spec,
                   int spec_len,
-                  uri_canon::CharsetConverter* charset_converter,
-                  uri_canon::CanonOutput* output,
-                  uri_parse::Parsed* output_parsed);
-bool Canonicalize(const char16* spec,
+                  uri::CharsetConverter* charset_converter,
+                  uri::CanonOutput* output,
+                  uri::Parsed* output_parsed);
+bool Canonicalize(const base::char16* spec,
                   int spec_len,
-                  uri_canon::CharsetConverter* charset_converter,
-                  uri_canon::CanonOutput* output,
-                  uri_parse::Parsed* output_parsed);
+                  uri::CharsetConverter* charset_converter,
+                  uri::CanonOutput* output,
+                  uri::Parsed* output_parsed);
 
-} // End of uri_util namespace
+} // End of uri namespace
 } // End of sippet namespace

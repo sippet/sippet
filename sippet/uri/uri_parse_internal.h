@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/uri/uri_parse.h"
-#include "googleurl/src/url_parse_internal.h"
+#include "sippet/uri/uri.h"
+#include "url/url_parse_internal.h"
 
 namespace sippet {
-namespace uri_parse {
+namespace uri {
 
 // Given an already-initialized begin index and length, this shrinks the range
 // to eliminate "should-be-trimmed" characters. Note that the length does *not*
@@ -15,10 +15,10 @@ namespace uri_parse {
 // and goes until |*len|).
 template<typename CHAR>
 inline void TrimURI(const CHAR* spec, int* begin, int* len) {
-  return url_parse::TrimURL(spec, begin, len);
+  return url::TrimURL(spec, begin, len);
 }
 
-// Internal functions in uri_parse.cc that parse the parameters and headers,
+// Internal functions in uri.cc that parse the parameters and headers,
 // that is, everything following the authority section. The input is the range
 // of everything following the authority section, and the output is the
 // identified ranges.
@@ -26,7 +26,7 @@ void ParseAfterAuthorityInternal(const char* spec,
                                  const Component& remaining,
                                  Component* parameters,
                                  Component* headers);
-void ParseAfterAuthorityInternal(const char16* spec,
+void ParseAfterAuthorityInternal(const base::char16* spec,
                                  const Component& remaining,
                                  Component* parameters,
                                  Component* headers);
@@ -38,10 +38,10 @@ void ParseAfterScheme(const char* spec,
                       int spec_len,
                       int after_scheme,
                       Parsed* parsed);
-void ParseAfterScheme(const char16* spec,
+void ParseAfterScheme(const base::char16* spec,
                       int spec_len,
                       int after_scheme,
                       Parsed* parsed);
 
-} // End of uri_parse
+} // End of uri
 } // End of sippet namespace

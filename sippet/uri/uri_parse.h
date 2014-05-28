@@ -5,16 +5,16 @@
 #ifndef SIPPET_MESSAGE_PARSE_H_
 #define SIPPET_MESSAGE_PARSE_H_
 
-#include "googleurl/src/gurl.h"
+#include "url/gurl.h"
 
 namespace sippet {
-namespace uri_parse {
+namespace uri {
 
-using url_parse::Component;
-using url_parse::SpecialPort;
-using url_parse::PORT_UNSPECIFIED;
-using url_parse::PORT_INVALID;
-using url_parse::MakeRange;
+using url::Component;
+using url::SpecialPort;
+using url::PORT_UNSPECIFIED;
+using url::PORT_INVALID;
+using url::MakeRange;
 
 // Part replacer --------------------------------------------------------------
 
@@ -24,7 +24,7 @@ using url_parse::MakeRange;
 // treated on the same code path as regular canonicalization (the same string
 // for each component).
 //
-// A uri_parse::Parsed structure usually goes along with this. Those
+// A uri::Parsed structure usually goes along with this. Those
 // components identify offsets within these strings, so that they can all be
 // in the same string, or spread arbitrarily across different ones.
 //
@@ -75,15 +75,15 @@ struct URIComponentSource {
 //
 // Typical usage would be:
 //
-//    uri_parse::Parsed parsed;
-//    uri_parse::Component scheme;
-//    if (!uri_parse::ExtractScheme(uri, uri_len, &scheme))
+//    uri::Parsed parsed;
+//    uri::Component scheme;
+//    if (!uri::ExtractScheme(uri, uri_len, &scheme))
 //      return I_CAN_NOT_FIND_THE_SCHEME_DUDE;
 //
 //    if (IsSipURI(uri, scheme))  // Not provided by this component
-//      uri_parse::ParseSipURI(uri, uri_len, &parsed);
+//      uri::ParseSipURI(uri, uri_len, &parsed);
 //    else if (IsTelURI(uri, scheme))    // Not provided by this component
-//      uri_parse::ParseTelURI(uri, uri_len, &parsed);
+//      uri::ParseTelURI(uri, uri_len, &parsed);
 //    else
 //      return I_CAN_NOT_FIND_THE_SCHEME_DUDE;
 //
@@ -173,11 +173,11 @@ struct Parsed {
 
 // SipURI is for sip: and sips: uris.
 void ParseSipURI(const char* uri, int uri_len, Parsed* parsed);
-void ParseSipURI(const char16* uri, int uri_len, Parsed* parsed);
+void ParseSipURI(const base::char16* uri, int uri_len, Parsed* parsed);
 
 // TelURI is for tel: uris.
 void ParseTelURI(const char* uri, int uri_len, Parsed* parsed);
-void ParseTelURI(const char16* uri, int uri_len, Parsed* parsed);
+void ParseTelURI(const base::char16* uri, int uri_len, Parsed* parsed);
 
 // Helper functions -----------------------------------------------------------
 
@@ -203,11 +203,11 @@ void ParseTelURI(const char16* uri, int uri_len, Parsed* parsed);
 // The 8-bit version requires UTF-8 encoding.
 inline
 bool ExtractScheme(const char* uri, int uri_len, Component* scheme) {
-  return url_parse::ExtractScheme(uri, uri_len, scheme);
+  return url::ExtractScheme(uri, uri_len, scheme);
 }
 inline
-bool ExtractScheme(const char16* uri, int uri_len, Component* scheme) {
-  return url_parse::ExtractScheme(uri, uri_len, scheme);
+bool ExtractScheme(const base::char16* uri, int uri_len, Component* scheme) {
+  return url::ExtractScheme(uri, uri_len, scheme);
 }
 
 // Does a best effort parse of input |spec|, in range |auth|. If a particular
@@ -219,17 +219,17 @@ void ParseAuthority(const char* spec,
                     Component* password,
                     Component* hostname,
                     Component* port_num) {
-  return url_parse::ParseAuthority(spec, auth, username,
+  return url::ParseAuthority(spec, auth, username,
                                    password, hostname, port_num);
 }
 inline
-void ParseAuthority(const char16* spec,
+void ParseAuthority(const base::char16* spec,
                     const Component& auth,
                     Component* username,
                     Component* password,
                     Component* hostname,
                     Component* port_num) {
-  return url_parse::ParseAuthority(spec, auth, username,
+  return url::ParseAuthority(spec, auth, username,
                                    password, hostname, port_num);
 }
 
@@ -250,12 +250,12 @@ bool ExtractParametersKeyValue(const char* uri,
                                Component* parameters,
                                Component* key,
                                Component* value);
-bool ExtractParametersKeyValue(const char16* uri,
+bool ExtractParametersKeyValue(const base::char16* uri,
                                Component* parameters,
                                Component* key,
                                Component* value);
 
-} // End of uri_parse namespace
+} // End of uri namespace
 } // End of sippet namespace
 
 #endif // SIPPET_MESSAGE_PARSE_H_

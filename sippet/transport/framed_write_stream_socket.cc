@@ -13,7 +13,7 @@ namespace sippet {
 FramedWriteStreamSocket::FramedWriteStreamSocket(
     net::StreamSocket *socket_to_wrap)
     : wrapped_socket_(socket_to_wrap),
-      ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)),
+      weak_factory_(this),
       error_(net::OK) {
 }
 
@@ -43,11 +43,11 @@ int FramedWriteStreamSocket::Write(net::IOBuffer* buf, int buf_len,
   return net::ERR_IO_PENDING;
 }
 
-bool FramedWriteStreamSocket::SetReceiveBufferSize(int32 size) {
+int FramedWriteStreamSocket::SetReceiveBufferSize(int32 size) {
   return wrapped_socket_->SetReceiveBufferSize(size);
 }
 
-bool FramedWriteStreamSocket::SetSendBufferSize(int32 size) {
+int FramedWriteStreamSocket::SetSendBufferSize(int32 size) {
   return wrapped_socket_->SetSendBufferSize(size);
 }
 
@@ -94,14 +94,6 @@ bool FramedWriteStreamSocket::WasEverUsed() const {
 
 bool FramedWriteStreamSocket::UsingTCPFastOpen() const {
   return wrapped_socket_->UsingTCPFastOpen();
-}
-
-int64 FramedWriteStreamSocket::NumBytesRead() const {
-  return wrapped_socket_->NumBytesRead();
-}
-
-base::TimeDelta FramedWriteStreamSocket::GetConnectTimeMicros() const {
-  return wrapped_socket_->GetConnectTimeMicros();
 }
 
 bool FramedWriteStreamSocket::WasNpnNegotiated() const {
