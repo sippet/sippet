@@ -18,12 +18,12 @@ namespace {
 template<typename STR>
 bool InitCanonical(const STR& input_spec,
                    std::string* canonical,
-                   uri_parse::Parsed* parsed) {
+                   uri::Parsed* parsed) {
   // Reserve enough room in the output for the input, plus some extra so that
   // we have room if we have to escape a few things without reallocating.
   canonical->reserve(input_spec.size() + 32);
-  url_canon::StdStringCanonOutput output(canonical);
-  bool success = uri_util::Canonicalize(
+  url::StdStringCanonOutput output(canonical);
+  bool success = uri::Canonicalize(
       input_spec.data(), static_cast<int>(input_spec.length()),
       NULL, &output, parsed);
 
@@ -32,9 +32,9 @@ bool InitCanonical(const STR& input_spec,
 }
 
 bool SchemeIs(const std::string& spec,
-              const uri_parse::Parsed& parsed,
+              const uri::Parsed& parsed,
               const char* lower_ascii_scheme) {
-  return uri_util::LowerCaseEqualsASCII(spec.data() + parsed.scheme.begin,
+  return uri::LowerCaseEqualsASCII(spec.data() + parsed.scheme.begin,
                                         spec.data() + parsed.scheme.end(),
                                         lower_ascii_scheme);
 }
@@ -42,13 +42,13 @@ bool SchemeIs(const std::string& spec,
 template<typename STR>
 bool InitCanonicalSipURI(const STR& input_spec,
                          std::string* canonical,
-                         uri_parse::Parsed* parsed) {
+                         uri::Parsed* parsed) {
   bool success = true;
   if (!InitCanonical(input_spec, canonical, parsed)
       || (!SchemeIs(*canonical, *parsed, "sip")
           && !SchemeIs(*canonical, *parsed, "sips"))) {
     canonical->clear();
-    *parsed = uri_parse::Parsed();
+    *parsed = uri::Parsed();
     success = false;
   }
   return success;
@@ -57,12 +57,12 @@ bool InitCanonicalSipURI(const STR& input_spec,
 template<typename STR>
 bool InitCanonicalTelURI(const STR& input_spec,
                          std::string* canonical,
-                         uri_parse::Parsed* parsed) {
+                         uri::Parsed* parsed) {
   bool success = true;
   if (!InitCanonical(input_spec, canonical, parsed)
       || !SchemeIs(*canonical, *parsed, "tel")) {
     canonical->clear();
-    *parsed = uri_parse::Parsed();
+    *parsed = uri::Parsed();
     success = false;
   }
   return success;
@@ -89,12 +89,12 @@ SipURI::SipURI(const std::string& uri_string) {
   is_valid_ = InitCanonicalSipURI(uri_string, &spec_, &parsed_);
 }
 
-SipURI::SipURI(const string16& uri_string) {
+SipURI::SipURI(const base::string16& uri_string) {
   is_valid_ = InitCanonicalSipURI(uri_string, &spec_, &parsed_);
 }
 
 SipURI::SipURI(const char* canonical_spec, size_t canonical_spec_len,
-               const uri_parse::Parsed& parsed, bool is_valid)
+               const uri::Parsed& parsed, bool is_valid)
     : spec_(canonical_spec, canonical_spec_len),
       is_valid_(is_valid),
       parsed_(parsed) {
@@ -103,7 +103,7 @@ SipURI::SipURI(const char* canonical_spec, size_t canonical_spec_len,
   // what we would have produced. Skip checking for invalid URIs have no meaning
   // and we can't always canonicalize then reproducabely.
   if (is_valid_) {
-    uri_parse::Component scheme;
+    uri::Component scheme;
     if (scheme.begin == parsed.scheme.begin) {
       SipURI test_url(spec_);
 
@@ -189,9 +189,9 @@ bool SipURI::HostIsIPAddress() const {
   if (!is_valid_ || spec_.empty())
      return false;
 
-  url_canon::RawCanonOutputT<char, 128> ignored_output;
-  uri_canon::CanonHostInfo host_info;
-  uri_canon::CanonicalizeIPAddress(spec_.c_str(), parsed_.host,
+  url::RawCanonOutputT<char, 128> ignored_output;
+  uri::CanonHostInfo host_info;
+  uri::CanonicalizeIPAddress(spec_.c_str(), parsed_.host,
                                    &ignored_output, &host_info);
   return host_info.IsIPAddress();
 }
@@ -199,20 +199,20 @@ bool SipURI::HostIsIPAddress() const {
 int SipURI::IntPort() const {
   if (parsed_.port.is_nonempty())
     return ParsePort(spec_.data(), parsed_.port);
-  return uri_parse::PORT_UNSPECIFIED;
+  return uri::PORT_UNSPECIFIED;
 }
 
 int SipURI::EffectiveIntPort() const {
   int int_port = IntPort();
-  if (int_port == uri_parse::PORT_UNSPECIFIED)
-    return uri_canon::DefaultPortForScheme(spec_.data() + parsed_.scheme.begin,
+  if (int_port == uri::PORT_UNSPECIFIED)
+    return uri::DefaultPortForScheme(spec_.data() + parsed_.scheme.begin,
                                            parsed_.scheme.len);
   return int_port;
 }
 
 std::string SipURI::HostNoBrackets() const {
   // If host looks like an IPv6 literal, strip the square brackets.
-  uri_parse::Component h(parsed_.host);
+  uri::Component h(parsed_.host);
   if (h.len >= 2 && spec_[h.begin] == '[' && spec_[h.end() - 1] == ']') {
     h.begin++;
     h.len -= 2;
@@ -246,7 +246,7 @@ bool SipURI::DomainIs(const char* lower_ascii_domain, int domain_len) const {
   const char* start_pos = spec_.data() + parsed_.host.begin +
                           host_len - domain_len;
 
-  if (!uri_util::LowerCaseEqualsASCII(start_pos,
+  if (!uri::LowerCaseEqualsASCII(start_pos,
                                       last_pos + 1,
                                       lower_ascii_domain,
                                       lower_ascii_domain + domain_len))
@@ -292,12 +292,12 @@ TelURI::TelURI(const std::string& uri_string) {
   is_valid_ = InitCanonicalTelURI(uri_string, &spec_, &parsed_);
 }
 
-TelURI::TelURI(const string16& uri_string) {
+TelURI::TelURI(const base::string16& uri_string) {
   is_valid_ = InitCanonicalTelURI(uri_string, &spec_, &parsed_);
 }
 
 TelURI::TelURI(const char* canonical_spec, size_t canonical_spec_len,
-               const uri_parse::Parsed& parsed, bool is_valid)
+               const uri::Parsed& parsed, bool is_valid)
     : spec_(canonical_spec, canonical_spec_len),
       is_valid_(is_valid),
       parsed_(parsed) {
@@ -306,7 +306,7 @@ TelURI::TelURI(const char* canonical_spec, size_t canonical_spec_len,
   // what we would have produced. Skip checking for invalid URIs have no meaning
   // and we can't always canonicalize then reproducabely.
   if (is_valid_) {
-    uri_parse::Component scheme;
+    uri::Component scheme;
     if (scheme.begin == parsed.scheme.begin) {
       TelURI test_url(spec_);
 
@@ -336,16 +336,16 @@ SipURI TelURI::ToSipURI(const SipURI& origin) {
     return SipURI();
 
   const std::string &origin_spec = origin.spec();
-  const uri_parse::Parsed &origin_parsed =
+  const uri::Parsed &origin_parsed =
     origin.parsed_for_possibly_invalid_spec();
 
   std::string canonical;
-  uri_parse::Parsed parsed;
+  uri::Parsed parsed;
   
   // Reserve enough room in the output for the input, plus some extra so that
   // we have room if we have to escape a few things without reallocating.
   canonical.reserve(origin.spec().size() + 32);
-  url_canon::StdStringCanonOutput output(&canonical);
+  url::StdStringCanonOutput output(&canonical);
 
   // Append the same scheme as the origin
   parsed.scheme.begin = 0;

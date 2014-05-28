@@ -13,7 +13,7 @@ namespace sippet {
 SequencedWriteStreamSocket::SequencedWriteStreamSocket(
     net::StreamSocket *socket_to_wrap)
     : wrapped_socket_(socket_to_wrap),
-      ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)),
+      weak_factory_(this),
       error_(net::OK) {
 }
 
@@ -45,11 +45,11 @@ int SequencedWriteStreamSocket::Write(net::IOBuffer* buf, int buf_len,
   return net::ERR_IO_PENDING;
 }
 
-bool SequencedWriteStreamSocket::SetReceiveBufferSize(int32 size) {
+int SequencedWriteStreamSocket::SetReceiveBufferSize(int32 size) {
   return wrapped_socket_->SetReceiveBufferSize(size);
 }
 
-bool SequencedWriteStreamSocket::SetSendBufferSize(int32 size) {
+int SequencedWriteStreamSocket::SetSendBufferSize(int32 size) {
   return wrapped_socket_->SetSendBufferSize(size);
 }
 
@@ -96,14 +96,6 @@ bool SequencedWriteStreamSocket::WasEverUsed() const {
 
 bool SequencedWriteStreamSocket::UsingTCPFastOpen() const {
   return wrapped_socket_->UsingTCPFastOpen();
-}
-
-int64 SequencedWriteStreamSocket::NumBytesRead() const {
-  return wrapped_socket_->NumBytesRead();
-}
-
-base::TimeDelta SequencedWriteStreamSocket::GetConnectTimeMicros() const {
-  return wrapped_socket_->GetConnectTimeMicros();
 }
 
 bool SequencedWriteStreamSocket::WasNpnNegotiated() const {

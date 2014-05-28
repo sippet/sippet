@@ -5,7 +5,7 @@
 #include "sippet/uri/uri_canon_internal.h"
 
 namespace sippet {
-namespace uri_canon {
+namespace uri {
 
 namespace {
 
@@ -149,11 +149,11 @@ void AppendStringOfType(const char* source, int length,
   DoAppendStringOfType<char, unsigned char>(source, length, type, output);
 }
 
-void AppendStringOfType(const char16* source, int length,
+void AppendStringOfType(const base::char16* source, int length,
                         SharedCharTypes type,
                         CanonOutput* output) {
-  DoAppendStringOfType<char16, char16>(source, length, type, output);
+  DoAppendStringOfType<base::char16, base::char16>(source, length, type, output);
 }
 
-} // End of uri_canon namespace
+} // End of uri namespace
 } // End of sippet namespace

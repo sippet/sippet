@@ -2,32 +2,32 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/uri/uri_canon.h"
+#include "sippet/uri/uri.h"
 #include "sippet/uri/uri_canon_internal.h"
 
 namespace sippet {
-namespace uri_canon {
+namespace uri {
 
 namespace {
 
 template<typename CHAR>
 bool DoCanonicalizeTelURI(const URIComponentSource<CHAR>& source,
-                          const uri_parse::Parsed& parsed,
+                          const uri::Parsed& parsed,
                           CharsetConverter* query_converter,
                           CanonOutput* output,
-                          uri_parse::Parsed* new_parsed) {
+                          uri::Parsed* new_parsed) {
   // Scheme: this will append the colon.
-  bool success = uri_canon::CanonicalizeScheme(source.scheme, parsed.scheme,
+  bool success = uri::CanonicalizeScheme(source.scheme, parsed.scheme,
                                                output, &new_parsed->scheme);
 
   if (parsed.username.is_valid()) {
     // User info is the tel-subscriber.
-    success &= uri_canon::CanonicalizeUserInfo(
+    success &= uri::CanonicalizeUserInfo(
         source.username, parsed.username, source.password, parsed.password,
         output, &new_parsed->username, &new_parsed->password);
 
     // Parameters
-    uri_canon::CanonicalizeParameters(
+    uri::CanonicalizeParameters(
         source.parameters, parsed.parameters, query_converter,
         output, &new_parsed->parameters);
   } else {
@@ -42,12 +42,12 @@ bool DoCanonicalizeTelURI(const URIComponentSource<CHAR>& source,
 
 template<typename CHAR>
 bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
-                          const uri_parse::Parsed& parsed,
+                          const uri::Parsed& parsed,
                           CharsetConverter* query_converter,
                           CanonOutput* output,
-                          uri_parse::Parsed* new_parsed) {
+                          uri::Parsed* new_parsed) {
   // Scheme: this will append the colon.
-  bool success = uri_canon::CanonicalizeScheme(source.scheme, parsed.scheme,
+  bool success = uri::CanonicalizeScheme(source.scheme, parsed.scheme,
                                                output, &new_parsed->scheme);
 
   // Authority (username, password, host, port)
@@ -57,11 +57,11 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
     have_authority = true;
 
     // User info: the canonicalizer will handle the : and @.
-    success &= uri_canon::CanonicalizeUserInfo(
+    success &= uri::CanonicalizeUserInfo(
         source.username, parsed.username, source.password, parsed.password,
         output, &new_parsed->username, &new_parsed->password);
 
-    success &= uri_canon::CanonicalizeHost(source.host, parsed.host,
+    success &= uri::CanonicalizeHost(source.host, parsed.host,
                                            output, &new_parsed->host);
 
     // Host must not be empty for standard URLs.
@@ -71,17 +71,17 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
     // Port: the port canonicalizer will handle the colon.
     int default_port = DefaultPortForScheme(
         &output->data()[new_parsed->scheme.begin], new_parsed->scheme.len);
-    success &= uri_canon::CanonicalizePort(
+    success &= uri::CanonicalizePort(
         source.port, parsed.port, default_port,
         output, &new_parsed->port);
 
     // Parameters
-    uri_canon::CanonicalizeParameters(
+    uri::CanonicalizeParameters(
         source.parameters, parsed.parameters, query_converter,
         output, &new_parsed->parameters);
 
     // Headers
-    uri_canon::CanonicalizeHeaders(
+    uri::CanonicalizeHeaders(
         source.headers, parsed.headers, query_converter,
         output, &new_parsed->headers);
 
@@ -104,16 +104,16 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
 // replacing components.
 template<typename CHAR>
 bool DoUserInfo(const CHAR* username_spec,
-                const uri_parse::Component& username,
+                const uri::Component& username,
                 const CHAR* password_spec,
-                const uri_parse::Component& password,
+                const uri::Component& password,
                 CanonOutput* output,
-                uri_parse::Component* out_username,
-                uri_parse::Component* out_password) {
+                uri::Component* out_username,
+                uri::Component* out_password) {
   if (username.len <= 0 && password.len <= 0) {
     // Common case: no user info. We strip empty username/passwords.
-    *out_username = uri_parse::Component();
-    *out_password = uri_parse::Component();
+    *out_username = uri::Component();
+    *out_password = uri::Component();
     return true;
   }
 
@@ -135,7 +135,7 @@ bool DoUserInfo(const CHAR* username_spec,
                        CHAR_USERINFO, output);
     out_password->len = output->length() - out_password->begin;
   } else {
-    *out_password = url_parse::Component();
+    *out_password = url::Component();
   }
 
   output->push_back('@');
@@ -144,13 +144,13 @@ bool DoUserInfo(const CHAR* username_spec,
 
 template<typename CHAR>
 void DoParameters(const CHAR* spec,
-                  const uri_parse::Component& parameters,
+                  const uri::Component& parameters,
                   CharsetConverter* converter,
                   CanonOutput* output,
-                  uri_parse::Component* out_parameters) {
+                  uri::Component* out_parameters) {
   if (parameters.len <= 0) {
     // Common case: no parameters.
-    *out_parameters = uri_parse::Component();
+    *out_parameters = uri::Component();
   }
   else {
     // Write the parameters.
@@ -163,13 +163,13 @@ void DoParameters(const CHAR* spec,
 
 template<typename CHAR>
 void DoHeaders(const CHAR* spec,
-               const uri_parse::Component& headers,
+               const uri::Component& headers,
                CharsetConverter* converter,
                CanonOutput* output,
-               uri_parse::Component* out_headers) {
+               uri::Component* out_headers) {
   if (headers.len <= 0) {
     // Common case: no headers.
-    *out_headers = uri_parse::Component();
+    *out_headers = uri::Component();
   }
   else {
     // Write the headers.
@@ -184,31 +184,31 @@ void DoHeaders(const CHAR* spec,
 } // End of empty namespace
 
 bool CanonicalizeUserInfo(const char* username_source,
-                          const uri_parse::Component& username,
+                          const uri::Component& username,
                           const char* password_source,
-                          const uri_parse::Component& password,
+                          const uri::Component& password,
                           CanonOutput* output,
-                          uri_parse::Component* out_username,
-                          uri_parse::Component* out_password) {
+                          uri::Component* out_username,
+                          uri::Component* out_password) {
   return DoUserInfo(
       username_source, username, password_source, password,
       output, out_username, out_password);
 }
 
-bool CanonicalizeUserInfo(const char16* username_source,
-                          const uri_parse::Component& username,
-                          const char16* password_source,
-                          const uri_parse::Component& password,
+bool CanonicalizeUserInfo(const base::char16* username_source,
+                          const uri::Component& username,
+                          const base::char16* password_source,
+                          const uri::Component& password,
                           CanonOutput* output,
-                          uri_parse::Component* out_username,
-                          uri_parse::Component* out_password) {
+                          uri::Component* out_username,
+                          uri::Component* out_password) {
   return DoUserInfo(
       username_source, username, password_source, password,
       output, out_username, out_password);
 }
 
 int DefaultPortForScheme(const char* scheme, int scheme_len) {
-  int default_port = uri_parse::PORT_UNSPECIFIED;
+  int default_port = uri::PORT_UNSPECIFIED;
   switch (scheme_len) {
     case 3:
       if (!strncmp(scheme, "sip", scheme_len))
@@ -223,76 +223,76 @@ int DefaultPortForScheme(const char* scheme, int scheme_len) {
 }
 
 void CanonicalizeParameters(const char* spec,
-                            const uri_parse::Component& parameters,
+                            const uri::Component& parameters,
                             CharsetConverter* converter,
                             CanonOutput* output,
-                            uri_parse::Component* out_parameters) {
+                            uri::Component* out_parameters) {
   DoParameters(spec, parameters, converter, output, out_parameters);
 }
 
-void CanonicalizeParameters(const char16* spec,
-                            const uri_parse::Component& parameters,
+void CanonicalizeParameters(const base::char16* spec,
+                            const uri::Component& parameters,
                             CharsetConverter* converter,
                             CanonOutput* output,
-                            uri_parse::Component* out_parameters) {
+                            uri::Component* out_parameters) {
   DoParameters(spec, parameters, converter, output, out_parameters);
 }
 
 void CanonicalizeHeaders(const char* spec,
-                         const uri_parse::Component& headers,
+                         const uri::Component& headers,
                          CharsetConverter* converter,
                          CanonOutput* output,
-                         uri_parse::Component* out_headers) {
+                         uri::Component* out_headers) {
   DoHeaders(spec, headers, converter, output, out_headers);
 }
 
-void CanonicalizeHeaders(const char16* spec,
-                         const uri_parse::Component& headers,
+void CanonicalizeHeaders(const base::char16* spec,
+                         const uri::Component& headers,
                          CharsetConverter* converter,
                          CanonOutput* output,
-                         uri_parse::Component* out_headers) {
+                         uri::Component* out_headers) {
   DoHeaders(spec, headers, converter, output, out_headers);
 }
 
 bool CanonicalizeSipURI(const char* spec,
                         int spec_len,
-                        const uri_parse::Parsed& parsed,
+                        const uri::Parsed& parsed,
                         CharsetConverter* query_converter,
                         CanonOutput* output,
-                        uri_parse::Parsed* new_parsed) {
+                        uri::Parsed* new_parsed) {
   return DoCanonicalizeSipURI(URIComponentSource<char>(spec), parsed,
                               query_converter, output, new_parsed);
 }
 
-bool CanonicalizeSipURI(const char16* spec,
+bool CanonicalizeSipURI(const base::char16* spec,
                         int spec_len,
-                        const uri_parse::Parsed& parsed,
+                        const uri::Parsed& parsed,
                         CharsetConverter* query_converter,
                         CanonOutput* output,
-                        uri_parse::Parsed* new_parsed) {
-  return DoCanonicalizeSipURI(URIComponentSource<char16>(spec), parsed,
+                        uri::Parsed* new_parsed) {
+  return DoCanonicalizeSipURI(URIComponentSource<base::char16>(spec), parsed,
                               query_converter, output, new_parsed);
 }
 
 bool CanonicalizeTelURI(const char* spec,
                         int spec_len,
-                        const uri_parse::Parsed& parsed,
+                        const uri::Parsed& parsed,
                         CharsetConverter* query_converter,
                         CanonOutput* output,
-                        uri_parse::Parsed* new_parsed) {
+                        uri::Parsed* new_parsed) {
   return DoCanonicalizeTelURI(URIComponentSource<char>(spec), parsed,
                               query_converter, output, new_parsed);
 }
 
-bool CanonicalizeTelURI(const char16* spec,
+bool CanonicalizeTelURI(const base::char16* spec,
                         int spec_len,
-                        const uri_parse::Parsed& parsed,
+                        const uri::Parsed& parsed,
                         CharsetConverter* query_converter,
                         CanonOutput* output,
-                        uri_parse::Parsed* new_parsed) {
-  return DoCanonicalizeTelURI(URIComponentSource<char16>(spec), parsed,
+                        uri::Parsed* new_parsed) {
+  return DoCanonicalizeTelURI(URIComponentSource<base::char16>(spec), parsed,
                               query_converter, output, new_parsed);
 }
 
-} // End of uri_canon namespace
+} // End of uri namespace
 } // End of sippet namespace

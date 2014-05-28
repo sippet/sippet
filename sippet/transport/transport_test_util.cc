@@ -4,10 +4,10 @@
 
 #include "sippet/transport/transport_test_util.h"
 
-#include "base/string_util.h"
+#include "base/strings/string_util.h"
 #include "base/rand_util.h"
 
-#include "third_party/icu/public/i18n/unicode/regex.h"
+#include "third_party/icu/source/i18n/unicode/regex.h"
 
 namespace sippet {
 
@@ -287,11 +287,18 @@ int UDPChannelAdapter::Connect(
   net::AddressList addrlist;
   if (!ParseHostPortPair(destination, &addrlist))
     return net::ERR_UNEXPECTED;
+
   net::NetLog::Source no_source;
-  socket_.reset(socket_factory_->CreateDatagramClientSocket(
+  socket_ = socket_factory_->CreateDatagramClientSocket(
     net::DatagramSocket::DEFAULT_BIND, base::Bind(&base::RandInt),
-    net_log_, no_source));
-  return socket_->Connect(addrlist.front());
+    net_log_, no_source);
+  if (!socket_.get()) {
+    LOG(WARNING) << "Failed to create socket.";
+    return net::ERR_UNEXPECTED;
+  }
+  else {
+    return socket_->Connect(addrlist.front());
+  }
 }
 
 int UDPChannelAdapter::Read(
@@ -321,9 +328,15 @@ int TCPChannelAdapter::Connect(
   if (!ParseHostPortPair(destination, &addrlist))
     return net::ERR_UNEXPECTED;
   net::NetLog::Source no_source;
-  socket_.reset(socket_factory_->CreateTransportClientSocket(
-    addrlist, net_log_, no_source));
-  return socket_->Connect(callback);
+  socket_ = socket_factory_->CreateTransportClientSocket(
+    addrlist, net_log_, no_source);
+  if (!socket_.get()) {
+    LOG(WARNING) << "Failed to create socket.";
+    return net::ERR_UNEXPECTED;
+  }
+  else {
+    return socket_->Connect(callback);
+  }
 }
 
 int TCPChannelAdapter::Read(
@@ -344,7 +357,7 @@ TLSChannelAdapter::TLSChannelAdapter(net::ClientSocketFactory *socket_factory,
                                      net::NetLog *net_log)
   : socket_factory_(socket_factory), net_log_(net_log),
     cert_verifier_(new net::MockCertVerifier),
-    ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)) {
+    weak_factory_(this) {
   cert_verifier_->set_default_result(net::OK);
   context_.cert_verifier = cert_verifier_.get();
 }
@@ -358,8 +371,12 @@ int TLSChannelAdapter::Connect(
     return net::ERR_UNEXPECTED;
   net::NetLog::Source no_source;
   scoped_ptr<net::StreamSocket> inner_socket;
-  tcp_socket_.reset(socket_factory_->CreateTransportClientSocket(
-    addrlist_, net_log_, no_source));
+  tcp_socket_ = socket_factory_->CreateTransportClientSocket(
+    addrlist_, net_log_, no_source);
+  if (!tcp_socket_.get()) {
+    LOG(WARNING) << "Failed to create socket.";
+    return net::ERR_UNEXPECTED;
+  }
   int result = tcp_socket_->Connect(
     base::Bind(&TLSChannelAdapter::OnConnected, weak_factory_.GetWeakPtr()));
   if (result == net::ERR_IO_PENDING)
@@ -386,8 +403,15 @@ void TLSChannelAdapter::OnConnected(int result) {
   if (result == net::OK) {
     net::HostPortPair host_and_port(
       net::HostPortPair::FromIPEndPoint(addrlist_.front()));
-    ssl_socket_.reset(socket_factory_->CreateSSLClientSocket(
-      tcp_socket_.get(), host_and_port, kDefaultSSLConfig, context_));
+
+    scoped_ptr<net::ClientSocketHandle> connection(new net::ClientSocketHandle);
+    connection->SetSocket(tcp_socket_.Pass());
+
+    ssl_socket_ = socket_factory_->CreateSSLClientSocket(
+      connection.Pass(), host_and_port, kDefaultSSLConfig, context_);
+    if (!ssl_socket_.get()) {
+      LOG(WARNING) << "Failed to create socket.";
+    }
   }
   if (!connect_callback_.is_null()) {
     connect_callback_.Run(result);
@@ -402,7 +426,7 @@ MockChannel::MockChannel(MockChannelAdapter *channel_adapter,
       delegate_(delegate),
       is_connected_(false),
       is_stream_(is_stream),
-      ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)),
+      weak_factory_(this),
       destination_(destination),
       origin_(net::HostPortPair("192.0.2.33", 123),
               destination.protocol()) {}
@@ -437,7 +461,7 @@ void MockChannel::Connect() {
     base::Bind(&MockChannel::OnConnected, this));
   if (result == net::OK) {
     // When using UDP, the connect event will occur in the next event loop.
-    MessageLoop::current()->PostTask(FROM_HERE,
+    base::MessageLoop::current()->PostTask(FROM_HERE,
       base::Bind(&MockChannel::OnConnected, this, net::OK));
   }
 }

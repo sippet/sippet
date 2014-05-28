@@ -11,7 +11,7 @@
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/param_setters.h"
 #include "sippet/base/raw_ostream.h"
-#include "googleurl/src/gurl.h"
+#include "url/gurl.h"
 
 namespace sippet {
 

@@ -7,7 +7,7 @@
 
 #include <string>
 #include "base/basictypes.h"
-#include "base/string_number_conversions.h"
+#include "base/strings/string_number_conversions.h"
 #include "sippet/base/format.h"
 #include "sippet/base/raw_ostream.h"
 

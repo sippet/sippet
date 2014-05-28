@@ -6,7 +6,7 @@
 #define SIPPET_MESSAGE_PARSER_TOKENIZER_H_
 
 #include <string>
-#include "base/string_piece.h"
+#include "base/strings/string_piece.h"
 
 namespace sippet {
 

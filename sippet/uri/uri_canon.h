@@ -5,18 +5,18 @@
 #ifndef SIPPET_MESSAGE_CANON_H_
 #define SIPPET_MESSAGE_CANON_H_
 
-#include "sippet/uri/uri_parse.h"
+#include "sippet/uri/uri.h"
 
 namespace sippet {
-namespace uri_canon {
+namespace uri {
 
 // Normally, all canonicalization output is in narrow characters. We support
 // the templates so it can also be used internally if a wide buffer is
 // required.
-using url_canon::CanonOutput;
-using url_canon::CanonOutputW;
-using url_canon::RawCanonOutput;
-using url_canon::RawCanonOutputW;
+using url::CanonOutput;
+using url::CanonOutputW;
+using url::RawCanonOutput;
+using url::RawCanonOutputW;
 
 // Character set converter ----------------------------------------------------
 //
@@ -25,7 +25,7 @@ using url_canon::RawCanonOutputW;
 // conversion libraries.
 //
 // Embedders will want to see the unit test for the ICU version.
-using url_canon::CharsetConverter;
+using url::CharsetConverter;
 
 // Whitespace -----------------------------------------------------------------
 
@@ -48,13 +48,13 @@ inline
 const char* RemoveURIWhitespace(const char* input, int input_len,
                                 CanonOutput* buffer,
                                 int* output_len) {
-  return url_canon::RemoveURLWhitespace(input, input_len, buffer, output_len);
+  return url::RemoveURLWhitespace(input, input_len, buffer, output_len);
 }
 inline
-const char16* RemoveURLWhitespace(const char16* input, int input_len,
-                                  CanonOutputW* buffer,
-                                  int* output_len) {
-  return url_canon::RemoveURLWhitespace(input, input_len, buffer, output_len);
+const base::char16* RemoveURLWhitespace(const base::char16* input, int input_len,
+                                        CanonOutputW* buffer,
+                                        int* output_len) {
+  return url::RemoveURLWhitespace(input, input_len, buffer, output_len);
 }
 
 // IDN ------------------------------------------------------------------------
@@ -69,8 +69,8 @@ const char16* RemoveURLWhitespace(const char16* input, int input_len,
 //
 // On error, returns false. The output in this case is undefined.
 inline
-bool IDNToASCII(const char16* src, int src_len, CanonOutputW* output) {
-  return url_canon::IDNToASCII(src, src_len, output);
+bool IDNToASCII(const base::char16* src, int src_len, CanonOutputW* output) {
+  return url::IDNToASCII(src, src_len, output);
 }
 
 // Piece-by-piece canonicalizers ----------------------------------------------
@@ -99,17 +99,17 @@ bool IDNToASCII(const char16* src, int src_len, CanonOutputW* output) {
 // The 8-bit version requires UTF-8 encoding.
 inline
 bool CanonicalizeScheme(const char* spec,
-                        const uri_parse::Component& scheme,
+                        const uri::Component& scheme,
                         CanonOutput* output,
-                        uri_parse::Component* out_scheme) {
-  return url_canon::CanonicalizeScheme(spec, scheme, output, out_scheme);
+                        uri::Component* out_scheme) {
+  return url::CanonicalizeScheme(spec, scheme, output, out_scheme);
 }
 inline
-bool CanonicalizeScheme(const char16* spec,
-                        const uri_parse::Component& scheme,
+bool CanonicalizeScheme(const base::char16* spec,
+                        const uri::Component& scheme,
                         CanonOutput* output,
-                        uri_parse::Component* out_scheme) {
-  return url_canon::CanonicalizeScheme(spec, scheme, output, out_scheme);
+                        uri::Component* out_scheme) {
+  return url::CanonicalizeScheme(spec, scheme, output, out_scheme);
 }
 
 // User info: username/password. If present, this will add the delimiters so
@@ -126,23 +126,23 @@ bool CanonicalizeScheme(const char16* spec,
 // These versions differ from the HTTP URLs due to differences in character
 // escaping.
 bool CanonicalizeUserInfo(const char* username_source,
-                          const uri_parse::Component& username,
+                          const uri::Component& username,
                           const char* password_source,
-                          const uri_parse::Component& password,
+                          const uri::Component& password,
                           CanonOutput* output,
-                          uri_parse::Component* out_username,
-                          uri_parse::Component* out_password);
-bool CanonicalizeUserInfo(const char16* username_source,
-                          const uri_parse::Component& username,
-                          const char16* password_source,
-                          const uri_parse::Component& password,
+                          uri::Component* out_username,
+                          uri::Component* out_password);
+bool CanonicalizeUserInfo(const base::char16* username_source,
+                          const uri::Component& username,
+                          const base::char16* password_source,
+                          const uri::Component& password,
                           CanonOutput* output,
-                          uri_parse::Component* out_username,
-                          uri_parse::Component* out_password);
+                          uri::Component* out_username,
+                          uri::Component* out_password);
 
 // This structure holds detailed state exported from the IP/Host canonicalizers.
 // Additional fields may be added as callers require them.
-using url_canon::CanonHostInfo;
+using url::CanonHostInfo;
 
 // Host.
 //
@@ -150,17 +150,17 @@ using url_canon::CanonHostInfo;
 // need to know whether canonicalization succeeded.
 inline
 bool CanonicalizeHost(const char* spec,
-                      const uri_parse::Component& host,
+                      const uri::Component& host,
                       CanonOutput* output,
-                      uri_parse::Component* out_host) {
-  return url_canon::CanonicalizeHost(spec, host, output, out_host);
+                      uri::Component* out_host) {
+  return url::CanonicalizeHost(spec, host, output, out_host);
 }
 inline
-bool CanonicalizeHost(const char16* spec,
-                      const uri_parse::Component& host,
+bool CanonicalizeHost(const base::char16* spec,
+                      const uri::Component& host,
                       CanonOutput* output,
-                      uri_parse::Component* out_host) {
-  return url_canon::CanonicalizeHost(spec, host, output, out_host);
+                      uri::Component* out_host) {
+  return url::CanonicalizeHost(spec, host, output, out_host);
 }
 
 // Extended version of CanonicalizeHost, which returns additional information.
@@ -169,17 +169,17 @@ bool CanonicalizeHost(const char16* spec,
 // definition of CanonHostInfo above for details.
 inline
 void CanonicalizeHostVerbose(const char* spec,
-                             const uri_parse::Component& host,
+                             const uri::Component& host,
                              CanonOutput* output,
                              CanonHostInfo* host_info) {
-  return url_canon::CanonicalizeHostVerbose(spec, host, output, host_info);
+  return url::CanonicalizeHostVerbose(spec, host, output, host_info);
 }
 inline
-void CanonicalizeHostVerbose(const char16* spec,
-                             const uri_parse::Component& host,
+void CanonicalizeHostVerbose(const base::char16* spec,
+                             const uri::Component& host,
                              CanonOutput* output,
                              CanonHostInfo* host_info) {
-  return url_canon::CanonicalizeHostVerbose(spec, host, output, host_info);
+  return url::CanonicalizeHostVerbose(spec, host, output, host_info);
 }
 
 // IP addresses.
@@ -194,41 +194,41 @@ void CanonicalizeHostVerbose(const char16* spec,
 // necessary or wise to call this directly.
 inline
 void CanonicalizeIPAddress(const char* spec,
-                           const uri_parse::Component& host,
+                           const uri::Component& host,
                            CanonOutput* output,
                            CanonHostInfo* host_info) {
-  return url_canon::CanonicalizeIPAddress(spec, host, output, host_info);
+  return url::CanonicalizeIPAddress(spec, host, output, host_info);
 }
 inline
-void CanonicalizeIPAddress(const char16* spec,
-                           const uri_parse::Component& host,
+void CanonicalizeIPAddress(const base::char16* spec,
+                           const uri::Component& host,
                            CanonOutput* output,
                            CanonHostInfo* host_info) {
-  return url_canon::CanonicalizeIPAddress(spec, host, output, host_info);
+  return url::CanonicalizeIPAddress(spec, host, output, host_info);
 }
 
 // Port: this function will add the colon for the port if a port is present.
-// The caller can pass uri_parse::PORT_UNSPECIFIED as the
+// The caller can pass uri::PORT_UNSPECIFIED as the
 // default_port_for_scheme argument if there is no default port.
 //
 // The 8-bit version requires UTF-8 encoding.
 inline
 bool CanonicalizePort(const char* spec,
-                      const uri_parse::Component& port,
+                      const uri::Component& port,
                       int default_port_for_scheme,
                       CanonOutput* output,
-                      uri_parse::Component* out_port) {
-  return url_canon::CanonicalizePort(spec, port, default_port_for_scheme,
-                                     output, out_port);
+                      uri::Component* out_port) {
+  return url::CanonicalizePort(spec, port, default_port_for_scheme,
+                               output, out_port);
 }
 inline
-bool CanonicalizePort(const char16* spec,
-                      const uri_parse::Component& port,
+bool CanonicalizePort(const base::char16* spec,
+                      const uri::Component& port,
                       int default_port_for_scheme,
                       CanonOutput* output,
-                      uri_parse::Component* out_port) {
-  return url_canon::CanonicalizePort(spec, port, default_port_for_scheme,
-                                     output, out_port);
+                      uri::Component* out_port) {
+  return url::CanonicalizePort(spec, port, default_port_for_scheme,
+                               output, out_port);
 }
 
 // Returns the default port for the given canonical scheme, or PORT_UNSPECIFIED
@@ -244,15 +244,15 @@ int DefaultPortForScheme(const char* scheme, int scheme_len);
 // the parameters that the server expects (we'll escape high-bit characters),
 // so if something is invalid, it's their problem.
 void CanonicalizeParameters(const char* spec,
-                            const uri_parse::Component& parameters,
+                            const uri::Component& parameters,
                             CharsetConverter* converter,
                             CanonOutput* output,
-                            uri_parse::Component* out_parameters);
-void CanonicalizeParameters(const char16* spec,
-                            const uri_parse::Component& parameters,
+                            uri::Component* out_parameters);
+void CanonicalizeParameters(const base::char16* spec,
+                            const uri::Component& parameters,
                             CharsetConverter* converter,
                             CanonOutput* output,
-                            uri_parse::Component* out_parameters);
+                            uri::Component* out_parameters);
 
 // Headers: Prepends the ? if needed.
 //
@@ -267,15 +267,15 @@ void CanonicalizeParameters(const char16* spec,
 //
 // The converter can be NULL. In this case, the output encoding will be UTF-8.
 void CanonicalizeHeaders(const char* spec,
-                         const uri_parse::Component& headers,
+                         const uri::Component& headers,
                          CharsetConverter* converter,
                          CanonOutput* output,
-                         uri_parse::Component* out_headers);
-void CanonicalizeHeaders(const char16* spec,
-                         const uri_parse::Component& headers,
+                         uri::Component* out_headers);
+void CanonicalizeHeaders(const base::char16* spec,
+                         const uri::Component& headers,
                          CharsetConverter* converter,
                          CanonOutput* output,
-                         uri_parse::Component* out_headers);
+                         uri::Component* out_headers);
 
 // Full canonicalizer ---------------------------------------------------------
 //
@@ -290,83 +290,32 @@ void CanonicalizeHeaders(const char16* spec,
 // Use for SIP-URIs.
 bool CanonicalizeSipURI(const char* spec,
                         int spec_len,
-                        const uri_parse::Parsed& parsed,
+                        const uri::Parsed& parsed,
                         CharsetConverter* query_converter,
                         CanonOutput* output,
-                        uri_parse::Parsed* new_parsed);
-bool CanonicalizeSipURI(const char16* spec,
+                        uri::Parsed* new_parsed);
+bool CanonicalizeSipURI(const base::char16* spec,
                         int spec_len,
-                        const uri_parse::Parsed& parsed,
+                        const uri::Parsed& parsed,
                         CharsetConverter* query_converter,
                         CanonOutput* output,
-                        uri_parse::Parsed* new_parsed);
+                        uri::Parsed* new_parsed);
 
 // Use for tel URIs.
 bool CanonicalizeTelURI(const char* spec,
                         int spec_len,
-                        const uri_parse::Parsed& parsed,
+                        const uri::Parsed& parsed,
                         CharsetConverter* query_converter,
                         CanonOutput* output,
-                        uri_parse::Parsed* new_parsed);
-bool CanonicalizeTelURI(const char16* spec,
+                        uri::Parsed* new_parsed);
+bool CanonicalizeTelURI(const base::char16* spec,
                         int spec_len,
-                        const uri_parse::Parsed& parsed,
+                        const uri::Parsed& parsed,
                         CharsetConverter* query_converter,
                         CanonOutput* output,
-                        uri_parse::Parsed* new_parsed);
+                        uri::Parsed* new_parsed);
 
-// Part replacer --------------------------------------------------------------
-
-// Internal structure used for storing separate strings for each component.
-// The basic canonicalization functions use this structure internally so that
-// component replacement (different strings for different components) can be
-// treated on the same code path as regular canonicalization (the same string
-// for each component).
-//
-// A uri_parse::Parsed structure usually goes along with this. Those
-// components identify offsets within these strings, so that they can all be
-// in the same string, or spread arbitrarily across different ones.
-//
-// This structures does not own any data. It is the caller's responsibility to
-// ensure that the data the pointers point to stays in scope and is not
-// modified.
-template<typename CHAR>
-struct URIComponentSource {
-  // Constructor normally used by callers wishing to replace components. This
-  // will make them all NULL, which is no replacement. The caller would then
-  // override the components they want to replace.
-  URIComponentSource()
-      : scheme(NULL),
-        username(NULL),
-        password(NULL),
-        host(NULL),
-        port(NULL),
-        parameters(NULL),
-        headers(NULL) {
-  }
-
-  // Constructor normally used internally to initialize all the components to
-  // point to the same spec.
-  explicit URIComponentSource(const CHAR* default_value)
-      : scheme(default_value),
-        username(default_value),
-        password(default_value),
-        host(default_value),
-        port(default_value),
-        parameters(default_value),
-        headers(default_value) {
-  }
-
-  const CHAR* scheme;
-  const CHAR* username;
-  const CHAR* password;
-  const CHAR* host;
-  const CHAR* port;
-  const CHAR* parameters;
-  const CHAR* headers;
-};
-
-} // End of uri_canon namespace
+} // End of uri namespace
 } // End of sippet namespace
 
 #endif // SIPPET_MESSAGE_CANON_H_

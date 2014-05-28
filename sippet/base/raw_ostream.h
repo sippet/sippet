@@ -42,7 +42,7 @@
 #define SIPPET_BASE_RAW_OSTREAM_H_
 
 #include <string>
-#include "base/string_piece.h"
+#include "base/strings/string_piece.h"
 #include "base/basictypes.h"
 
 namespace sippet {
