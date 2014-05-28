@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "sippet/uri/uri.h"
 #include "sippet/uri/uri_parse.h"
-#include "sippet/uri/uri_util.h"
 #include "sippet/uri/uri_parse_internal.h"
 
 #include "base/logging.h"
-#include "base/string_util.h"
+#include "base/strings/string_util.h"
 
 namespace sippet {
-namespace uri_parse {
+namespace uri {
 
 namespace {
 
@@ -48,7 +48,7 @@ bool DoExtractParametersKeyValue(const CHAR* spec,
     cur++;
 
   // Save the new query
-  *query = uri_parse::MakeRange(cur, end);
+  *query = uri::MakeRange(cur, end);
   return true;
 }
 
@@ -141,7 +141,7 @@ int Parsed::CountCharactersBefore(ComponentType type,
 }
 
 // This handles everything that may be an authority terminator.
-bool IsAuthorityTerminator(char16 ch) {
+bool IsAuthorityTerminator(base::char16 ch) {
   return ch == ';' || ch == '?';
 }
 
@@ -237,9 +237,9 @@ void DoParseAfterScheme(const CHAR* spec,
     remaining = Component(end_auth, spec_len - end_auth);
 
   // Now parse those two sub-parts.
-  uri_parse::ParseAuthority(spec, authority, &parsed->username, &parsed->password,
+  uri::ParseAuthority(spec, authority, &parsed->username, &parsed->password,
                             &parsed->host, &parsed->port);
-  uri_parse::ParseAfterAuthorityInternal(spec, remaining, &parsed->parameters,
+  uri::ParseAfterAuthorityInternal(spec, remaining, &parsed->parameters,
                                          &parsed->headers);
 }
 
@@ -250,10 +250,10 @@ void DoParseSipURI(const CHAR* spec, int spec_len, Parsed* parsed) {
 
   // Strip leading & trailing spaces and control characters.
   int begin = 0;
-  uri_parse::TrimURI(spec, &begin, &spec_len);
+  uri::TrimURI(spec, &begin, &spec_len);
 
   int after_scheme;
-  if (uri_parse::ExtractScheme(spec, spec_len, &parsed->scheme)) {
+  if (uri::ExtractScheme(spec, spec_len, &parsed->scheme)) {
     after_scheme = parsed->scheme.end() + 1;  // Skip past the colon.
     DoParseAfterScheme(spec, spec_len, after_scheme, parsed);
   }
@@ -269,10 +269,10 @@ void DoParseTelURI(const CHAR* spec, int spec_len, Parsed* parsed) {
 
   // Strip leading & trailing spaces and control characters.
   int begin = 0;
-  uri_parse::TrimURI(spec, &begin, &spec_len);
+  uri::TrimURI(spec, &begin, &spec_len);
 
   int after_scheme;
-  if (uri_parse::ExtractScheme(spec, spec_len, &parsed->scheme)) {
+  if (uri::ExtractScheme(spec, spec_len, &parsed->scheme)) {
     after_scheme = parsed->scheme.end() + 1;  // Skip past the colon.
 
     // First split into two main parts, the telephone-subscriber
@@ -307,7 +307,7 @@ void ParseSipURI(const char* uri, int uri_len, Parsed* parsed) {
   DoParseSipURI(uri, uri_len, parsed);
 }
 
-void ParseSipURI(const char16* uri, int uri_len, Parsed* parsed) {
+void ParseSipURI(const base::char16* uri, int uri_len, Parsed* parsed) {
   DoParseSipURI(uri, uri_len, parsed);
 }
 
@@ -315,7 +315,7 @@ void ParseTelURI(const char* uri, int uri_len, Parsed* parsed) {
   DoParseTelURI(uri, uri_len, parsed);
 }
 
-void ParseTelURI(const char16* uri, int uri_len, Parsed* parsed) {
+void ParseTelURI(const base::char16* uri, int uri_len, Parsed* parsed) {
   DoParseTelURI(uri, uri_len, parsed);
 }
 
@@ -326,7 +326,7 @@ bool ExtractParametersKeyValue(const char* uri,
   return DoExtractParametersKeyValue(uri, query, key, value);
 }
 
-bool ExtractParametersKeyValue(const char16* uri,
+bool ExtractParametersKeyValue(const base::char16* uri,
                                Component* query,
                                Component* key,
                                Component* value) {
@@ -340,7 +340,7 @@ void ParseAfterAuthorityInternal(const char* spec,
   return DoParseAfterAuthority(spec, remaining, parameters, headers);
 }
 
-void ParseAfterAuthorityInternal(const char16* spec,
+void ParseAfterAuthorityInternal(const base::char16* spec,
                                  const Component& remaining,
                                  Component* parameters,
                                  Component* headers) {
@@ -354,12 +354,12 @@ void ParseAfterScheme(const char* spec,
   DoParseAfterScheme(spec, spec_len, after_scheme, parsed);
 }
 
-void ParseAfterScheme(const char16* spec,
+void ParseAfterScheme(const base::char16* spec,
                       int spec_len,
                       int after_scheme,
                       Parsed* parsed) {
   DoParseAfterScheme(spec, spec_len, after_scheme, parsed);
 }
 
-} // End of uri_parse namespace
+} // End of uri namespace
 } // End of sippet namespace

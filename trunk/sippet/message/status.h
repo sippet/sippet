@@ -6,7 +6,7 @@
 #define SIPPET_MESSAGE_STATUS_H_
 
 #include "sippet/message/atom.h"
-#include "base/string_util.h"
+#include "base/strings/string_util.h"
 
 namespace sippet {
 

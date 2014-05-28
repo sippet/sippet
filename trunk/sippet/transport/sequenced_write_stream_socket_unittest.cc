@@ -14,7 +14,7 @@ using namespace sippet;
 class StreamChannelTest : public testing::Test {
  public:
   void Finish() {
-    MessageLoop::current()->RunUntilIdle();
+    base::MessageLoop::current()->RunUntilIdle();
     EXPECT_TRUE(data_->at_read_eof());
     EXPECT_TRUE(data_->at_write_eof());
   }
@@ -28,7 +28,7 @@ class StreamChannelTest : public testing::Test {
     }
     net::DeterministicMockTCPClientSocket* wrapped_socket =
         new net::DeterministicMockTCPClientSocket(net_log_.net_log(), data_.get());
-    data_->set_socket(wrapped_socket->AsWeakPtr());
+    data_->set_socket(wrapped_socket);
     socket_.reset(new SequencedWriteStreamSocket(wrapped_socket));
     socket_->Connect(callback_.callback());
   }

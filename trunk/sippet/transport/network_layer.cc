@@ -5,7 +5,7 @@
 #include "sippet/transport/network_layer.h"
 
 #include "base/stl_util.h"
-#include "base/string_util.h"
+#include "base/strings/string_util.h"
 #include "net/base/net_errors.h"
 #include "sippet/message/headers/via.h"
 #include "sippet/message/headers/cseq.h"
@@ -22,7 +22,7 @@ NetworkLayer::NetworkLayer(Delegate *delegate,
   : delegate_(delegate),
     network_settings_(network_settings),
     suspended_(false),
-    ALLOW_THIS_IN_INITIALIZER_LIST(weak_factory_(this)) {
+    weak_factory_(this) {
   DCHECK(delegate);
 }
 

@@ -34,7 +34,7 @@
 #define SIPPET_MESSAGE_HEADERS_BITS_AUTH_SETTERS_H_
 
 #include <string>
-#include "base/stringprintf.h"
+#include "base/strings/stringprintf.h"
 
 namespace sippet {
 

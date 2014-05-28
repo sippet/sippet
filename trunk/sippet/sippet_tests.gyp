@@ -18,7 +18,7 @@
         '<(DEPTH)/third_party',
       ],
       'sources': [
-        '../net/base/run_all_unittests.cc',
+        '../net/test/run_all_unittests.cc',
         'message/message_unittest.cc',
         'message/headers_unittest.cc',
         'message/parser_unittest.cc',

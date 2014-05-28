@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 #include "sippet/uri/uri_canon.h"
-#include "googleurl/src/url_canon_internal.h"
+#include "url/url_canon_internal.h"
 
 namespace sippet {
-namespace uri_canon {
+namespace uri {
 
 // Character type handling -----------------------------------------------------
 
@@ -37,16 +37,16 @@ inline bool IsCharOfType(unsigned char c, SharedCharTypes type) {
   return !!(kSharedCharTypeTable[c] & type);
 }
 inline bool IsQueryChar(unsigned char c) {
-  return url_canon::IsQueryChar(c);
+  return url::IsQueryChar(c);
 }
 inline bool IsIPv4Char(unsigned char c) {
-  return url_canon::IsIPv4Char(c);
+  return url::IsIPv4Char(c);
 }
 inline bool IsHexChar(unsigned char c) {
-  return url_canon::IsHexChar(c);
+  return url::IsHexChar(c);
 }
 inline bool IsComponentChar(unsigned char c) {
-  return url_canon::IsComponentChar(c);
+  return url::IsComponentChar(c);
 }
 inline bool IsUserInfoChar(unsigned char c) {
   return IsCharOfType(c, CHAR_USERINFO);
@@ -63,7 +63,7 @@ inline bool IsHeadersChar(unsigned char c) {
 void AppendStringOfType(const char* source, int length,
                         SharedCharTypes type,
                         CanonOutput* output);
-void AppendStringOfType(const char16* source, int length,
+void AppendStringOfType(const base::char16* source, int length,
                         SharedCharTypes type,
                         CanonOutput* output);
 
@@ -81,7 +81,7 @@ void AppendStringOfType(const char16* source, int length,
 inline
 bool ReadUTFChar(const char* str, int* begin, int length,
                  unsigned* code_point_out) {
-  return url_canon::ReadUTFChar(str, begin, length, code_point_out);
+  return url::ReadUTFChar(str, begin, length, code_point_out);
 }
 
 // UTF-16 functions -----------------------------------------------------------
@@ -95,10 +95,10 @@ bool ReadUTFChar(const char* str, int* begin, int length,
 // can be incremented in a loop and will be ready for the next character.
 // (for a single-16-bit-word character, it will not be changed).
 inline
-bool ReadUTFChar(const char16* str, int* begin, int length,
+bool ReadUTFChar(const base::char16* str, int* begin, int length,
                  unsigned* code_point) {
-  return url_canon::ReadUTFChar(str, begin, length, code_point);
+  return url::ReadUTFChar(str, begin, length, code_point);
 }
 
-} // End of uri_canon namespace
+} // End of uri namespace
 } // End of sippet namespace
