@@ -10,11 +10,11 @@
 namespace sippet {
 namespace uri {
 
-using url::Component;
-using url::SpecialPort;
-using url::PORT_UNSPECIFIED;
-using url::PORT_INVALID;
-using url::MakeRange;
+using url_parse::Component;
+using url_parse::SpecialPort;
+using url_parse::PORT_UNSPECIFIED;
+using url_parse::PORT_INVALID;
+using url_parse::MakeRange;
 
 // Part replacer --------------------------------------------------------------
 
@@ -203,11 +203,11 @@ void ParseTelURI(const base::char16* uri, int uri_len, Parsed* parsed);
 // The 8-bit version requires UTF-8 encoding.
 inline
 bool ExtractScheme(const char* uri, int uri_len, Component* scheme) {
-  return url::ExtractScheme(uri, uri_len, scheme);
+  return url_parse::ExtractScheme(uri, uri_len, scheme);
 }
 inline
 bool ExtractScheme(const base::char16* uri, int uri_len, Component* scheme) {
-  return url::ExtractScheme(uri, uri_len, scheme);
+  return url_parse::ExtractScheme(uri, uri_len, scheme);
 }
 
 // Does a best effort parse of input |spec|, in range |auth|. If a particular
@@ -219,7 +219,7 @@ void ParseAuthority(const char* spec,
                     Component* password,
                     Component* hostname,
                     Component* port_num) {
-  return url::ParseAuthority(spec, auth, username,
+  return url_parse::ParseAuthority(spec, auth, username,
                                    password, hostname, port_num);
 }
 inline
@@ -229,7 +229,7 @@ void ParseAuthority(const base::char16* spec,
                     Component* password,
                     Component* hostname,
                     Component* port_num) {
-  return url::ParseAuthority(spec, auth, username,
+  return url_parse::ParseAuthority(spec, auth, username,
                                    password, hostname, port_num);
 }
 

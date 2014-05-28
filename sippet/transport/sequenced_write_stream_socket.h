@@ -36,8 +36,8 @@ class NET_EXPORT_PRIVATE SequencedWriteStreamSocket : public net::StreamSocket {
                    const net::CompletionCallback& callback) OVERRIDE;
   virtual int Write(net::IOBuffer* buf, int buf_len,
                     const net::CompletionCallback& callback) OVERRIDE;
-  virtual int SetReceiveBufferSize(int32 size) OVERRIDE;
-  virtual int SetSendBufferSize(int32 size) OVERRIDE;
+  virtual bool SetReceiveBufferSize(int32 size) OVERRIDE;
+  virtual bool SetSendBufferSize(int32 size) OVERRIDE;
 
   // StreamSocket interface
   virtual int Connect(const net::CompletionCallback& callback) OVERRIDE;

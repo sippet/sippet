@@ -135,7 +135,7 @@ bool DoUserInfo(const CHAR* username_spec,
                        CHAR_USERINFO, output);
     out_password->len = output->length() - out_password->begin;
   } else {
-    *out_password = url::Component();
+    *out_password = url_parse::Component();
   }
 
   output->push_back('@');

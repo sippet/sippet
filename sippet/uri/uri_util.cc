@@ -30,10 +30,10 @@ bool DoCanonicalize(const CHAR* in_spec, int in_spec_len,
                     uri::Parsed* output_parsed) {
   // Remove any whitespace from the middle of the relative URL, possibly
   // copying to the new buffer.
-  url::RawCanonOutputT<CHAR> whitespace_buffer;
+  url_canon::RawCanonOutputT<CHAR> whitespace_buffer;
   int spec_len;
-  const CHAR* spec = url::RemoveURLWhitespace(in_spec, in_spec_len,
-                                              &whitespace_buffer, &spec_len);
+  const CHAR* spec = url_canon::RemoveURLWhitespace(in_spec, in_spec_len,
+                                                    &whitespace_buffer, &spec_len);
 
   uri::Parsed parsed_input;
   uri::Component scheme;

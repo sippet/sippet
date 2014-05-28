@@ -12,7 +12,7 @@ vars = {
   "sourceforge_url": "http://%(repo)s.svn.sourceforge.net/svnroot/%(repo)s",
   "chromium_trunk": "http://src.chromium.org/chrome/trunk",
 
-  "chromium_revision": "272606",
+  "chromium_revision": "238260",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -49,17 +49,11 @@ deps = {
   "v8":
     From("chromium_deps", "src/v8"),
 
-  "gin":
-    Var("chromium_trunk") + "/src/gin@" + Var("chromium_revision"),
-
   "url":
     Var("chromium_trunk") + "/src/url@" + Var("chromium_revision"),
 
   "chrome/tools/build":
     Var("chromium_trunk") + "/src/chrome/tools/build@" + Var("chromium_revision"),
-
-  "chrome":
-    File(Var("chromium_trunk") + "/src/chrome/VERSION@" + Var("chromium_revision")),
 
   "testing":
     Var("chromium_trunk") + "/src/testing@" + Var("chromium_revision"),
@@ -69,9 +63,6 @@ deps = {
 
   "testing/gmock":
     From("chromium_deps", "src/testing/gmock"),
-
-  "third_party/libjingle/source/talk":
-    From("chromium_deps", "src/third_party/libjingle/source/talk"),
 
   "third_party/icu":
     From("chromium_deps", "src/third_party/icu"),
@@ -97,14 +88,8 @@ deps = {
   "third_party/libxml":
     Var("chromium_trunk") + "/src/third_party/libxml@" + Var("chromium_revision"),
 
-  "third_party/openssl":
-    From("chromium_deps", "src/third_party/openssl"),
-
-  "third_party/clang_format":
-    Var("chromium_trunk") + "/src/third_party/clang_format@" + Var("chromium_revision"),
-
-  "third_party/clang_format/script":
-    From("chromium_deps", "src/third_party/clang_format/script"),
+  "tools":
+    File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
 
   "tools/clang":
     Var("chromium_trunk") + "/src/tools/clang@" + Var("chromium_revision"),
@@ -139,7 +124,7 @@ deps = {
 deps_os = {
   "win": {
     "third_party/cygwin":
-      (Var("googlecode_url") % "webrtc") + "/deps/third_party/cygwin@231940",
+      From("chromium_deps", "src/third_party/cygwin"),
 
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
@@ -152,23 +137,42 @@ deps_os = {
       From("chromium_deps", "src/third_party/nss"),
   },
 
+  "ios": {
+    # NSS, for SSLClientSocketNSS.
+    "third_party/nss":
+      From("chromium_deps", "src/third_party/nss"),
+
+    "net/third_party/nss":
+      Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
+
+    # class-dump utility to generate header files for undocumented SDKs.
+    "testing/iossim/third_party/class-dump":
+      From("chromium_deps", "src/testing/iossim/third_party/class-dump"),
+
+    # Helper for running under the simulator.
+    "testing/iossim":
+      Var("chromium_trunk") + "/src/testing/iossim@" + Var("chromium_revision"),
+  },
+
   "unix": {
+    "third_party/gold":
+      From("chromium_deps", "src/third_party/gold"),
+
     "third_party/openssl":
       From("chromium_deps", "src/third_party/openssl"),
-
-    "third_party/libevent":
-      Var("chromium_trunk") + "/src/third_party/libevent@" + Var("chromium_revision"),
-
-    "tools/xdisplaycheck":
-      Var("chromium_trunk") + "/src/tools/xdisplaycheck@" + Var("chromium_revision"),
-
-    "tools/generate_library_loader":
-      Var("chromium_trunk") + "/src/tools/generate_library_loader@" + Var("chromium_revision"),
   },
 
   "android": {
+    # Precompiled tools needed for Android test execution. Needed since we can't
+    # compile them from source in WebRTC since they depend on Chromium's base.
+    "tools/android":
+      (Var("googlecode_url") % "webrtc") + "/deps/tools/android@4258",
+
     "third_party/android_tools":
       From("chromium_deps", "src/third_party/android_tools"),
+
+    "third_party/android_testrunner":
+      Var("chromium_trunk") + "/src/third_party/android_testrunner@" + Var("chromium_revision"),
 
     "third_party/openssl":
       From("chromium_deps", "src/third_party/openssl"),
@@ -176,158 +180,22 @@ deps_os = {
 }
 
 
-include_rules = [
-  "+base",
-  "+build",
-
-  "+testing",
-  "+third_party/icu/source/common/unicode",
-  "+third_party/icu/source/i18n/unicode",
-  "+url",
-]
-
-
 hooks = [
   {
-    # This downloads binaries for Native Client's newlib toolchain.
-    # Done in lieu of building the toolchain from scratch as it can take
-    # anywhere from 30 minutes to 4 hours depending on platform to build.
-    "name": "nacltools",
+    # Pull clang on mac. If nothing changed, or on non-mac platforms, this takes
+    # zero seconds to run. If something changed, it downloads a prebuilt clang.
     "pattern": ".",
-    "action": [
-        "python", "trunk/build/download_nacl_toolchains.py",
-        "--exclude", "arm_trusted",
-    ],
+    "action": ["python", Var("root_dir") + "/tools/clang/scripts/update.py",
+               "--mac-only"],
   },
   {
-    # Downloads an ARM sysroot image to trunk/arm-sysroot. This image updates
-    # at about the same rate that the chrome build deps change.
-    # This script is a no-op except for linux users who have
-    # target_arch=arm in their GYP_DEFINES.
-    "name": "sysroot",
+    # Update the cygwin mount on Windows.
+    # This is necessary to get the correct mapping between e.g. /bin and the
+    # cygwin path on Windows. Without it we can't run bash scripts in actions.
+    # Ideally this should be solved in "pylib/gyp/msvs_emulation.py".
     "pattern": ".",
-    "action": ["python", "trunk/build/linux/install-arm-sysroot.py",
-               "--linux-only"],
-  },
-  {
-    # Pull clang if on Mac or clang is requested via GYP_DEFINES.
-    "name": "clang",
-    "pattern": ".",
-    "action": ["python", "trunk/tools/clang/scripts/update.py", "--if-needed"],
-  },
-  {
-    # Update the Windows toolchain if necessary.
-    "name": "win_toolchain",
-    "pattern": ".",
-    "action": ["python", "trunk/build/vs_toolchain.py", "update"],
-  },
-  {
-    # Update LASTCHANGE. This is also run by export_tarball.py in
-    # trunk/tools/export_tarball - please keep them in sync.
-    "name": "lastchange",
-    "pattern": ".",
-    "action": ["python", "trunk/build/util/lastchange.py",
-               "-o", "trunk/build/util/LASTCHANGE"],
-  },
-  {
-    # Update LASTCHANGE.blink. This is also run by export_tarball.py in
-    # trunk/tools/export_tarball - please keep them in sync.
-    "name": "lastchange",
-    "pattern": ".",
-    "action": ["python", "trunk/build/util/lastchange.py",
-               "-s", "trunk/third_party/WebKit",
-               "-o", "trunk/build/util/LASTCHANGE.blink"],
-  },
-  # Pull GN binaries. This needs to be before running GYP below.
-  {
-    "name": "gn_win",
-    "pattern": ".",
-    "action": [ "download_from_google_storage",
-                "--no_resume",
-                "--platform=win32",
-                "--no_auth",
-                "--bucket", "chromium-gn",
-                "-s", "trunk/tools/gn/bin/win/gn.exe.sha1",
-    ],
-  },
-  {
-    "name": "gn_mac",
-    "pattern": ".",
-    "action": [ "download_from_google_storage",
-                "--no_resume",
-                "--platform=darwin",
-                "--no_auth",
-                "--bucket", "chromium-gn",
-                "-s", "trunk/tools/gn/bin/mac/gn.sha1",
-    ],
-  },
-  {
-    "name": "gn_linux",
-    "pattern": ".",
-    "action": [ "download_from_google_storage",
-                "--no_resume",
-                "--platform=linux*",
-                "--no_auth",
-                "--bucket", "chromium-gn",
-                "-s", "trunk/tools/gn/bin/linux/gn.sha1",
-    ],
-  },
-  {
-    "name": "gn_linux32",
-    "pattern": ".",
-    "action": [ "download_from_google_storage",
-                "--no_resume",
-                "--platform=linux*",
-                "--no_auth",
-                "--bucket", "chromium-gn",
-                "-s", "trunk/tools/gn/bin/linux/gn32.sha1",
-    ],
-  },
-  # Pull clang-format binaries using checked-in hashes.
-  {
-    "name": "clang_format_win",
-    "pattern": ".",
-    "action": [ "download_from_google_storage",
-                "--no_resume",
-                "--platform=win32",
-                "--no_auth",
-                "--bucket", "chromium-clang-format",
-                "-s", "trunk/third_party/clang_format/bin/win/clang-format.exe.sha1",
-    ],
-  },
-  {
-    "name": "clang_format_mac",
-    "pattern": ".",
-    "action": [ "download_from_google_storage",
-                "--no_resume",
-                "--platform=darwin",
-                "--no_auth",
-                "--bucket", "chromium-clang-format",
-                "-s", "trunk/third_party/clang_format/bin/mac/clang-format.sha1",
-    ],
-  },
-  {
-    "name": "clang_format_linux",
-    "pattern": ".",
-    "action": [ "download_from_google_storage",
-                "--no_resume",
-                "--platform=linux*",
-                "--no_auth",
-                "--bucket", "chromium-clang-format",
-                "-s", "trunk/third_party/clang_format/bin/linux/clang-format.sha1",
-    ],
-  },
-  # Pull eu-strip binaries using checked-in hashes.
-  {
-    "name": "eu-strip",
-    "pattern": ".",
-    "action": [ "download_from_google_storage",
-                "--no_resume",
-                "--platform=linux*",
-                "--no_auth",
-                "--bucket", "chromium-eu-strip",
-                "-s", "trunk/build/linux/bin/eu-strip.sha1",
-    ],
+    "action": ["python", Var("root_dir") + "/build/win/setup_cygwin_mount.py",
+               "--win-only"],
   },
   {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
