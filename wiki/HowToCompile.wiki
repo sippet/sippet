@@ -88,19 +88,19 @@ cd chromium_sippet/trunk
 gclient runhooks
 </code>
 
-This will generate the build using the default GYP generator for your
-platform. It will be GNU Makefiles if you are using Linux, Xcode for Mac OSX, and Visual Studio (auto detected) if Windows.
-
-Now that you have the build set up, just start compiling. Ninja is now the official Chromium build tool, so, on Linux you would do:
+Now that you have the build set up, just start compiling. Ninja is now the official Chromium build tool for all platforms, so, you would just do:
 
 <code language="xml">
-ninja -C out/Debug
+ninja -C out/Debug sippet
 </code>
 
-If you have selected to use Xcode, you can open the workspace using it, or you can just execute the command-line build:
+== Building in Visual Studio ==
+
+According to [http://www.chromium.org/developers/how-tos/build-instructions-windows Official Chrome Build Instructions], you have to do the following in order to generate a VS2013 solution:
 
 <code language="xml">
-xcodebuild
+set GYP_GENERATORS=msvs-ninja,ninja
+gclient runhooks
 </code>
 
-If you have used the Visual Studio generator, just open VS and point it to the solution recently created by GYP.
+Now just open VS and point it to the solution recently created by GYP in `chromium_sippet/trunk/sippet/all.sln`.
