@@ -99,7 +99,9 @@ ninja -C out/Debug sippet
 According to [http://www.chromium.org/developers/how-tos/build-instructions-windows Official Chrome Build Instructions], you have to do the following in order to generate a VS2013 solution:
 
 <code language="xml">
-set GYP_GENERATORS=msvs-ninja,ninja
+set GYP_MSVS_VERSION=2013
+set DEPOT_TOOLS_WIN_TOOLCHAIN=0
+set GYP_GENERATORS=msvs
 gclient runhooks
 </code>
 
