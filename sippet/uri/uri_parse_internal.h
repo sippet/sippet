@@ -15,7 +15,7 @@ namespace uri {
 // and goes until |*len|).
 template<typename CHAR>
 inline void TrimURI(const CHAR* spec, int* begin, int* len) {
-  return url::TrimURL(spec, begin, len);
+  return url_parse::TrimURL(spec, begin, len);
 }
 
 // Internal functions in uri.cc that parse the parameters and headers,

@@ -22,7 +22,7 @@ bool InitCanonical(const STR& input_spec,
   // Reserve enough room in the output for the input, plus some extra so that
   // we have room if we have to escape a few things without reallocating.
   canonical->reserve(input_spec.size() + 32);
-  url::StdStringCanonOutput output(canonical);
+  url_canon::StdStringCanonOutput output(canonical);
   bool success = uri::Canonicalize(
       input_spec.data(), static_cast<int>(input_spec.length()),
       NULL, &output, parsed);
@@ -189,7 +189,7 @@ bool SipURI::HostIsIPAddress() const {
   if (!is_valid_ || spec_.empty())
      return false;
 
-  url::RawCanonOutputT<char, 128> ignored_output;
+  url_canon::RawCanonOutputT<char, 128> ignored_output;
   uri::CanonHostInfo host_info;
   uri::CanonicalizeIPAddress(spec_.c_str(), parsed_.host,
                                    &ignored_output, &host_info);
@@ -345,7 +345,7 @@ SipURI TelURI::ToSipURI(const SipURI& origin) {
   // Reserve enough room in the output for the input, plus some extra so that
   // we have room if we have to escape a few things without reallocating.
   canonical.reserve(origin.spec().size() + 32);
-  url::StdStringCanonOutput output(&canonical);
+  url_canon::StdStringCanonOutput output(&canonical);
 
   // Append the same scheme as the origin
   parsed.scheme.begin = 0;

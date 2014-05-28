@@ -43,11 +43,11 @@ int FramedWriteStreamSocket::Write(net::IOBuffer* buf, int buf_len,
   return net::ERR_IO_PENDING;
 }
 
-int FramedWriteStreamSocket::SetReceiveBufferSize(int32 size) {
+bool FramedWriteStreamSocket::SetReceiveBufferSize(int32 size) {
   return wrapped_socket_->SetReceiveBufferSize(size);
 }
 
-int FramedWriteStreamSocket::SetSendBufferSize(int32 size) {
+bool FramedWriteStreamSocket::SetSendBufferSize(int32 size) {
   return wrapped_socket_->SetSendBufferSize(size);
 }
 
