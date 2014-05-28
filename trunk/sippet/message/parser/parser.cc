@@ -438,7 +438,7 @@ bool ParseContact(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     if (!laquot.EndOfInput()) {
       // contact-param = *(token LWS) LAQUOT addr-spec RAQUOT
       display_name.assign(tok.current(), laquot.current());
-      base::TrimString(display_name, HTTP_LWS, &display_name);
+      TrimString(display_name, HTTP_LWS, &display_name);
       std::string::const_iterator address_start = laquot.Skip();
       laquot.SkipTo('>');
       if (laquot.EndOfInput()) {
@@ -564,7 +564,7 @@ bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     return false;
   }
   std::string sentby_string(sentby_start, tok.SkipTo(';'));
-  base::TrimString(sentby_string, HTTP_LWS, &sentby_string);
+  TrimString(sentby_string, HTTP_LWS, &sentby_string);
   if (sentby_string.empty()) {
     DVLOG(1) << "missing sent-by";
     return false;
@@ -842,7 +842,7 @@ scoped_ptr<Header> ParseTrimmedUtf8(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
   std::string value(values_begin, values_end);
-  base::TrimString(value, HTTP_LWS, &value);
+  TrimString(value, HTTP_LWS, &value);
   return scoped_ptr<HeaderType>(new HeaderType(value))
          .template PassAs<Header>();
 }

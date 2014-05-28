@@ -45,11 +45,11 @@ int SequencedWriteStreamSocket::Write(net::IOBuffer* buf, int buf_len,
   return net::ERR_IO_PENDING;
 }
 
-int SequencedWriteStreamSocket::SetReceiveBufferSize(int32 size) {
+bool SequencedWriteStreamSocket::SetReceiveBufferSize(int32 size) {
   return wrapped_socket_->SetReceiveBufferSize(size);
 }
 
-int SequencedWriteStreamSocket::SetSendBufferSize(int32 size) {
+bool SequencedWriteStreamSocket::SetSendBufferSize(int32 size) {
   return wrapped_socket_->SetSendBufferSize(size);
 }
 
