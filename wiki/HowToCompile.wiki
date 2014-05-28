@@ -91,10 +91,10 @@ gclient runhooks
 This will generate the build using the default GYP generator for your
 platform. It will be GNU Makefiles if you are using Linux, Xcode for Mac OSX, and Visual Studio (auto detected) if Windows.
 
-Now that you have the build set up, just start compiling. Typically, on Linux you would do:
+Now that you have the build set up, just start compiling. Ninja is now the official Chromium build tool, so, on Linux you would do:
 
 <code language="xml">
-make
+ninja -C out/Debug
 </code>
 
 If you have selected to use Xcode, you can open the workspace using it, or you can just execute the command-line build:
