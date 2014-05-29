@@ -35,7 +35,7 @@ To download the initial code, update your checkout as described in next section.
 If you are using Ubuntu 14.04, these are the build requirements:
 
 <code language="xml">
-$ sudo apt-get install libgtk2.0-dev libdrm-dev libgconf2-dev
+sudo apt-get install libgtk2.0-dev libdrm-dev libgconf2-dev
 </code>
 
 For other distributions, follow the same instructions above, adapting the commands and the package names according your distribution.
@@ -45,8 +45,8 @@ Pick a directory for your build.  We will call this directory $CHROMIUM_SIPPET_R
 Check out the code:
 
 <code language="xml">
-$ cd $CHROMIUM_SIPPET_ROOT
-$ gclient config http://sippet.googlecode.com/svn/trunk
+cd $CHROMIUM_SIPPET_ROOT
+gclient config http://sippet.googlecode.com/svn/trunk
 </code>
 
 To download the initial code, update your checkout as described in next
@@ -59,8 +59,8 @@ Create a directory to hold the code.  This example assumes the directory is ~/ch
 From a shell in the Terminal, execute the following commands: 
 
 <code language="xml">
-$ cd ~/chromium_sippet
-$ gclient config http://sippet.googlecode.com/svn/trunk
+cd ~/chromium_sippet
+gclient config http://sippet.googlecode.com/svn/trunk
 </code>
 
 To download the initial code, update your checkout as described in next section.
