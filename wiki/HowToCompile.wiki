@@ -35,7 +35,7 @@ To download the initial code, update your checkout as described in next section.
 If you are using Ubuntu 14.04, these are the build requirements:
 
 <code language="xml">
-sudo apt-get install libgtk2.0-dev libdrm-dev libgconf2-dev
+sudo apt-get install libgtk2.0-dev libdrm-dev libgconf2-dev libgnome-keyring-dev 
 </code>
 
 For other distributions, follow the same instructions above, adapting the commands and the package names according your distribution.
