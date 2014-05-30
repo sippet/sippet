@@ -32,7 +32,7 @@ To download the initial code, update your checkout as described in next section.
 
 == Linux ==
 
-If you are using Ubuntu 14.04, these are the build requirements:
+If you are using Ubuntu 14.04, the following command summarizes the build requirements:
 
 <code language="xml">
 sudo apt-get -y install \
@@ -49,9 +49,6 @@ sudo apt-get -y install \
     python-cherrypy3 python-dev python-psutil rpm ruby subversion \
     ttf-dejavu-core ttf-indic-fonts ttf-kochi-gothic ttf-kochi-mincho \
     wdiff xfonts-mathml
-
-
-
 </code>
 
 For other distributions, follow the same instructions above, adapting the commands and the package names according your distribution.
