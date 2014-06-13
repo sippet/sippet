@@ -25,8 +25,8 @@
         'uri/uri_unittest.cc',
         'transport/end_point_unittest.cc',
         'transport/network_layer_unittest.cc',
-        'transport/glue/framed_write_stream_socket_unittest.cc',
-        'transport/glue/sequenced_write_stream_socket_unittest.cc',
+        'transport/chrome/framed_write_stream_socket_unittest.cc',
+        'transport/chrome/sequenced_write_stream_socket_unittest.cc',
       ],
     },  # target sippet_unittest
     {
@@ -48,8 +48,8 @@
         '<(DEPTH)/testing/gmock.gyp:gmock',
       ],
       'sources': [
-        'transport/glue/transport_test_util.h',
-        'transport/glue/transport_test_util.cc',
+        'transport/chrome/transport_test_util.h',
+        'transport/chrome/transport_test_util.cc',
       ],
     },  # target sippet_test_support
   ],

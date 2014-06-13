@@ -275,7 +275,9 @@ std::string NetworkLayer::CreateBranch() {
 
 void NetworkLayer::StampClientTopmostVia(scoped_refptr<Request> &request,
         const scoped_refptr<Channel> &channel) {
-  EndPoint origin(channel->origin());
+  EndPoint origin;
+  int rv = channel->origin(&origin);
+  CHECK(net::OK == rv);
   scoped_ptr<Via> via(new Via);
   net::HostPortPair hostport(origin.host(), origin.port());
   via->push_back(ViaParam(origin.protocol(), hostport));
