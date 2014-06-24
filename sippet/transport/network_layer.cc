@@ -588,7 +588,7 @@ void NetworkLayer::HandleIncomingRequest(
 
   // Server transactions are created in advance
   CreateServerTransaction(request, channel_context);
-  delegate_->OnIncomingMessage(request);
+  delegate_->OnIncomingRequest(request);
 }
 
 void NetworkLayer::HandleIncomingResponse(
@@ -599,7 +599,7 @@ void NetworkLayer::HandleIncomingResponse(
 
   DCHECK(channel_context);
 
-  delegate_->OnIncomingMessage(response);
+  delegate_->OnIncomingResponse(response);
 }
 
 void NetworkLayer::OnChannelClosed(const scoped_refptr<Channel> &channel,
@@ -614,8 +614,8 @@ void NetworkLayer::OnChannelClosed(const scoped_refptr<Channel> &channel,
   delegate_->OnChannelClosed(destination, error);
 }
 
-void NetworkLayer::OnPassMessage(const scoped_refptr<Message> &message) {
-  delegate_->OnIncomingMessage(message);
+void NetworkLayer::OnIncomingResponse(const scoped_refptr<Response> &response) {
+  delegate_->OnIncomingResponse(response);
 }
 
 void NetworkLayer::OnTimedOut(const std::string &id) {

@@ -22,7 +22,6 @@
 #include "sippet/transport/transaction_delegate.h"
 #include "sippet/transport/aliases_map.h"
 #include "sippet/transport/network_settings.h"
-#include "sippet/uri/uri.h"
 
 namespace sippet {
 
@@ -100,17 +99,25 @@ class NetworkLayer :
    public:
     virtual ~Delegate() {}
 
+    // Called when a channel is opened.
+    virtual void OnChannelConnected(const EndPoint &destination) = 0;
+
     // Called when one of the opened channels is closed. Normally this function
     // is called only when a stream oriented channel is closed, but it's
     // possible to be called on datagram channels when an ICMP error (such as
     // port unreachable) is detected by the network layer.
     virtual void OnChannelClosed(const EndPoint &destination, int err) = 0;
 
-    // Called whenever a new message is received. Incoming responses are
+    // Called whenever a new request is received.
+    virtual void OnIncomingRequest(
+        const scoped_refptr<Request> &request) = 0;
+
+    // Called whenever a new response is received. Incoming responses are
     // associated to initial requests by the |Response::refer_to| ID. The
     // same happens for generated responses passed to |NetworkLayer::Send|:
     // automatic responses carry the associated |Request::id|.
-    virtual void OnIncomingMessage(Message *incoming_message) = 0;
+    virtual void OnIncomingResponse(
+        const scoped_refptr<Response> &response) = 0;
 
     // Called when a timeout is detected while trying to send a request, or
     // while trying to send an INVITE error response.
@@ -174,7 +181,6 @@ class NetworkLayer :
   // topmost Via header will be used as the destination.
   //
   // |message| the message to be sent; it could be a request or a response.
-  // |destination| the destination to be used when sending the message.
   // |callback| the callback on completion of the socket Write.
   int Send(const scoped_refptr<Message> &message,
            const net::CompletionCallback& callback);
@@ -184,12 +190,15 @@ class NetworkLayer :
   // been successfully created.
   bool AddAlias(const EndPoint &destination, const EndPoint &alias);
 
+  // This function gets the end point of sending messages. For requests, it
+  // uses the request-URI; for responses, use the topmost Via header.
+  static EndPoint GetMessageEndPoint(const scoped_refptr<Message> &message);
+
  private:
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
 
   // Just for testing purposes
   friend class NetworkLayerTest;
-
 
   // base::SystemMonitor::PowerObserver methods:
   virtual void OnSuspend() OVERRIDE;
@@ -221,9 +230,9 @@ class NetworkLayer :
   typedef std::map<EndPoint, ChannelContext*, EndPointLess> ChannelsMap;
 
   typedef std::map<std::string, scoped_refptr<ClientTransaction> >
-    ClientTransactionsMap;
+      ClientTransactionsMap;
   typedef std::map<std::string, scoped_refptr<ServerTransaction> >
-    ServerTransactionsMap;
+      ServerTransactionsMap;
 
   NetworkSettings network_settings_;
   AliasesMap aliases_map_;
@@ -236,9 +245,9 @@ class NetworkLayer :
   bool suspended_;
 
   int SendRequest(scoped_refptr<Request> &request,
-                  const net::CompletionCallback& callback);
+      const net::CompletionCallback& callback);
   int SendResponse(const scoped_refptr<Response> &message,
-                   const net::CompletionCallback& callback);
+      const net::CompletionCallback& callback);
 
   // Manage the number of channel references to start/stop the idle timeout
   void RequestChannelInternal(ChannelContext *channel_context);
@@ -246,41 +255,40 @@ class NetworkLayer :
 
   // Create transactions, associating to referencing tables
   ClientTransaction *CreateClientTransaction(
-                           const scoped_refptr<Request> &request,
-                           ChannelContext *channel_context);
+      const scoped_refptr<Request> &request,
+      ChannelContext *channel_context);
   ServerTransaction *CreateServerTransaction(
-                           const scoped_refptr<Request> &request,
-                           ChannelContext *channel_context);
+      const scoped_refptr<Request> &request,
+      ChannelContext *channel_context);
   void DestroyClientTransaction(
-                const scoped_refptr<ClientTransaction> &client_transaction);
+      const scoped_refptr<ClientTransaction> &client_transaction);
   void DestroyServerTransaction(
-                const scoped_refptr<ServerTransaction> &server_transaction);
+      const scoped_refptr<ServerTransaction> &server_transaction);
 
   // Create channel contexts, associating to referencing tables
-  int CreateChannelContext(const EndPoint &destination,
-                           const scoped_refptr<Request> &request,
-                           const net::CompletionCallback &callback,
-                           ChannelContext **created_channel_context);
+  int CreateChannelContext(
+      const EndPoint &destination,
+      const scoped_refptr<Request> &request,
+      const net::CompletionCallback &callback,
+      ChannelContext **created_channel_context);
   void DestroyChannelContext(ChannelContext *channel_context);
 
   // Set of utility functions used internally
   std::string CreateBranch();
-  void StampClientTopmostVia(scoped_refptr<Request> &request,
-                             const scoped_refptr<Channel> &channel);
-  void StampServerTopmostVia(scoped_refptr<Request> &request,
-                             const scoped_refptr<Channel> &channel);
+  void StampClientTopmostVia(
+      scoped_refptr<Request> &request,
+      const scoped_refptr<Channel> &channel);
+  void StampServerTopmostVia(
+      scoped_refptr<Request> &request,
+      const scoped_refptr<Channel> &channel);
   static std::string ClientTransactionId(
-                        const scoped_refptr<Request> &request);
+      const scoped_refptr<Request> &request);
   static std::string ClientTransactionId(
-                        const scoped_refptr<Response> &response);
+      const scoped_refptr<Response> &response);
   static std::string ServerTransactionId(
-                        const scoped_refptr<Request> &request);
+      const scoped_refptr<Request> &request);
   static std::string ServerTransactionId(
-                        const scoped_refptr<Response> &response);
-
-  // This function gets the end point of sending messages. For requests, use
-  // the request-URI; for responses, use the topmost Via header.
-  static EndPoint GetMessageEndPoint(const scoped_refptr<Message> &message);
+      const scoped_refptr<Response> &response);
 
   // Recover channel and transaction contexts from referencing tables
   ChannelContext *GetChannelContext(const EndPoint &destination);
@@ -312,7 +320,7 @@ class NetworkLayer :
   virtual void OnChannelClosed(const scoped_refptr<Channel> &, int) OVERRIDE;
 
   // sippet::TransactionDelegate methods:
-  virtual void OnPassMessage(const scoped_refptr<Message> &) OVERRIDE;
+  virtual void OnIncomingResponse(const scoped_refptr<Response> &) OVERRIDE;
   virtual void OnTimedOut(const std::string &id) OVERRIDE;
   virtual void OnTransportError(const std::string &id, int error) OVERRIDE;
   virtual void OnTransactionTerminated(const std::string &) OVERRIDE;

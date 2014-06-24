@@ -12,6 +12,7 @@
       'type': 'executable',
       'dependencies': [
         'sippet_test_support',
+        'sippet.gyp:sippet',
       ],
       'include_dirs': [
         '<(DEPTH)',

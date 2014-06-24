@@ -61,7 +61,7 @@ void ClientTransactionImpl::HandleIncomingResponse(
 
   if (state != STATE_COMPLETED) {
     response->set_refer_to(initial_request_->id());
-    delegate_->OnPassMessage(response);
+    delegate_->OnIncomingResponse(response);
   }
 
   switch (state) {

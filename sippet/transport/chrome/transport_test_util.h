@@ -77,11 +77,17 @@ class MockEvent {
   }
 
   // NetworkLayer::Delegate events:
+  void OnChannelConnected(const EndPoint &destination) {
+    expect_->OnChannelConnected(destination);
+  }
   void OnChannelClosed(const EndPoint& destination, int error) {
     expect_->OnChannelClosed(destination, error);
   }
-  void OnIncomingMessage(Message *message) {
-    expect_->OnIncomingMessage(message);
+  void OnIncomingRequest(const scoped_refptr<Request> &request) {
+    expect_->OnIncomingRequest(request);
+  }
+  void OnIncomingResponse(const scoped_refptr<Response> &response) {
+    expect_->OnIncomingResponse(response);
   }
   void OnTimedOut(const std::string &id) {
     expect_->OnTimedOut(id);
@@ -190,7 +196,11 @@ class StaticDataProvider : public DataProvider {
     GetNextEvent().OnChannelClosed(destination, error);
   }
   virtual void OnIncomingMessage(Message *message) OVERRIDE {
-    GetNextEvent().OnIncomingMessage(message);
+    if (isa<Request>(message)) {
+      GetNextEvent().OnIncomingRequest(dyn_cast<Request>(message));
+    } else {
+      GetNextEvent().OnIncomingResponse(dyn_cast<Response>(message));
+    }
   }
   virtual void Start(
           const scoped_refptr<Request>& starting_request) OVERRIDE {
@@ -256,8 +266,12 @@ class StaticNetworkLayerDelegate :
  private:
   DataProvider *data_provider_;
 
+  virtual void OnChannelConnected(const EndPoint &destination) OVERRIDE;
   virtual void OnChannelClosed(const EndPoint&, int) OVERRIDE;
-  virtual void OnIncomingMessage(Message*) OVERRIDE;
+  virtual void OnIncomingRequest(
+      const scoped_refptr<Request> &request) OVERRIDE;
+  virtual void OnIncomingResponse(
+      const scoped_refptr<Response> &response) OVERRIDE;
   virtual void OnTimedOut(const std::string &id) OVERRIDE;
   virtual void OnTransportError(const std::string &id, int error) OVERRIDE;
 };
@@ -363,7 +377,7 @@ class MockChannel : public Channel {
   static const int kBufferSize;
 
   // sippet::Channel methods:
-  virtual const EndPoint& origin() const OVERRIDE;
+  virtual int origin(EndPoint *origin) const OVERRIDE;
   virtual const EndPoint& destination() const OVERRIDE;
   virtual bool is_secure() const OVERRIDE;
   virtual bool is_connected() const OVERRIDE;

@@ -57,8 +57,9 @@ TEST_F(MessageTest, Basic) {
   EXPECT_FALSE(message_->empty());
   EXPECT_EQ(5, message_->size());
 
-  EXPECT_EQ(0, one[0].get());
-  EXPECT_EQ(0, set_of[1].get());
+  // They should have been cloned
+  EXPECT_TRUE(one[0].get());
+  EXPECT_TRUE(set_of[1].get());
 
   message_->erase(message_->begin());
 
