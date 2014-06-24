@@ -15,6 +15,7 @@
 #include "sippet/transport/channel_factory.h"
 #include "sippet/transport/chrome/chrome_channel_factory.h"
 #include "sippet/transport/network_layer.h"
+#include "sippet/ua/user_agent.h"
 #include "sippet/examples/login/url_request_context_getter.h"
 
 static void PrintUsage() {
@@ -90,12 +91,9 @@ int main(int argc, char **argv) {
   net::ClientSocketFactory *client_socket_factory =
       net::ClientSocketFactory::GetDefaultFactory();
 
-  /*
-  scoped_ptr<LoginObserver> login_observer(new LoginObserver());
-  scoped_ptr<LoginHandler> login_handler(new LoginHandler(login_observer.get()));
-  */
+  scoped_refptr<sippet::ua::UserAgent> user_agent(new sippet::ua::UserAgent);
   scoped_refptr<sippet::NetworkLayer> network_layer;
-  //network_layer.reset(new sippet::NetworkLayer(login_handler.get()));
+  network_layer = new sippet::NetworkLayer(user_agent.get());
 
   // Register the channel factory
   scoped_ptr<sippet::ChromeChannelFactory> channel_factory(
