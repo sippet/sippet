@@ -54,6 +54,10 @@ class UserAgent :
   UserAgent();
   virtual ~UserAgent() {}
 
+  void SetNetworkLayer(NetworkLayer *network_layer) {
+    network_layer_ = network_layer;
+  }
+
   // Append an User Agent handler. Handlers receive events in the same order
   // they were registered.
   void AppendHandler(Delegate *delegate);
@@ -84,6 +88,7 @@ class UserAgent :
 
  private:
   int local_sequence_;
+  NetworkLayer *network_layer_;
   std::vector<Delegate*> handlers_;
   std::map<std::string, scoped_refptr<Dialog> > dialogs_;
 
@@ -107,7 +112,7 @@ class UserAgent :
   virtual void OnIncomingResponse(
       const scoped_refptr<Response> &response) OVERRIDE;
   virtual void OnTimedOut(const std::string &id) OVERRIDE;
-  virtual void OnTransportError(const std::string &id, int error) OVERRIDE;
+  virtual void OnTransportError(const std::string &id, int err) OVERRIDE;
 };
 
 } // End of ua namespace
