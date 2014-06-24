@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/transport/glue/transport_test_util.h"
+#include "sippet/transport/chrome/transport_test_util.h"
 
 #include "base/strings/string_util.h"
 #include "base/rand_util.h"
@@ -37,12 +37,18 @@ bool ParseHostPortPair(const net::HostPortPair &destination,
 
 class ExpectNothing : public MockEvent::Expect {
  public:
+  virtual void OnChannelConnected(const EndPoint &destination) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected a channel connect at this time";
+  }
   virtual void OnChannelClosed(
                     const EndPoint& destination, int error) OVERRIDE {
     EXPECT_TRUE(false) << "Not expected a channel close at this time";
   }
-  virtual void OnIncomingMessage(Message *message) OVERRIDE {
-    EXPECT_TRUE(false) << "Not expected to get an incoming message this time";
+  virtual void OnIncomingRequest(const scoped_refptr<Request> &) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected to get an incoming request this time";
+  }
+  virtual void OnIncomingResponse(const scoped_refptr<Response> &) OVERRIDE {
+    EXPECT_TRUE(false) << "Not expected to get an incoming response this time";
   }
   virtual void OnTimedOut(const std::string &id) OVERRIDE {
     EXPECT_TRUE(false) << "Not expected a timeout at this time";
@@ -92,9 +98,15 @@ class IncomingMessageImpl : public ExpectNothing {
   IncomingMessageImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
   virtual ~IncomingMessageImpl() {}
-  virtual void OnIncomingMessage(Message *message) OVERRIDE {
-    DCHECK(message);
-    MatchMessage(message, regular_expressions_);
+  virtual void OnIncomingRequest(
+      const scoped_refptr<Request>& request) OVERRIDE {
+    DCHECK(request);
+    MatchMessage(request, regular_expressions_);
+  }
+  virtual void OnIncomingResponse(
+      const scoped_refptr<Response>& response) OVERRIDE {
+    DCHECK(response);
+    MatchMessage(response, regular_expressions_);
   }
  private:
   const char *regular_expressions_;
@@ -254,14 +266,26 @@ StaticNetworkLayerDelegate::StaticNetworkLayerDelegate(
 
 StaticNetworkLayerDelegate::~StaticNetworkLayerDelegate() {}
 
+void StaticNetworkLayerDelegate::OnChannelConnected(const EndPoint& destination) {
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->GetNextEvent().OnChannelConnected(destination);
+}
+
 void StaticNetworkLayerDelegate::OnChannelClosed(const EndPoint& destination, int error) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
   data_provider_->GetNextEvent().OnChannelClosed(destination, error);
 }
 
-void StaticNetworkLayerDelegate::OnIncomingMessage(Message *message) {
+void StaticNetworkLayerDelegate::OnIncomingRequest(
+    const scoped_refptr<Request>& request) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
-  data_provider_->GetNextEvent().OnIncomingMessage(message);
+  data_provider_->GetNextEvent().OnIncomingRequest(request);
+}
+
+void StaticNetworkLayerDelegate::OnIncomingResponse(
+    const scoped_refptr<Response>& response) {
+  DCHECK(data_provider_ && !data_provider_->at_events_end());
+  data_provider_->GetNextEvent().OnIncomingResponse(response);
 }
 
 void StaticNetworkLayerDelegate::OnTimedOut(const std::string &id) {
@@ -435,8 +459,9 @@ MockChannel::~MockChannel() {}
 
 const int MockChannel::kBufferSize = 1500;
 
-const EndPoint& MockChannel::origin() const {
-  return origin_;
+int MockChannel::origin(EndPoint *origin) const {
+  *origin = origin_;
+  return net::OK;
 }
 
 const EndPoint& MockChannel::destination() const {
@@ -578,7 +603,7 @@ void MockClientTransaction::HandleIncomingResponse(
                     const scoped_refptr<Response> &response) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
   data_provider_->HandleIncomingResponse(transaction_id_, response);
-  delegate_->OnPassMessage(response);
+  delegate_->OnIncomingResponse(response);
 }
 
 void MockClientTransaction::Close() {
