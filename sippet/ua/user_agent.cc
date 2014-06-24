@@ -17,17 +17,29 @@ void UserAgent::AppendHandler(Delegate *delegate) {
 
 scoped_refptr<Request> UserAgent::CreateRequest(
     const Method &method,
-    const GURL &from,
-    const GURL &to) {
+    const GURL &from_uri,
+    const GURL &to_uri) {
+  GURL request_uri; // TODO
+  scoped_refptr<Request> request(
+    new Request(method, request_uri));
+  scoped_ptr<To> to(new To(to_uri));
+  request->push_back(to.PassAs<Header>());
+  scoped_ptr<From> from(new From(from_uri));
+  request->push_back(from.PassAs<Header>());
+  scoped_ptr<Cseq> cseq(new Cseq(local_sequence_, method)); // TODO
+  request->push_back(cseq.PassAs<Header>());
   NOTIMPLEMENTED();
-  return 0;
+  return request;
 }
 
 scoped_refptr<Request> UserAgent::CreateRequest(
     const Method &method,
     const scoped_refptr<Dialog> &dialog) {
+  scoped_refptr<Request> request(
+    CreateRequest(method, dialog->local_uri(), dialog->remote_uri()));
+  request->get<Cseq>()->set_sequence(dialog->local_sequence()); // TODO
   NOTIMPLEMENTED();
-  return 0;
+  return request;
 }
 
 scoped_refptr<Response> UserAgent::CreateResponse(
@@ -40,34 +52,51 @@ scoped_refptr<Response> UserAgent::CreateResponse(
 int UserAgent::Send(
     const scoped_refptr<Message> &message,
     const net::CompletionCallback& callback) {
-  NOTIMPLEMENTED();
-  return net::ERR_NOT_IMPLEMENTED;
+  return network_layer_->Send(message, callback);
 }
 
 void UserAgent::OnChannelConnected(const EndPoint &destination) {
-  NOTIMPLEMENTED();
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnChannelConnected(destination);
+  }
 }
 
 void UserAgent::OnChannelClosed(const EndPoint &destination, int err) {
-  NOTIMPLEMENTED();
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnChannelClosed(destination, err);
+  }
 }
 
 void UserAgent::OnIncomingRequest(
     const scoped_refptr<Request> &request) {
-  NOTIMPLEMENTED();
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnIncomingRequest(request, 0); // TODO: dialog matching
+  }
 }
 
 void UserAgent::OnIncomingResponse(
     const scoped_refptr<Response> &response) {
-  NOTIMPLEMENTED();
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnIncomingResponse(response, 0); // TODO: dialog matching
+  }
 }
 
 void UserAgent::OnTimedOut(const std::string &id) {
-  NOTIMPLEMENTED();
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnTimedOut(id);
+  }
 }
 
-void UserAgent::OnTransportError(const std::string &id, int error) {
-  NOTIMPLEMENTED();
+void UserAgent::OnTransportError(const std::string &id, int err) {
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnTransportError(id, err);
+  }
 }
 
 } // End of ua namespace
