@@ -14,8 +14,8 @@ class TransactionDelegate {
  public:
   virtual ~TransactionDelegate() {}
 
-  // Called when the transaction wants to deliver a message upside.
-  virtual void OnPassMessage(const scoped_refptr<Message> &) = 0;
+  // Called when the transaction wants to deliver a response upside.
+  virtual void OnIncomingResponse(const scoped_refptr<Response> &) = 0;
 
   // Called when the transaction timed-out.
   virtual void OnTimedOut(const std::string &id) = 0;

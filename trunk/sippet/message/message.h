@@ -150,11 +150,11 @@ public:
   }
 
   //! Insert a set of headers to the message before a certain element, in
-  //! order. The set of headers must be of type scoped_ptr<Header>.
+  //! order. The set of headers will be cloned.
   template<class InIt>
   void insert(iterator where, InIt first, InIt last) {
     for (; first != last; ++first)
-      headers_.insert(where, first->release());
+      headers_.insert(where, (*first)->Clone().release());
   }
 
   //! Erase all headers matching a given predicate.
@@ -221,6 +221,16 @@ public:
   //! Check if the message has contents.
   bool has_content() const {
     return !content_.empty();
+  }
+
+  //! Filter the given headers.
+  template<class HeaderType>
+  std::vector<const HeaderType*> filter() const {
+    std::vector<const HeaderType*> result;
+    for (iterator i = find_first<HeaderType>(); i != end();
+         i = find_next<HeaderType>(i))
+      result.append(&(*i));
+    return result;
   }
 
 private:
