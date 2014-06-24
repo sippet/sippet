@@ -25,7 +25,7 @@ namespace sippet {
 // one User Agent is identical to the remote tag at the peer User Agent. The
 // tags are opaque tokens that facilitate the generation of unique dialog Ids.
 class Dialog :
-  public base::RefCountedThreadSafe<UserAgent> {
+  public base::RefCountedThreadSafe<Dialog> {
  public:
   // A dialog has its own state machine, the current state is determined
   // by the sequence of messages that occur on the initial dialog.

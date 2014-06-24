@@ -134,7 +134,9 @@
         'transport/chrome/chrome_channel_factory.cc',
         'transport/chrome/chrome_stream_channel.h',
         'transport/chrome/chrome_stream_channel.cc',
-
+        'ua/user_agent.h',
+        'ua/user_agent.cc',
+        'ua/dialog.h',
       ],
     },  # target sippet
   ],

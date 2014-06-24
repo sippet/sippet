@@ -6,22 +6,23 @@
 #define SIPPET_UA_USER_AGENT_H_
 
 #include "sippet/transport/network_layer.h"
+#include "sippet/ua/dialog.h"
 
 #include <map>
 #include <vector>
 
 namespace sippet {
 
-class Method;
 class To;
 class From;
 class CallId;
 class Cseq;
 class Via;
-class Dialog;
 class Message;
 class Request;
 class Response;
+
+namespace ua {
 
 class UserAgent :
   public base::RefCountedThreadSafe<UserAgent>,
@@ -55,7 +56,7 @@ class UserAgent :
 
   // Append an User Agent handler. Handlers receive events in the same order
   // they were registered.
-  void AppendHandler(UserAgentHandler *user_agent_handler);
+  void AppendHandler(Delegate *delegate);
 
   // Creates a minimum valid SIP request, containing the following header
   // fields: To, From, CSeq, Call-ID and Max-Forwards. Remember that the
@@ -77,12 +78,13 @@ class UserAgent :
 
   // Send a message throughout the nextwork layer. This function encapsulates
   // the dialog creation/destruction handling.
-  int Send(const scoped_refptr<Message> &message,
-           const net::CompletionCallback& callback);
+  int Send(
+      const scoped_refptr<Message> &message,
+      const net::CompletionCallback& callback);
 
  private:
   int local_sequence_;
-  std::vector<UserAgentHandler*> user_agent_handlers_;
+  std::vector<Delegate*> handlers_;
   std::map<std::string, scoped_refptr<Dialog> > dialogs_;
 
   struct IncomingRequestContext {
@@ -95,7 +97,7 @@ class UserAgent :
     base::OneShotTimer<NetworkLayer> timer_;
   };
 
-  std::map<std::string, IncomeRequestContext> incoming_requests_;
+  std::map<std::string, IncomingRequestContext> incoming_requests_;
 
   // sippet::NetworkLayer::Delegate methods:
   virtual void OnChannelConnected(const EndPoint &destination) OVERRIDE;
@@ -108,6 +110,7 @@ class UserAgent :
   virtual void OnTransportError(const std::string &id, int error) OVERRIDE;
 };
 
+} // End of ua namespace
 } // End of sippet namespace
 
 #endif // SIPPET_UA_USER_AGENT_H_
