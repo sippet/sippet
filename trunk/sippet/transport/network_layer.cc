@@ -49,6 +49,27 @@ void NetworkLayer::ReleaseChannel(const EndPoint &destination) {
     ReleaseChannelInternal(channel_context);
 }
 
+int NetworkLayer::Connect(const EndPoint &destination) {
+  ChannelContext *channel_context = GetChannelContext(destination);
+  if (channel_context)
+    return net::OK;
+  int result = CreateChannelContext(
+    destination, 0, net::CompletionCallback(), &channel_context);
+  if (result != net::OK)
+    return result;
+  channel_context->channel_->Connect();
+  // Now wait for the asynchronous connect. When using UDP,
+  // the connect event will occur in the next event loop.
+  return net::ERR_IO_PENDING;
+}
+
+int NetworkLayer::GetOriginOf(const EndPoint& destination, EndPoint *origin) {
+  ChannelContext *channel_context = GetChannelContext(destination);
+  if (!channel_context)
+    return net::ERR_SOCKET_NOT_CONNECTED;
+  return channel_context->channel_->origin(origin);
+}
+
 int NetworkLayer::Send(const scoped_refptr<Message> &message,
                        const net::CompletionCallback& callback) {
   if (isa<Request>(message)) {
@@ -100,7 +121,9 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
       DVLOG(1) << "Cannot send a request yet";
       return net::ERR_SOCKET_NOT_CONNECTED;
     }
-    StampClientTopmostVia(request, channel_context->channel_);
+    // Case the upper layer didn't copy a previous Via, create a new one
+    if (request->end() == request->find_first<Via>())
+      StampClientTopmostVia(request, channel_context->channel_);
     // Send ACKs out of transactions
     if (Method::ACK != request->method()) {
       // The created transaction will handle the response processing.
@@ -525,24 +548,28 @@ void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel,
   DCHECK(channel_it != channels_.end());
   ChannelContext *channel_context = channel_it->second;
   if (result == net::OK) {
-    StampClientTopmostVia(channel_context->initial_request_,
-      channel_context->channel_);
-    ignore_result(CreateClientTransaction(
-      channel_context->initial_request_, channel_context));
-    result = channel_context->channel_->Send(
-      channel_context->initial_request_, channel_context->initial_callback_);
-    if (result == net::OK) {
-      if (!channel_context->initial_callback_.is_null()) {
-        // Complete the pending send callback now
-        channel_context->initial_callback_.Run(net::OK);
+    if (channel_context->initial_request_) {
+      StampClientTopmostVia(channel_context->initial_request_,
+        channel_context->channel_);
+      ignore_result(CreateClientTransaction(
+        channel_context->initial_request_, channel_context));
+      result = channel_context->channel_->Send(
+        channel_context->initial_request_, channel_context->initial_callback_);
+      if (result == net::OK) {
+        if (!channel_context->initial_callback_.is_null()) {
+          // Complete the pending send callback now
+          channel_context->initial_callback_.Run(net::OK);
+        }
+      }
+      if (result == net::OK || result == net::ERR_IO_PENDING) {
+        // Clean channel initial context, the channel will be
+        // responsible for the callback now.
+        channel_context->initial_request_ = NULL;
+        channel_context->initial_callback_.Reset();
       }
     }
-    if (result == net::OK || result == net::ERR_IO_PENDING) {
-      // Clean channel initial context, the channel will be
-      // responsible for the callback now.
-      channel_context->initial_request_ = NULL;
-      channel_context->initial_callback_.Reset();
-    }
+    EndPoint destination(channel_context->channel_->destination());
+    delegate_->OnChannelConnected(destination);
   }
   if (result != net::OK && result != net::ERR_IO_PENDING) {
     net::CompletionCallback callback(channel_context->initial_callback_);
