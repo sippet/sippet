@@ -58,6 +58,16 @@ class UserAgent :
     network_layer_ = network_layer;
   }
 
+  // The route set is the list of servers that need to be traversed to send
+  // requests out of a dialog to peers. For outbound proxies, this list is
+  // constituted by a single URI.
+  void set_route_set(const std::vector<GURL> &route_set) {
+    route_set_.assign(route_set.begin(), route_set.end());
+  }
+  const std::vector<GURL> &route_set() {
+    return route_set_;
+  }
+
   // Append an User Agent handler. Handlers receive events in the same order
   // they were registered.
   void AppendHandler(Delegate *delegate);
@@ -68,6 +78,7 @@ class UserAgent :
   // request (or after connecting).
   scoped_refptr<Request> CreateRequest(
       const Method &method,
+      const GURL &request_uri,
       const GURL &from,
       const GURL &to);
   scoped_refptr<Request> CreateRequest(
@@ -89,6 +100,7 @@ class UserAgent :
  private:
   int local_sequence_;
   NetworkLayer *network_layer_;
+  std::vector<GURL> route_set_;
   std::vector<Delegate*> handlers_;
   std::map<std::string, scoped_refptr<Dialog> > dialogs_;
 
@@ -103,6 +115,15 @@ class UserAgent :
   };
 
   std::map<std::string, IncomingRequestContext> incoming_requests_;
+
+  // Create a 32-bits random string
+  std::string Create32BitRandomString();
+
+  // Create a local tag
+  std::string CreateTag();
+
+  // Create an unique Call-ID
+  std::string CreateCallId();
 
   // sippet::NetworkLayer::Delegate methods:
   virtual void OnChannelConnected(const EndPoint &destination) OVERRIDE;

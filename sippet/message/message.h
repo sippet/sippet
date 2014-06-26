@@ -233,6 +233,15 @@ public:
     return result;
   }
 
+  //! Clone all headers of a given type to another message.
+  template<class HeaderType>
+  void copy_to(Message *message) {
+    for (Message::iterator i = find_first<HeaderType>(),
+         ie = end(); i != ie; i = find_next<HeaderType>(i)) {
+      message->push_back(i->Clone().PassAs<Header>());
+    }
+  }
+
 private:
   template<class HeaderType>
   struct equals : public std::unary_function<const Header &, bool> {

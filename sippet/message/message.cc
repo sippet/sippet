@@ -12,15 +12,26 @@ Message::Message(bool is_request)
 Message::~Message() {}
 
 void Message::print(raw_ostream &os) const {
-  const_iterator i = headers_.begin(), ie = headers_.end();
-  for (; i != ie; ++i) {
+  for (const_iterator i = headers_.begin(), ie = headers_.end();
+       i != ie; ++i) {
+    if (isa<ContentLength>(i))
+      continue;
     i->print(os);
     os << "\r\n";
   }
+
+  // Force the Content Length to match the content size
+  scoped_ptr<ContentLength> content_length(
+    new ContentLength(content_.length()));
+  content_length->print(os);
   os << "\r\n";
-  if (has_content()) {
+
+  // End of header
+  os << "\r\n";
+
+  // Append the content when available
+  if (has_content())
     os.write(content_.data(), content_.length());
-  }
 }
 
 std::string Message::ToString() const {

@@ -73,6 +73,11 @@ class Dialog :
     return local_sequence_;
   }
 
+  // Generate a new local sequence and return it.
+  unsigned GetNewLocalSequence() {
+    return ++local_sequence_;
+  }
+
   // Used to order requests from its peer to the User Agent.
   unsigned remote_sequence() const {
     return remote_sequence_;

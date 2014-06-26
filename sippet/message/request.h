@@ -37,8 +37,25 @@ public:
 
   virtual void print(raw_ostream &os) const OVERRIDE;
 
-  scoped_refptr<Response> MakeResponse(int response_code,
-                                       const std::string &to_tag = "");
+  scoped_refptr<Response> CreateResponse(int response_code,
+                                         const std::string &to_tag = "");
+
+  // A |Method::INVITE| request can be created from an |Method::INVITE|
+  // request by calling this method. Headers |MaxForwards|, |From|, |To|,
+  // |CallId|, |Cseq| and |Route| are populated from the current request.
+  // A |remote_tag| needs to collected from a |To::tag| contained on a final
+  // response to the initial |Method::INVITE| request. Note that the header
+  // |Via| is not copied, therefore, if you're sending a |Method::ACK| for a
+  // 2xx response, you just need to pass the request to the |NetworkLayer| and
+  // it will include a new automatic |Via| header.
+  int CreateAck(const std::string &remote_tag,
+                scoped_refptr<Request> &ack);
+
+  // A |Method::CANCEL| request can be created from an |Method::INVITE|
+  // request by calling this method. Headers |Via|, |MaxForwards|, |From|,
+  // |To|, |CallId|, |Cseq| and |Route| are populated from the current request.
+  int CreateCancel(scoped_refptr<Request> &cancel);
+
 private:
   Method method_;
   std::string id_;
