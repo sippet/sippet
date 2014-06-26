@@ -55,6 +55,7 @@ class ClientTransactionImpl : public ClientTransaction {
   
   TransactionDelegate *delegate_;
   scoped_refptr<Request> initial_request_;
+  scoped_refptr<Request> generated_ack_;
   base::OneShotTimer<ClientTransactionImpl> retryTimer_;
   base::OneShotTimer<ClientTransactionImpl> timedOutTimer_;
   base::OneShotTimer<ClientTransactionImpl> terminateTimer_;
@@ -66,7 +67,7 @@ class ClientTransactionImpl : public ClientTransaction {
   void OnWrite(int result);
 
   void StopTimers();
-  void SendAck();
+  void SendAck(const std::string &to_tag);
   void ScheduleRetry();
   void ScheduleTimeout();
   void ScheduleTerminate();

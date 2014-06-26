@@ -167,18 +167,28 @@ class NetworkLayer :
   // by other calls to |Send|.
   void ReleaseChannel(const EndPoint &destination);
 
+  // Forces a connection to a given destination. If there is no connected
+  // channel to the given destination, then |net::ERR_IO_PENDING| is returned
+  // and |NetworkLayer::Delegate::OnChannelConnected| is called when completed.
+  // Otherwise, |net::OK| is just returned.
+  int Connect(const EndPoint &destination);
+
+  // Get the origin |EndPoint| of a given destination. This function returns
+  // |net::OK| only if there is a channel available for that destination.
+  int GetOriginOf(const EndPoint& destination, EndPoint *origin);
+
   // Send a message (request or response) using one of the opened channels. If
   // there is no channel to the destination taken from the message, then a new
   // one will be created. If a previous request has been made, and you are
   // already sending a request to the same destination, but the request has
-  // not completed yet, then you will get an error; it is required to complete
-  // an initial request (such as a REGISTER) to be able to send subsequent
-  // messages to the same destination.
+  // not completed yet, then you will get an error.
   //
-  // In case of a |Request|, a Via header is added to the top of available
-  // ones, and the destination will be taken from the |Request::request_uri|.
-  // In case of a |Response|, the stamped received and rport parameters on the
-  // topmost Via header will be used as the destination.
+  // In case of a |Request|, case there is no |Via|, a topmost |Via| header is
+  // added. The destination will be taken from the |Request::request_uri|. Case
+  // the |Request| already contains a |Via| header, it will be kept.
+  //
+  // In case of a |Response|, the parameters 'received' and 'rport' available
+  // on the topmost Via header will be used as the destination.
   //
   // |message| the message to be sent; it could be a request or a response.
   // |callback| the callback on completion of the socket Write.

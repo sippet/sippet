@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/message/request.h"
+#include "net/base/net_errors.h"
 #include "base/guid.h"
 
 namespace sippet {
@@ -49,27 +50,23 @@ void Request::print(raw_ostream &os) const {
   Message::print(os);
 }
 
-scoped_refptr<Response> Request::MakeResponse(int response_code,
-                                              const std::string &to_tag) {
+scoped_refptr<Response> Request::CreateResponse(int response_code,
+                                                const std::string &to_tag) {
   scoped_refptr<Response> response(new Response(response_code));
-  for (iterator via = find_first<Via>(); via != end();
-       via = find_next<Via>(via)) {
-    response->push_back(via->Clone().PassAs<Header>());
-  }
-  From* from = get<From>();
-  response->push_back(from->Clone().PassAs<Header>());
-  To* to = get<To>();
+  copy_to<Via>(response);
+  scoped_ptr<From> from(get<From>()->Clone());
+  response->push_back(from.PassAs<Header>());
+  scoped_ptr<To> to(get<To>()->Clone());
   if (to->HasTag())
-    response->push_back(to->Clone().PassAs<Header>());
+    response->push_back(to.PassAs<Header>());
   else {
-    scoped_ptr<To> newTo(to->Clone());
-    newTo->set_tag(to_tag);
-    response->push_back(newTo.PassAs<Header>());
+    to->set_tag(to_tag);
+    response->push_back(to.PassAs<Header>());
   }
-  CallId* callid = get<CallId>();
-  response->push_back(callid->Clone().PassAs<Header>());
-  Cseq* cseq = get<Cseq>();
-  response->push_back(cseq->Clone().PassAs<Header>());
+  scoped_ptr<CallId> call_id(get<CallId>()->Clone());
+  response->push_back(call_id.PassAs<Header>());
+  scoped_ptr<Cseq> cseq(get<Cseq>()->Clone());
+  response->push_back(cseq.PassAs<Header>());
   if (response_code/100 == 1) {
     Timestamp *timestamp = get<Timestamp>();
     if (timestamp != NULL) {
@@ -81,6 +78,71 @@ scoped_refptr<Response> Request::MakeResponse(int response_code,
   }
   response->set_refer_to(id_);
   return response;
+}
+
+int Request::CreateAck(const std::string &remote_tag,
+                       scoped_refptr<Request> &ack) {
+  if (Method::INVITE != method()) {
+    DVLOG(1) << "Cannot create an ACK from a non-INVITE request";
+    return net::ERR_NOT_IMPLEMENTED;
+  }
+  if (end() == find_first<From>()
+      || end() == find_first<To>()
+      || end() == find_first<Cseq>()
+      || end() == find_first<CallId>()) {
+    DVLOG(1) << "Incomplete INVITE request, cannot create the ACK";
+    return net::ERR_UNEXPECTED;
+  }
+  if (end() == find_first<Via>()) {
+    DVLOG(1) << "INVITE request was not sent yet, cannot create the ACK";
+    return net::ERR_UNEXPECTED;
+  }
+  ack = new Request(Method::ACK, request_uri());
+  scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
+  ack->push_back(max_forwards.PassAs<Header>());
+  scoped_ptr<From> from(get<From>()->Clone());
+  ack->push_back(from.PassAs<Header>());
+  scoped_ptr<To> to(get<To>()->Clone());
+  to->set_tag(remote_tag);
+  ack->push_back(to.PassAs<Header>());
+  scoped_ptr<CallId> call_id(get<CallId>()->Clone());
+  ack->push_back(call_id.PassAs<Header>());
+  scoped_ptr<Cseq> cseq(new Cseq(get<Cseq>()->sequence(), Method::ACK));
+  ack->push_back(cseq.PassAs<Header>());
+  copy_to<Route>(ack);
+  return net::OK;
+}
+
+int Request::CreateCancel(scoped_refptr<Request> &cancel) {
+  if (Method::INVITE != method()) {
+    DVLOG(1) << "Cannot create an ACK from a non-INVITE request";
+    return net::ERR_NOT_IMPLEMENTED;
+  }
+  if (end() == find_first<From>()
+      || end() == find_first<To>()
+      || end() == find_first<Cseq>()
+      || end() == find_first<CallId>()) {
+    DVLOG(1) << "Incomplete INVITE request, cannot create the ACK";
+    return net::ERR_UNEXPECTED;
+  }
+  if (end() == find_first<Via>()) {
+    DVLOG(1) << "INVITE request was not sent yet, cannot create the ACK";
+    return net::ERR_UNEXPECTED;
+  }
+  cancel = new Request(Method::CANCEL, request_uri());
+  copy_to<Via>(cancel);
+  scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
+  cancel->push_back(max_forwards.PassAs<Header>());
+  scoped_ptr<From> from(get<From>()->Clone());
+  cancel->push_back(from.PassAs<Header>());
+  scoped_ptr<To> to(get<To>()->Clone());
+  cancel->push_back(to.PassAs<Header>());
+  scoped_ptr<CallId> call_id(get<CallId>()->Clone());
+  cancel->push_back(call_id.PassAs<Header>());
+  scoped_ptr<Cseq> cseq(new Cseq(get<Cseq>()->sequence(), Method::CANCEL));
+  cancel->push_back(cseq.PassAs<Header>());
+  copy_to<Route>(cancel);
+  return net::OK;
 }
 
 } // End of sippet namespace
