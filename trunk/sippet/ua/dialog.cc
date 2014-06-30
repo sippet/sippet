@@ -29,50 +29,29 @@ std::vector<GURL> GetRouteSet(
 }
 
 scoped_refptr<Request> Dialog::CreateRequest(const Method &method) {
-  GURL request_uri;
-  scoped_ptr<Route> route;
-  if (route_set().empty()) {
-    request_uri = remote_target();
+  if (Method::ACK == method) {
+    DVLOG(1) << "ACK requests for 2xx are created by Dialog::CreateAck()";
+    return 0;
   }
-  else {
-    GURL first(route_set().front());
-    SipURI uri(first);
-    if (uri.has_parameters() && uri.parameter("lr").first) {
-      request_uri = remote_target();
-      route.reset(new Route);
-      for (std::vector<GURL>::const_iterator i = route_set().begin(),
-           ie = route_set().end(); i != ie; i++) {
-        route->push_back(RouteParam(*i));
-      }
-    }
-    else {
-      request_uri = first; // TODO: strip not allowed parameters
-      std::vector<GURL>::const_iterator i = route_set().begin(),
-                                        ie = route_set().end();
-      i++; // discard the first
-      route.reset(new Route);
-      for (; i != ie; i++)
-        route->push_back(RouteParam(*i));
-      route->push_back(RouteParam(remote_target()));
-    }
+  if (Method::CANCEL == method) {
+    DVLOG(1) << "CANCEL requests are created by Request::CreateCancel()";
+    return 0;
   }
-  scoped_refptr<Request> request = new Request(method, request_uri);
-  scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  request->push_back(max_forwards.PassAs<Header>());
-  scoped_ptr<From> from(new From(local_uri()));
-  from->set_tag(local_tag());
-  request->push_back(from.PassAs<Header>());
-  scoped_ptr<To> to(new To(remote_uri()));
-  if (!remote_tag().empty())
-    to->set_tag(remote_tag());
-  request->push_back(to.PassAs<Header>());
-  scoped_ptr<CallId> call_id(new CallId(call_id()));
-  request->push_back(call_id.PassAs<Header>());
-  scoped_ptr<Cseq> cseq(new Cseq(GetNewLocalSequence(), method));
-  request->push_back(cseq.PassAs<Header>());
-  if (route)
-    request->push_back(route.PassAs<Header>());
-  return request;
+  return CreateRequestInternal(method, GetNewLocalSequence());
+}
+
+scoped_refptr<Request> Dialog::CreateAck(
+    const scoped_refptr<Request> &invite) {
+  if (Method::INVITE != invite->method()) {
+    DVLOG(1) << "ACK requests require the INVITE being acknowledged";
+    return 0;
+  }
+  unsigned local_sequence = invite->get<Cseq>()->sequence();
+  scoped_refptr<Request> ack(
+      CreateRequestInternal(Method::ACK, local_sequence));
+  invite->copy_to<WwwAuthenticate>(ack);
+  invite->copy_to<ProxyAuthenticate>(ack);
+  return ack;
 }
 
 scoped_refptr<Dialog> Dialog::CreateClientDialog(
@@ -135,6 +114,54 @@ unsigned Dialog::GetNewLocalSequence() {
   else {
     return ++local_sequence_;
   }
+}
+
+scoped_refptr<Request> Dialog::CreateRequestInternal(
+    const Method &method, unsigned local_sequence) {
+  GURL request_uri;
+  scoped_ptr<Route> route;
+  if (route_set().empty()) {
+    request_uri = remote_target();
+  }
+  else {
+    GURL first(route_set().front());
+    SipURI uri(first);
+    if (uri.has_parameters() && uri.parameter("lr").first) {
+      request_uri = remote_target();
+      route.reset(new Route);
+      for (std::vector<GURL>::const_iterator i = route_set().begin(),
+           ie = route_set().end(); i != ie; i++) {
+        route->push_back(RouteParam(*i));
+      }
+    }
+    else {
+      request_uri = first; // TODO: strip not allowed parameters
+      std::vector<GURL>::const_iterator i = route_set().begin(),
+                                        ie = route_set().end();
+      i++; // discard the first
+      route.reset(new Route);
+      for (; i != ie; i++)
+        route->push_back(RouteParam(*i));
+      route->push_back(RouteParam(remote_target()));
+    }
+  }
+  scoped_refptr<Request> request = new Request(method, request_uri);
+  scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
+  request->push_back(max_forwards.PassAs<Header>());
+  scoped_ptr<From> from(new From(local_uri()));
+  from->set_tag(local_tag());
+  request->push_back(from.PassAs<Header>());
+  scoped_ptr<To> to(new To(remote_uri()));
+  if (!remote_tag().empty())
+    to->set_tag(remote_tag());
+  request->push_back(to.PassAs<Header>());
+  scoped_ptr<CallId> call_id(new CallId(call_id()));
+  request->push_back(call_id.PassAs<Header>());
+  scoped_ptr<Cseq> cseq(new Cseq(local_sequence, method));
+  request->push_back(cseq.PassAs<Header>());
+  if (route)
+    request->push_back(route.PassAs<Header>());
+  return request;
 }
 
 } // End of sippet namespace
