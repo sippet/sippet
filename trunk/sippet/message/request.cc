@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/message/request.h"
+#include "sippet/base/tags.h"
 #include "net/base/net_errors.h"
 #include "base/guid.h"
 
@@ -50,8 +51,7 @@ void Request::print(raw_ostream &os) const {
   Message::print(os);
 }
 
-scoped_refptr<Response> Request::CreateResponse(int response_code,
-                                                const std::string &to_tag) {
+scoped_refptr<Response> Request::CreateResponse(int response_code) {
   scoped_refptr<Response> response(new Response(response_code));
   copy_to<Via>(response);
   scoped_ptr<From> from(get<From>()->Clone());
@@ -60,14 +60,14 @@ scoped_refptr<Response> Request::CreateResponse(int response_code,
   if (to->HasTag())
     response->push_back(to.PassAs<Header>());
   else {
-    to->set_tag(to_tag);
+    to->set_tag(CreateTag());
     response->push_back(to.PassAs<Header>());
   }
   scoped_ptr<CallId> call_id(get<CallId>()->Clone());
   response->push_back(call_id.PassAs<Header>());
   scoped_ptr<Cseq> cseq(get<Cseq>()->Clone());
   response->push_back(cseq.PassAs<Header>());
-  if (response_code/100 == 1) {
+  if (response_code == 100) {
     Timestamp *timestamp = get<Timestamp>();
     if (timestamp != NULL) {
       scoped_ptr<Timestamp> newTimestamp(timestamp->Clone());
@@ -76,6 +76,7 @@ scoped_refptr<Response> Request::CreateResponse(int response_code,
       response->push_back(newTimestamp.PassAs<Header>());
     }
   }
+  copy_to<RecordRoute>(response);
   response->set_refer_to(id_);
   return response;
 }
@@ -98,6 +99,7 @@ int Request::CreateAck(const std::string &remote_tag,
     return net::ERR_UNEXPECTED;
   }
   ack = new Request(Method::ACK, request_uri());
+  copy_to<Via>(ack);
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
   ack->push_back(max_forwards.PassAs<Header>());
   scoped_ptr<From> from(get<From>()->Clone());
@@ -143,6 +145,10 @@ int Request::CreateCancel(scoped_refptr<Request> &cancel) {
   cancel->push_back(cseq.PassAs<Header>());
   copy_to<Route>(cancel);
   return net::OK;
+}
+
+std::string Request::CreateTag() {
+  return Create32BitRandomString();
 }
 
 } // End of sippet namespace

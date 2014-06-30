@@ -25,8 +25,10 @@
         'base/ilist_node.h',
         'base/raw_ostream.cc',
         'base/raw_ostream.h',
+        'base/sequences.h',
         'base/stl_extras.h',
         'base/string_extras.h',
+        'base/tags.h',
         'base/type_traits.h',
         'message/atom.h',
         'message/header.h',
@@ -137,6 +139,7 @@
         'ua/user_agent.h',
         'ua/user_agent.cc',
         'ua/dialog.h',
+        'ua/dialog.cc',
       ],
     },  # target sippet
   ],
