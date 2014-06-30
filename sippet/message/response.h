@@ -15,26 +15,11 @@ class Response :
 private:
   DISALLOW_COPY_AND_ASSIGN(Response);
 public:
-  // This constructor will take a default reason phrase for you
-  Response(int response_code,
-           const Version &version = Version(2,0))
-    : Message(false) { /* TODO */ }
-
-  // Just in case you want to define the reason phrase
-  Response(int response_code,
-           const std::string &reason_phrase,
-           const Version &version = Version(2,0))
-    : Message(false), response_code_(response_code),
-      reason_phrase_(reason_phrase), version_(version) {}
-
   virtual ~Response() {}
 
   // Every processed |Response| object should refer to some
   // previous |Request|.
-  void set_refer_to(const std::string &request_id) {
-    refer_to_ = request_id;
-  }
-  const std::string &refer_to() const {
+  const scoped_refptr<Request> &refer_to() const {
     return refer_to_;
   }
 
@@ -53,20 +38,25 @@ public:
     version_ = version;
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    os << "SIP/" << version_.major_value()
-       << "." << version_.minor_value()
-       << " " << response_code_
-       << " " << reason_phrase_
-       << "\r\n";
-    Message::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 
 private:
+  friend class Request;
+  friend class Message;
+  friend class ClientTransactionImpl;
+
   Version version_;
   int response_code_;
-  std::string refer_to_;
+  scoped_refptr<Request> refer_to_;
   std::string reason_phrase_;
+
+  Response(int response_code,
+           const std::string &reason_phrase,
+           const Version &version = Version(2,0));
+
+  void set_refer_to(const scoped_refptr<Request> &request) {
+    refer_to_ = request;
+  }
 };
 
 } // End of sippet namespace

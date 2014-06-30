@@ -51,8 +51,11 @@ void Request::print(raw_ostream &os) const {
   Message::print(os);
 }
 
-scoped_refptr<Response> Request::CreateResponse(int response_code) {
-  scoped_refptr<Response> response(new Response(response_code));
+scoped_refptr<Response> Request::CreateResponse(
+    int response_code,
+    const std::string &reason_phrase) {
+  scoped_refptr<Response> response(
+      new Response(response_code, reason_phrase));
   copy_to<Via>(response);
   scoped_ptr<From> from(get<From>()->Clone());
   response->push_back(from.PassAs<Header>());
@@ -77,8 +80,12 @@ scoped_refptr<Response> Request::CreateResponse(int response_code) {
     }
   }
   copy_to<RecordRoute>(response);
-  response->set_refer_to(id_);
+  response->set_refer_to(this);
   return response;
+}
+
+scoped_refptr<Response> Request::CreateResponse(const Status::Type &status) {
+  return CreateResponse(static_cast<int>(status), Status::string_of(status));
 }
 
 int Request::CreateAck(const std::string &remote_tag,

@@ -80,7 +80,8 @@ class UserAgent :
       const Method &method,
       const GURL &request_uri,
       const GURL &from,
-      const GURL &to);
+      const GURL &to,
+      unsigned local_sequence=0);
 
   // Send a message throughout the nextwork layer. This function encapsulates
   // the dialog creation/destruction handling.
@@ -89,7 +90,6 @@ class UserAgent :
       const net::CompletionCallback& callback);
 
  private:
-  int local_sequence_;
   NetworkLayer *network_layer_;
   std::vector<GURL> route_set_;
   std::vector<Delegate*> handlers_;
@@ -106,6 +106,15 @@ class UserAgent :
   };
 
   std::map<std::string, IncomingRequestContext> incoming_requests_;
+
+  struct OutgoingRequestContext {
+    // Holds the outgoing request instance.
+    scoped_refptr<Request> outgoing_request_;
+    // Arrival time
+    base::Time dispatch_time_;
+  };
+
+  std::map<std::string, OutgoingRequestContext> outgoing_requests_;
 
   // Create a local tag
   static std::string CreateTag();
