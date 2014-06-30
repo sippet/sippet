@@ -112,6 +112,10 @@ class Dialog :
   // Create a |Request| whithin a dialog.
   scoped_refptr<Request> CreateRequest(const Method &method);
 
+  // Create a |Method::ACK| request for a 2xx response, passing the INVITE
+  // request being acknowledged.
+  scoped_refptr<Request> CreateAck(const scoped_refptr<Request> &invite);
+
  private:
   friend class UserAgent;
 
@@ -178,6 +182,9 @@ class Dialog :
 
   // Generate a new local sequence and return it.
   unsigned GetNewLocalSequence();
+
+  scoped_refptr<Request> CreateRequestInternal(
+      const Method &method, unsigned local_sequence);
 
   DISALLOW_COPY_AND_ASSIGN(Dialog);
 };
