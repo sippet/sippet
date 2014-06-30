@@ -474,7 +474,12 @@ EndPoint NetworkLayer::GetMessageEndPoint(
     const scoped_refptr<Message> &message) {
   if (isa<Request>(message)) {
     scoped_refptr<Request> request = dyn_cast<Request>(message);
-    return EndPoint::FromGURL(request->request_uri());
+    GURL destination;
+    Route *route = request->get<Route>();
+    if (route && !route->empty())
+      return EndPoint::FromGURL(route->front().address());
+    else
+      return EndPoint::FromGURL(request->request_uri());
   }
   else {
     scoped_refptr<Response> response = dyn_cast<Response>(message);

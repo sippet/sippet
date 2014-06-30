@@ -99,6 +99,7 @@
         'message/request.h',
         'message/request.cc',
         'message/response.h',
+        'message/response.cc',
         'message/version.h',
         'message/status.h',
         'message/status.cc',

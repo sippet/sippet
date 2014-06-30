@@ -15,6 +15,10 @@ namespace sippet {
 class Request;
 class Response;
 
+namespace ua {
+class UserAgent;
+}
+
 // A dialog represents a peer-to-peer SIP relationship between two user agents
 // that persists for some time. Dialogs are typically used by user agents to
 // facilitate management of state. Dialogs are typically not relevant to proxy
@@ -117,7 +121,7 @@ class Dialog :
   scoped_refptr<Request> CreateAck(const scoped_refptr<Request> &invite);
 
  private:
-  friend class UserAgent;
+  friend class ua::UserAgent;
 
   Dialog(State state,
          const std::string &call_id,
