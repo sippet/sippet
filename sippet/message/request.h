@@ -23,7 +23,7 @@ public:
           const GURL &request_uri,
           const Version &version = Version(2,0));
 
-  //! Every SIP request has an unique associated ID.
+  // Every SIP request has an unique associated ID.
   const std::string &id() const { return id_; }
 
   Method method() const;
@@ -37,19 +37,16 @@ public:
 
   virtual void print(raw_ostream &os) const OVERRIDE;
 
-  scoped_refptr<Response> CreateResponse(int response_code,
-                                         const std::string &to_tag = "");
-
-  // A |Method::INVITE| request can be created from an |Method::INVITE|
-  // request by calling this method. Headers |MaxForwards|, |From|, |To|,
-  // |CallId|, |Cseq| and |Route| are populated from the current request.
-  // A |remote_tag| needs to collected from a |To::tag| contained on a final
-  // response to the initial |Method::INVITE| request. Note that the header
-  // |Via| is not copied, therefore, if you're sending a |Method::ACK| for a
-  // 2xx response, you just need to pass the request to the |NetworkLayer| and
-  // it will include a new automatic |Via| header.
-  int CreateAck(const std::string &remote_tag,
-                scoped_refptr<Request> &ack);
+  // Responses can be generated from incoming requests by using this method.
+  // Headers |From|, |CallId|, |CSeq|, |Via| and |To| are copied from the
+  // request. If the |To| header doesn't contain a tag, then a new random one
+  // is generated (32-bit random string). When a 100 (Trying) |Response| is
+  // generated, any |Timestamp| header present in the |Request| is copied into
+  // the |Response|. Delays are added into the |Timestamp| header of the
+  // response by using the internal timestamp value of the |Request| creation.
+  // By default, any |RecordRoute| header available in the |Request| is copied
+  // to the generated |Response|.
+  scoped_refptr<Response> CreateResponse(int response_code);
 
   // A |Method::CANCEL| request can be created from an |Method::INVITE|
   // request by calling this method. Headers |Via|, |MaxForwards|, |From|,
@@ -57,11 +54,24 @@ public:
   int CreateCancel(scoped_refptr<Request> &cancel);
 
 private:
+  friend class ClientTransactionImpl;
+
   Method method_;
   std::string id_;
   GURL request_uri_;
   Version version_;
   base::Time time_stamp_;
+
+  // Creates an |Method::ACK| request from a |Method::INVITE| request. Intended
+  // to be used by the transaction layer only. Headers |MaxForwards|, |From|,
+  // |To|, |CallId|, |Cseq|, |Route| and |Via| are copied from the current
+  // request. A |remote_tag| needs to collected from a |To::tag| contained on
+  // a final response to the initial |Method::INVITE| request.
+  int CreateAck(const std::string &remote_tag,
+                scoped_refptr<Request> &ack);
+
+  // Create a local tag for responses.
+  static std::string CreateTag();
 };
 
 } // End of sippet namespace

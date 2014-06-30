@@ -4,10 +4,8 @@
 
 #include "sippet/ua/user_agent.h"
 #include "sippet/uri/uri.h"
+#include "sippet/base/tags.h"
 #include "net/base/net_errors.h"
-#include "crypto/random.h"
-#include "base/strings/string_number_conversions.h"
-#include <sstream>
 
 namespace sippet {
 namespace ua {
@@ -52,44 +50,10 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   return request;
 }
 
-scoped_refptr<Request> UserAgent::CreateRequest(
-    const Method &method,
-    const scoped_refptr<Dialog> &dialog) {
-  GURL request_uri;
-  scoped_refptr<Request> request;
-  if (dialog->route_set().empty()) {
-    request = CreateRequest(method, dialog->remote_target(),
-        dialog->local_uri(), dialog->remote_uri());
-  }
-  else {
-    // TODO
-  }
-  request->get<CallId>()->set_value(dialog->call_id());
-  request->get<Cseq>()->set_sequence(dialog->GetNewLocalSequence());
-  request->get<From>()->set_tag(dialog->local_tag());
-  if (!dialog->remote_tag().empty())
-    request->get<To>()->set_tag(dialog->remote_tag());
-  NOTIMPLEMENTED();
-  return request;
-}
-
-scoped_refptr<Response> UserAgent::CreateResponse(
-    int response_code,
-    const scoped_refptr<Request> &request) {
-  NOTIMPLEMENTED();
-  return 0;
-}
-
 int UserAgent::Send(
     const scoped_refptr<Message> &message,
     const net::CompletionCallback& callback) {
   return network_layer_->Send(message, callback);
-}
-
-std::string UserAgent::Create32BitRandomString() {
-  char tag[4];
-  crypto::RandBytes(tag, sizeof(tag));
-  return base::HexEncode(tag, sizeof(tag));
 }
 
 std::string UserAgent::CreateTag() {

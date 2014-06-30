@@ -75,15 +75,15 @@ protected:
 public:
   static scoped_refptr<Message> Parse(const std::string &raw_message);
 
-  //! Returns true if the current message is a request.
+  // Returns true if the current message is a request.
   bool IsRequest() const { return is_request_; }
 
-  //! Returns true if the current message is a response.
+  // Returns true if the current message is a response.
   bool IsResponse() const { return !is_request_; }
 
   //===--------------------------------------------------------------------===//
-  /// Header iterator methods
-  ///
+  // Header iterator methods
+  //
   iterator       begin()       { return headers_.begin(); }
   const_iterator begin() const { return headers_.begin(); }
   iterator       end  ()       { return headers_.end();   }
@@ -102,62 +102,62 @@ public:
   reference       back()        { return headers_.back();  }
   const_reference back() const  { return headers_.back();  }
 
-  //! Insert a header before a specific position in the message.
+  // Insert a header before a specific position in the message.
   iterator insert(iterator where, scoped_ptr<Header> header) {
     return header ? headers_.insert(where, header.release()) : where;
   }
 
-  //! Insert a header after a specific position in the message.
+  // Insert a header after a specific position in the message.
   iterator insertAfter(iterator where, scoped_ptr<Header> header) {
     return header ? headers_.insertAfter(where, header.release()) : where;
   }
 
-  //! Insert a header to the beginning of the message.
+  // Insert a header to the beginning of the message.
   void push_front(scoped_ptr<Header> header) {
     if (header)
       headers_.push_front(header.release());
   }
 
-  //! Insert a header to the end of the message.
+  // Insert a header to the end of the message.
   void push_back(scoped_ptr<Header> header) {
     if (header)
       headers_.push_back(header.release());
   }
  
-  //! Remove an existing header and return an iterator to the next header.
+  // Remove an existing header and return an iterator to the next header.
   iterator erase(iterator position) {
     return headers_.erase(position);
   }
 
-  //! Remove all headers in the given interval.
+  // Remove all headers in the given interval.
   void erase(iterator first, iterator last) {
     headers_.erase(first, last);
   }
 
-  //! Clear all headers.
+  // Clear all headers.
   void clear() {
     headers_.clear();
   }
 
-  //! Remove the first header of the message.
+  // Remove the first header of the message.
   void pop_front() {
     headers_.pop_front();
   }
 
-  //! Remove the last header of the message.
+  // Remove the last header of the message.
   void pop_back() {
     headers_.pop_back();
   }
 
-  //! Insert a set of headers to the message before a certain element, in
-  //! order. The set of headers will be cloned.
+  // Insert a set of headers to the message before a certain element, in
+  // order. The set of headers will be cloned.
   template<class InIt>
   void insert(iterator where, InIt first, InIt last) {
     for (; first != last; ++first)
       headers_.insert(where, (*first)->Clone().release());
   }
 
-  //! Erase all headers matching a given predicate.
+  // Erase all headers matching a given predicate.
   template<class Pr1> void erase_if(Pr1 pred) {
     headers_.erase_if(pred);
   }
@@ -190,7 +190,7 @@ public:
       equals<HeaderType>());
   }
 
-  //! Get a specific header.
+  // Get a specific header.
   template<class HeaderType>
   HeaderType *get() {
     iterator it = find_first<HeaderType>();
@@ -202,38 +202,38 @@ public:
     return it != end() ? dyn_cast<HeaderType>(it) : 0;
   }
 
-  //! Print this message to the output.
+  // Print this message to the output.
   virtual void print(raw_ostream &os) const;
 
-  //! Print the message on a string.
+  // Print the message on a string.
   std::string ToString() const;
 
-  //! Set the message content.
+  // Set the message content.
   void set_content(const std::string &content) {
     content_ = content;
   }
 
-  //! Get the message content.
+  // Get the message content.
   const std::string &content() const {
     return content_;
   }
 
-  //! Check if the message has contents.
+  // Check if the message has contents.
   bool has_content() const {
     return !content_.empty();
   }
 
-  //! Filter the given headers.
+  // Filter the given headers.
   template<class HeaderType>
-  std::vector<const HeaderType*> filter() const {
-    std::vector<const HeaderType*> result;
-    for (iterator i = find_first<HeaderType>(); i != end();
-         i = find_next<HeaderType>(i))
-      result.append(&(*i));
+  std::vector<HeaderType*> filter() {
+    std::vector<HeaderType*> result;
+    for (iterator i = find_first<HeaderType>(), ie = end();
+         i != ie; i = find_next<HeaderType>(i))
+      result.push_back(&reinterpret_cast<HeaderType&>(i));
     return result;
   }
 
-  //! Clone all headers of a given type to another message.
+  // Clone all headers of a given type to another message.
   template<class HeaderType>
   void copy_to(Message *message) {
     for (Message::iterator i = find_first<HeaderType>(),
