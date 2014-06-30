@@ -5,11 +5,15 @@
 #ifndef SIPPET_UA_DIALOG_H_
 #define SIPPET_UA_DIALOG_H_
 
-#include <sstream>
-#include <vector>
+#include "sippet/message/method.h"
+#include "base/memory/ref_counted.h"
 #include "url/gurl.h"
+#include <vector>
 
 namespace sippet {
+
+class Request;
+class Response;
 
 // A dialog represents a peer-to-peer SIP relationship between two user agents
 // that persists for some time. Dialogs are typically used by user agents to
@@ -31,10 +35,10 @@ class Dialog :
   // by the sequence of messages that occur on the initial dialog.
   //
   // Invite Dialog States:
-  // STATE_EARLY --> STATE_CONFIRMED --> STATE_TERMINATED
+  // |STATE_EARLY| --> |STATE_CONFIRMED| --> |STATE_TERMINATED|
   //
-  // Other Dialog-creating Requests Dialog States (ie. SUBSCRIBE):
-  // STATE_CONFIRMED --> STATE_TERMINATED
+  // Other Dialog-creating Requests Dialog States (i.e. |Method::SUBSCRIBE|):
+  // |STATE_CONFIRMED| --> |STATE_TERMINATED|
   enum State {
     STATE_EARLY,
     STATE_CONFIRMED,
@@ -73,11 +77,6 @@ class Dialog :
     return local_sequence_;
   }
 
-  // Generate a new local sequence and return it.
-  unsigned GetNewLocalSequence() {
-    return ++local_sequence_;
-  }
-
   // Used to order requests from its peer to the User Agent.
   unsigned remote_sequence() const {
     return remote_sequence_;
@@ -110,6 +109,9 @@ class Dialog :
     return route_set_;
   }
 
+  // Create a |Request| whithin a dialog.
+  scoped_refptr<Request> CreateRequest(const Method &method);
+
  private:
   friend class UserAgent;
 
@@ -117,7 +119,9 @@ class Dialog :
          const std::string &call_id,
          const std::string &local_tag,
          const std::string &remote_tag,
+         bool has_local_sequence,
          unsigned local_sequence,
+         bool has_remote_sequence,
          unsigned remote_sequence,
          const GURL &local_uri,
          const GURL &remote_uri,
@@ -128,7 +132,9 @@ class Dialog :
       call_id_(call_id),
       local_tag_(local_tag),
       remote_tag_(remote_tag),
+      has_local_sequence_(has_local_sequence),
       local_sequence_(local_sequence),
+      has_remote_sequence_(has_remote_sequence),
       remote_sequence_(remote_sequence),
       local_uri_(local_uri),
       remote_uri_(remote_uri),
@@ -140,13 +146,38 @@ class Dialog :
   std::string call_id_;
   std::string local_tag_;
   std::string remote_tag_;
+  bool has_local_sequence_;
   unsigned local_sequence_;
+  bool has_remote_sequence_;
   unsigned remote_sequence_;
   GURL local_uri_;
   GURL remote_uri_;
   GURL remote_target_;
   bool is_secure_;
   std::vector<GURL> route_set_;
+
+  // Create a client |Dialog|.
+  static scoped_refptr<Dialog> CreateClientDialog(
+      const scoped_refptr<Request> &request,
+      const scoped_refptr<Response> &response);
+
+  // Create a server |Dialog|.
+  static scoped_refptr<Dialog> CreateServerDialog(
+      const scoped_refptr<Request> &request,
+      const scoped_refptr<Response> &response);
+
+  // Set the dialog state (UserAgent only).
+  void set_state(State state) {
+    state_ = state;
+  }
+
+  // Set the dialog remote sequence (UserAgent only).
+  void set_remote_sequence(unsigned sequence) {
+    remote_sequence_ = sequence;
+  }
+
+  // Generate a new local sequence and return it.
+  unsigned GetNewLocalSequence();
 
   DISALLOW_COPY_AND_ASSIGN(Dialog);
 };

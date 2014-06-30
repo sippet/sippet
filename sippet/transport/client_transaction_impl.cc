@@ -166,10 +166,8 @@ void ClientTransactionImpl::StopTimers() {
 }
 
 void ClientTransactionImpl::SendAck(const std::string &to_tag) {
-  if (!generated_ack_) {
+  if (!generated_ack_)
     ignore_result(initial_request_->CreateAck(to_tag, generated_ack_));
-    initial_request_->copy_to<Via>(generated_ack_);
-  }
   channel_->Send(generated_ack_, net::CompletionCallback());
 }
 

@@ -72,24 +72,15 @@ class UserAgent :
   // they were registered.
   void AppendHandler(Delegate *delegate);
 
-  // Creates a minimum valid SIP request, containing the following header
-  // fields: To, From, CSeq, Call-ID and Max-Forwards. Remember that the
-  // topmost Via header is always set by the network layer, after sending the
-  // request (or after connecting).
+  // Creates a minimum valid SIP request, containing |To|, |From|, |Cseq|,
+  // |CallId| and |MaxForwards|. Remember that the topmost |Via| header is
+  // set by the network layer, after sending the request (or after connecting),
+  // therefore this method doesn't add any |Via| header.
   scoped_refptr<Request> CreateRequest(
       const Method &method,
       const GURL &request_uri,
       const GURL &from,
       const GURL &to);
-  scoped_refptr<Request> CreateRequest(
-      const Method &method,
-      const scoped_refptr<Dialog> &dialog);
-
-  // Creates a minimum valid SIP response, containing header fields To, From,
-  // CSeq, Call-ID and Via.
-  scoped_refptr<Response> CreateResponse(
-      int response_code,
-      const scoped_refptr<Request> &request);
 
   // Send a message throughout the nextwork layer. This function encapsulates
   // the dialog creation/destruction handling.
@@ -116,14 +107,11 @@ class UserAgent :
 
   std::map<std::string, IncomingRequestContext> incoming_requests_;
 
-  // Create a 32-bits random string
-  std::string Create32BitRandomString();
-
   // Create a local tag
-  std::string CreateTag();
+  static std::string CreateTag();
 
   // Create an unique Call-ID
-  std::string CreateCallId();
+  static std::string CreateCallId();
 
   // sippet::NetworkLayer::Delegate methods:
   virtual void OnChannelConnected(const EndPoint &destination) OVERRIDE;
