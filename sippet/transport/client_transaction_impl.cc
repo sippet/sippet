@@ -60,7 +60,7 @@ void ClientTransactionImpl::HandleIncomingResponse(
   int response_code = response->response_code();
 
   if (state != STATE_COMPLETED) {
-    response->set_refer_to(initial_request_->id());
+    response->set_refer_to(initial_request_);
     delegate_->OnIncomingResponse(response);
   }
 

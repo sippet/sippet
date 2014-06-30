@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include "sippet/ua/user_agent.h"
+#include "sippet/ua/dialog.h"
 #include "sippet/uri/uri.h"
 #include "sippet/base/tags.h"
+#include "sippet/base/sequences.h"
 #include "net/base/net_errors.h"
 
 namespace sippet {
@@ -21,7 +23,8 @@ scoped_refptr<Request> UserAgent::CreateRequest(
     const Method &method,
     const GURL &request_uri,
     const GURL &from_uri,
-    const GURL &to_uri) {
+    const GURL &to_uri,
+    unsigned local_sequence) {
   scoped_refptr<Request> request(
     new Request(method, request_uri));
   scoped_ptr<To> to(new To(to_uri));
@@ -36,8 +39,10 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   scoped_ptr<CallId> call_id(new CallId(CreateCallId()));
   request->push_back(call_id.PassAs<Header>());
   
-  // Cseq always contain the request method and the local sequence
-  scoped_ptr<Cseq> cseq(new Cseq(local_sequence_++, method));
+  // Cseq always contain the request method and a new (random) local sequence
+  if (local_sequence == 0)
+    local_sequence = Create16BitRandomInteger();
+  scoped_ptr<Cseq> cseq(new Cseq(local_sequence, method));
   request->push_back(cseq.PassAs<Header>());
 
   // Max-Forwards header field is always 70.
@@ -46,6 +51,7 @@ scoped_refptr<Request> UserAgent::CreateRequest(
 
   // Contact: TODO
 
+
   NOTIMPLEMENTED();
   return request;
 }
@@ -53,6 +59,20 @@ scoped_refptr<Request> UserAgent::CreateRequest(
 int UserAgent::Send(
     const scoped_refptr<Message> &message,
     const net::CompletionCallback& callback) {
+  // Create an UAS dialog
+  if (isa<Response>(message)) {
+    scoped_refptr<Response> response = dyn_cast<Response>(message);
+    switch (response->response_code()/100) {
+      case 1:
+      case 2: {
+        scoped_refptr<Request> request(response->refer_to());
+        scoped_refptr<Dialog> dialog(
+            Dialog::CreateServerDialog(request, response));
+        dialogs_.insert(std::make_pair(dialog->id(), dialog));
+        break;
+      }
+    }
+  }
   return network_layer_->Send(message, callback);
 }
 
@@ -88,6 +108,7 @@ void UserAgent::OnIncomingRequest(
 
 void UserAgent::OnIncomingResponse(
     const scoped_refptr<Response> &response) {
+  // Create an UAC dialog
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
     (*i)->OnIncomingResponse(response, 0); // TODO: dialog matching

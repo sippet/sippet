@@ -8,6 +8,7 @@
 #include "sippet/message/message.h"
 #include "sippet/message/method.h"
 #include "sippet/message/version.h"
+#include "sippet/message/status.h"
 #include "url/gurl.h"
 #include "base/time/time.h"
 
@@ -46,7 +47,10 @@ public:
   // response by using the internal timestamp value of the |Request| creation.
   // By default, any |RecordRoute| header available in the |Request| is copied
   // to the generated |Response|.
-  scoped_refptr<Response> CreateResponse(int response_code);
+  scoped_refptr<Response> CreateResponse(
+      int response_code,
+      const std::string &reason_phrase);
+  scoped_refptr<Response> CreateResponse(const Status::Type &status);
 
   // A |Method::CANCEL| request can be created from an |Method::INVITE|
   // request by calling this method. Headers |Via|, |MaxForwards|, |From|,

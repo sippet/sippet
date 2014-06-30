@@ -184,11 +184,13 @@ class NetworkLayer :
   // not completed yet, then you will get an error.
   //
   // In case of a |Request|, case there is no |Via|, a topmost |Via| header is
-  // added. The destination will be taken from the |Request::request_uri|. Case
-  // the |Request| already contains a |Via| header, it will be kept.
+  // added. Case the |Request| already contains a |Via| header, it will be
+  // kept. The destination will be taken from the first |Route| header entry,
+  // if exists, or |Request::request_uri| otherwise.
   //
-  // In case of a |Response|, the parameters 'received' and 'rport' available
-  // on the topmost Via header will be used as the destination.
+  // In case of a |Response|, the parameters |ViaParam::received| and
+  // |ViaParam::rport| available on the topmost |Via| header will be used as
+  // the destination.
   //
   // |message| the message to be sent; it could be a request or a response.
   // |callback| the callback on completion of the socket Write.

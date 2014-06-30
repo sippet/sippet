@@ -51,7 +51,7 @@ void ServerTransactionImpl::Start(
 
 void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
   DCHECK(response);
-  DCHECK(response->refer_to() == initial_request_->id());
+  DCHECK(response->refer_to() == initial_request_);
 
   if (STATE_PROCEED_CALLING < next_state_) {
     DVLOG(1) << "Ignored second final response attempt";
@@ -197,7 +197,7 @@ void ServerTransactionImpl::OnTerminated() {
 
 void ServerTransactionImpl::OnSendProvisionalResponse() {
   DCHECK(MODE_INVITE == mode_ && STATE_PROCEEDING == next_state_);
-  scoped_refptr<Response> response = initial_request_->CreateResponse(100);
+  scoped_refptr<Response> response = initial_request_->CreateResponse(Status::Trying);
   int result = channel_->Send(response,
     base::Bind(&ServerTransactionImpl::OnSendProvisionalResponseWriteComplete, this));
   if (net::ERR_IO_PENDING != result)
