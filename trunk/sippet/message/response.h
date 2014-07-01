@@ -7,6 +7,7 @@
 
 #include "sippet/message/message.h"
 #include "sippet/message/version.h"
+#include "base/gtest_prod_util.h"
 
 namespace sippet {
 
@@ -44,6 +45,8 @@ public:
   std::string GetDialogId();
 
 private:
+  FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
+
   friend class Request;
   friend class Message;
   friend class ClientTransactionImpl;
