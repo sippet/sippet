@@ -1110,14 +1110,14 @@ scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
       std::string reason_phrase;
       if (!ParseStatusLine(start, i, &version, &code, &reason_phrase))
         break;
-      message = new Response(code, reason_phrase, version);
+      message = new Response(code, reason_phrase, Message::Incoming, version);
     }
     else {
       Method method;
       GURL request_uri;
       if (!ParseRequestLine(start, i, &method, &request_uri, &version))
         break;
-      message = new Request(method, request_uri, version);
+      message = new Request(method, request_uri, Message::Incoming, version);
     }
   } while (false);
 

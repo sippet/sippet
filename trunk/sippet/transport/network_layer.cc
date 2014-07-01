@@ -72,6 +72,10 @@ int NetworkLayer::GetOriginOf(const EndPoint& destination, EndPoint *origin) {
 
 int NetworkLayer::Send(const scoped_refptr<Message> &message,
                        const net::CompletionCallback& callback) {
+  if (Message::Outgoing != message->direction()) {
+    DVLOG(1) << "Trying to send an incoming message";
+    return net::ERR_UNEXPECTED;
+  }
   if (isa<Request>(message)) {
     scoped_refptr<Request> request = dyn_cast<Request>(message);
     return SendRequest(request, callback);

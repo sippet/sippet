@@ -40,6 +40,9 @@ public:
 
   virtual void print(raw_ostream &os) const OVERRIDE;
 
+  // Get a the dialog identifier.
+  std::string GetDialogId();
+
 private:
   friend class Request;
   friend class Message;
@@ -52,6 +55,7 @@ private:
 
   Response(int response_code,
            const std::string &reason_phrase,
+           Direction direction,
            const Version &version = Version(2,0));
 
   void set_refer_to(const scoped_refptr<Request> &request) {

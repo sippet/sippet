@@ -20,6 +20,7 @@ private:
   DISALLOW_COPY_AND_ASSIGN(Request);
   virtual ~Request();
 public:
+  // Create a |Request|. New requests assume the |Outgoing| direction.
   Request(const Method &method,
           const GURL &request_uri,
           const Version &version = Version(2,0));
@@ -46,7 +47,8 @@ public:
   // the |Response|. Delays are added into the |Timestamp| header of the
   // response by using the internal timestamp value of the |Request| creation.
   // By default, any |RecordRoute| header available in the |Request| is copied
-  // to the generated |Response|.
+  // to the generated |Response|. Created responses have always |Outgoing|
+  // direction.
   scoped_refptr<Response> CreateResponse(
       int response_code,
       const std::string &reason_phrase);
@@ -57,7 +59,12 @@ public:
   // |To|, |CallId|, |Cseq| and |Route| are populated from the current request.
   int CreateCancel(scoped_refptr<Request> &cancel);
 
+  // Get a the dialog identifier.
+  std::string GetDialogId();
+
 private:
+  friend class Dialog;
+  friend class Message;
   friend class ClientTransactionImpl;
 
   Method method_;
@@ -65,6 +72,12 @@ private:
   GURL request_uri_;
   Version version_;
   base::Time time_stamp_;
+
+  // Used by the parser.
+  Request(const Method &method,
+          const GURL &request_uri,
+          Direction direction,
+          const Version &version);
 
   // Creates an |Method::ACK| request from a |Method::INVITE| request. Intended
   // to be used by the transaction layer only. Headers |MaxForwards|, |From|,
@@ -76,6 +89,16 @@ private:
 
   // Create a local tag for responses.
   static std::string CreateTag();
+
+  scoped_refptr<Response> CreateResponseInternal(
+      int response_code,
+      const std::string &reason_phrase);
+
+  // Intended to be used only by the dialog.
+  scoped_refptr<Response> CreateResponse(
+      int response_code,
+      const std::string &reason_phrase,
+      const std::string &remote_tag);
 };
 
 } // End of sippet namespace
