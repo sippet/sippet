@@ -48,6 +48,11 @@ class Response;
 class Message
   : public base::RefCountedThreadSafe<Message> {
 public:
+  enum Direction {
+    Incoming,
+    Outgoing,
+  };
+
   typedef iplist<Header> HeaderListType;
 
   // Header iterators...
@@ -63,17 +68,25 @@ private:
   bool is_request_;
   HeaderListType headers_;
   std::string content_;
+  Direction direction_;
 
   DISALLOW_COPY_AND_ASSIGN(Message);
 
 protected:
   friend class base::RefCountedThreadSafe<Message>;
 
-  Message(bool is_request);
+  Message(bool is_request,
+          Direction direction);
   virtual ~Message();
 
 public:
+  // Parse a SIP message. Parsed messages have |Incoming| direction.
   static scoped_refptr<Message> Parse(const std::string &raw_message);
+
+  // Returns the message direction.
+  Direction direction() const {
+    return direction_;
+  }
 
   // Returns true if the current message is a request.
   bool IsRequest() const { return is_request_; }
@@ -235,11 +248,21 @@ public:
 
   // Clone all headers of a given type to another message.
   template<class HeaderType>
-  void copy_to(Message *message) {
+  void CloneTo(Message *message) {
     for (Message::iterator i = find_first<HeaderType>(),
          ie = end(); i != ie; i = find_next<HeaderType>(i)) {
       message->push_back(i->Clone().PassAs<Header>());
     }
+  }
+
+  // Clone the first matching header, if exists.
+  template<class HeaderType>
+  scoped_ptr<HeaderType> Clone() {
+    Message::iterator i = find_first<HeaderType>();
+    if (i == end())
+      return scoped_ptr<HeaderType>();
+    Header *clone = i->Clone().release();
+    return scoped_ptr<HeaderType>(dyn_cast<HeaderType>(clone));
   }
 
 private:

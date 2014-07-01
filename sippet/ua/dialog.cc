@@ -40,6 +40,20 @@ scoped_refptr<Request> Dialog::CreateRequest(const Method &method) {
   return CreateRequestInternal(method, GetNewLocalSequence());
 }
 
+scoped_refptr<Response> Dialog::CreateResponse(
+    int response_code,
+    const std::string &reason_phrase,
+    const scoped_refptr<Request> &request) {
+  return request->CreateResponse(response_code, reason_phrase, remote_tag_);
+}
+
+scoped_refptr<Response> Dialog::CreateResponse(
+    Status::Type status,
+    const scoped_refptr<Request> &request) {
+  return CreateResponse(static_cast<int>(status),
+      Status::string_of(status), request);
+}
+
 scoped_refptr<Request> Dialog::CreateAck(
     const scoped_refptr<Request> &invite) {
   if (Method::INVITE != invite->method()) {
@@ -49,8 +63,8 @@ scoped_refptr<Request> Dialog::CreateAck(
   unsigned local_sequence = invite->get<Cseq>()->sequence();
   scoped_refptr<Request> ack(
       CreateRequestInternal(Method::ACK, local_sequence));
-  invite->copy_to<WwwAuthenticate>(ack);
-  invite->copy_to<ProxyAuthenticate>(ack);
+  invite->CloneTo<WwwAuthenticate>(ack);
+  invite->CloneTo<ProxyAuthenticate>(ack);
   return ack;
 }
 

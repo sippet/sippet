@@ -59,17 +59,21 @@ scoped_refptr<Request> UserAgent::CreateRequest(
 int UserAgent::Send(
     const scoped_refptr<Message> &message,
     const net::CompletionCallback& callback) {
-  // Create an UAS dialog
+  // Create an UAS dialog when appropriated
   if (isa<Response>(message)) {
     scoped_refptr<Response> response = dyn_cast<Response>(message);
-    switch (response->response_code()/100) {
-      case 1:
-      case 2: {
-        scoped_refptr<Request> request(response->refer_to());
+    int response_code = response->response_code();
+    if (response_code > 100) {
+      scoped_refptr<Request> request(response->refer_to());
+      std::string id(response->GetDialogId());
+      DialogMapType::iterator i = dialogs_.find(id);
+      if (dialogs_.end() == i) {
         scoped_refptr<Dialog> dialog(
             Dialog::CreateServerDialog(request, response));
-        dialogs_.insert(std::make_pair(dialog->id(), dialog));
-        break;
+        dialogs_.insert(std::make_pair(id, dialog));
+      }
+      else if (response_code/100 == 2) {
+        i->second->set_state(Dialog::STATE_CONFIRMED);
       }
     }
   }
@@ -100,18 +104,38 @@ void UserAgent::OnChannelClosed(const EndPoint &destination, int err) {
 
 void UserAgent::OnIncomingRequest(
     const scoped_refptr<Request> &request) {
+  scoped_refptr<Dialog> dialog;
+  std::string id(request->GetDialogId());
+  DialogMapType::iterator i = dialogs_.find(id);
+  if (dialogs_.end() != i)
+    dialog = i->second;
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
-    (*i)->OnIncomingRequest(request, 0); // TODO: dialog matching
+    (*i)->OnIncomingRequest(request, dialog);
   }
 }
 
 void UserAgent::OnIncomingResponse(
     const scoped_refptr<Response> &response) {
-  // Create an UAC dialog
+  // Create an UAC dialog when appropriated
+  scoped_refptr<Dialog> dialog;
+  int response_code = response->response_code();
+  if (response_code > 100) {
+    scoped_refptr<Request> request(response->refer_to());
+    std::string id(response->GetDialogId());
+    DialogMapType::iterator i = dialogs_.find(id);
+    if (dialogs_.end() == i) {
+      dialog = Dialog::CreateClientDialog(request, response);
+      dialogs_.insert(std::make_pair(id, dialog));
+    }
+    else if (response_code/100 == 2) {
+      dialog = i->second;
+      dialog->set_state(Dialog::STATE_CONFIRMED);
+    }
+  }
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
-    (*i)->OnIncomingResponse(response, 0); // TODO: dialog matching
+    (*i)->OnIncomingResponse(response, dialog);
   }
 }
 
