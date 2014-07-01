@@ -148,7 +148,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   EXPECT_EQ(EndPoint("foo.com",5060,Protocol::TCP),
     single_via_request_endpoint);
 
-  scoped_refptr<Response> single_via_response = new Response(200);
+  scoped_refptr<Response> single_via_response = new Response(200, "OK", Message::Outgoing);
   via.reset(new Via);
   via->push_back(ViaParam(Protocol::TCP, net::HostPortPair("192.168.0.1", 7001)));
   single_via_response->push_front(via.PassAs<Header>());
@@ -157,7 +157,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   EXPECT_EQ(EndPoint("192.168.0.1",7001,Protocol::TCP),
     single_via_response_endpoint);
 
-  single_via_response = new Response(200);
+  single_via_response = new Response(200, "OK", Message::Outgoing);
   via.reset(new Via);
   via->push_back(ViaParam(Protocol::TCP, net::HostPortPair("192.168.0.1", 7001)));
   via->front().set_received("189.187.200.23");
@@ -167,7 +167,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   EXPECT_EQ(EndPoint("189.187.200.23",7001,Protocol::TCP),
     single_via_response_endpoint);
 
-  single_via_response = new Response(200);
+  single_via_response = new Response(200, "OK", Message::Outgoing);
   via.reset(new Via);
   via->push_back(ViaParam(Protocol::TCP, net::HostPortPair("192.168.0.1", 7001)));
   via->front().set_received("189.187.200.23");
@@ -217,6 +217,7 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
              branches, ARRAYSIZE_UNSAFE(branches));
 
   scoped_refptr<Message> request(Message::Parse(kRegisterRequest));
+  request->set_direction(Message::Outgoing);
   request->erase(request->find_first<Via>());
   int rv = network_layer_->Send(request, callback_.callback());
   EXPECT_EQ(net::ERR_IO_PENDING, rv);
@@ -238,6 +239,7 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
   data_->RunFor(1);
 
   scoped_refptr<Message> response(Message::Parse(kOptionsResponse));
+  response->set_direction(Message::Outgoing);
   rv = network_layer_->Send(response, callback_.callback());
   EXPECT_EQ(net::OK, rv);
 

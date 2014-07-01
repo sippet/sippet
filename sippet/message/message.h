@@ -8,9 +8,10 @@
 #include <algorithm>
 #include "sippet/base/ilist.h"
 #include "sippet/base/casting.h"
+#include "sippet/message/header.h"
 #include "base/memory/ref_counted.h"
 #include "base/memory/scoped_ptr.h"
-#include "sippet/message/header.h"
+#include "base/gtest_prod_util.h"
 
 namespace sippet {
 
@@ -266,12 +267,18 @@ public:
   }
 
 private:
+  FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, OutgoingRequest);
+
   template<class HeaderType>
   struct equals : public std::unary_function<const Header &, bool> {
     bool operator()(const Header &header) {
       return isa<HeaderType>(header);
     }
   };
+
+  void set_direction(Direction direction) {
+    direction_ = direction;
+  }
 };
 
 // isa - Provide some specializations of isa so that we don't have to include

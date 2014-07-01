@@ -10,7 +10,7 @@ using namespace sippet;
 
 class InstanceOfMessage : public Message {
 public:
-  InstanceOfMessage() : Message(true) {}
+  InstanceOfMessage() : Message(true, Outgoing) {}
 };
 
 class InstanceOfHeader : public Header {
