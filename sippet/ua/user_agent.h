@@ -90,10 +90,14 @@ class UserAgent :
       const net::CompletionCallback& callback);
 
  private:
+  typedef std::vector<GURL> UrlListType;
+  typedef std::vector<Delegate*> HandlerListType;
+  typedef std::map<std::string, scoped_refptr<Dialog> > DialogMapType;
+
   NetworkLayer *network_layer_;
-  std::vector<GURL> route_set_;
-  std::vector<Delegate*> handlers_;
-  std::map<std::string, scoped_refptr<Dialog> > dialogs_;
+  UrlListType route_set_;
+  HandlerListType handlers_;
+  DialogMapType dialogs_;
 
   struct IncomingRequestContext {
     // Holds the incoming request instance.

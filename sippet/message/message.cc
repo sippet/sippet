@@ -6,8 +6,10 @@
 
 namespace sippet {
 
-Message::Message(bool is_request)
-  : is_request_(is_request) {}
+Message::Message(bool is_request,
+                 Direction direction)
+  : is_request_(is_request),
+    direction_(direction) {}
 
 Message::~Message() {}
 

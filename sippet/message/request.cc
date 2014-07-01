@@ -12,7 +12,15 @@ namespace sippet {
 Request::Request(const Method &method,
                  const GURL &request_uri,
                  const Version &version)
-  : Message(true), method_(method), request_uri_(request_uri),
+  : Message(true, Outgoing), method_(method), request_uri_(request_uri),
+    version_(version), time_stamp_(base::Time::Now()),
+    id_(base::GenerateGUID()) {}
+
+Request::Request(const Method &method,
+                 const GURL &request_uri,
+                 Direction direction,
+                 const Version &version)
+  : Message(true, direction), method_(method), request_uri_(request_uri),
     version_(version), time_stamp_(base::Time::Now()),
     id_(base::GenerateGUID()) {}
 
@@ -51,36 +59,28 @@ void Request::print(raw_ostream &os) const {
   Message::print(os);
 }
 
+std::string Request::GetDialogId() {
+  std::string call_id(get<CallId>()->value());
+  std::string from_tag(get<From>()->tag());
+  std::string to_tag(get<To>()->tag());
+  std::ostringstream oss;
+  oss << call_id << ":";
+  if (direction() == Outgoing) {
+    oss << from_tag << ":" << to_tag;
+  } else {
+    oss << to_tag << ":" << from_tag;
+  }
+  return oss.str();
+}
+
 scoped_refptr<Response> Request::CreateResponse(
     int response_code,
     const std::string &reason_phrase) {
   scoped_refptr<Response> response(
-      new Response(response_code, reason_phrase));
-  copy_to<Via>(response);
-  scoped_ptr<From> from(get<From>()->Clone());
-  response->push_back(from.PassAs<Header>());
-  scoped_ptr<To> to(get<To>()->Clone());
-  if (to->HasTag())
-    response->push_back(to.PassAs<Header>());
-  else {
+      CreateResponseInternal(response_code, reason_phrase));
+  To *to = response->get<To>();
+  if (response_code > 100 && to && !to->HasTag())
     to->set_tag(CreateTag());
-    response->push_back(to.PassAs<Header>());
-  }
-  scoped_ptr<CallId> call_id(get<CallId>()->Clone());
-  response->push_back(call_id.PassAs<Header>());
-  scoped_ptr<Cseq> cseq(get<Cseq>()->Clone());
-  response->push_back(cseq.PassAs<Header>());
-  if (response_code == 100) {
-    Timestamp *timestamp = get<Timestamp>();
-    if (timestamp != NULL) {
-      scoped_ptr<Timestamp> newTimestamp(timestamp->Clone());
-      double delay = (base::Time::Now() - time_stamp_).InSecondsF();
-      newTimestamp->set_delay(delay);
-      response->push_back(newTimestamp.PassAs<Header>());
-    }
-  }
-  copy_to<RecordRoute>(response);
-  response->set_refer_to(this);
   return response;
 }
 
@@ -106,19 +106,18 @@ int Request::CreateAck(const std::string &remote_tag,
     return net::ERR_UNEXPECTED;
   }
   ack = new Request(Method::ACK, request_uri());
-  copy_to<Via>(ack);
+  CloneTo<Via>(ack);
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
   ack->push_back(max_forwards.PassAs<Header>());
-  scoped_ptr<From> from(get<From>()->Clone());
-  ack->push_back(from.PassAs<Header>());
-  scoped_ptr<To> to(get<To>()->Clone());
-  to->set_tag(remote_tag);
+  CloneTo<From>(ack);
+  scoped_ptr<To> to(Clone<To>().Pass());
+  if (to) to->set_tag(remote_tag);
   ack->push_back(to.PassAs<Header>());
-  scoped_ptr<CallId> call_id(get<CallId>()->Clone());
-  ack->push_back(call_id.PassAs<Header>());
-  scoped_ptr<Cseq> cseq(new Cseq(get<Cseq>()->sequence(), Method::ACK));
+  CloneTo<CallId>(ack);
+  scoped_ptr<Cseq> cseq(Clone<Cseq>().Pass());
+  if (cseq) cseq->set_method(Method::ACK);
   ack->push_back(cseq.PassAs<Header>());
-  copy_to<Route>(ack);
+  CloneTo<Route>(ack);
   return net::OK;
 }
 
@@ -139,23 +138,59 @@ int Request::CreateCancel(scoped_refptr<Request> &cancel) {
     return net::ERR_UNEXPECTED;
   }
   cancel = new Request(Method::CANCEL, request_uri());
-  copy_to<Via>(cancel);
+  CloneTo<Via>(cancel);
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
   cancel->push_back(max_forwards.PassAs<Header>());
-  scoped_ptr<From> from(get<From>()->Clone());
-  cancel->push_back(from.PassAs<Header>());
-  scoped_ptr<To> to(get<To>()->Clone());
-  cancel->push_back(to.PassAs<Header>());
-  scoped_ptr<CallId> call_id(get<CallId>()->Clone());
-  cancel->push_back(call_id.PassAs<Header>());
-  scoped_ptr<Cseq> cseq(new Cseq(get<Cseq>()->sequence(), Method::CANCEL));
+  CloneTo<From>(cancel);
+  CloneTo<To>(cancel);
+  CloneTo<CallId>(cancel);
+  scoped_ptr<Cseq> cseq(Clone<Cseq>());
+  if (cseq) cseq->set_method(Method::CANCEL);
   cancel->push_back(cseq.PassAs<Header>());
-  copy_to<Route>(cancel);
+  CloneTo<Route>(cancel);
   return net::OK;
 }
 
 std::string Request::CreateTag() {
   return Create32BitRandomString();
+}
+
+scoped_refptr<Response> Request::CreateResponseInternal(
+    int response_code,
+    const std::string &reason_phrase) {
+  if (Message::Incoming != direction()) {
+    DVLOG(1) << "Trying to create a response from an outgoing request";
+    return 0;
+  }
+  scoped_refptr<Response> response(
+      new Response(response_code, reason_phrase, Message::Outgoing));
+  CloneTo<Via>(response);
+  CloneTo<From>(response);
+  CloneTo<To>(response);
+  CloneTo<CallId>(response);
+  CloneTo<Cseq>(response);
+  if (response_code == 100) {
+    scoped_ptr<Timestamp> timestamp(Clone<Timestamp>());
+    if (timestamp) {
+      double delay = (base::Time::Now() - time_stamp_).InSecondsF();
+      timestamp->set_delay(delay);
+      response->push_back(timestamp.PassAs<Header>());
+    }
+  }
+  CloneTo<RecordRoute>(response);
+  response->set_refer_to(this);
+  return response;
+}
+
+scoped_refptr<Response> Request::CreateResponse(
+    int response_code,
+    const std::string &reason_phrase,
+    const std::string &remote_tag) {
+  scoped_refptr<Response> response(
+      CreateResponseInternal(response_code, reason_phrase));
+  To *to = response->get<To>();
+  if (to) to->set_tag(remote_tag);
+  return response;
 }
 
 } // End of sippet namespace
