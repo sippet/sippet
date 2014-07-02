@@ -556,12 +556,16 @@ void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel,
   ChannelsMap::iterator channel_it = channels_.find(channel->destination());
   DCHECK(channel_it != channels_.end());
   ChannelContext *channel_context = channel_it->second;
+  EndPoint destination(channel_context->channel_->destination());
+  int initial_result = result;
+  delegate_->OnChannelConnected(destination, initial_result);
   if (result == net::OK) {
     if (channel_context->initial_request_) {
       StampClientTopmostVia(channel_context->initial_request_,
         channel_context->channel_);
       ignore_result(CreateClientTransaction(
         channel_context->initial_request_, channel_context));
+      // The result is now related to send operation
       result = channel_context->channel_->Send(
         channel_context->initial_request_, channel_context->initial_callback_);
       if (result == net::OK) {
@@ -577,8 +581,6 @@ void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel,
         channel_context->initial_callback_.Reset();
       }
     }
-    EndPoint destination(channel_context->channel_->destination());
-    delegate_->OnChannelConnected(destination);
   }
   if (result != net::OK && result != net::ERR_IO_PENDING) {
     net::CompletionCallback callback(channel_context->initial_callback_);
@@ -586,8 +588,10 @@ void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel,
     EndPoint destination(channel_context->channel_->destination());
     DestroyChannelContext(channel_context);
     channel->Close();
-    callback.Run(result);
-    delegate_->OnChannelClosed(destination, result);
+    if (!callback.is_null())
+      callback.Run(result);
+    if (initial_result == net::OK)
+      delegate_->OnChannelClosed(destination);
   }
 }
 
@@ -647,7 +651,7 @@ void NetworkLayer::OnChannelClosed(const scoped_refptr<Channel> &channel,
   scoped_refptr<Channel> closing_channel(channel);
   DestroyChannelContext(channel_context);
   closing_channel->CloseWithError(error);
-  delegate_->OnChannelClosed(destination, error);
+  delegate_->OnChannelClosed(destination);
 }
 
 void NetworkLayer::OnIncomingResponse(const scoped_refptr<Response> &response) {

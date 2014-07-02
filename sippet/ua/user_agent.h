@@ -34,9 +34,9 @@ class UserAgent :
    public:
     virtual ~Delegate() {}
 
-    virtual void OnChannelConnected(const EndPoint &destination) = 0;
+    virtual void OnChannelConnected(const EndPoint &destination, int err) = 0;
 
-    virtual void OnChannelClosed(const EndPoint &destination, int err) = 0;
+    virtual void OnChannelClosed(const EndPoint &destination) = 0;
 
     virtual void OnIncomingRequest(
         const scoped_refptr<Request> &incoming_request,
@@ -127,8 +127,9 @@ class UserAgent :
   static std::string CreateCallId();
 
   // sippet::NetworkLayer::Delegate methods:
-  virtual void OnChannelConnected(const EndPoint &destination) OVERRIDE;
-  virtual void OnChannelClosed(const EndPoint &destination, int err) OVERRIDE;
+  virtual void OnChannelConnected(
+      const EndPoint &destination, int err) OVERRIDE;
+  virtual void OnChannelClosed(const EndPoint &destination) OVERRIDE;
   virtual void OnIncomingRequest(
       const scoped_refptr<Request> &request) OVERRIDE;
   virtual void OnIncomingResponse(

@@ -88,17 +88,17 @@ std::string UserAgent::CreateCallId() {
   return Create32BitRandomString();
 }
 
-void UserAgent::OnChannelConnected(const EndPoint &destination) {
+void UserAgent::OnChannelConnected(const EndPoint &destination, int err) {
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
-    (*i)->OnChannelConnected(destination);
+    (*i)->OnChannelConnected(destination, err);
   }
 }
 
-void UserAgent::OnChannelClosed(const EndPoint &destination, int err) {
+void UserAgent::OnChannelClosed(const EndPoint &destination) {
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
-    (*i)->OnChannelClosed(destination, err);
+    (*i)->OnChannelClosed(destination);
   }
 }
 
