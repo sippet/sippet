@@ -200,6 +200,7 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
   std::string client_tid;
   std::string server_tid;
   MockEvent expected_events[] = {
+    ExpectConnectChannel("192.0.4.42:5060/TCP", net::OK),
     ExpectStartTransaction("^REGISTER sip:192.0.4.42.*", &client_tid),
     ExpectIncomingResponse("^SIP/2.0 200 OK.*", &client_tid),
     ExpectIncomingMessage("^SIP/2.0 200 OK.*"),
@@ -208,7 +209,7 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
     ExpectIncomingMessage("^OPTIONS sip:192.0.2.33.*"),
     ExpectTransactionSend("^SIP/2.0 200 OK.*", &server_tid),
     ExpectTransactionClose(&server_tid),
-    ExpectCloseChannel("192.0.4.42:5060/TCP", net::ERR_CONNECTION_RESET),
+    ExpectCloseChannel("192.0.4.42:5060/TCP"),
   };
 
   Initialize(expected_reads, ARRAYSIZE_UNSAFE(expected_reads),
