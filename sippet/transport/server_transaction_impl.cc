@@ -71,7 +71,7 @@ void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
 void ServerTransactionImpl::OnSendWriteComplete(
           scoped_refptr<Response> response, int result) {
   if (net::OK != result) {
-    delegate_->OnTransportError(initial_request_->id(), result);
+    delegate_->OnTransportError(initial_request_, result);
     return;
   }
 
@@ -181,7 +181,7 @@ void ServerTransactionImpl::OnTimedOut() {
   DCHECK(MODE_INVITE == mode_);
   DCHECK(STATE_COMPLETED == next_state_);
   next_state_ = STATE_TERMINATED;
-  delegate_->OnTimedOut(initial_request_->id());
+  delegate_->OnTimedOut(initial_request_);
   Terminate();
 }
 
@@ -209,13 +209,13 @@ void ServerTransactionImpl::OnRetransmitWriteComplete(int result) {
     ScheduleRetry();
   }
   else if (net::ERR_IO_PENDING != result) {
-    delegate_->OnTransportError(initial_request_->id(), result);
+    delegate_->OnTransportError(initial_request_, result);
   }
 }
 
 void ServerTransactionImpl::OnSendProvisionalResponseWriteComplete(int result) {
   if (net::ERR_IO_PENDING != result) {
-    delegate_->OnTransportError(initial_request_->id(), result);
+    delegate_->OnTransportError(initial_request_, result);
   }
 }
 

@@ -122,21 +122,22 @@ class NetworkLayer :
     // Called when a timeout is detected while trying to send a request, or
     // while trying to send an INVITE error response.
     //
-    // |id| the request ID associated with the transaction. For client
-    // requests, it's the ID of the request used in |NetworkLayer::Send|. For
-    // server requests, it's the ID of the incoming request passed to
+    // |request| the request associated with the transaction. For client
+    // requests, it's the same request used in |NetworkLayer::Send|. For
+    // server requests, it's the incoming request passed to
     // |NetworkLayer::Delegate::OnIncomingMessage|.
-    virtual void OnTimedOut(const std::string &id) = 0;
+    virtual void OnTimedOut(const scoped_refptr<Request> &request) = 0;
 
     // Called when a network error is found while handling the requests or
     // responses.
     //
-    // |id| the request ID associated with the transaction. For client
-    // requests, it's the ID of the request used in |NetworkLayer::Send|. For
-    // server requests, it's the ID of the incoming request passed to
+    // |request| the request associated with the transaction. For client
+    // requests, it's the same request used in |NetworkLayer::Send|. For
+    // server requests, it's the incoming request passed to
     // |NetworkLayer::Delegate::OnIncomingMessage|.
     // |error| the network error arised while handling the messages.
-    virtual void OnTransportError(const std::string &id, int error) = 0;
+    virtual void OnTransportError(
+        const scoped_refptr<Request> &request, int error) = 0;
   };
 
   // Construct a |NetworkLayer| with an existing |TransactionFactory|.
@@ -333,8 +334,9 @@ class NetworkLayer :
 
   // sippet::TransactionDelegate methods:
   virtual void OnIncomingResponse(const scoped_refptr<Response> &) OVERRIDE;
-  virtual void OnTimedOut(const std::string &id) OVERRIDE;
-  virtual void OnTransportError(const std::string &id, int error) OVERRIDE;
+  virtual void OnTimedOut(const scoped_refptr<Request> &request) OVERRIDE;
+  virtual void OnTransportError(
+      const scoped_refptr<Request> &request, int error) OVERRIDE;
   virtual void OnTransactionTerminated(const std::string &) OVERRIDE;
 
   // Timer callbacks

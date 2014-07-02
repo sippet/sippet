@@ -658,12 +658,13 @@ void NetworkLayer::OnIncomingResponse(const scoped_refptr<Response> &response) {
   delegate_->OnIncomingResponse(response);
 }
 
-void NetworkLayer::OnTimedOut(const std::string &id) {
-  delegate_->OnTimedOut(id);
+void NetworkLayer::OnTimedOut(const scoped_refptr<Request> &request) {
+  delegate_->OnTimedOut(request);
 }
 
-void NetworkLayer::OnTransportError(const std::string &id, int error) {
-  delegate_->OnTransportError(id, error);
+void NetworkLayer::OnTransportError(
+    const scoped_refptr<Request> &request, int error) {
+  delegate_->OnTransportError(request, error);
 }
 
 void NetworkLayer::OnTransactionTerminated(const std::string &transaction_id) {

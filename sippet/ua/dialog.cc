@@ -68,52 +68,42 @@ scoped_refptr<Request> Dialog::CreateAck(
   return ack;
 }
 
-scoped_refptr<Dialog> Dialog::CreateClientDialog(
-    const scoped_refptr<Request> &request,
+scoped_refptr<Dialog> Dialog::Create(
     const scoped_refptr<Response> &response) {
+  scoped_refptr<Request> request(response->refer_to());
   State state = response->response_code() / 100 == 1
       ? STATE_EARLY : STATE_CONFIRMED;
   bool is_secure = request->request_uri().SchemeIs("sips");
-  std::vector<GURL> route_set(GetRouteSet(response->filter<RecordRoute>()));
-  std::reverse(route_set.begin(), route_set.end());
-  GURL remote_target(response->get<Contact>()->front().address());
-  bool has_local_sequence = true;
-  unsigned local_sequence = request->get<Cseq>()->sequence();
-  bool has_remote_sequence = false;
-  unsigned remote_sequence = 0;
+  std::vector<GURL> route_set;
+  GURL remote_target, remote_uri, local_uri;
+  bool has_local_sequence = false, has_remote_sequence = false;
+  unsigned local_sequence = 0, remote_sequence = 0;
   std::string call_id(request->get<CallId>()->value());
-  std::string local_tag(request->get<From>()->tag());
-  std::string remote_tag;
-  To *to = response->get<To>();
-  if (to->HasTag())
-    remote_tag = to->tag();
-  GURL remote_uri(request->get<To>()->address());
-  GURL local_uri(request->get<From>()->address());
-  return new Dialog(state, call_id, local_tag, remote_tag,
-      has_local_sequence, local_sequence, has_remote_sequence, remote_sequence,
-      local_uri, remote_uri, remote_target, is_secure, route_set);
-}
-
-scoped_refptr<Dialog> Dialog::CreateServerDialog(
-    const scoped_refptr<Request> &request,
-    const scoped_refptr<Response> &response) {
-  State state = response->response_code() / 100 == 1
-      ? STATE_EARLY : STATE_CONFIRMED;
-  bool is_secure = request->request_uri().SchemeIs("sips");
-  std::vector<GURL> route_set(GetRouteSet(request->filter<RecordRoute>()));
-  GURL remote_target(request->get<Contact>()->front().address());
-  bool has_remote_sequence = true;
-  unsigned remote_sequence = request->get<Cseq>()->sequence();
-  bool has_local_sequence = false;
-  unsigned local_sequence = 0;
-  std::string call_id(request->get<CallId>()->value());
-  std::string local_tag(response->get<To>()->tag());
-  std::string remote_tag;
-  From *from = request->get<From>();
-  if (from->HasTag())
-    remote_tag = from->tag();
-  GURL remote_uri(request->get<From>()->address());
-  GURL local_uri(request->get<To>()->address());
+  std::string local_tag, remote_tag;
+  if (Message::Outgoing == request->direction()) {
+    route_set = GetRouteSet(response->filter<RecordRoute>());
+    std::reverse(route_set.begin(), route_set.end());
+    remote_target = response->get<Contact>()->front().address();
+    has_local_sequence = true;
+    local_sequence = request->get<Cseq>()->sequence();
+    local_tag = request->get<From>()->tag();
+    To *to = response->get<To>();
+    if (to->HasTag())
+      remote_tag = to->tag();
+    remote_uri = request->get<To>()->address();
+    local_uri = request->get<From>()->address();
+  } else {
+    route_set = GetRouteSet(request->filter<RecordRoute>());
+    remote_target = request->get<Contact>()->front().address();
+    has_remote_sequence = true;
+    remote_sequence = request->get<Cseq>()->sequence();
+    local_tag = response->get<To>()->tag();
+    From *from = request->get<From>();
+    if (from->HasTag())
+      remote_tag = from->tag();
+    remote_uri = request->get<From>()->address();
+    local_uri = request->get<To>()->address();
+  }
   return new Dialog(state, call_id, local_tag, remote_tag,
       has_local_sequence, local_sequence, has_remote_sequence, remote_sequence,
       local_uri, remote_uri, remote_target, is_secure, route_set);

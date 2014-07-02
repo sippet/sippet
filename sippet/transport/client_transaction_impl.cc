@@ -139,7 +139,7 @@ void ClientTransactionImpl::OnTimedOut() {
   else
     DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
   next_state_ = STATE_TERMINATED;
-  delegate_->OnTimedOut(initial_request_->id());
+  delegate_->OnTimedOut(initial_request_);
   Terminate();
 }
 
@@ -155,7 +155,7 @@ void ClientTransactionImpl::OnWrite(int result) {
     ScheduleRetry();
   }
   else if (net::ERR_IO_PENDING != result) {
-    delegate_->OnTransportError(initial_request_->id(), result);
+    delegate_->OnTransportError(initial_request_, result);
   }
 }
 

@@ -46,9 +46,13 @@ class UserAgent :
         const scoped_refptr<Response> &incoming_response,
         const scoped_refptr<Dialog> &dialog) = 0;
 
-    virtual void OnTimedOut(const std::string &id) = 0;
+    virtual void OnTimedOut(
+        const scoped_refptr<Request> &request,
+        const scoped_refptr<Dialog> &dialog) = 0;
 
-    virtual void OnTransportError(const std::string &id, int error) = 0;
+    virtual void OnTransportError(
+        const scoped_refptr<Request> &request, int error,
+        const scoped_refptr<Dialog> &dialog) = 0;
   };
 
   UserAgent();
@@ -99,6 +103,7 @@ class UserAgent :
   HandlerListType handlers_;
   DialogMapType dialogs_;
 
+  // TODO
   struct IncomingRequestContext {
     // Holds the incoming request instance.
     scoped_refptr<Request> incoming_request_;
@@ -111,20 +116,26 @@ class UserAgent :
 
   std::map<std::string, IncomingRequestContext> incoming_requests_;
 
-  struct OutgoingRequestContext {
-    // Holds the outgoing request instance.
-    scoped_refptr<Request> outgoing_request_;
-    // Arrival time
-    base::Time dispatch_time_;
-  };
-
-  std::map<std::string, OutgoingRequestContext> outgoing_requests_;
-
   // Create a local tag
   static std::string CreateTag();
 
   // Create an unique Call-ID
   static std::string CreateCallId();
+
+  scoped_refptr<Dialog> HandleDialogStateOnResponse(
+      const scoped_refptr<Response> &response);
+  scoped_refptr<Dialog> HandleDialogStateOnError(
+      const scoped_refptr<Request> &request);
+
+  template <class Message>
+  std::pair<scoped_refptr<Dialog>, DialogMapType::iterator>
+      GetDialog(const scoped_refptr<Message> &message) {
+    std::string id(message->GetDialogId());
+    DialogMapType::iterator i = dialogs_.find(id);
+    return dialogs_.end() == i
+        ? std::make_pair(NULL, i)
+        : std::make_pair(i->second, i);
+  }
 
   // sippet::NetworkLayer::Delegate methods:
   virtual void OnChannelConnected(
@@ -134,8 +145,9 @@ class UserAgent :
       const scoped_refptr<Request> &request) OVERRIDE;
   virtual void OnIncomingResponse(
       const scoped_refptr<Response> &response) OVERRIDE;
-  virtual void OnTimedOut(const std::string &id) OVERRIDE;
-  virtual void OnTransportError(const std::string &id, int err) OVERRIDE;
+  virtual void OnTimedOut(const scoped_refptr<Request> &request) OVERRIDE;
+  virtual void OnTransportError(
+      const scoped_refptr<Request> &request, int err) OVERRIDE;
 };
 
 } // End of ua namespace
