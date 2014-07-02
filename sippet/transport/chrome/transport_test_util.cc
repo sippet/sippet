@@ -51,10 +51,11 @@ class ExpectNothing : public MockEvent::Expect {
   virtual void OnIncomingResponse(const scoped_refptr<Response> &) OVERRIDE {
     EXPECT_TRUE(false) << "Not expected to get an incoming response this time";
   }
-  virtual void OnTimedOut(const std::string &id) OVERRIDE {
+  virtual void OnTimedOut(const scoped_refptr<Request> &request) OVERRIDE {
     EXPECT_TRUE(false) << "Not expected a timeout at this time";
   }
-  virtual void OnTransportError(const std::string &id, int error) OVERRIDE {
+  virtual void OnTransportError(
+      const scoped_refptr<Request> &request, int error) OVERRIDE {
     EXPECT_TRUE(false) << "Not expected a transport error at this time";
   }
   virtual void Start(const scoped_refptr<Request>&) OVERRIDE {
@@ -307,15 +308,16 @@ void StaticNetworkLayerDelegate::OnIncomingResponse(
   data_provider_->GetNextEvent().OnIncomingResponse(response);
 }
 
-void StaticNetworkLayerDelegate::OnTimedOut(const std::string &id) {
+void StaticNetworkLayerDelegate::OnTimedOut(
+    const scoped_refptr<Request> &request) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
-  data_provider_->GetNextEvent().OnTimedOut(id);
+  data_provider_->GetNextEvent().OnTimedOut(request);
 }
 
 void StaticNetworkLayerDelegate::OnTransportError(
-                                  const std::string &id, int error) {
+    const scoped_refptr<Request> &request, int error) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
-  data_provider_->GetNextEvent().OnTransportError(id, error);
+  data_provider_->GetNextEvent().OnTransportError(request, error);
 }
 
 UDPChannelAdapter::UDPChannelAdapter(net::ClientSocketFactory *socket_factory,

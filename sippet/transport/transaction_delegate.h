@@ -18,10 +18,11 @@ class TransactionDelegate {
   virtual void OnIncomingResponse(const scoped_refptr<Response> &) = 0;
 
   // Called when the transaction timed-out.
-  virtual void OnTimedOut(const std::string &id) = 0;
+  virtual void OnTimedOut(const scoped_refptr<Request> &request) = 0;
 
   // Called when the transaction detects a network error.
-  virtual void OnTransportError(const std::string &id, int error) = 0;
+  virtual void OnTransportError(
+      const scoped_refptr<Request> &request, int error) = 0;
 
   // Called when the transaction has ended.
   virtual void OnTransactionTerminated(const std::string &transaction_id) = 0;

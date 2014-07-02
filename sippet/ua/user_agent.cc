@@ -7,6 +7,7 @@
 #include "sippet/uri/uri.h"
 #include "sippet/base/tags.h"
 #include "sippet/base/sequences.h"
+#include "sippet/base/stl_extras.h"
 #include "net/base/net_errors.h"
 
 namespace sippet {
@@ -59,23 +60,9 @@ scoped_refptr<Request> UserAgent::CreateRequest(
 int UserAgent::Send(
     const scoped_refptr<Message> &message,
     const net::CompletionCallback& callback) {
-  // Create an UAS dialog when appropriated
   if (isa<Response>(message)) {
     scoped_refptr<Response> response = dyn_cast<Response>(message);
-    int response_code = response->response_code();
-    if (response_code > 100) {
-      scoped_refptr<Request> request(response->refer_to());
-      std::string id(response->GetDialogId());
-      DialogMapType::iterator i = dialogs_.find(id);
-      if (dialogs_.end() == i) {
-        scoped_refptr<Dialog> dialog(
-            Dialog::CreateServerDialog(request, response));
-        dialogs_.insert(std::make_pair(id, dialog));
-      }
-      else if (response_code/100 == 2) {
-        i->second->set_state(Dialog::STATE_CONFIRMED);
-      }
-    }
+    HandleDialogStateOnResponse(response);
   }
   return network_layer_->Send(message, callback);
 }
@@ -86,6 +73,68 @@ std::string UserAgent::CreateTag() {
 
 std::string UserAgent::CreateCallId() {
   return Create32BitRandomString();
+}
+
+scoped_refptr<Dialog> UserAgent::HandleDialogStateOnResponse(
+    const scoped_refptr<Response> &response) {
+  scoped_refptr<Dialog> dialog;
+  scoped_refptr<Request> request(response->refer_to());
+  int response_code = response->response_code();
+  // Create dialog on response_code > 100 for INVITE requests
+  if (Method::INVITE == request->method()
+      && response_code > 100
+      && response->get<To>()->HasTag()) {
+    DialogMapType::iterator i;
+    tie(dialog, i) = GetDialog(response);
+    if (!dialog) {
+      switch (response_code/100) {
+        case 1:
+        case 2:
+          dialog = Dialog::Create(response);
+          dialogs_.insert(std::make_pair(dialog->id(), dialog));
+          break;
+      }
+    }
+    else {
+      switch (response_code/100) {
+        case 1:
+          break;
+        case 2:
+          dialog->set_state(Dialog::STATE_CONFIRMED);
+          break;
+        default:
+          dialog->set_state(Dialog::STATE_TERMINATED);
+          dialogs_.erase(i);
+          break;
+      }
+    }
+  }
+  // Terminate UAC dialog on response_code 2xx for BYE requests
+  else if (Method::BYE == request->method()
+      && response_code/100 == 2) {
+    DialogMapType::iterator i;
+    tie(dialog, i) = GetDialog(response);
+    if (dialog) {
+      dialog->set_state(Dialog::STATE_TERMINATED);
+      dialogs_.erase(i);
+    }
+  }
+  return dialog;
+}
+
+scoped_refptr<Dialog> UserAgent::HandleDialogStateOnError(
+    const scoped_refptr<Request> &request) {
+  scoped_refptr<Dialog> dialog;
+  if (Message::Outgoing == request->direction()) {
+    // UAC timeout or transport error
+    DialogMapType::iterator i;
+    tie(dialog, i) = GetDialog(request);
+    if (dialog) {
+      dialog->set_state(Dialog::STATE_TERMINATED);
+      dialogs_.erase(i);
+    }
+  }
+  return dialog;
 }
 
 void UserAgent::OnChannelConnected(const EndPoint &destination, int err) {
@@ -104,11 +153,7 @@ void UserAgent::OnChannelClosed(const EndPoint &destination) {
 
 void UserAgent::OnIncomingRequest(
     const scoped_refptr<Request> &request) {
-  scoped_refptr<Dialog> dialog;
-  std::string id(request->GetDialogId());
-  DialogMapType::iterator i = dialogs_.find(id);
-  if (dialogs_.end() != i)
-    dialog = i->second;
+  scoped_refptr<Dialog> dialog = GetDialog(request).first;
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
     (*i)->OnIncomingRequest(request, dialog);
@@ -117,39 +162,27 @@ void UserAgent::OnIncomingRequest(
 
 void UserAgent::OnIncomingResponse(
     const scoped_refptr<Response> &response) {
-  // Create an UAC dialog when appropriated
-  scoped_refptr<Dialog> dialog;
-  int response_code = response->response_code();
-  if (response_code > 100) {
-    scoped_refptr<Request> request(response->refer_to());
-    std::string id(response->GetDialogId());
-    DialogMapType::iterator i = dialogs_.find(id);
-    if (dialogs_.end() == i) {
-      dialog = Dialog::CreateClientDialog(request, response);
-      dialogs_.insert(std::make_pair(id, dialog));
-    }
-    else if (response_code/100 == 2) {
-      dialog = i->second;
-      dialog->set_state(Dialog::STATE_CONFIRMED);
-    }
-  }
+  scoped_refptr<Dialog> dialog = HandleDialogStateOnResponse(response);
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
     (*i)->OnIncomingResponse(response, dialog);
   }
 }
 
-void UserAgent::OnTimedOut(const std::string &id) {
+void UserAgent::OnTimedOut(const scoped_refptr<Request> &request) {
+  scoped_refptr<Dialog> dialog = HandleDialogStateOnError(request);
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
-    (*i)->OnTimedOut(id);
+    (*i)->OnTimedOut(request, dialog);
   }
 }
 
-void UserAgent::OnTransportError(const std::string &id, int err) {
+void UserAgent::OnTransportError(
+    const scoped_refptr<Request> &request, int err) {
+  scoped_refptr<Dialog> dialog = HandleDialogStateOnError(request);
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
-    (*i)->OnTransportError(id, err);
+    (*i)->OnTransportError(request, err, dialog);
   }
 }
 

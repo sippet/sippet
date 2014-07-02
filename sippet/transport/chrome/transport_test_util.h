@@ -89,11 +89,11 @@ class MockEvent {
   void OnIncomingResponse(const scoped_refptr<Response> &response) {
     expect_->OnIncomingResponse(response);
   }
-  void OnTimedOut(const std::string &id) {
-    expect_->OnTimedOut(id);
+  void OnTimedOut(const scoped_refptr<Request> &request) {
+    expect_->OnTimedOut(request);
   }
-  void OnTransportError(const std::string &id, int error) {
-    expect_->OnTransportError(id, error);
+  void OnTransportError(const scoped_refptr<Request> &request, int error) {
+    expect_->OnTransportError(request, error);
   }
 
   // Transaction layer events:
@@ -279,8 +279,9 @@ class StaticNetworkLayerDelegate :
       const scoped_refptr<Request> &request) OVERRIDE;
   virtual void OnIncomingResponse(
       const scoped_refptr<Response> &response) OVERRIDE;
-  virtual void OnTimedOut(const std::string &id) OVERRIDE;
-  virtual void OnTransportError(const std::string &id, int error) OVERRIDE;
+  virtual void OnTimedOut(const scoped_refptr<Request> &request) OVERRIDE;
+  virtual void OnTransportError(
+      const scoped_refptr<Request> &request, int error) OVERRIDE;
 };
 
 class MockChannelAdapter {
