@@ -174,14 +174,8 @@ class Dialog :
   bool is_secure_;
   std::vector<GURL> route_set_;
 
-  // Create a client |Dialog|.
-  static scoped_refptr<Dialog> CreateClientDialog(
-      const scoped_refptr<Request> &request,
-      const scoped_refptr<Response> &response);
-
-  // Create a server |Dialog|.
-  static scoped_refptr<Dialog> CreateServerDialog(
-      const scoped_refptr<Request> &request,
+  // Create a |Dialog|.
+  static scoped_refptr<Dialog> Create(
       const scoped_refptr<Response> &response);
 
   // Set the dialog state (UserAgent only).
