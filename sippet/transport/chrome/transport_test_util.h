@@ -77,11 +77,11 @@ class MockEvent {
   }
 
   // NetworkLayer::Delegate events:
-  void OnChannelConnected(const EndPoint &destination) {
-    expect_->OnChannelConnected(destination);
+  void OnChannelConnected(const EndPoint &destination, int error) {
+    expect_->OnChannelConnected(destination, error);
   }
-  void OnChannelClosed(const EndPoint& destination, int error) {
-    expect_->OnChannelClosed(destination, error);
+  void OnChannelClosed(const EndPoint& destination) {
+    expect_->OnChannelClosed(destination);
   }
   void OnIncomingRequest(const scoped_refptr<Request> &request) {
     expect_->OnIncomingRequest(request);
@@ -137,7 +137,8 @@ class DataProvider {
 
   virtual void set_transaction_id(const std::string &transaction_id) = 0;
 
-  virtual void OnChannelClosed(const EndPoint& destination, int error) = 0;
+  virtual void OnChannelConnected(const EndPoint& destination, int err) = 0;
+  virtual void OnChannelClosed(const EndPoint& destination) = 0;
   virtual void OnIncomingMessage(Message *message) = 0;
   virtual void Start(const scoped_refptr<Request> &starting_request) = 0;
   virtual void Send(const std::string &transaction_id,
@@ -191,9 +192,13 @@ class StaticDataProvider : public DataProvider {
     PeekEvent().set_transaction_id(transaction_id);
   }
 
-  virtual void OnChannelClosed(
+  virtual void OnChannelConnected(
           const EndPoint& destination, int error) OVERRIDE {
-    GetNextEvent().OnChannelClosed(destination, error);
+    GetNextEvent().OnChannelConnected(destination, error);
+  }
+  virtual void OnChannelClosed(
+          const EndPoint& destination) OVERRIDE {
+    GetNextEvent().OnChannelClosed(destination);
   }
   virtual void OnIncomingMessage(Message *message) OVERRIDE {
     if (isa<Request>(message)) {
@@ -240,8 +245,9 @@ class StaticDataProvider : public DataProvider {
 };
 
 // NetworkLayer::Delegate events:
+MockEvent ExpectConnectChannel(const char *destination);
+MockEvent ExpectConnectChannel(const char *destination, int err);
 MockEvent ExpectCloseChannel(const char *destination);
-MockEvent ExpectCloseChannel(const char *destination, int error);
 MockEvent ExpectIncomingMessage(const char *regular_expressions);
 
 // Transaction events:
@@ -266,8 +272,9 @@ class StaticNetworkLayerDelegate :
  private:
   DataProvider *data_provider_;
 
-  virtual void OnChannelConnected(const EndPoint &destination) OVERRIDE;
-  virtual void OnChannelClosed(const EndPoint&, int) OVERRIDE;
+  virtual void OnChannelConnected(
+      const EndPoint &destination, int err) OVERRIDE;
+  virtual void OnChannelClosed(const EndPoint &destination) OVERRIDE;
   virtual void OnIncomingRequest(
       const scoped_refptr<Request> &request) OVERRIDE;
   virtual void OnIncomingResponse(

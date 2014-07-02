@@ -100,13 +100,13 @@ class NetworkLayer :
     virtual ~Delegate() {}
 
     // Called when a channel is opened.
-    virtual void OnChannelConnected(const EndPoint &destination) = 0;
+    virtual void OnChannelConnected(const EndPoint &destination, int err) = 0;
 
     // Called when one of the opened channels is closed. Normally this function
     // is called only when a stream oriented channel is closed, but it's
     // possible to be called on datagram channels when an ICMP error (such as
     // port unreachable) is detected by the network layer.
-    virtual void OnChannelClosed(const EndPoint &destination, int err) = 0;
+    virtual void OnChannelClosed(const EndPoint &destination) = 0;
 
     // Called whenever a new request is received.
     virtual void OnIncomingRequest(

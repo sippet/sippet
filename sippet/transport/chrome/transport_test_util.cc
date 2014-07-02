@@ -37,11 +37,12 @@ bool ParseHostPortPair(const net::HostPortPair &destination,
 
 class ExpectNothing : public MockEvent::Expect {
  public:
-  virtual void OnChannelConnected(const EndPoint &destination) OVERRIDE {
+  virtual void OnChannelConnected(
+                    const EndPoint &destination, int error) OVERRIDE {
     EXPECT_TRUE(false) << "Not expected a channel connect at this time";
   }
   virtual void OnChannelClosed(
-                    const EndPoint& destination, int error) OVERRIDE {
+                    const EndPoint& destination) OVERRIDE {
     EXPECT_TRUE(false) << "Not expected a channel close at this time";
   }
   virtual void OnIncomingRequest(const scoped_refptr<Request> &) OVERRIDE {
@@ -75,14 +76,14 @@ class ExpectNothing : public MockEvent::Expect {
   }
 };
 
-class ChannelClosedImpl : public ExpectNothing {
+class ChannelConnectedImpl : public ExpectNothing {
  public:
-  ChannelClosedImpl(const EndPoint &destination)
+  ChannelConnectedImpl(const EndPoint &destination)
     : has_error_(false), destination_(destination) {}
-  ChannelClosedImpl(const EndPoint &destination, int error)
+  ChannelConnectedImpl(const EndPoint &destination, int error)
     : has_error_(true), destination_(destination), error_(error) {}
-  virtual ~ChannelClosedImpl() {}
-  void OnChannelClosed(const EndPoint& destination, int error) OVERRIDE {
+  virtual ~ChannelConnectedImpl() {}
+  void OnChannelConnected(const EndPoint& destination, int error) OVERRIDE {
     EXPECT_EQ(destination_, destination);
     if (has_error_)
       EXPECT_EQ(error_, error);
@@ -91,6 +92,18 @@ class ChannelClosedImpl : public ExpectNothing {
   EndPoint destination_;
   bool has_error_;
   int error_;
+};
+
+class ChannelClosedImpl : public ExpectNothing {
+ public:
+  ChannelClosedImpl(const EndPoint &destination)
+    : destination_(destination) {}
+  virtual ~ChannelClosedImpl() {}
+  void OnChannelClosed(const EndPoint& destination) OVERRIDE {
+    EXPECT_EQ(destination_, destination);
+  }
+ private:
+  EndPoint destination_;
 };
 
 class IncomingMessageImpl : public ExpectNothing {
@@ -220,14 +233,19 @@ std::string MockBranchFactory::CreateBranch() {
   return branches_[branches_index_++];
 }
 
+MockEvent ExpectConnectChannel(const char *destination) {
+  EndPoint endpoint(EndPoint::FromString(destination));
+  return MockEvent(new ChannelConnectedImpl(endpoint));
+}
+
+MockEvent ExpectConnectChannel(const char *destination, int error) {
+  EndPoint endpoint(EndPoint::FromString(destination));
+  return MockEvent(new ChannelConnectedImpl(endpoint, error));
+}
+
 MockEvent ExpectCloseChannel(const char *destination) {
   EndPoint endpoint(EndPoint::FromString(destination));
   return MockEvent(new ChannelClosedImpl(endpoint));
-}
-
-MockEvent ExpectCloseChannel(const char *destination, int error) {
-  EndPoint endpoint(EndPoint::FromString(destination));
-  return MockEvent(new ChannelClosedImpl(endpoint, error));
 }
 
 MockEvent ExpectIncomingMessage(const char *regular_expressions) {
@@ -266,14 +284,15 @@ StaticNetworkLayerDelegate::StaticNetworkLayerDelegate(
 
 StaticNetworkLayerDelegate::~StaticNetworkLayerDelegate() {}
 
-void StaticNetworkLayerDelegate::OnChannelConnected(const EndPoint& destination) {
+void StaticNetworkLayerDelegate::OnChannelConnected(
+    const EndPoint& destination, int error) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
-  data_provider_->GetNextEvent().OnChannelConnected(destination);
+  data_provider_->GetNextEvent().OnChannelConnected(destination, error);
 }
 
-void StaticNetworkLayerDelegate::OnChannelClosed(const EndPoint& destination, int error) {
+void StaticNetworkLayerDelegate::OnChannelClosed(const EndPoint& destination) {
   DCHECK(data_provider_ && !data_provider_->at_events_end());
-  data_provider_->GetNextEvent().OnChannelClosed(destination, error);
+  data_provider_->GetNextEvent().OnChannelClosed(destination);
 }
 
 void StaticNetworkLayerDelegate::OnIncomingRequest(
