@@ -5,23 +5,31 @@
 #ifndef SIPPET_TRANSPORT_NETWORK_SETTINGS_H_
 #define SIPPET_TRANSPORT_NETWORK_SETTINGS_H_
 
+#include "net/base/net_export.h"
 #include "base/memory/ref_counted.h"
 #include "sippet/transport/branch_factory.h"
 #include "sippet/transport/transaction_factory.h"
 
+#include <string>
+
 namespace sippet {
 
 class NetworkSettings {
+ public:
+  static std::string GetDefaultSoftwareName();
+
  private:
   struct Data {
     int reuse_lifetime_;
     bool enable_compact_headers_;
+    std::string software_name_;
     BranchFactory *branch_factory_;
     TransactionFactory *transaction_factory_;
     // Default values
     Data() :
       reuse_lifetime_(60),
       enable_compact_headers_(true),
+      software_name_(GetDefaultSoftwareName()),
       branch_factory_(BranchFactory::GetDefaultBranchFactory()),
       transaction_factory_(TransactionFactory::GetDefaultTransactionFactory()) {}
   };
@@ -51,6 +59,14 @@ class NetworkSettings {
   }
   void set_enable_compact_headers(bool value) {
     data_.enable_compact_headers_ = value;
+  }
+
+  // Set the software name (the value added to User-Agent headers)
+  std::string software_name() const {
+    return data_.software_name_;
+  }
+  void set_software_name(const std::string &software_name) {
+    data_.software_name_ = software_name;
   }
 
   // The internal branch factory to use

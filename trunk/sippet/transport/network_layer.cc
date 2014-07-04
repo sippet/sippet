@@ -119,6 +119,13 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
     return net::ERR_INVALID_ARGUMENT;
   }
 
+  // Add a User-Agent header if there's none
+  if (!request->get<UserAgent>()) {
+    scoped_ptr<UserAgent> user_agent(
+        new UserAgent(network_settings_.software_name()));
+    request->push_back(user_agent.PassAs<Header>());
+  }
+
   ChannelContext *channel_context = GetChannelContext(destination);
   if (channel_context) {
     if (!channel_context->channel_->is_connected()) {
@@ -155,6 +162,13 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
 
 int NetworkLayer::SendResponse(const scoped_refptr<Response> &response,
                                const net::CompletionCallback& callback) {
+  // Add a Server header if there's none
+  if (!response->get<Server>()) {
+    scoped_ptr<Server> server(
+        new Server(network_settings_.software_name()));
+    response->push_back(server.PassAs<Header>());
+  }
+
   scoped_refptr<ServerTransaction> server_transaction =
     GetServerTransaction(response);
   if (server_transaction) {
