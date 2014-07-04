@@ -1026,7 +1026,7 @@ typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,
 const ParseFunction parsers[] = {
 #define X(class_name, compact_form, header_name, enum_name, format) \
   &Parse##format<class_name>,
-#include "sippet/message/known_headers.h"
+#include "sippet/message/header_list.h"
 #undef X
 };
 

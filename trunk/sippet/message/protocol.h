@@ -13,9 +13,9 @@ namespace sippet {
 namespace details {
 struct Protocol {
   enum Type {
-#define X(protocol) protocol,
-#include "sippet/message/known_protocols.h"
-#undef X
+#define SIP_PROTOCOL(protocol) protocol,
+#include "sippet/message/protocol_list.h"
+#undef SIP_PROTOCOL
     Unknown
   };
 };
