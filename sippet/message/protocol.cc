@@ -13,10 +13,10 @@ namespace sippet {
 
 namespace {
   const char *names[] = {
-#define X(method) \
+#define SIP_PROTOCOL(method) \
   #method,
-  #include "sippet/message/known_protocols.h"
-#undef X
+  #include "sippet/message/protocol_list.h"
+#undef SIP_PROTOCOL
     "", // for Unknown
   };
 

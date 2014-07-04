@@ -15,7 +15,7 @@ namespace sippet {
 class raw_ostream;
 #define X(class_name, compact_form, header_name, enum_name, format) \
 class class_name;
-#include "sippet/message/known_headers.h"
+#include "sippet/message/header_list.h"
 #undef X
 class Generic;
 
@@ -25,7 +25,7 @@ public:
   enum Type {
     #define X(class_name, compact_form, header_name, enum_name, format) \
     HDR_##enum_name,
-    #include "sippet/message/known_headers.h"
+    #include "sippet/message/header_list.h"
     #undef X
     HDR_GENERIC
   };
@@ -62,7 +62,7 @@ template <> struct isa_impl<class_name, Header> {                   \
     return h.type() == Header::HDR_##enum_name;                     \
   }                                                                 \
 };
-#include "sippet/message/known_headers.h"
+#include "sippet/message/header_list.h"
 #undef X
 
 template <> struct isa_impl<Generic, Header> {

@@ -6,7 +6,7 @@
 #define SIPPET_UA_DIALOG_H_
 
 #include "sippet/message/method.h"
-#include "sippet/message/status.h"
+#include "sippet/message/status_code.h"
 #include "base/memory/ref_counted.h"
 #include "url/gurl.h"
 #include <vector>
@@ -123,7 +123,7 @@ class Dialog :
       const std::string &reason_phrase,
       const scoped_refptr<Request> &request);
   scoped_refptr<Response> CreateResponse(
-      Status::Type status,
+      StatusCode code,
       const scoped_refptr<Request> &request);
 
   // Create a |Method::ACK| request for a 2xx response, passing the INVITE

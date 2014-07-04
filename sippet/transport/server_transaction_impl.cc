@@ -197,7 +197,7 @@ void ServerTransactionImpl::OnTerminated() {
 
 void ServerTransactionImpl::OnSendProvisionalResponse() {
   DCHECK(MODE_INVITE == mode_ && STATE_PROCEEDING == next_state_);
-  scoped_refptr<Response> response = initial_request_->CreateResponse(Status::Trying);
+  scoped_refptr<Response> response = initial_request_->CreateResponse(SIP_TRYING);
   int result = channel_->Send(response,
     base::Bind(&ServerTransactionImpl::OnSendProvisionalResponseWriteComplete, this));
   if (net::ERR_IO_PENDING != result)
