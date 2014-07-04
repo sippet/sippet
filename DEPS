@@ -198,6 +198,15 @@ hooks = [
                "--win-only"],
   },
   {
+    # Update LASTCHANGE. This is also run by export_tarball.py in
+    # src/tools/export_tarball - please keep them in sync.
+    "name": "lastchange",
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/build/util/lastchange.py",
+               "-s", Var("root_dir") + "/sippet",
+               "-o", Var("root_dir") + "/build/util/LASTCHANGE"],
+  },
+  {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/build/gyp_chromium",
