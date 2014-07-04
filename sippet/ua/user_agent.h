@@ -7,6 +7,7 @@
 
 #include "sippet/transport/network_layer.h"
 #include "sippet/ua/dialog.h"
+#include "sippet/ua/user_agent_settings.h"
 
 #include <map>
 #include <vector>
@@ -55,7 +56,9 @@ class UserAgent :
         const scoped_refptr<Dialog> &dialog) = 0;
   };
 
-  UserAgent();
+  // Construct a |UserAgent|.
+  UserAgent(
+      /*const UserAgentSettings &user_agent_settings = UserAgentSettings()*/);
   virtual ~UserAgent() {}
 
   void SetNetworkLayer(NetworkLayer *network_layer) {
@@ -133,7 +136,7 @@ class UserAgent :
     std::string id(message->GetDialogId());
     DialogMapType::iterator i = dialogs_.find(id);
     return dialogs_.end() == i
-        ? std::make_pair(NULL, i)
+        ? std::make_pair(scoped_refptr<Dialog>(), i)
         : std::make_pair(i->second, i);
   }
 

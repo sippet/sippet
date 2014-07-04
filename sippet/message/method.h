@@ -13,9 +13,9 @@ namespace sippet {
 namespace details {
 struct Method {
   enum Type {
-#define X(method) method,
-#include "sippet/message/known_methods.h"
-#undef X
+#define SIP_METHOD(method) method,
+#include "sippet/message/method_list.h"
+#undef SIP_METHOD
     Unknown
   };
 };

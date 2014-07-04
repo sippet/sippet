@@ -111,7 +111,7 @@ scoped_refptr<Dialog> UserAgent::HandleDialogStateOnResponse(
   }
   // Terminate UAC dialog on response_code 2xx for BYE requests
   else if (Method::BYE == request->method()
-      && response_code/100 == 2) {
+           && response_code/100 == 2) {
     DialogMapType::iterator i;
     tie(dialog, i) = GetDialog(response);
     if (dialog) {

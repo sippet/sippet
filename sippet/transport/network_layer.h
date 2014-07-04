@@ -140,7 +140,7 @@ class NetworkLayer :
         const scoped_refptr<Request> &request, int error) = 0;
   };
 
-  // Construct a |NetworkLayer| with an existing |TransactionFactory|.
+  // Construct a |NetworkLayer|.
   NetworkLayer(Delegate *delegate,
                const NetworkSettings &network_settings = NetworkSettings());
   virtual ~NetworkLayer();

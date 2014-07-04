@@ -17,14 +17,14 @@ namespace {
   static const char *names[] = {
 #define X(class_name, compact_form, header_name, enum_name, format) \
     #header_name,
-#include "sippet/message/known_headers.h"
+#include "sippet/message/header_list.h"
 #undef X
   };
 
   static const char compact_forms[] = {
 #define X(class_name, compact_form, header_name, enum_name, format) \
     compact_form,
-#include "sippet/message/known_headers.h"
+#include "sippet/message/header_list.h"
 #undef X
   };
 

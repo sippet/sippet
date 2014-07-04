@@ -84,8 +84,8 @@ scoped_refptr<Response> Request::CreateResponse(
   return response;
 }
 
-scoped_refptr<Response> Request::CreateResponse(const Status::Type &status) {
-  return CreateResponse(static_cast<int>(status), Status::string_of(status));
+scoped_refptr<Response> Request::CreateResponse(StatusCode code) {
+  return CreateResponse(static_cast<int>(code), GetReasonPhrase(code));
 }
 
 int Request::CreateAck(const std::string &remote_tag,

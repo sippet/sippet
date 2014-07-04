@@ -48,10 +48,10 @@ scoped_refptr<Response> Dialog::CreateResponse(
 }
 
 scoped_refptr<Response> Dialog::CreateResponse(
-    Status::Type status,
+    StatusCode code,
     const scoped_refptr<Request> &request) {
-  return CreateResponse(static_cast<int>(status),
-      Status::string_of(status), request);
+  return CreateResponse(static_cast<int>(code),
+      GetReasonPhrase(code), request);
 }
 
 scoped_refptr<Request> Dialog::CreateAck(
