@@ -187,6 +187,16 @@ public:
     return std::find_if(headers_.begin(), headers_.end(),
       equals<HeaderType>());
   }
+  template<class HeaderType>
+  reverse_iterator rfind_first() {
+    return std::find_if(headers_.rbegin(), headers_.rend(),
+      equals<HeaderType>());
+  }
+  template<class HeaderType>
+  const_reverse_iterator rfind_first() const {
+    return std::find_if(headers_.rbegin(), headers_.rend(),
+      equals<HeaderType>());
+  }
 
   // Find next header of given type.
   template<class HeaderType>
