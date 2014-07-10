@@ -156,6 +156,8 @@
         'ua/auth_cache.cc',
         'ua/auth_handler.h',
         'ua/auth_handler.cc',
+        'ua/auth_handler_digest.h',
+        'ua/auth_handler_digest.cc',
         'ua/auth_handler_factory.h',
         'ua/auth_handler_factory.cc',
         'ua/auth_controller.h',
