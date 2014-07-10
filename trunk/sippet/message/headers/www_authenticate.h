@@ -6,6 +6,7 @@
 #define SIPPET_MESSAGE_HEADERS_WWW_AUTHENTICATE_H_
 
 #include "sippet/message/headers/bits/auth_setters.h"
+#include "sippet/base/raw_ostream.h"
 
 namespace sippet {
 
@@ -24,6 +25,13 @@ public:
   Challenge(const std::string &scheme) : has_auth_params(scheme) {}
   Challenge(const Challenge &other) : has_auth_params(other) {}
   ~Challenge() {}
+
+  std::string ToString() {
+    std::string result;
+    raw_string_ostream os(result);
+    has_auth_params::print(os);
+    return os.str();
+  }
 };
 
 class WwwAuthenticate :
