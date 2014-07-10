@@ -6,7 +6,10 @@
 #include "sippet/uri/uri_parse.h"
 #include "sippet/uri/uri_canon.h"
 #include "sippet/uri/uri_util.h"
+#include "sippet/base/stl_extras.h"
 #include "base/logging.h"
+
+#include <sstream>
 
 namespace sippet {
 
@@ -169,14 +172,16 @@ SipURI SipURI::GetOrigin() const {
   if (!is_valid_)
     return SipURI();
 
-  std::string spec;
-  spec += scheme();
-  spec += ":";
-  spec += host();
+  std::ostringstream spec;
+  spec << scheme() << ":" << host();
   if (has_port())
-    spec += port();
-
-  return SipURI(spec);
+    spec << port();
+  bool exists;
+  std::string value;
+  tie(exists, value) = parameter("transport");
+  if (exists)
+    spec << ";transport=" << value;
+  return SipURI(spec.str());
 }
 
 bool SipURI::SchemeIs(const char* lower_ascii_scheme) const {

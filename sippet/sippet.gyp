@@ -150,6 +150,16 @@
         'ua/user_agent.cc',
         'ua/dialog.h',
         'ua/dialog.cc',
+        'ua/auth.h',
+        'ua/auth.cc',
+        'ua/auth_cache.h',
+        'ua/auth_cache.cc',
+        'ua/auth_handler.h',
+        'ua/auth_handler.cc',
+        'ua/auth_handler_factory.h',
+        'ua/auth_handler_factory.cc',
+        'ua/auth_controller.h',
+        'ua/auth_controller.cc',
       ],
       'conditions': [
         ['OS == "ios"', {
