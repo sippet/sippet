@@ -21,6 +21,7 @@ class Credentials :
   public has_cnonce<Credentials>,
   public has_opaque<Credentials>,
   public has_nc<Credentials>,
+  public has_qop<Credentials>,
   public has_auth_params {
 public:
   Credentials() {}
