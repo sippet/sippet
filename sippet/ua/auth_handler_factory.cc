@@ -9,6 +9,7 @@
 #include "net/base/net_errors.h"
 #include "sippet/message/headers.h"
 #include "sippet/ua/auth_handler.h"
+#include "sippet/ua/auth_handler_digest.h"
 
 namespace sippet {
 
@@ -39,8 +40,8 @@ AuthHandlerRegistryFactory* AuthHandlerFactory::CreateDefault(
   DCHECK(host_resolver);
   AuthHandlerRegistryFactory* registry_factory =
       new AuthHandlerRegistryFactory();
-/*  registry_factory->RegisterSchemeFactory(
-      "digest", new HttpAuthHandlerDigest::Factory());*/
+  registry_factory->RegisterSchemeFactory(
+      "digest", new AuthHandlerDigest::Factory());
   return registry_factory;
 }
 
@@ -96,9 +97,9 @@ AuthHandlerRegistryFactory* AuthHandlerRegistryFactory::Create(
     bool negotiate_enable_port) {
   AuthHandlerRegistryFactory* registry_factory =
       new AuthHandlerRegistryFactory();
-/*  if (IsSupportedScheme(supported_schemes, "digest"))
+  if (IsSupportedScheme(supported_schemes, "digest"))
     registry_factory->RegisterSchemeFactory(
-        "digest", new HttpAuthHandlerDigest::Factory());*/
+        "digest", new AuthHandlerDigest::Factory());
   return registry_factory;
 }
 
