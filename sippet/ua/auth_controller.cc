@@ -7,6 +7,13 @@
 
 namespace sippet {
 
+// Based on net/http/http_auth_controller.cc,
+// revision 238260
+
+// Copyright (c) 2011 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 AuthController::AuthController(
     AuthCache* auth_cache,
     AuthHandlerFactory* auth_handler_factory) {}
