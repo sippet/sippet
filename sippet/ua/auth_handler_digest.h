@@ -82,7 +82,7 @@ class AuthHandlerDigest : public AuthHandler {
  protected:
   virtual bool Init(const Challenge& challenge) OVERRIDE;
 
-  virtual int GenerateAuthTokenImpl(
+  virtual int GenerateAuthImpl(
       const net::AuthCredentials* credentials,
       const scoped_refptr<Request> &request,
       const net::CompletionCallback& callback) OVERRIDE;
@@ -103,10 +103,10 @@ class AuthHandlerDigest : public AuthHandler {
   };
 
   // Possible values for QualityOfProtection.
-  // auth-int is not (yet) supported.
   enum QualityOfProtection {
     QOP_UNSPECIFIED,
     QOP_AUTH,
+    QOP_AUTH_INT,
   };
 
   // |nonce_count| indicates how many times the server-specified nonce has
@@ -120,10 +120,6 @@ class AuthHandlerDigest : public AuthHandler {
   // Parse the challenge, saving the results into this instance.
   // Returns true on success.
   bool ParseChallenge(const Challenge& challenge);
-
-  // Parse an individual property. Returns true on success.
-  bool ParseChallengeProperty(const std::string& name,
-                              const std::string& value);
 
   // Generates a random string, to be used for client-nonce.
   static std::string GenerateNonce();
@@ -144,6 +140,7 @@ class AuthHandlerDigest : public AuthHandler {
   // Build up  the 'response' production.
   std::string AssembleResponseDigest(const std::string& method,
                                      const std::string& request_uri,
+                                     const std::string& body,
                                      const net::AuthCredentials& credentials,
                                      const std::string& cnonce,
                                      int nonce_count) const;

@@ -28,6 +28,7 @@
         'transport/network_layer_unittest.cc',
         'transport/chrome/framed_write_stream_socket_unittest.cc',
         'transport/chrome/sequenced_write_stream_socket_unittest.cc',
+        'ua/auth_handler_digest_unittest.cc',
       ],
     },  # target sippet_unittest
     {
