@@ -53,7 +53,7 @@ bool AuthHandler::InitFromChallenge(
   return ok;
 }
 
-int AuthHandler::GenerateAuthToken(
+int AuthHandler::GenerateAuth(
     const net::AuthCredentials* credentials,
     const scoped_refptr<Request> &request,
     const net::CompletionCallback& callback) {
@@ -62,12 +62,12 @@ int AuthHandler::GenerateAuthToken(
   DCHECK(callback_.is_null());
   callback_ = callback;
   net_log_.BeginEvent(EventTypeFromAuthTarget(target_));
-  int rv = GenerateAuthTokenImpl(
+  int rv = GenerateAuthImpl(
       credentials, request,
-      base::Bind(&AuthHandler::OnGenerateAuthTokenComplete,
+      base::Bind(&AuthHandler::OnGenerateAuthComplete,
                  base::Unretained(this)));
   if (rv != net::ERR_IO_PENDING)
-    FinishGenerateAuthToken();
+    FinishGenerateAuth();
   return rv;
 }
 
@@ -79,14 +79,14 @@ bool AuthHandler::AllowsExplicitCredentials() {
   return true;
 }
 
-void AuthHandler::OnGenerateAuthTokenComplete(int rv) {
+void AuthHandler::OnGenerateAuthComplete(int rv) {
   net::CompletionCallback callback = callback_;
-  FinishGenerateAuthToken();
+  FinishGenerateAuth();
   if (!callback.is_null())
     callback.Run(rv);
 }
 
-void AuthHandler::FinishGenerateAuthToken() {
+void AuthHandler::FinishGenerateAuth() {
   net_log_.EndEvent(EventTypeFromAuthTarget(target_));
   callback_.Reset();
 }

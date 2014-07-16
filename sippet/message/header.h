@@ -51,6 +51,13 @@ public:
   scoped_ptr<Header> Clone() const { return scoped_ptr<Header>(DoClone()); }
 
   virtual void print(raw_ostream &os) const;
+
+  std::string ToString() {
+    std::string result;
+    raw_string_ostream os(result);
+    print(os);
+    return os.str();
+  }
 };
 
 // isa - Provide some specializations of isa so that we don't have to include
