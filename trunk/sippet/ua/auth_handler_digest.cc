@@ -127,7 +127,7 @@ bool AuthHandlerDigest::Init(const Challenge& challenge) {
   return ParseChallenge(challenge);
 }
 
-int AuthHandlerDigest::GenerateAuthTokenImpl(
+int AuthHandlerDigest::GenerateAuthImpl(
     const net::AuthCredentials* credentials,
     const scoped_refptr<Request> &request,
     const net::CompletionCallback& callback) {
@@ -189,51 +189,42 @@ bool AuthHandlerDigest::ParseChallenge(
   if (!LowerCaseEqualsASCII(challenge.scheme(), "digest"))
     return false;
 
-  // Loop through all the properties.
-  for (Challenge::const_param_iterator i = challenge.param_begin(),
-       ie = challenge.param_end(); i != ie; i++) {
-    // FAIL -- couldn't parse a property.
-    if (!ParseChallengeProperty(i->first, i->second))
-      return false;
-  }
-
-  // Check that a minimum set of properties were provided.
-  if (nonce_.empty())
-    return false;
-
-  return true;
-}
-
-bool AuthHandlerDigest::ParseChallengeProperty(const std::string& name,
-                                               const std::string& value) {
-  if (LowerCaseEqualsASCII(name, "realm")) {
+  // Get all properties.
+  if (challenge.HasRealm()) {
     std::string realm;
-    if (!base::ConvertToUtf8AndNormalize(value, base::kCodepageLatin1, &realm))
+    if (!base::ConvertToUtf8AndNormalize(challenge.realm(),
+        base::kCodepageLatin1, &realm))
       return false;
+    original_realm_ = challenge.realm();
     realm_ = realm;
-    original_realm_ = value;
-  } else if (LowerCaseEqualsASCII(name, "nonce")) {
-    nonce_ = value;
-  } else if (LowerCaseEqualsASCII(name, "domain")) {
-    domain_ = value;
-  } else if (LowerCaseEqualsASCII(name, "opaque")) {
-    opaque_ = value;
-  } else if (LowerCaseEqualsASCII(name, "stale")) {
-    // Parse the stale boolean.
-    stale_ = LowerCaseEqualsASCII(value, "true");
-  } else if (LowerCaseEqualsASCII(name, "algorithm")) {
-    // Parse the algorithm.
-    if (LowerCaseEqualsASCII(value, "md5")) {
+  }
+  if (challenge.HasNonce()) {
+    nonce_ = challenge.nonce();
+  }
+  if (challenge.HasDomain()) {
+    domain_ = challenge.domain();
+  }
+  if (challenge.HasOpaque()) {
+    opaque_ = challenge.opaque();
+  }
+  if (challenge.HasStale()) {
+    stale_ = challenge.stale();
+  }
+  if (challenge.HasAlgorithm()) {
+    std::string algorithm(challenge.algorithm());
+    if (LowerCaseEqualsASCII(algorithm, "md5")) {
       algorithm_ = ALGORITHM_MD5;
-    } else if (LowerCaseEqualsASCII(value, "md5-sess")) {
+    } else if (LowerCaseEqualsASCII(algorithm, "md5-sess")) {
       algorithm_ = ALGORITHM_MD5_SESS;
     } else {
       DVLOG(1) << "Unknown value of algorithm";
       return false;  // FAIL -- unsupported value of algorithm.
     }
-  } else if (LowerCaseEqualsASCII(name, "qop")) {
+  }
+  if (challenge.HasQop()) {
     // Parse the comma separated list of qops.
-    // auth is the only supported qop, and all other values are ignored.
+    // auth is the preferred qop.
+    std::string value(challenge.qop());
     net::HttpUtil::ValuesIterator qop_values(value.begin(), value.end(), ',');
     qop_ = QOP_UNSPECIFIED;
     while (qop_values.GetNext()) {
@@ -241,10 +232,17 @@ bool AuthHandlerDigest::ParseChallengeProperty(const std::string& name,
         qop_ = QOP_AUTH;
         break;
       }
+      else if (LowerCaseEqualsASCII(qop_values.value(), "auth-int")) {
+        qop_ = QOP_AUTH_INT;
+        continue;
+      }
     }
-  } else {
-    DVLOG(1) << "Skipping unrecognized digest property";
   }
+
+  // Check that a minimum set of properties were provided.
+  if (nonce_.empty())
+    return false;
+
   return true;
 }
 
@@ -255,6 +253,8 @@ std::string AuthHandlerDigest::QopToString(QualityOfProtection qop) {
       return std::string();
     case QOP_AUTH:
       return "auth";
+    case QOP_AUTH_INT:
+      return "auth-int";
     default:
       NOTREACHED();
       return std::string();
@@ -284,15 +284,13 @@ void AuthHandlerDigest::GetRequestMethodAndRequestUri(
   const GURL& uri = request->request_uri();
   *request_uri = uri.spec();
 
-  if (Method::ACK == request->method())
-    *method = Method(Method::ACK).str();
-  else
-    *method = request->method().str();
+  *method = request->method().str();
 }
 
 std::string AuthHandlerDigest::AssembleResponseDigest(
     const std::string& method,
-    const std::string& path,
+    const std::string& request_uri,
+    const std::string& body,
     const net::AuthCredentials& credentials,
     const std::string& cnonce,
     int nonce_count) const {
@@ -307,7 +305,11 @@ std::string AuthHandlerDigest::AssembleResponseDigest(
     ha1 = base::MD5String(ha1 + ":" + nonce_ + ":" + cnonce);
 
   // ha2 = MD5(A2)
-  std::string ha2 = base::MD5String(method + ":" + path);
+  std::string a2 = method + ":" + request_uri;
+  if (qop_ == AuthHandlerDigest::QOP_AUTH_INT)
+    a2 += ":" + base::MD5String(body);
+  
+  std::string ha2 = base::MD5String(a2);
 
   std::string nc_part;
   if (qop_ != AuthHandlerDigest::QOP_UNSPECIFIED) {
@@ -344,14 +346,14 @@ void AuthHandlerDigest::AssembleCredentials(
   if (algorithm_ != ALGORITHM_UNSPECIFIED) {
     cred->set_algorithm(AlgorithmToCredentials(algorithm_));
   }
-  std::string response = AssembleResponseDigest(
-      method, request_uri, credentials, cnonce, nonce_count);
+  std::string response = AssembleResponseDigest(method, request_uri,
+    request->content(), credentials, cnonce, nonce_count);
   cred->set_response(response);
   if (!opaque_.empty()) {
     cred->set_opaque(opaque_);
   }
   if (qop_ != QOP_UNSPECIFIED) {
-    cred->set_qop(Credentials::auth);
+    cred->set_qop(QopToString(qop_));
     cred->set_nc(nonce_count);
     cred->set_cnonce(cnonce);
   }

@@ -21,7 +21,8 @@ public:                                                             \
   }                                                                 \
   std::string Name() const {                                        \
     assert(Has##Capitalized() && "Cannot read " #Name);             \
-    return static_cast<const T*>(this)->param_find(#Name)->second;  \
+    return net::HttpUtil::Unquote(                                  \
+      static_cast<const T*>(this)->param_find(#Name)->second);      \
   }                                                                 \
   void set_##Name(const std::string &Name) {                        \
     static_cast<T*>(this)->param_set(#Name,                         \

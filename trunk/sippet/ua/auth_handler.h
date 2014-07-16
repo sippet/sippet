@@ -43,7 +43,8 @@ class AuthHandler {
   virtual Auth::AuthorizationResult HandleAnotherChallenge(
       const Challenge& challenge) = 0;
 
-  // Generates an authentication token, potentially asynchronously.
+  // Generates an authentication token and add to the given request,
+  // potentially asynchronously.
   //
   // When |credentials| is NULL, the default credentials for the currently
   // logged in user are used. |AllowsDefaultCredentials()| MUST be true in this
@@ -62,9 +63,9 @@ class AuthHandler {
   //
   // All other return codes indicate that there was a problem generating a
   // token, and the |request| is not modified.
-  int GenerateAuthToken(const net::AuthCredentials* credentials,
-                        const scoped_refptr<Request> &request,
-                        const net::CompletionCallback& callback);
+  int GenerateAuth(const net::AuthCredentials* credentials,
+                   const scoped_refptr<Request> &request,
+                   const net::CompletionCallback& callback);
 
   // The authentication scheme as an enumerated value.
   Auth::Scheme auth_scheme() const {
@@ -110,10 +111,10 @@ class AuthHandler {
   // scheme_, realm_ and score_
   virtual bool Init(const Challenge& challenge) = 0;
 
-  // |GenerateAuthTokenImpl()} is the auth-scheme specific implementation
-  // of generating the next auth token. Callers should use |GenerateAuthToken()|
-  // which will in turn call |GenerateAuthTokenImpl()|
-  virtual int GenerateAuthTokenImpl(
+  // |GenerateAuthImpl()} is the auth-scheme specific implementation
+  // of generating the next auth token. Callers should use |GenerateAuth()|
+  // which will in turn call |GenerateAuthImpl()|
+  virtual int GenerateAuthImpl(
       const net::AuthCredentials* credentials,
       const scoped_refptr<Request> &request,
       const net::CompletionCallback& callback) = 0;
@@ -138,8 +139,8 @@ class AuthHandler {
   net::BoundNetLog net_log_;
 
  private:
-  void OnGenerateAuthTokenComplete(int rv);
-  void FinishGenerateAuthToken();
+  void OnGenerateAuthComplete(int rv);
+  void FinishGenerateAuth();
 
   net::CompletionCallback callback_;
 };
