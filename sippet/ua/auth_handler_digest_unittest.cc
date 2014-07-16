@@ -255,4 +255,48 @@ TEST(AuthHandlerDigest, AuthIntAndMd5Sess) {
             auth_token);
 }
 
+TEST(AuthHandlerDigest, HandleAnotherChallenge) {
+  scoped_ptr<AuthHandlerDigest::Factory> factory(
+      new AuthHandlerDigest::Factory());
+  scoped_ptr<AuthHandler> handler;
+  std::string default_challenge =
+      "Digest realm=\"biloxi.com\", nonce=\"nonce-value\"";
+  scoped_ptr<Header> header =
+    Header::Parse(std::string("WWW-Authenticate: " + default_challenge));
+  Challenge *challenge = dyn_cast<WwwAuthenticate>(header);
+  SipURI uri_origin("sip:bob@biloxi.com");
+  int rv = factory->CreateAuthHandler(
+    *challenge, net::HttpAuth::AUTH_SERVER,
+    GURL(uri_origin.GetOrigin().spec()),
+    AuthHandlerFactory::CREATE_CHALLENGE, 1,
+    net::BoundNetLog(), &handler);
+  EXPECT_EQ(net::OK, rv);
+  ASSERT_TRUE(handler.get() != NULL);
+
+  EXPECT_EQ(net::HttpAuth::AUTHORIZATION_RESULT_REJECT,
+            handler->HandleAnotherChallenge(*challenge));
+
+  std::string stale_challenge = default_challenge + ", stale=true";
+  scoped_ptr<Header> header1 =
+    Header::Parse(std::string("WWW-Authenticate: " + stale_challenge));
+  challenge = dyn_cast<WwwAuthenticate>(header1);
+  EXPECT_EQ(net::HttpAuth::AUTHORIZATION_RESULT_STALE,
+            handler->HandleAnotherChallenge(*challenge));
+
+  std::string stale_false_challenge = default_challenge + ", stale=false";
+  scoped_ptr<Header> header2 =
+    Header::Parse(std::string("WWW-Authenticate: " + stale_false_challenge));
+  challenge = dyn_cast<WwwAuthenticate>(header2);
+  EXPECT_EQ(net::HttpAuth::AUTHORIZATION_RESULT_REJECT,
+            handler->HandleAnotherChallenge(*challenge));
+
+  std::string realm_change_challenge =
+      "Digest realm=\"p1.biloxi.com\", nonce=\"nonce-value2\"";
+  scoped_ptr<Header> header3 =
+    Header::Parse(std::string("WWW-Authenticate: " + realm_change_challenge));
+  challenge = dyn_cast<WwwAuthenticate>(header3);
+  EXPECT_EQ(net::HttpAuth::AUTHORIZATION_RESULT_DIFFERENT_REALM,
+            handler->HandleAnotherChallenge(*challenge));
+}
+
 } // namespace sippet
