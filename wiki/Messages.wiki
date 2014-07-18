@@ -55,8 +55,7 @@ scoped_refptr<Request> CreateInvite() {
   content_type->push_back(MediaType("application", "sdp"));
   request->push_back(content_type.PassAs<Header>());
 
-  scoped_ptr<ContentLength> content_length(new ContentLength(142));
-  request->push_back(content_length.PassAs<Header>());
+  // The Content-Length is automatically set.
 
   return request;
 }
@@ -74,7 +73,7 @@ Call-ID: a84b4c76e66710@pc33.atlanta.com
 CSeq: 314159 INVITE
 Contact: <sip:alice@pc33.atlanta.com>
 Content-Type: application/sdp
-Content-Length: 142
+Content-Length: 0
 </pre>
 
 The response generation follows about the same sequence, with the difference
