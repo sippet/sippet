@@ -26,7 +26,7 @@ scoped_refptr<Request> CreateInvite() {
 
   scoped_ptr<Via> via(
     new Via(ViaParam(Protocol::UDP,
-                     net::HostPortPair::FromString(pc33.atlanta.com)));
+                     net::HostPortPair::FromString(pc33.atlanta.com))));
   via->front().set_branch("z9hG4bK776asdhds");
   request->push_back(via.PassAs<Header>());
 
