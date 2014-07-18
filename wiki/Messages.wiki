@@ -99,12 +99,13 @@ void HandleIncomingUrl(const GURL &url) {
 </code>
 
 It's possible to "convert" a `TelURI` into a `SipURI`. For example, the URI
-`tel:+1555000000` can be converted into `sip:+1555000000@domain.com;user=phone`
+`tel:+1555000000` can be converted into `sip:+1555000000@biloxi.com;user=phone`
 using the following code:
 
 <code language="c++">
   TelURI tel_uri("tel:+1555000000");
-  SipURI sip_uri(tel_uri.ToSipURI());
+  SipURI origin("sip:bob@biloxi.com");
+  SipURI sip_uri(tel_uri.ToSipURI(origin));
 </code>
 
 If you have to convert a `SipURI` into a `GURL`, the following code can be
