@@ -21,8 +21,14 @@ Here is an example of an INVITE request creation:
 using namespace sippet;
 
 scoped_refptr<Request> CreateInvite() {
-  GURL request_uri("sip:bob@biloxi.com");
-  scoped_refptr<Request> request(new Request(Method::INVITE, request_uri));
+  scoped_refptr<Request> request(
+    new Request(Method::INVITE, GURL("sip:bob@biloxi.com")));
+
+  scoped_ptr<Via> via(
+    new Via(ViaParam(Protocol::UDP,
+                     net::HostPortPair::FromString(pc33.atlanta.com)));
+  via->front().set_branch("z9hG4bK776asdhds");
+  request->push_back(via.PassAs<Header>());
 
   scoped_ptr<MaxForwards> maxfw(new MaxForwards(70));
   request->push_back(maxfw.PassAs<Header>());
@@ -30,11 +36,13 @@ scoped_refptr<Request> CreateInvite() {
   scoped_ptr<To> to(new To(GURL("sip:bob@biloxi.com"), "Bob"));
   request->push_back(to.PassAs<Header>());
 
-  scoped_ptr<From> from(new To(GURL("sip:alice@atlanta.com"), "Alice"));
+  scoped_ptr<From> from(
+    new From(GURL("sip:alice@atlanta.com"), "Alice"));
   from->set_tag("1928301774");
   request->push_back(from.PassAs<Header>());
 
-  scoped_ptr<CallId> callid(new CallId("a84b4c76e66710@pc33.atlanta.com"));
+  scoped_ptr<CallId> callid(
+    new CallId("a84b4c76e66710@pc33.atlanta.com"));
   request->push_back(callid.PassAs<Header>());
 
   scoped_ptr<Cseq> cseq(new Cseq(314159, Method::INVITE));
