@@ -86,6 +86,10 @@ bool AuthHandler::AllowsExplicitCredentials() {
   return true;
 }
 
+bool AuthHandler::NeedsIdentity() {
+  return true;
+}
+
 void AuthHandler::OnGenerateAuthComplete(int rv) {
   net::CompletionCallback callback = callback_;
   FinishGenerateAuth();
