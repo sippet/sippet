@@ -112,6 +112,10 @@ class AuthHandler {
   // cannot be determined.
   virtual bool AllowsExplicitCredentials();
 
+  // Returns true if the response to the current authentication challenge
+  // requires an identity.
+  virtual bool NeedsIdentity();
+
  protected:
   // Initializes the handler using a challenge issued by a server.
   // Implementations are expected to initialize the following members:

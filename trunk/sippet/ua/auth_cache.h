@@ -31,11 +31,6 @@ class AuthCache {
    public:
     ~Entry();
 
-    // The origin represents the {protocol, host, port}.
-    const GURL& origin() const {
-      return origin_;
-    }
-
     // The case-sensitive realm string of the challenge.
     const std::string realm() const {
       return realm_;
@@ -64,7 +59,6 @@ class AuthCache {
     Entry();
 
     // |origin_| contains the {protocol, host, port} of the server.
-    GURL origin_;
     std::string realm_;
     Auth::Scheme scheme_;
 
@@ -86,36 +80,30 @@ class AuthCache {
 
   // Find the realm entry on server |origin| for realm |realm| and
   // scheme |scheme|.
-  //   |origin| - the {scheme, host, port} of the server.
   //   |realm|  - case sensitive realm string.
   //   |scheme| - the authentication scheme (i.e. basic, negotiate).
   //   returns  - the matched entry or NULL.
-  Entry* Lookup(const GURL& origin,
-                const std::string& realm,
+  Entry* Lookup(const std::string& realm,
                 Auth::Scheme scheme);
 
   // Add an entry on server |origin| for realm |handler->realm()| and
   // scheme |handler->scheme()|.  If an entry for this (realm,scheme)
   // already exists, update it rather than replace it.
-  //   |origin|   - the {scheme, host, port} of the server.
   //   |realm|    - the auth realm for the challenge.
   //   |scheme|   - the authentication scheme (i.e. basic, negotiate).
   //   |credentials| - login information for the realm.
   //   returns    - the entry that was just added/updated.
-  Entry* Add(const GURL& origin,
-             const std::string& realm,
+  Entry* Add(const std::string& realm,
              Auth::Scheme scheme,
              const net::AuthCredentials& credentials);
 
   // Remove entry on server |origin| for realm |realm| and scheme |scheme|
   // if one exists AND if the cached credentials matches |credentials|.
-  //   |origin|   - the {scheme, host, port} of the server.
   //   |realm|    - case sensitive realm string.
   //   |scheme|   - the authentication scheme (i.e. basic, negotiate).
   //   |credentials| - the credentials to match.
   //   returns    - true if an entry was removed.
-  bool Remove(const GURL& origin,
-              const std::string& realm,
+  bool Remove(const std::string& realm,
               Auth::Scheme scheme,
               const net::AuthCredentials& credentials);
 
@@ -124,8 +112,7 @@ class AuthCache {
   // |auth_challenge| and the nonce count is reset.
   // |UpdateStaleChallenge()| returns true if a matching entry exists in the
   // cache, false otherwise.
-  bool UpdateStaleChallenge(const GURL& origin,
-                            const std::string& realm,
+  bool UpdateStaleChallenge(const std::string& realm,
                             Auth::Scheme scheme);
 
   // Copies all entries from |other| cache.
