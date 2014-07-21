@@ -44,28 +44,21 @@ AuthCache::AuthCache() {
 AuthCache::~AuthCache() {
 }
 
-AuthCache::Entry* AuthCache::Lookup(const GURL& origin,
-                                    const std::string& realm,
+AuthCache::Entry* AuthCache::Lookup(const std::string& realm,
                                     Auth::Scheme scheme) {
-  CheckOriginIsValid(origin);
-
   // Linear scan through the realm entries.
   for (EntryList::iterator it = entries_.begin(); it != entries_.end(); ++it) {
-    if (it->origin() == origin && it->realm() == realm &&
-        it->scheme() == scheme)
+    if (it->realm() == realm && it->scheme() == scheme)
       return &(*it);
   }
   return NULL;  // No realm entry found.
 }
 
-AuthCache::Entry* AuthCache::Add(const GURL& origin,
-                                 const std::string& realm,
+AuthCache::Entry* AuthCache::Add(const std::string& realm,
                                  Auth::Scheme scheme,
                                  const net::AuthCredentials& credentials) {
-  CheckOriginIsValid(origin);
-
   // Check for existing entry (we will re-use it if present).
-  AuthCache::Entry* entry = Lookup(origin, realm, scheme);
+  AuthCache::Entry* entry = Lookup(realm, scheme);
   if (!entry) {
     // Failsafe to prevent unbounded memory growth of the cache.
     if (entries_.size() >= kMaxNumRealmEntries) {
@@ -75,11 +68,9 @@ AuthCache::Entry* AuthCache::Add(const GURL& origin,
 
     entries_.push_front(Entry());
     entry = &entries_.front();
-    entry->origin_ = origin;
     entry->realm_ = realm;
     entry->scheme_ = scheme;
   }
-  DCHECK_EQ(origin, entry->origin_);
   DCHECK_EQ(realm, entry->realm_);
   DCHECK_EQ(scheme, entry->scheme_);
 
@@ -89,13 +80,11 @@ AuthCache::Entry* AuthCache::Add(const GURL& origin,
   return entry;
 }
 
-bool AuthCache::Remove(const GURL& origin,
-                       const std::string& realm,
+bool AuthCache::Remove(const std::string& realm,
                        Auth::Scheme scheme,
                        const net::AuthCredentials& credentials) {
   for (EntryList::iterator it = entries_.begin(); it != entries_.end(); ++it) {
-    if (it->origin() == origin && it->realm() == realm &&
-        it->scheme() == scheme) {
+    if (it->realm() == realm && it->scheme() == scheme) {
       if (credentials.Equals(it->credentials())) {
         entries_.erase(it);
         return true;
@@ -106,10 +95,9 @@ bool AuthCache::Remove(const GURL& origin,
   return false;
 }
 
-bool AuthCache::UpdateStaleChallenge(const GURL& origin,
-                                     const std::string& realm,
+bool AuthCache::UpdateStaleChallenge(const std::string& realm,
                                      Auth::Scheme scheme) {
-  AuthCache::Entry* entry = Lookup(origin, realm, scheme);
+  AuthCache::Entry* entry = Lookup(realm, scheme);
   if (!entry)
     return false;
   entry->UpdateStaleChallenge();
@@ -119,8 +107,7 @@ bool AuthCache::UpdateStaleChallenge(const GURL& origin,
 void AuthCache::UpdateAllFrom(const AuthCache& other) {
   for (EntryList::const_iterator it = other.entries_.begin();
        it != other.entries_.end(); ++it) {
-    Entry* entry = Add(it->origin(), it->realm(), it->scheme(),
-                       it->credentials());
+    Entry* entry = Add(it->realm(), it->scheme(), it->credentials());
     // Copy nonce count (for digest authentication).
     entry->nonce_count_ = it->nonce_count_;
   }

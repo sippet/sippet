@@ -8,6 +8,7 @@
 #include "sippet/message/request.h"
 #include "sippet/message/response.h"
 #include "sippet/message/headers.h"
+#include "sippet/uri/uri.h"
 #include "net/base/net_errors.h"
 
 #include <sstream>
@@ -87,32 +88,18 @@ Challenge& Auth::GetChallengeFromHeader(Header* header) {
 
 GURL Auth::GetResponseOrigin(const scoped_refptr<Response>& response) {
   std::ostringstream spec;
-
   DCHECK(response->refer_to());
-  
   GURL request_uri(response->refer_to()->request_uri());
-  spec << request_uri.scheme() << ":";
-
-  Via *via = response->get<Via>();
-
-  DCHECK(via);
-  DCHECK(!via->empty());
-
-  ViaParam &params = via->front();
-  if (params.HasReceived()) {
-    spec << params.received();
-  } else {
-    spec << params.sent_by().host();
+  if (request_uri.SchemeIs("sip") || request_uri.SchemeIs("sips")) {
+    SipURI uri(request_uri);
+    spec << request_uri.scheme() << ":"
+         << request_uri.host() << ":"
+         << request_uri.EffectiveIntPort();
+    std::pair<bool, std::string> result = uri.parameter("transport");
+    if (result.first)
+      spec << ";transport=" << result.second;
   }
-  if (params.HasRport()) {
-    spec << ":" << params.rport();
-  } else if (params.sent_by().port() != 0) {
-    spec << ":" << params.sent_by().port();
-  }
-  if (Protocol::UDP != params.protocol()) {
-    spec << ";transport=" << params.protocol().str();
-  }
-
+  // else return empty GURL
   return GURL(spec.str());
 }
 
