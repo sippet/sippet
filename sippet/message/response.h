@@ -46,6 +46,7 @@ public:
 
 private:
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
+  FRIEND_TEST_ALL_PREFIXES(AuthControllerTest, NoExplicitCredentialsAllowed);
 
   friend class Request;
   friend class Message;

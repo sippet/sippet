@@ -278,6 +278,7 @@ public:
 
  private:
   friend class AuthControllerTest;
+  FRIEND_TEST_ALL_PREFIXES(AuthControllerTest, NoExplicitCredentialsAllowed);
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, OutgoingRequest);
 
   template<class HeaderType>
