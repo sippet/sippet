@@ -8,6 +8,9 @@
 #include "sippet/transport/network_layer.h"
 #include "sippet/ua/dialog.h"
 #include "sippet/ua/user_agent_settings.h"
+#include "sippet/ua/auth_controller.h"
+#include "sippet/ua/auth_cache.h"
+#include "sippet/ua/auth_handler.h"
 
 #include <map>
 #include <vector>
@@ -57,8 +60,9 @@ class UserAgent :
   };
 
   // Construct a |UserAgent|.
-  UserAgent(
-      /*const UserAgentSettings &user_agent_settings = UserAgentSettings()*/);
+  UserAgent(AuthHandlerFactory *auth_handler_factory,
+            const net::BoundNetLog &net_log
+            /*const UserAgentSettings &user_agent_settings = UserAgentSettings()*/);
   virtual ~UserAgent() {}
 
   void SetNetworkLayer(NetworkLayer *network_layer) {
@@ -105,6 +109,9 @@ class UserAgent :
   UrlListType route_set_;
   HandlerListType handlers_;
   DialogMapType dialogs_;
+  AuthCache auth_cache_;
+  AuthHandlerFactory *auth_handler_factory_;
+  net::BoundNetLog net_log_;
 
   // TODO
   struct IncomingRequestContext {
@@ -119,6 +126,19 @@ class UserAgent :
 
   std::map<std::string, IncomingRequestContext> incoming_requests_;
 
+  struct OutgoingRequestContext {
+    // Holds the outgoing request instance.
+    scoped_refptr<Request> outgoing_request_;
+    // First sent time
+    base::Time parted_time_;
+    // Used to manage authentication
+    scoped_refptr<AuthController> auth_controller_;
+  };
+
+  typedef std::map<std::string, OutgoingRequestContext>
+      OutgoingRequestMap;
+  OutgoingRequestMap outgoing_requests_;
+
   // Create a local tag
   static std::string CreateTag();
 
@@ -129,6 +149,8 @@ class UserAgent :
       const scoped_refptr<Response> &response);
   scoped_refptr<Dialog> HandleDialogStateOnError(
       const scoped_refptr<Request> &request);
+  bool HandleChallengeAuthentication(
+      const scoped_refptr<Response> &response);
 
   template <class Message>
   std::pair<scoped_refptr<Dialog>, DialogMapType::iterator>
