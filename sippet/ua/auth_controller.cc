@@ -25,7 +25,7 @@ AuthController::AuthController(
     : target_(net::HttpAuth::AUTH_NONE),
       auth_cache_(auth_cache),
       auth_handler_factory_(auth_handler_factory),
-      default_credentials_used_(true) {
+      default_credentials_used_(false) {
 }
 
 AuthController::~AuthController() {
@@ -139,11 +139,12 @@ int AuthController::HandleAuthChallenge(
                                 disabled_schemes_,
                                 net_log,
                                 &handler_);
-      if (!handler_.get()) {
-        // We found no supported challenge -- let the transaction continue so
-        // the app ends up displaying an error page.
-        return net::OK;
-      }
+    }
+
+    if (!handler_.get()) {
+      // We found no supported challenge -- let the transaction continue so
+      // the app ends up displaying an error page.
+      return net::OK;
     }
 
     if (handler_->NeedsIdentity()) {
