@@ -92,9 +92,9 @@ GURL Auth::GetResponseOrigin(const scoped_refptr<Response>& response) {
   GURL request_uri(response->refer_to()->request_uri());
   if (request_uri.SchemeIs("sip") || request_uri.SchemeIs("sips")) {
     SipURI uri(request_uri);
-    spec << request_uri.scheme() << ":"
-         << request_uri.host() << ":"
-         << request_uri.EffectiveIntPort();
+    spec << uri.scheme() << ":"
+         << uri.host() << ":"
+         << uri.EffectiveIntPort();
     std::pair<bool, std::string> result = uri.parameter("transport");
     if (result.first)
       spec << ";transport=" << result.second;
