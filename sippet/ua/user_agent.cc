@@ -13,7 +13,10 @@
 namespace sippet {
 namespace ua {
 
-UserAgent::UserAgent() {
+UserAgent::UserAgent(AuthHandlerFactory *auth_handler_factory,
+                     const net::BoundNetLog &net_log)
+  : auth_handler_factory_(auth_handler_factory),
+    net_log_(net_log) {
 }
 
 void UserAgent::AppendHandler(Delegate *delegate) {
@@ -137,6 +140,39 @@ scoped_refptr<Dialog> UserAgent::HandleDialogStateOnError(
   return dialog;
 }
 
+bool UserAgent::HandleChallengeAuthentication(
+    const scoped_refptr<Response> &response) {
+  int response_code = response->response_code();
+  if (SIP_UNAUTHORIZED != response_code
+      && SIP_PROXY_AUTHENTICATION_REQUIRED != response_code)
+    return false;
+  scoped_refptr<Request> request(response->refer_to());
+  OutgoingRequestMap::iterator i = outgoing_requests_.find(request->id());
+  if (outgoing_requests_.end() == i)
+    return false;
+  if (!i->second.auth_controller_.get()) {
+    i->second.auth_controller_ = new AuthController(&auth_cache_,
+        auth_handler_factory_);
+  }
+  int rv = i->second.auth_controller_->HandleAuthChallenge(response, net_log_);
+  if (net::OK != rv)
+    return false;
+  if (!i->second.auth_controller_->HaveAuthHandler())
+    return false;
+  if (i->second.auth_controller_->auth_info()) {
+    // TODO: collect user credentials here
+  }
+  // TODO: handle asynchronous cases here
+  rv = i->second.auth_controller_->AddAuthorizationHeaders(
+      request, net::CompletionCallback(), net_log_);
+  if (net::OK != rv)
+    return false;
+  // TODO: reissue the request + authentication tokens on the network
+  rv = network_layer_->Send(request, net::CompletionCallback());
+  // TODO: get the callback set in the Send method in case of errors
+  return true;
+}
+
 void UserAgent::OnChannelConnected(const EndPoint &destination, int err) {
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
@@ -162,6 +198,8 @@ void UserAgent::OnIncomingRequest(
 
 void UserAgent::OnIncomingResponse(
     const scoped_refptr<Response> &response) {
+  if (HandleChallengeAuthentication(response))
+    return;
   scoped_refptr<Dialog> dialog = HandleDialogStateOnResponse(response);
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
