@@ -65,6 +65,11 @@ class AuthController :
   // Disable a given authentication scheme.
   void DisableAuthScheme(Auth::Scheme scheme);
 
+  // Returns the current controller target.
+  Auth::Target target() const {
+    return target_;
+  }
+
  private:
   virtual ~AuthController();
 

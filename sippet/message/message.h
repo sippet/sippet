@@ -276,7 +276,8 @@ public:
     return scoped_ptr<HeaderType>(dyn_cast<HeaderType>(clone));
   }
 
-private:
+ private:
+  friend class AuthControllerTest;
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, OutgoingRequest);
 
   template<class HeaderType>
