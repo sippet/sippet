@@ -139,12 +139,11 @@ int AuthController::HandleAuthChallenge(
                                 disabled_schemes_,
                                 net_log,
                                 &handler_);
-    }
-
-    if (!handler_.get()) {
-      // We found no supported challenge -- let the transaction continue so
-      // the app ends up displaying an error page.
-      return net::OK;
+      if (!handler_.get()) {
+        // We found no supported challenge -- let the transaction continue so
+        // the app ends up displaying an error page.
+        return net::OK;
+      }
     }
 
     if (handler_->NeedsIdentity()) {
