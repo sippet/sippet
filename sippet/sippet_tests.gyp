@@ -28,6 +28,7 @@
         'transport/network_layer_unittest.cc',
         'transport/chrome/framed_write_stream_socket_unittest.cc',
         'transport/chrome/sequenced_write_stream_socket_unittest.cc',
+        'ua/auth_controller_unittest.cc',
         'ua/auth_handler_digest_unittest.cc',
       ],
     },  # target sippet_unittest
@@ -52,6 +53,8 @@
       'sources': [
         'transport/chrome/transport_test_util.h',
         'transport/chrome/transport_test_util.cc',
+        'ua/auth_handler_mock.h',
+        'ua/auth_handler_mock.cc',
       ],
     },  # target sippet_test_support
   ],

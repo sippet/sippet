@@ -50,6 +50,7 @@ private:
   friend class Request;
   friend class Message;
   friend class ClientTransactionImpl;
+  friend class AuthControllerTest;
 
   Version version_;
   int response_code_;
