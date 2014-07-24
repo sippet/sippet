@@ -102,4 +102,4 @@ void AuthHandler::FinishGenerateAuth() {
   callback_.Reset();
 }
 
-}  // namespace net
+}  // namespace sippet

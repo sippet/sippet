@@ -7,7 +7,6 @@
 
 #include "sippet/transport/network_layer.h"
 #include "sippet/ua/dialog.h"
-#include "sippet/ua/user_agent_settings.h"
 #include "sippet/ua/auth_controller.h"
 #include "sippet/ua/auth_cache.h"
 #include "sippet/ua/auth_handler.h"
