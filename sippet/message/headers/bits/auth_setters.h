@@ -7,6 +7,7 @@
 
 #include <string>
 #include "base/strings/stringprintf.h"
+#include "base/strings/string_number_conversions.h"
 #include "net/http/http_util.h"
 
 namespace sippet {
