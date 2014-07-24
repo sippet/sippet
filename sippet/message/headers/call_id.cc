@@ -18,6 +18,9 @@ CallId::CallId(const CallId &other)
   : Header(other), single_value(other) {
 }
 
+CallId::~CallId() {
+}
+
 CallId *CallId::DoClone() const {
   return new CallId(*this);
 }

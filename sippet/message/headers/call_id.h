@@ -23,6 +23,7 @@ class CallId :
  public:
   CallId();
   CallId(const single_value::value_type &callid);
+  virtual ~CallId();
 
   scoped_ptr<CallId> Clone() const {
     return scoped_ptr<CallId>(DoClone());

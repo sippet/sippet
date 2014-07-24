@@ -19,6 +19,9 @@ Unsupported::Unsupported(const Unsupported &other)
   : Header(other), has_multiple(other) {
 }
 
+Unsupported::~Unsupported() {
+}
+
 Unsupported *Unsupported::DoClone() const {
   return new Unsupported(*this);
 }

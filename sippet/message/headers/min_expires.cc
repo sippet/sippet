@@ -18,6 +18,9 @@ MinExpires::MinExpires(const MinExpires &other)
   : Header(other), single_value(other) {
 }
 
+MinExpires::~MinExpires() {
+}
+
 MinExpires *MinExpires::DoClone() const {
   return new MinExpires(*this);
 }

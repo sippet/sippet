@@ -18,6 +18,9 @@ MaxForwards::MaxForwards(const MaxForwards &other)
   : Header(other), single_value(other) {
 }
 
+MaxForwards::~MaxForwards() {
+}
+
 MaxForwards *MaxForwards::DoClone() const {
   return new MaxForwards(*this);
 }

@@ -18,7 +18,6 @@ class ClientTransaction :
   DISALLOW_COPY_AND_ASSIGN(ClientTransaction);
  public:
   ClientTransaction() {}
-  virtual ~ClientTransaction() {}
 
   virtual const std::string& id() const = 0;
   virtual scoped_refptr<Channel> channel() const = 0;
@@ -29,6 +28,10 @@ class ClientTransaction :
                     const scoped_refptr<Response> &response) = 0;
 
   virtual void Close() = 0;
+
+ protected:
+  friend class base::RefCountedThreadSafe<ClientTransaction>;
+  virtual ~ClientTransaction() {}
 };
 
 } /// End of sippet namespace

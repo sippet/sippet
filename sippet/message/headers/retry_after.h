@@ -24,6 +24,7 @@ class RetryAfter :
  public:
   RetryAfter();
   RetryAfter(single_value::value_type seconds);
+  virtual ~RetryAfter();
 
   scoped_ptr<RetryAfter> Clone() const {
     return scoped_ptr<RetryAfter>(DoClone());

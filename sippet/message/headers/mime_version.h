@@ -24,6 +24,7 @@ class MimeVersion :
  public:
   MimeVersion();
   MimeVersion(unsigned major, unsigned minor);
+  virtual ~MimeVersion();
 
   scoped_ptr<MimeVersion> Clone() const {
     return scoped_ptr<MimeVersion>(DoClone());

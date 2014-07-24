@@ -22,6 +22,9 @@ ProxyAuthenticate::ProxyAuthenticate(const ProxyAuthenticate &other)
   : Header(other), Challenge(other) {
 }
 
+ProxyAuthenticate::~ProxyAuthenticate() {
+}
+
 ProxyAuthenticate *ProxyAuthenticate::DoClone() const {
   return new ProxyAuthenticate(*this);
 }

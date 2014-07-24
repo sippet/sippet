@@ -33,14 +33,6 @@ void MediaType::print(raw_ostream &os) const {
   has_parameters::print(os);
 }
 
-ContentType::ContentType(const ContentType &other)
-  : Header(other), MediaType(other) {
-}
-
-ContentType *ContentType::DoClone() const {
-  return new ContentType(*this);
-}
-
 ContentType::ContentType()
   : Header(Header::HDR_CONTENT_TYPE) {
 }
@@ -51,6 +43,17 @@ ContentType::ContentType(const std::string &type, const std::string &subtype)
 
 ContentType::ContentType(const MediaType &mediaType)
   : Header(Header::HDR_CONTENT_TYPE), MediaType(mediaType) {
+}
+
+ContentType::ContentType(const ContentType &other)
+  : Header(other), MediaType(other) {
+}
+
+ContentType::~ContentType() {
+}
+
+ContentType *ContentType::DoClone() const {
+  return new ContentType(*this);
 }
 
 void ContentType::print(raw_ostream &os) const {

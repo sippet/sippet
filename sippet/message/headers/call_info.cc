@@ -39,6 +39,9 @@ CallInfo::CallInfo(const CallInfo &other)
   : Header(other), has_multiple(other) {
 }
 
+CallInfo::~CallInfo() {
+}
+
 CallInfo *CallInfo::DoClone() const {
   return new CallInfo(*this);
 }

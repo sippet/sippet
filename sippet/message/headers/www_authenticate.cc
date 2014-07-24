@@ -47,6 +47,9 @@ WwwAuthenticate::WwwAuthenticate(const WwwAuthenticate &other)
   : Header(other), Challenge(other) {
 }
 
+WwwAuthenticate::~WwwAuthenticate() {
+}
+
 WwwAuthenticate *WwwAuthenticate::DoClone() const {
   return new WwwAuthenticate(*this);
 }

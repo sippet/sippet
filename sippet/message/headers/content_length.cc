@@ -18,6 +18,9 @@ ContentLength::ContentLength(const ContentLength &other)
   : Header(other), single_value(other) {
 }
 
+ContentLength::~ContentLength() {
+}
+
 ContentLength *ContentLength::DoClone() const {
   return new ContentLength(*this);
 }

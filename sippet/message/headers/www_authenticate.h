@@ -43,6 +43,7 @@ class WwwAuthenticate :
   WwwAuthenticate();
   WwwAuthenticate(Scheme s);
   WwwAuthenticate(const std::string &scheme);
+  virtual ~WwwAuthenticate();
 
   scoped_ptr<WwwAuthenticate> Clone() const {
     return scoped_ptr<WwwAuthenticate>(DoClone());

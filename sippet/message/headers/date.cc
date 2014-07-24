@@ -18,6 +18,9 @@ Date::Date(const Date &other)
   : Header(other), single_value(other) {
 }
 
+Date::~Date() {
+}
+
 Date *Date::DoClone() const {
   return new Date(*this);
 }

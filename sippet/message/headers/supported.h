@@ -24,6 +24,7 @@ class Supported :
  public:
   Supported();
   Supported(const std::string &value);
+  virtual ~Supported();
 
   scoped_ptr<Supported> Clone() const {
     return scoped_ptr<Supported>(DoClone());

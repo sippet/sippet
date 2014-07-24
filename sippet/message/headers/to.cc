@@ -18,6 +18,9 @@ To::To(const To &other)
   : Header(other), ContactBase(other) {
 }
 
+To::~To() {
+}
+
 To *To::DoClone() const {
   return new To(*this);
 }

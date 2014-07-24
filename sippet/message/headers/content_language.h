@@ -23,6 +23,7 @@ class ContentLanguage :
  public:
   ContentLanguage();
   ContentLanguage(const std::string &language);
+  virtual ~ContentLanguage();
 
   scoped_ptr<ContentLanguage> Clone() const {
     return scoped_ptr<ContentLanguage>(DoClone());

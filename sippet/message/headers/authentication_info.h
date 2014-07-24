@@ -26,6 +26,7 @@ class AuthenticationInfo :
 
  public:
   AuthenticationInfo();
+  virtual ~AuthenticationInfo();
 
   scoped_ptr<AuthenticationInfo> Clone() const {
     return scoped_ptr<AuthenticationInfo>(DoClone());

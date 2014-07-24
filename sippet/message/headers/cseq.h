@@ -22,6 +22,7 @@ class Cseq :
  public:
   Cseq();
   Cseq(unsigned sequence, const Method &method);
+  virtual ~Cseq();
 
   scoped_ptr<Cseq> Clone() const {
     return scoped_ptr<Cseq>(DoClone());

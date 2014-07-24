@@ -40,6 +40,7 @@ class Accept :
 
  public:
   Accept();
+  virtual ~Accept();
 
   scoped_ptr<Accept> Clone() const {
     return scoped_ptr<Accept>(DoClone());

@@ -18,6 +18,9 @@ Expires::Expires(const Expires &other)
   : Header(other), single_value(other) {
 }
 
+Expires::~Expires() {
+}
+
 Expires *Expires::DoClone() const {
   return new Expires(*this);
 }

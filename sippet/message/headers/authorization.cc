@@ -40,6 +40,9 @@ Authorization::Authorization(const Authorization &other)
   : Header(other), Credentials(other) {
 }
 
+Authorization::~Authorization() {
+}
+
 Authorization *Authorization::DoClone() const {
   return new Authorization(*this);
 }

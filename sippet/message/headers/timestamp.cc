@@ -31,6 +31,9 @@ Timestamp::Timestamp(const Timestamp &other)
   : Header(other), timestamp_(other.timestamp_), delay_(other.delay_) {
 }
 
+Timestamp::~Timestamp() {
+}
+
 Timestamp *Timestamp::DoClone() const {
   return new Timestamp(*this);
 }

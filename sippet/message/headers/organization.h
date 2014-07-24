@@ -23,6 +23,7 @@ class Organization :
  public:
   Organization();
   Organization(const single_value::value_type &organization);
+  virtual ~Organization();
 
   scoped_ptr<Organization> Clone() const {
     return scoped_ptr<Organization>(DoClone());

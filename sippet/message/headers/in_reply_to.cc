@@ -14,6 +14,9 @@ InReplyTo::InReplyTo(const InReplyTo &other)
   : Header(other), has_multiple(other) {
 }
 
+InReplyTo::~InReplyTo() {
+}
+
 InReplyTo *InReplyTo::DoClone() const {
   return new InReplyTo(*this);
 }

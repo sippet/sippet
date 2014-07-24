@@ -18,6 +18,9 @@ RetryAfter::RetryAfter(const RetryAfter &other)
   : Header(other), single_value(other), has_parameters(other) {
 }
 
+RetryAfter::~RetryAfter() {
+}
+
 RetryAfter *RetryAfter::DoClone() const {
   return new RetryAfter(*this);
 }

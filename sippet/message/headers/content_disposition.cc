@@ -23,6 +23,9 @@ ContentDisposition::ContentDisposition(const ContentDisposition &other)
   : Header(other), has_parameters(other), single_value(other) {
 }
 
+ContentDisposition::~ContentDisposition() {
+}
+
 ContentDisposition *ContentDisposition::DoClone() const {
   return new ContentDisposition(*this);
 }

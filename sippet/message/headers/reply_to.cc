@@ -18,6 +18,9 @@ ReplyTo::ReplyTo(const ReplyTo &other)
   : Header(other), ContactBase(other) {
 }
 
+ReplyTo::~ReplyTo() {
+}
+
 ReplyTo *ReplyTo::DoClone() const {
   return new ReplyTo(*this);
 }

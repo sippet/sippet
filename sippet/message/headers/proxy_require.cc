@@ -19,6 +19,9 @@ ProxyRequire::ProxyRequire(const ProxyRequire &other)
   : Header(other), has_multiple(other) {
 }
 
+ProxyRequire::~ProxyRequire() {
+}
+
 ProxyRequire *ProxyRequire::DoClone() const {
   return new ProxyRequire(*this);
 }

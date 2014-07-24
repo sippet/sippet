@@ -73,6 +73,7 @@ class Via :
  public:
   Via();
   Via(const ViaParam &param);
+  virtual ~Via();
 
   scoped_ptr<Via> Clone() const {
     return scoped_ptr<Via>(DoClone());

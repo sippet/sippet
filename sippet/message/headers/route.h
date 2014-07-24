@@ -32,6 +32,7 @@ class Route :
  public:
   Route();
   Route(const RouteParam &param);
+  virtual ~Route();
 
   scoped_ptr<Route> Clone() const {
     return scoped_ptr<Route>(DoClone());

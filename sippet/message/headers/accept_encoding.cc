@@ -40,6 +40,9 @@ AcceptEncoding::AcceptEncoding(const AcceptEncoding &other)
   : Header(other), has_multiple(other) {
 }
 
+AcceptEncoding::~AcceptEncoding() {
+}
+
 AcceptEncoding *AcceptEncoding::DoClone() const {
   return new AcceptEncoding(*this);
 }
