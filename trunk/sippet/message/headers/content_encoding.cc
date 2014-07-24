@@ -19,6 +19,9 @@ ContentEncoding::ContentEncoding(const ContentEncoding &other)
   : Header(other), has_multiple(other) {
 }
 
+ContentEncoding::~ContentEncoding() {
+}
+
 ContentEncoding *ContentEncoding::DoClone() const {
   return new ContentEncoding(*this);
 }

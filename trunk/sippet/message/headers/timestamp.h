@@ -25,6 +25,7 @@ class Timestamp :
  public:
   Timestamp();
   Timestamp(const double &timestamp, const double &delay=.0);
+  virtual ~Timestamp();
 
   scoped_ptr<Timestamp> Clone() const {
     return scoped_ptr<Timestamp>(DoClone());

@@ -39,7 +39,6 @@ class NET_EXPORT_PRIVATE Channel :
   };
 
   Channel() {}
-  virtual ~Channel() {}
 
   // The origin (local address) of this channel.
   virtual int origin(EndPoint *origin) const = 0;
@@ -82,6 +81,10 @@ class NET_EXPORT_PRIVATE Channel :
   // Detach delegate.  Call before delegate is deleted.  Once delegate
   // is detached, close the channel and never call delegate back.
   virtual void DetachDelegate() = 0;
+
+ protected:
+  friend class base::RefCountedThreadSafe<Channel>;
+  virtual ~Channel() {}
 };
 
 } /// End of sippet namespace

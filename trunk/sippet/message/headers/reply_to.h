@@ -20,6 +20,7 @@ class ReplyTo :
  public:
   ReplyTo();
   ReplyTo(const GURL &address, const std::string &displayName="");
+  virtual ~ReplyTo();
 
   scoped_ptr<ReplyTo> Clone() const {
     return scoped_ptr<ReplyTo>(DoClone());

@@ -24,6 +24,7 @@ class ContentEncoding :
  public:
   ContentEncoding();
   ContentEncoding(const std::string &encoding);
+  virtual ~ContentEncoding();
 
   scoped_ptr<ContentEncoding> Clone() const {
     return scoped_ptr<ContentEncoding>(DoClone());

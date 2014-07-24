@@ -14,6 +14,9 @@ Allow::Allow(const Allow &other)
   : Header(other), has_multiple(other) {
 }
 
+Allow::~Allow() {
+}
+
 Allow *Allow::DoClone() const {
   return new Allow(*this);
 }

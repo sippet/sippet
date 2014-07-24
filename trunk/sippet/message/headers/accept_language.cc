@@ -40,6 +40,9 @@ AcceptLanguage::AcceptLanguage(const AcceptLanguage &other)
   : Header(other), has_multiple(other) {
 }
 
+AcceptLanguage::~AcceptLanguage() {
+}
+
 AcceptLanguage *AcceptLanguage::DoClone() const {
   return new AcceptLanguage(*this);
 }

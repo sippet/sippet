@@ -18,7 +18,6 @@ class ServerTransaction :
   DISALLOW_COPY_AND_ASSIGN(ServerTransaction);
  public:
   ServerTransaction() {}
-  virtual ~ServerTransaction() {}
 
   virtual const std::string& id() const = 0;
 
@@ -32,6 +31,10 @@ class ServerTransaction :
                     const scoped_refptr<Request> &request) = 0;
 
   virtual void Close() = 0;
+
+ protected:
+  friend class base::RefCountedThreadSafe<ServerTransaction>;
+  virtual ~ServerTransaction() {}
 };
 
 } /// End of sippet namespace

@@ -21,6 +21,7 @@ class ProxyAuthorization :
   ProxyAuthorization();
   ProxyAuthorization(Scheme s);
   ProxyAuthorization(const std::string &scheme);
+  virtual ~ProxyAuthorization();
 
   scoped_ptr<ProxyAuthorization> Clone() const {
     return scoped_ptr<ProxyAuthorization>(DoClone());

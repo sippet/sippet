@@ -18,6 +18,9 @@ Server::Server(const Server &other)
   : Header(other), single_value(other) {
 }
 
+Server::~Server() {
+}
+
 Server *Server::DoClone() const {
   return new Server(*this);
 }

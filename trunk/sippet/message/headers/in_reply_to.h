@@ -23,6 +23,7 @@ class InReplyTo :
 
  public:
   InReplyTo();
+  virtual ~InReplyTo();
 
   scoped_ptr<InReplyTo> Clone() const {
     return scoped_ptr<InReplyTo>(DoClone());

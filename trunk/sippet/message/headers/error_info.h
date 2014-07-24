@@ -45,6 +45,7 @@ class ErrorInfo :
 
  public:
   ErrorInfo();
+  virtual ~ErrorInfo();
 
   scoped_ptr<ErrorInfo> Clone() const {
     return scoped_ptr<ErrorInfo>(DoClone());

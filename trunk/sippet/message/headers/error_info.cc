@@ -39,6 +39,9 @@ ErrorInfo::ErrorInfo(const ErrorInfo &other)
   : Header(other), has_multiple(other) {
 }
 
+ErrorInfo::~ErrorInfo() {
+}
+
 ErrorInfo *ErrorInfo::DoClone() const {
   return new ErrorInfo(*this);
 }

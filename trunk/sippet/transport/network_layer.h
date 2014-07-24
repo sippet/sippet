@@ -89,9 +89,9 @@ class TransactionFactory;
 //   
 class NetworkLayer :
   public base::PowerObserver,
-  public base::RefCountedThreadSafe<NetworkLayer>,
+  public TransactionDelegate,
   public Channel::Delegate,
-  public TransactionDelegate {
+  public base::RefCountedThreadSafe<NetworkLayer> {
  private:
   DISALLOW_COPY_AND_ASSIGN(NetworkLayer);
  public:
@@ -143,7 +143,6 @@ class NetworkLayer :
   // Construct a |NetworkLayer|.
   NetworkLayer(Delegate *delegate,
                const NetworkSettings &network_settings = NetworkSettings());
-  virtual ~NetworkLayer();
 
   // This is the magic cookie "z9hG4bK" defined in RFC 3261
   static const char kMagicCookie[];
@@ -208,6 +207,9 @@ class NetworkLayer :
   static EndPoint GetMessageEndPoint(const scoped_refptr<Message> &message);
 
  private:
+  friend base::RefCountedThreadSafe<NetworkLayer>;
+  virtual ~NetworkLayer();
+
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
 
   // Just for testing purposes
@@ -231,12 +233,11 @@ class NetworkLayer :
     // Keep references to transactions using this channel.
     std::set<std::string> transactions_;
 
-    ChannelContext() : refs_(0) {}
+    ChannelContext();
     explicit ChannelContext(Channel *channel,
-                          const scoped_refptr<Request> &initial_request,
-                          const net::CompletionCallback& initial_callback)
-      : channel_(channel), refs_(0), initial_request_(initial_request),
-        initial_callback_(initial_callback) {}
+                            const scoped_refptr<Request> &initial_request,
+                            const net::CompletionCallback& initial_callback);
+    ~ChannelContext();
   };
 
   typedef std::map<Protocol, ChannelFactory*, ProtocolLess> FactoriesMap;

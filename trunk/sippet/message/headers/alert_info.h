@@ -46,6 +46,7 @@ class AlertInfo :
 
  public:
   AlertInfo();
+  virtual ~AlertInfo();
 
   scoped_ptr<AlertInfo> Clone() const {
     return scoped_ptr<AlertInfo>(DoClone());

@@ -84,6 +84,7 @@ class Contact :
   explicit Contact(const ContactInfo &info);
   Contact(const GURL &address,
           const std::string &displayName="");
+  virtual ~Contact();
 
   scoped_ptr<Contact> Clone() const {
     return scoped_ptr<Contact>(DoClone());

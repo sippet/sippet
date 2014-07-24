@@ -72,6 +72,9 @@ Via::Via(const Via &other)
   : Header(other), has_multiple(other) {
 }
 
+Via::~Via() {
+}
+
 Via *Via::DoClone() const {
   return new Via(*this);
 }

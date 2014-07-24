@@ -19,6 +19,9 @@ Require::Require(const Require &other)
   : Header(other), has_multiple(other) {
 }
 
+Require::~Require() {
+}
+
 Require *Require::DoClone() const {
   return new Require(*this);
 }

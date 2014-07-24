@@ -47,6 +47,7 @@ class CallInfo :
 
  public:
   CallInfo();
+  virtual ~CallInfo();
 
   scoped_ptr<CallInfo> Clone() const {
     return scoped_ptr<CallInfo>(DoClone());

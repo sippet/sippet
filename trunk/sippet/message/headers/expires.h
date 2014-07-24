@@ -22,6 +22,7 @@ class Expires :
  public:
   Expires();
   Expires(const single_value::value_type &seconds);
+  virtual ~Expires();
 
   scoped_ptr<Expires> Clone() const {
     return scoped_ptr<Expires>(DoClone());

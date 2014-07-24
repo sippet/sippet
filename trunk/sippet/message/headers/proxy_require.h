@@ -23,6 +23,7 @@ class ProxyRequire :
  public:
   ProxyRequire();
   ProxyRequire(const std::string &value);
+  virtual ~ProxyRequire();
 
   scoped_ptr<ProxyRequire> Clone() const {
     return scoped_ptr<ProxyRequire>(DoClone());

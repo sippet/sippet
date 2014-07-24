@@ -43,6 +43,7 @@ class Authorization :
   Authorization();
   Authorization(Scheme s);
   Authorization(const std::string &scheme);
+  virtual ~Authorization();
 
   scoped_ptr<Authorization> Clone() const {
     return scoped_ptr<Authorization>(DoClone());

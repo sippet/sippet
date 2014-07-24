@@ -24,6 +24,7 @@ class Require :
  public:
   Require();
   Require(const std::string &value);
+  virtual ~Require();
 
   scoped_ptr<Require> Clone() const {
     return scoped_ptr<Require>(DoClone());

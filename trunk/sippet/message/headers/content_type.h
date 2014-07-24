@@ -50,6 +50,7 @@ class ContentType :
   ContentType();
   ContentType(const std::string &type, const std::string &subtype);
   explicit ContentType(const MediaType &mediaType);
+  virtual ~ContentType();
 
   scoped_ptr<ContentType> Clone() const {
     return scoped_ptr<ContentType>(DoClone());

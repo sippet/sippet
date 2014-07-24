@@ -22,6 +22,7 @@ class ContentLength :
  public:
   ContentLength();
   ContentLength(const single_value::value_type &length);
+  virtual ~ContentLength();
 
   scoped_ptr<ContentLength> Clone() const {
     return scoped_ptr<ContentLength>(DoClone());

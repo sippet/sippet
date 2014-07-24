@@ -39,6 +39,9 @@ Route::Route(const Route &other)
   : Header(other), has_multiple(other) {
 }
 
+Route::~Route() {
+}
+
 Route *Route::DoClone() const {
   return new Route(*this);
 }

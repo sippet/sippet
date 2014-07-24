@@ -23,6 +23,9 @@ Priority::Priority(const Priority &other)
   : Header(other), single_value(other) {
 }
 
+Priority::~Priority() {
+}
+
 Priority *Priority::DoClone() const {
   return new Priority(*this);
 }

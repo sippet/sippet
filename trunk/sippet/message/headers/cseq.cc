@@ -18,6 +18,9 @@ Cseq::Cseq(const Cseq &other)
   : Header(other), sequence_(other.sequence_), method_(other.method_) {
 }
 
+Cseq::~Cseq() {
+}
+
 Cseq *Cseq::DoClone() const {
   return new Cseq(*this);
 }

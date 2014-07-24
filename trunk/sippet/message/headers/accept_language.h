@@ -48,6 +48,7 @@ class AcceptLanguage :
 
  public:
   AcceptLanguage();
+  virtual ~AcceptLanguage();
 
   scoped_ptr<AcceptLanguage> Clone() const {
     return scoped_ptr<AcceptLanguage>(DoClone());

@@ -19,6 +19,9 @@ Supported::Supported(const Supported &other)
   : Header(other), has_multiple(other) {
 }
 
+Supported::~Supported() {
+}
+
 Supported *Supported::DoClone() const {
   return new Supported(*this);
 }

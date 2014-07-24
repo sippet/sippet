@@ -23,6 +23,7 @@ class Subject :
  public:
   Subject();
   Subject(const single_value::value_type &subject);
+  virtual ~Subject();
 
   scoped_ptr<Subject> Clone() const {
     return scoped_ptr<Subject>(DoClone());

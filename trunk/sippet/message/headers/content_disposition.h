@@ -32,6 +32,7 @@ class ContentDisposition :
   ContentDisposition();
   ContentDisposition(Type t);
   ContentDisposition(const single_value::value_type &value);
+  virtual ~ContentDisposition();
 
   scoped_ptr<ContentDisposition> Clone() const {
     return scoped_ptr<ContentDisposition>(DoClone());

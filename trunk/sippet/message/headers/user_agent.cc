@@ -18,6 +18,9 @@ UserAgent::UserAgent(const UserAgent &other)
   : Header(other), single_value(other) {
 }
 
+UserAgent::~UserAgent() {
+}
+
 UserAgent *UserAgent::DoClone() const {
   return new UserAgent(*this);
 }

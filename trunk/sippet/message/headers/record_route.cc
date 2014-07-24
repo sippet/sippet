@@ -19,6 +19,9 @@ RecordRoute::RecordRoute(const RecordRoute &other)
   : Header(other), has_multiple(other) {
 }
 
+RecordRoute::~RecordRoute() {
+}
+
 RecordRoute *RecordRoute::DoClone() const {
   return new RecordRoute(*this);
 }

@@ -22,6 +22,7 @@ class MaxForwards :
  public:
   MaxForwards();
   MaxForwards(const single_value::value_type &n);
+  virtual ~MaxForwards();
 
   scoped_ptr<MaxForwards> Clone() const {
     return scoped_ptr<MaxForwards>(DoClone());

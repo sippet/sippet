@@ -28,6 +28,7 @@ class Priority :
   Priority();
   Priority(Level l);
   Priority(const single_value::value_type &priority);
+  virtual ~Priority();
 
   scoped_ptr<Priority> Clone() const {
     return scoped_ptr<Priority>(DoClone());
