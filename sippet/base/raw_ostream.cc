@@ -408,6 +408,10 @@ raw_string_ostream::~raw_string_ostream() {
   flush();
 }
 
+uint64 raw_string_ostream::current_pos() const {
+  return OS.size();
+}
+
 void raw_string_ostream::write_impl(const char *Ptr, size_t Size) {
   OS.append(Ptr, Size);
 }

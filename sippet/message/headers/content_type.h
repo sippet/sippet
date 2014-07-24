@@ -16,21 +16,13 @@ namespace sippet {
 class MediaType :
   public has_parameters,
   public has_qvalue<MediaType> {
-public:
-  MediaType() {}
-  MediaType(const MediaType &other)
-    : has_parameters(other), type_(other.type_), subtype_(other.subtype_) {}
-  MediaType(const std::string &type, const std::string &subtype)
-    : type_(type), subtype_(subtype)
-  { /* TODO: convert to lower case */ }
-  ~MediaType() {}
+ public:
+  MediaType();
+  MediaType(const MediaType &other);
+  MediaType(const std::string &type, const std::string &subtype);
+  ~MediaType();
 
-  MediaType &operator=(const MediaType &other) {
-    type_ = other.type_;
-    subtype_ = other.subtype_;
-    has_parameters::operator=(other);
-    return *this;
-  }
+  MediaType &operator=(const MediaType &other);
 
   std::string type() const { return type_; }
   void set_type(const std::string &type) { type_ = type; }
@@ -40,11 +32,9 @@ public:
 
   std::string value() const { return type_ + "/" + subtype_; }
 
-  void print(raw_ostream &os) const {
-    os << value();
-    has_parameters::print(os);
-  }
-private:
+  void print(raw_ostream &os) const;
+
+ private:
   std::string type_;
   std::string subtype_;
 };
@@ -52,27 +42,20 @@ private:
 class ContentType :
   public Header,
   public MediaType {
-private:
+ private:
   DISALLOW_ASSIGN(ContentType);
-  ContentType(const ContentType &other) : Header(other), MediaType(other) {}
-  virtual ContentType *DoClone() const OVERRIDE {
-    return new ContentType(*this);
-  }
-public:
-  ContentType() : Header(Header::HDR_CONTENT_TYPE) {}
-  ContentType(const std::string &type, const std::string &subtype)
-    : Header(Header::HDR_CONTENT_TYPE), MediaType(type, subtype) {}
-  explicit ContentType(const MediaType &mediaType)
-    : Header(Header::HDR_CONTENT_TYPE), MediaType(mediaType) {}
+  ContentType(const ContentType &other);
+  virtual ContentType *DoClone() const OVERRIDE;
+ public:
+  ContentType();
+  ContentType(const std::string &type, const std::string &subtype);
+  explicit ContentType(const MediaType &mediaType);
 
   scoped_ptr<ContentType> Clone() const {
     return scoped_ptr<ContentType>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    MediaType::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

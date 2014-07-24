@@ -12,8 +12,12 @@ Response::Response(int response_code,
     const Version &version)
   : Message(false, direction), response_code_(response_code),
     reason_phrase_(reason_phrase),
-    version_(version) {}
+    version_(version) {
+}
 
+Response::~Response() {
+}
+ 
 void Response::print(raw_ostream &os) const {
   os << "SIP/" << version_.major_value()
      << "." << version_.minor_value()
