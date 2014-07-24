@@ -273,7 +273,7 @@ TEST_F(AuthControllerTest, NoExplicitCredentialsAllowed) {
       ON_CALL(*this, GenerateAuthImpl(_, _, _))
         .WillByDefault(Return(expected_rv));
       ON_CALL(*this, HandleAnotherChallenge(_))
-        .WillByDefault(Invoke(this, &MockHandler::HandleAnotherChallenge));
+        .WillByDefault(Invoke(this, &MockHandler::HandleAnotherChallengeImpl));
     }
 
    protected:
@@ -291,7 +291,7 @@ TEST_F(AuthControllerTest, NoExplicitCredentialsAllowed) {
       return true;
     }
 
-    Auth::AuthorizationResult HandleAnotherChallenge(
+    Auth::AuthorizationResult HandleAnotherChallengeImpl(
         const Challenge& challenge) {
       // If we receive an empty challenge for a connection based scheme, or a second
       // challenge for a non connection based scheme, assume it's a rejection.
