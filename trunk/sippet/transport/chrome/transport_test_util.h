@@ -330,7 +330,6 @@ class MockChannel : public Channel {
               bool is_stream,
               Channel::Delegate *delegate,
               const EndPoint &destination);
-  virtual ~MockChannel();
 
   static const int kBufferSize;
 
@@ -348,6 +347,9 @@ class MockChannel : public Channel {
   virtual void DetachDelegate() OVERRIDE;
 
  private:
+  friend class base::RefCountedThreadSafe<MockChannel>;
+  virtual ~MockChannel();
+
   Channel::Delegate *delegate_;
   EndPoint destination_;
   EndPoint origin_;
@@ -385,7 +387,6 @@ class MockChannelFactory : public ChannelFactory {
 class MockClientTransaction : public ClientTransaction {
  public:
   MockClientTransaction(DataProvider *data_provider);
-  virtual ~MockClientTransaction();
 
   void set_id(const std::string id) {
     transaction_id_ = id;
@@ -408,7 +409,11 @@ class MockClientTransaction : public ClientTransaction {
   virtual void HandleIncomingResponse(
                     const scoped_refptr<Response> &response) OVERRIDE;
   virtual void Close() OVERRIDE;
+
  private:
+  friend class base::RefCountedThreadSafe<MockClientTransaction>;
+  virtual ~MockClientTransaction();
+
   std::string transaction_id_;
   scoped_refptr<Channel> channel_;
   TransactionDelegate *delegate_;
@@ -418,7 +423,6 @@ class MockClientTransaction : public ClientTransaction {
 class MockServerTransaction : public ServerTransaction {
  public:
   MockServerTransaction(DataProvider *data_provider);
-  virtual ~MockServerTransaction();
 
   void set_id(const std::string &id) {
     transaction_id_ = id;
@@ -446,7 +450,11 @@ class MockServerTransaction : public ServerTransaction {
   virtual void HandleIncomingRequest(
                     const scoped_refptr<Request> &request) OVERRIDE;
   virtual void Close() OVERRIDE;
+
  private:
+  friend class base::RefCountedThreadSafe<MockServerTransaction>;
+  virtual ~MockServerTransaction();
+
   std::string transaction_id_;
   scoped_refptr<Channel> channel_;
   TransactionDelegate *delegate_;
