@@ -50,12 +50,9 @@ class MockEvent {
     virtual void Close() = 0;
   };
 
-  MockEvent(Expect *expect, std::string *transaction_id = NULL)
-    : expect_(expect), transaction_id_(transaction_id) {}
-  MockEvent(const MockEvent &other)
-    : expect_(other.expect_), time_stamp_(other.time_stamp_),
-      transaction_id_(other.transaction_id_) {}
-  ~MockEvent() {}
+  MockEvent(Expect *expect, std::string *transaction_id = NULL);
+  MockEvent(const MockEvent &other);
+  ~MockEvent();
 
   MockEvent &operator=(const MockEvent &other) {
     expect_ = other.expect_;
@@ -156,87 +153,40 @@ class DataProvider {
 
 class StaticDataProvider : public DataProvider {
  public:
-  StaticDataProvider()
-    : events_(NULL), events_count_(0), events_index_(0) {}
+  StaticDataProvider();
   StaticDataProvider(MockEvent *events,
-                     size_t events_count)
-    : events_(events), events_count_(events_count), events_index_(0) {}
-  virtual ~StaticDataProvider() {}
+                     size_t events_count);
+  virtual ~StaticDataProvider();
 
-  virtual MockEvent& PeekEvent() OVERRIDE {
-    return PeekEvent(events_index_);
-  }
-  virtual MockEvent& PeekEvent(size_t index) OVERRIDE {
-    DCHECK_LT(index, events_count_);
-    return events_[index];
-  }
+  virtual MockEvent& PeekEvent() OVERRIDE;
+  virtual MockEvent& PeekEvent(size_t index) OVERRIDE;
 
-  virtual size_t events_index() const OVERRIDE {
-    return events_index_;
-  }
-  virtual size_t events_count() const OVERRIDE {
-    return events_count_;
-  }
+  virtual size_t events_index() const OVERRIDE;
+  virtual size_t events_count() const OVERRIDE;
 
-  virtual bool at_events_end() const OVERRIDE {
-    return events_index_ >= events_count_;
-  }
+  virtual bool at_events_end() const OVERRIDE;
 
-  virtual MockEvent &GetNextEvent() OVERRIDE {
-    DCHECK(!at_events_end());
-    events_[events_index_].set_time_stamp(base::Time::Now());
-    return events_[events_index_++];
-  }
+  virtual MockEvent &GetNextEvent() OVERRIDE;
 
-  virtual void set_transaction_id(const std::string &transaction_id) {
-    PeekEvent().set_transaction_id(transaction_id);
-  }
+  virtual void set_transaction_id(const std::string &transaction_id) OVERRIDE;
 
   virtual void OnChannelConnected(
-          const EndPoint& destination, int error) OVERRIDE {
-    GetNextEvent().OnChannelConnected(destination, error);
-  }
+          const EndPoint& destination, int error) OVERRIDE;
   virtual void OnChannelClosed(
-          const EndPoint& destination) OVERRIDE {
-    GetNextEvent().OnChannelClosed(destination);
-  }
-  virtual void OnIncomingMessage(Message *message) OVERRIDE {
-    if (isa<Request>(message)) {
-      GetNextEvent().OnIncomingRequest(dyn_cast<Request>(message));
-    } else {
-      GetNextEvent().OnIncomingResponse(dyn_cast<Response>(message));
-    }
-  }
+          const EndPoint& destination) OVERRIDE;
+  virtual void OnIncomingMessage(Message *message) OVERRIDE;
   virtual void Start(
-          const scoped_refptr<Request>& starting_request) OVERRIDE {
-    GetNextEvent().Start(starting_request);
-  }
+          const scoped_refptr<Request>& starting_request) OVERRIDE;
   virtual void Send(
           const std::string &transaction_id,
-          const scoped_refptr<Response>& response) OVERRIDE {
-    if (!PeekEvent().transaction_id().empty())
-      EXPECT_EQ(PeekEvent().transaction_id(), transaction_id);
-    GetNextEvent().Send(response);
-  }
+          const scoped_refptr<Response>& response) OVERRIDE;
   virtual void HandleIncomingResponse(
           const std::string &transaction_id,
-          const scoped_refptr<Response>& response) OVERRIDE {
-    if (!PeekEvent().transaction_id().empty())
-      EXPECT_EQ(PeekEvent().transaction_id(), transaction_id);
-    GetNextEvent().HandleIncomingResponse(response);
-  }
+          const scoped_refptr<Response>& response) OVERRIDE;
   virtual void HandleIncomingRequest(
           const std::string &transaction_id,
-          const scoped_refptr<Request>& request) OVERRIDE {
-    if (!PeekEvent().transaction_id().empty())
-      EXPECT_EQ(PeekEvent().transaction_id(), transaction_id);
-    GetNextEvent().HandleIncomingRequest(request);
-  }
-  virtual void Close(const std::string &transaction_id) OVERRIDE {
-    if (!PeekEvent().transaction_id().empty())
-      EXPECT_EQ(PeekEvent().transaction_id(), transaction_id);
-    GetNextEvent().Close();
-  }
+          const scoped_refptr<Request>& request) OVERRIDE;
+  virtual void Close(const std::string &transaction_id) OVERRIDE;
 
  private:
   MockEvent *events_;

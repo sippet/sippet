@@ -171,3 +171,4 @@ class AuthHandlerRegistryFactory
 } // namespace sippet
 
 #endif  // SIPPET_UA_AUTH_HANDLER_FACTORY_H_
+

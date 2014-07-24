@@ -234,6 +234,115 @@ std::string MockBranchFactory::CreateBranch() {
   return branches_[branches_index_++];
 }
 
+MockEvent::MockEvent(Expect *expect, std::string *transaction_id)
+  : expect_(expect), transaction_id_(transaction_id) {
+}
+
+MockEvent::MockEvent(const MockEvent &other)
+  : expect_(other.expect_), time_stamp_(other.time_stamp_),
+    transaction_id_(other.transaction_id_) {
+}
+
+MockEvent::~MockEvent() {
+}
+
+StaticDataProvider::StaticDataProvider()
+  : events_(NULL), events_count_(0), events_index_(0) {
+}
+
+StaticDataProvider::StaticDataProvider(MockEvent *events,
+                                       size_t events_count)
+  : events_(events), events_count_(events_count), events_index_(0) {
+}
+
+StaticDataProvider::~StaticDataProvider() {
+}
+
+MockEvent& StaticDataProvider::PeekEvent() {
+  return PeekEvent(events_index_);
+}
+
+MockEvent& StaticDataProvider::PeekEvent(size_t index) {
+  DCHECK_LT(index, events_count_);
+  return events_[index];
+}
+
+size_t StaticDataProvider::events_index() const {
+  return events_index_;
+}
+
+size_t StaticDataProvider::events_count() const {
+  return events_count_;
+}
+
+bool StaticDataProvider::at_events_end() const {
+  return events_index_ >= events_count_;
+}
+
+MockEvent &StaticDataProvider::GetNextEvent() {
+  DCHECK(!at_events_end());
+  events_[events_index_].set_time_stamp(base::Time::Now());
+  return events_[events_index_++];
+}
+
+void StaticDataProvider::set_transaction_id(
+        const std::string &transaction_id) {
+  PeekEvent().set_transaction_id(transaction_id);
+}
+
+void StaticDataProvider::OnChannelConnected(
+        const EndPoint& destination, int error) {
+  GetNextEvent().OnChannelConnected(destination, error);
+}
+
+void StaticDataProvider::OnChannelClosed(
+        const EndPoint& destination) {
+  GetNextEvent().OnChannelClosed(destination);
+}
+
+void StaticDataProvider::OnIncomingMessage(Message *message) {
+  if (isa<Request>(message)) {
+    GetNextEvent().OnIncomingRequest(dyn_cast<Request>(message));
+  } else {
+    GetNextEvent().OnIncomingResponse(dyn_cast<Response>(message));
+  }
+}
+
+void StaticDataProvider::Start(
+        const scoped_refptr<Request>& starting_request) {
+  GetNextEvent().Start(starting_request);
+}
+
+void StaticDataProvider::Send(
+        const std::string &transaction_id,
+        const scoped_refptr<Response>& response) {
+  if (!PeekEvent().transaction_id().empty())
+    EXPECT_EQ(PeekEvent().transaction_id(), transaction_id);
+  GetNextEvent().Send(response);
+}
+
+void StaticDataProvider::HandleIncomingResponse(
+        const std::string &transaction_id,
+        const scoped_refptr<Response>& response) {
+  if (!PeekEvent().transaction_id().empty())
+    EXPECT_EQ(PeekEvent().transaction_id(), transaction_id);
+  GetNextEvent().HandleIncomingResponse(response);
+}
+
+void StaticDataProvider::HandleIncomingRequest(
+        const std::string &transaction_id,
+        const scoped_refptr<Request>& request) {
+  if (!PeekEvent().transaction_id().empty())
+    EXPECT_EQ(PeekEvent().transaction_id(), transaction_id);
+  GetNextEvent().HandleIncomingRequest(request);
+}
+
+void StaticDataProvider::Close(const std::string &transaction_id) {
+  if (!PeekEvent().transaction_id().empty())
+    EXPECT_EQ(PeekEvent().transaction_id(), transaction_id);
+  GetNextEvent().Close();
+}
+
 MockEvent ExpectConnectChannel(const char *destination) {
   EndPoint endpoint(EndPoint::FromString(destination));
   return MockEvent(new ChannelConnectedImpl(endpoint));
