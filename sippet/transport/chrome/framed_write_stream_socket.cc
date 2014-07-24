@@ -10,6 +10,15 @@
 
 namespace sippet {
 
+FramedWriteStreamSocket::PendingFrame::PendingFrame(
+        net::IOBuffer *buf, int buf_len,
+        const net::CompletionCallback& callback)
+  : buf_(buf), buf_len_(buf_len), callback_(callback) {
+}
+
+FramedWriteStreamSocket::PendingFrame::~PendingFrame() {
+}
+
 FramedWriteStreamSocket::FramedWriteStreamSocket(
     net::StreamSocket *socket_to_wrap)
     : wrapped_socket_(socket_to_wrap),

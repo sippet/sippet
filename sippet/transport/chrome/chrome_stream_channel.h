@@ -50,6 +50,9 @@ class ChromeStreamChannel : public Channel {
   virtual void DetachDelegate() OVERRIDE;
 
  private:
+  friend class base::RefCountedThreadSafe<Channel>;
+  virtual ~ChromeStreamChannel();
+
   // Proxy resolution and connection functions.
   void ProcessProxyResolveDone(int status);
   void ProcessConnectDone(int status);

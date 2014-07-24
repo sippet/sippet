@@ -132,6 +132,7 @@ class Dialog :
 
  private:
   friend class ua::UserAgent;
+  friend class base::RefCountedThreadSafe<Dialog>;
 
   Dialog(State state,
          const std::string &call_id,
@@ -145,20 +146,9 @@ class Dialog :
          const GURL &remote_uri,
          const GURL &remote_target,
          bool is_secure,
-         const std::vector<GURL> &route_set)
-    : state_(state),
-      call_id_(call_id),
-      local_tag_(local_tag),
-      remote_tag_(remote_tag),
-      has_local_sequence_(has_local_sequence),
-      local_sequence_(local_sequence),
-      has_remote_sequence_(has_remote_sequence),
-      remote_sequence_(remote_sequence),
-      local_uri_(local_uri),
-      remote_uri_(remote_uri),
-      remote_target_(remote_target),
-      is_secure_(is_secure),
-      route_set_(route_set) {}
+         const std::vector<GURL> &route_set);
+
+  virtual ~Dialog();
 
   State state_;
   std::string call_id_;

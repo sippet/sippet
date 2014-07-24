@@ -22,7 +22,6 @@ class ServerTransactionImpl : public ServerTransaction {
         const scoped_refptr<Channel> &channel,
         TransactionDelegate *delegate,
         TimeDeltaFactory *time_delta_factory);
-  virtual ~ServerTransactionImpl();
 
   // ServerTransaction methods:
   virtual const std::string& id() const OVERRIDE;
@@ -34,6 +33,9 @@ class ServerTransactionImpl : public ServerTransaction {
 
   virtual void Close() OVERRIDE;
  private:
+  friend class base::RefCountedThreadSafe<ServerTransactionImpl>;
+  virtual ~ServerTransactionImpl();
+
   enum Mode {
     MODE_NORMAL,
     MODE_INVITE

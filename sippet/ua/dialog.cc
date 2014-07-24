@@ -28,6 +28,38 @@ std::vector<GURL> GetRouteSet(
 
 }
 
+Dialog::Dialog(
+        State state,
+        const std::string &call_id,
+        const std::string &local_tag,
+        const std::string &remote_tag,
+        bool has_local_sequence,
+        unsigned local_sequence,
+        bool has_remote_sequence,
+        unsigned remote_sequence,
+        const GURL &local_uri,
+        const GURL &remote_uri,
+        const GURL &remote_target,
+        bool is_secure,
+        const std::vector<GURL> &route_set)
+  : state_(state),
+    call_id_(call_id),
+    local_tag_(local_tag),
+    remote_tag_(remote_tag),
+    has_local_sequence_(has_local_sequence),
+    local_sequence_(local_sequence),
+    has_remote_sequence_(has_remote_sequence),
+    remote_sequence_(remote_sequence),
+    local_uri_(local_uri),
+    remote_uri_(remote_uri),
+    remote_target_(remote_target),
+    is_secure_(is_secure),
+    route_set_(route_set) {
+}
+
+Dialog::~Dialog() {
+}
+
 scoped_refptr<Request> Dialog::CreateRequest(const Method &method) {
   if (Method::ACK == method) {
     DVLOG(1) << "ACK requests for 2xx are created by Dialog::CreateAck()";
@@ -169,3 +201,4 @@ scoped_refptr<Request> Dialog::CreateRequestInternal(
 }
 
 } // End of sippet namespace
+
