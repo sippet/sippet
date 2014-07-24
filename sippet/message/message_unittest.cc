@@ -9,15 +9,18 @@
 using namespace sippet;
 
 class InstanceOfMessage : public Message {
-public:
+ public:
   InstanceOfMessage() : Message(true, Outgoing) {}
+ private:
+  friend class base::RefCountedThreadSafe<InstanceOfMessage>;
+  virtual ~InstanceOfMessage() {}
 };
 
 class InstanceOfHeader : public Header {
 private:
   InstanceOfHeader(const InstanceOfHeader &other) : Header(other) {}
   InstanceOfHeader &operator=(const InstanceOfHeader &other);
-  virtual InstanceOfHeader *DoClone() const {
+  virtual InstanceOfHeader *DoClone() const OVERRIDE {
     return new InstanceOfHeader(*this);
   }
 public:
@@ -25,13 +28,13 @@ public:
   virtual scoped_ptr<InstanceOfHeader> Clone() {
     return scoped_ptr<InstanceOfHeader>(DoClone());
   }
-  virtual void print(raw_ostream &os) const { }
+  virtual void print(raw_ostream &os) const OVERRIDE { }
 };
 
 class MessageTest : public testing::Test {
  public:
   MessageTest() : message_(new InstanceOfMessage()) { }
-  ~MessageTest() {}
+  virtual ~MessageTest() {}
 
   scoped_refptr<Message> message_;
 };
