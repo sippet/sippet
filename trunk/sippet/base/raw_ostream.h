@@ -277,14 +277,15 @@ class raw_string_ostream : public raw_ostream {
   std::string &OS;
 
   /// write_impl - See raw_ostream::write_impl.
-  virtual void write_impl(const char *Ptr, size_t Size);
+  virtual void write_impl(const char *Ptr, size_t Size) OVERRIDE;
 
   /// current_pos - Return the current position within the stream, not
   /// counting the bytes currently in the buffer.
-  virtual uint64 current_pos() const { return OS.size(); }
+  virtual uint64 current_pos() const OVERRIDE;
+
 public:
   explicit raw_string_ostream(std::string &O) : OS(O) {}
-  ~raw_string_ostream();
+  virtual ~raw_string_ostream();
 
   /// str - Flushes the stream contents to the target string and returns
   ///  the string's reference.
