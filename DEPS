@@ -135,6 +135,20 @@ deps_os = {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),
+
+    "third_party/libevent":
+      Var("chromium_trunk") + "/src/third_party/libevent@" + Var("chromium_revision"),
+
+    "third_party/mach_override":
+      Var("chromium_trunk") + "/src/third_party/mach_override@" + Var("chromium_revision"),
+
+    "third_party/apple_apsl":
+      Var("chromium_trunk") + "/src/third_party/apple_apsl@" + Var("chromium_revision"),
+
+    "ipc":
+      Var("chromium_trunk") + "/src/ipc@" + Var("chromium_revision"),
+
+
   },
 
   "ios": {

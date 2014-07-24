@@ -16,8 +16,6 @@ class Response :
 private:
   DISALLOW_COPY_AND_ASSIGN(Response);
 public:
-  virtual ~Response() {}
-
   // Every processed |Response| object should refer to some
   // previous |Request|.
   const scoped_refptr<Request> &refer_to() const {
@@ -45,6 +43,8 @@ public:
   std::string GetDialogId();
 
 private:
+  virtual ~Response();
+
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
   FRIEND_TEST_ALL_PREFIXES(AuthControllerTest, NoExplicitCredentialsAllowed);
 

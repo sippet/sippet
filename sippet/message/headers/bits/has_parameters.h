@@ -15,20 +15,18 @@
 namespace sippet {
 
 class has_parameters {
-public:
+ public:
   typedef std::pair<std::string, std::string> param_type;
   typedef std::vector<param_type>::iterator param_iterator;
   typedef std::vector<param_type>::const_iterator const_param_iterator;
 
-protected:
-  has_parameters(const has_parameters &other) : params_(other.params_) {}
-  has_parameters &operator=(const has_parameters &other) {
-    params_ = other.params_;
-    return *this;
-  }
-public:
-  has_parameters() {}
-  ~has_parameters() {}
+ protected:
+  has_parameters(const has_parameters &other);
+  has_parameters &operator=(const has_parameters &other);
+
+ public:
+  has_parameters();
+  ~has_parameters();
 
   // Iterator creation methods.
   param_iterator param_begin()             { return params_.begin(); }
