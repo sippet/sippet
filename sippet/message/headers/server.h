@@ -23,6 +23,7 @@ class Server :
  public:
   Server();
   Server(const single_value::value_type &subject);
+  virtual ~Server();
 
   scoped_ptr<Server> Clone() const {
     return scoped_ptr<Server>(DoClone());

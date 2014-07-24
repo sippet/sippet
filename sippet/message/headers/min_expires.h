@@ -22,6 +22,7 @@ class MinExpires :
  public:
   MinExpires();
   MinExpires(const single_value::value_type &seconds);
+  virtual ~MinExpires();
 
   scoped_ptr<MinExpires> Clone() const {
     return scoped_ptr<MinExpires>(DoClone());

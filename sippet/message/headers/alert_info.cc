@@ -39,6 +39,9 @@ AlertInfo::AlertInfo(const AlertInfo &other)
   : Header(other), has_multiple(other) {
 }
 
+AlertInfo::~AlertInfo() {
+}
+
 AlertInfo *AlertInfo::DoClone() const {
   return new AlertInfo(*this);
 }

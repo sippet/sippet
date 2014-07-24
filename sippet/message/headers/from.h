@@ -21,6 +21,7 @@ private:
 public:
   From();
   From(const GURL &address, const std::string &displayName="");
+  virtual ~From();
 
   scoped_ptr<From> Clone() const {
     return scoped_ptr<From>(DoClone());

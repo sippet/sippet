@@ -18,6 +18,9 @@ From::From(const From &other)
   : Header(other), ContactBase(other) {
 }
 
+From::~From() {
+}
+
 From *From::DoClone() const {
   return new From(*this);
 }

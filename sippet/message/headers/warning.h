@@ -60,6 +60,7 @@ class Warning :
  public:
   Warning();
   Warning(const WarnParam &param);
+  virtual ~Warning();
 
   scoped_ptr<Warning> Clone() const {
     return scoped_ptr<Warning>(DoClone());

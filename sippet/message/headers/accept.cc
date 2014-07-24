@@ -33,6 +33,9 @@ Accept::Accept(const Accept &other)
   : Header(other), has_multiple(other) {
 }
 
+Accept::~Accept() {
+}
+
 Accept *Accept::DoClone() const {
   return new Accept(*this);
 }

@@ -21,6 +21,7 @@ class ProxyAuthenticate :
   ProxyAuthenticate();
   ProxyAuthenticate(Scheme s);
   ProxyAuthenticate(const std::string &scheme);
+  virtual ~ProxyAuthenticate();
 
   scoped_ptr<ProxyAuthenticate> Clone() const {
     return scoped_ptr<ProxyAuthenticate>(DoClone());

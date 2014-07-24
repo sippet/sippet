@@ -18,6 +18,9 @@ MimeVersion::MimeVersion(const MimeVersion &other)
   : Header(other), major_(other.major_), minor_(other.minor_) {
 }
 
+MimeVersion::~MimeVersion() {
+}
+
 MimeVersion *MimeVersion::DoClone() const {
   return new MimeVersion(*this);
 }

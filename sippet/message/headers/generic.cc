@@ -15,6 +15,9 @@ Generic::Generic(const Generic &other)
     header_value_(other.header_value_) {
 }
 
+Generic::~Generic() {
+}
+
 Generic *Generic::DoClone() const {
   return new Generic(*this);
 }

@@ -19,6 +19,9 @@ ContentLanguage::ContentLanguage(const ContentLanguage &other)
   : Header(other), has_multiple(other) {
 }
 
+ContentLanguage::~ContentLanguage() {
+}
+
 ContentLanguage *ContentLanguage::DoClone() const {
   return new ContentLanguage(*this);
 }

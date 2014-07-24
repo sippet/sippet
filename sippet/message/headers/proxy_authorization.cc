@@ -22,6 +22,9 @@ ProxyAuthorization::ProxyAuthorization(const ProxyAuthorization &other)
   : Header(other), Credentials(other) {
 }
 
+ProxyAuthorization::~ProxyAuthorization() {
+}
+
 ProxyAuthorization *ProxyAuthorization::DoClone() const {
   return new ProxyAuthorization(*this);
 }

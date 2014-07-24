@@ -49,6 +49,7 @@ class AcceptEncoding :
 
  public:
   AcceptEncoding();
+  virtual ~AcceptEncoding();
 
   scoped_ptr<AcceptEncoding> Clone() const {
     return scoped_ptr<AcceptEncoding>(DoClone());

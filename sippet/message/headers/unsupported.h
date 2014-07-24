@@ -24,6 +24,7 @@ class Unsupported :
  public:
   Unsupported();
   Unsupported(const std::string &value);
+  virtual ~Unsupported();
 
   scoped_ptr<Unsupported> Clone() const {
     return scoped_ptr<Unsupported>(DoClone());

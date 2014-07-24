@@ -21,6 +21,7 @@ class To :
  public:
   To();
   To(const GURL &address, const std::string &displayName="");
+  virtual ~To();
 
   scoped_ptr<To> Clone() const {
     return scoped_ptr<To>(DoClone());

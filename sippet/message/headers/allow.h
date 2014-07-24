@@ -24,6 +24,7 @@ private:
 
 public:
   Allow();
+  virtual ~Allow();
 
   scoped_ptr<Allow> Clone() const {
     return scoped_ptr<Allow>(DoClone());

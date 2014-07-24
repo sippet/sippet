@@ -8,6 +8,35 @@
 
 namespace sippet {
 
+EndPoint::EndPoint()
+  : protocol_(Protocol::Unknown) {
+}
+
+EndPoint::EndPoint(const EndPoint &other)
+  : hostport_(other.hostport_), protocol_(other.protocol_) {
+}
+
+EndPoint::EndPoint(const net::HostPortPair &hostport, const Protocol &protocol)
+  : hostport_(hostport), protocol_(protocol) {
+}
+
+EndPoint::EndPoint(const net::HostPortPair &hostport, Protocol::Type protocol)
+  : hostport_(hostport), protocol_(protocol) {
+}
+
+EndPoint::EndPoint(const std::string& host, uint16 port,
+                   const Protocol &protocol)
+  : hostport_(host, port), protocol_(protocol) {
+}
+
+EndPoint::EndPoint(const std::string& host, uint16 port,
+                   Protocol::Type protocol)
+  : hostport_(host, port), protocol_(protocol) {
+}
+
+EndPoint::~EndPoint() {
+}
+
 EndPoint EndPoint::FromString(const std::string& str) {
   std::vector<std::string> hostport_protocol;
   base::SplitString(str, '/', &hostport_protocol);

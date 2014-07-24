@@ -85,6 +85,9 @@ Contact::Contact(const GURL &address,
   push_back(ContactInfo(address, displayName));
 }
 
+Contact::~Contact() {
+}
+
 void Contact::print(raw_ostream &os) const {
   Header::print(os);
   if (star_)

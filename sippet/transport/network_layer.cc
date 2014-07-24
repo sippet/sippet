@@ -17,6 +17,21 @@ namespace sippet {
 
 const char NetworkLayer::kMagicCookie[] = "z9hG4bK";
 
+NetworkLayer::ChannelContext::ChannelContext()
+  : refs_(0) {
+}
+
+NetworkLayer::ChannelContext::ChannelContext(
+    Channel *channel,
+    const scoped_refptr<Request> &initial_request,
+    const net::CompletionCallback& initial_callback)
+  : channel_(channel), refs_(0), initial_request_(initial_request),
+    initial_callback_(initial_callback) {
+}
+
+NetworkLayer::ChannelContext::~ChannelContext() {
+}
+
 NetworkLayer::NetworkLayer(Delegate *delegate,
                            const NetworkSettings &network_settings)
   : delegate_(delegate),

@@ -49,6 +49,9 @@ Warning::Warning(const Warning &other)
   : Header(other), has_multiple(other) {
 }
 
+Warning::~Warning() {
+}
+
 Warning *Warning::DoClone() const {
   return new Warning(*this);
 }

@@ -19,6 +19,7 @@ class Generic :
  public:
   Generic();
   Generic(const std::string &header_name, const std::string &header_value);
+  virtual ~Generic();
 
   scoped_ptr<Generic> Clone() const {
     return scoped_ptr<Generic>(DoClone());

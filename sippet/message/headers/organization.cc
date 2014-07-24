@@ -18,6 +18,9 @@ Organization::Organization(const Organization &other)
   : Header(other), single_value(other) {
 }
 
+Organization::~Organization() {
+}
+
 Organization *Organization::DoClone() const {
   return new Organization(*this);
 }

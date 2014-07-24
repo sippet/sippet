@@ -23,6 +23,7 @@ class UserAgent :
  public:
   UserAgent();
   UserAgent(const single_value::value_type &subject);
+  virtual ~UserAgent();
 
   scoped_ptr<UserAgent> Clone() const {
     return scoped_ptr<UserAgent>(DoClone());

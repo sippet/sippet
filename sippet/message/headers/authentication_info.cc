@@ -14,6 +14,9 @@ AuthenticationInfo::AuthenticationInfo(const AuthenticationInfo &other)
   : Header(other), has_auth_params(other) {
 }
 
+AuthenticationInfo::~AuthenticationInfo() {
+}
+
 AuthenticationInfo *AuthenticationInfo::DoClone() const {
   return new AuthenticationInfo(*this);
 }

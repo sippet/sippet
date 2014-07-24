@@ -166,6 +166,8 @@
         'uri/uri_parse.cc',
         'uri/uri_util.h',
         'uri/uri_util.cc',
+        'transport/aliases_map.h',
+        'transport/aliases_map.cc',
         'transport/end_point.h',
         'transport/end_point.cc',
         'transport/network_layer.h',

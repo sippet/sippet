@@ -24,6 +24,7 @@ class Date :
  public:
   Date();
   Date(const single_value::value_type &date);
+  virtual ~Date();
 
   scoped_ptr<Date> Clone() const {
     return scoped_ptr<Date>(DoClone());

@@ -20,6 +20,7 @@ class RecordRoute :
  public:
   RecordRoute();
   RecordRoute(const RouteParam &param);
+  virtual ~RecordRoute();
 
   scoped_ptr<RecordRoute> Clone() const {
     return scoped_ptr<RecordRoute>(DoClone());

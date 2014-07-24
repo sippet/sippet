@@ -16,20 +16,16 @@ namespace sippet {
 
 class EndPoint {
  public:
-  EndPoint()
-    : protocol_(Protocol::Unknown) {}
-  EndPoint(const EndPoint &other)
-    : hostport_(other.hostport_), protocol_(other.protocol_) {}
-  EndPoint(const net::HostPortPair &hostport, const Protocol &protocol)
-    : hostport_(hostport), protocol_(protocol) {}
-  EndPoint(const net::HostPortPair &hostport, Protocol::Type protocol)
-    : hostport_(hostport), protocol_(protocol) {}
+  EndPoint();
+  EndPoint(const EndPoint &other);
+  EndPoint(const net::HostPortPair &hostport, const Protocol &protocol);
+  EndPoint(const net::HostPortPair &hostport, Protocol::Type protocol);
 
   // If |host| represents an IPv6 address, it should not bracket the address.
-  EndPoint(const std::string& host, uint16 port, const Protocol &protocol)
-    : hostport_(host, port), protocol_(protocol) {}
-  EndPoint(const std::string& host, uint16 port, Protocol::Type protocol)
-    : hostport_(host, port), protocol_(protocol) {}
+  EndPoint(const std::string& host, uint16 port, const Protocol &protocol);
+  EndPoint(const std::string& host, uint16 port, Protocol::Type protocol);
+
+  ~EndPoint();
 
   // Creates an EndPoint from a string formatted in same manner as ToString().
   static EndPoint FromString(const std::string& str);

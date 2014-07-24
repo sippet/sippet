@@ -18,6 +18,9 @@ Subject::Subject(const Subject &other)
   : Header(other), single_value(other) {
 }
 
+Subject::~Subject() {
+}
+
 Subject *Subject::DoClone() const {
   return new Subject(*this);
 }
