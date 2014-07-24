@@ -191,8 +191,8 @@ scoped_refptr<Request> Dialog::CreateRequestInternal(
   if (!remote_tag().empty())
     to->set_tag(remote_tag());
   request->push_back(to.PassAs<Header>());
-  scoped_ptr<CallId> call_id(new CallId(call_id()));
-  request->push_back(call_id.PassAs<Header>());
+  scoped_ptr<CallId> callid(new CallId(call_id()));
+  request->push_back(callid.PassAs<Header>());
   scoped_ptr<Cseq> cseq(new Cseq(local_sequence, method));
   request->push_back(cseq.PassAs<Header>());
   if (route)

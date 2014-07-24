@@ -62,7 +62,6 @@ class UserAgent :
   UserAgent(AuthHandlerFactory *auth_handler_factory,
             const net::BoundNetLog &net_log
             /*const UserAgentSettings &user_agent_settings = UserAgentSettings()*/);
-  virtual ~UserAgent() {}
 
   void SetNetworkLayer(NetworkLayer *network_layer) {
     network_layer_ = network_layer;
@@ -100,6 +99,9 @@ class UserAgent :
       const net::CompletionCallback& callback);
 
  private:
+  friend class base::RefCountedThreadSafe<UserAgent>;
+  virtual ~UserAgent();
+
   typedef std::vector<GURL> UrlListType;
   typedef std::vector<Delegate*> HandlerListType;
   typedef std::map<std::string, scoped_refptr<Dialog> > DialogMapType;
@@ -121,6 +123,9 @@ class UserAgent :
     // Used to send a final automatic response if there's no answer in
     // a reasonable time.
     base::OneShotTimer<NetworkLayer> timer_;
+
+    IncomingRequestContext(const scoped_refptr<Request>& incoming_request);
+    ~IncomingRequestContext();
   };
 
   std::map<std::string, IncomingRequestContext> incoming_requests_;
@@ -132,6 +137,9 @@ class UserAgent :
     base::Time parted_time_;
     // Used to manage authentication
     scoped_refptr<AuthController> auth_controller_;
+
+    OutgoingRequestContext(const scoped_refptr<Request>& outgoing_request);
+    ~OutgoingRequestContext();
   };
 
   typedef std::map<std::string, OutgoingRequestContext>
