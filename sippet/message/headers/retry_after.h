@@ -16,27 +16,20 @@ class RetryAfter :
   public Header,
   public single_value<unsigned>,
   public has_parameters {
-private:
+ private:
   DISALLOW_ASSIGN(RetryAfter);
-  RetryAfter(const RetryAfter &other)
-    : Header(other), single_value(other), has_parameters(other) {}
-  virtual RetryAfter *DoClone() const OVERRIDE {
-    return new RetryAfter(*this);
-  }
-public:
-  RetryAfter() : Header(Header::HDR_RETRY_AFTER) {}
-  RetryAfter(single_value::value_type seconds)
-    : Header(Header::HDR_RETRY_AFTER), single_value(seconds) {}
+  RetryAfter(const RetryAfter &other);
+  virtual RetryAfter *DoClone() const OVERRIDE;
+
+ public:
+  RetryAfter();
+  RetryAfter(single_value::value_type seconds);
 
   scoped_ptr<RetryAfter> Clone() const {
     return scoped_ptr<RetryAfter>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    single_value::print(os);
-    has_parameters::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

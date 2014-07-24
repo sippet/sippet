@@ -14,25 +14,20 @@ namespace sippet {
 class MaxForwards :
   public Header,
   public single_value<unsigned> {
-private:
+ private:
   DISALLOW_ASSIGN(MaxForwards);
-  MaxForwards(const MaxForwards &other) : Header(other), single_value(other) {}
-  virtual MaxForwards *DoClone() const OVERRIDE {
-    return new MaxForwards(*this);
-  }
-public:
-  MaxForwards() : Header(Header::HDR_MAX_FORWARDS) {}
-  MaxForwards(const single_value::value_type &n)
-    : Header(Header::HDR_MAX_FORWARDS), single_value(n) {}
+  MaxForwards(const MaxForwards &other);
+  virtual MaxForwards *DoClone() const OVERRIDE;
+
+ public:
+  MaxForwards();
+  MaxForwards(const single_value::value_type &n);
 
   scoped_ptr<MaxForwards> Clone() const {
     return scoped_ptr<MaxForwards>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    single_value::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

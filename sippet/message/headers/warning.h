@@ -12,25 +12,15 @@
 namespace sippet {
 
 class WarnParam {
-public:
-  WarnParam() : warn_code_(0) {}
-  WarnParam(const WarnParam &other)
-    : warn_code_(other.warn_code_), warn_agent_(other.warn_agent_),
-      warn_text_(other.warn_text_) {}
+ public:
+  WarnParam();
+  WarnParam(const WarnParam &other);
   WarnParam(unsigned warn_code,
             const std::string &warn_agent,
-            const std::string &warn_text)
-    : warn_code_(warn_code), warn_agent_(warn_agent),
-      warn_text_(warn_text) {}
+            const std::string &warn_text);
+  ~WarnParam();
 
-  ~WarnParam() {}
-
-  WarnParam &operator=(const WarnParam &other) {
-    warn_code_ = other.warn_code_;
-    warn_agent_ = other.warn_agent_;
-    warn_text_ = other.warn_text_;
-    return *this;
-  }
+  WarnParam &operator=(const WarnParam &other);
 
   unsigned warn_code() const { return warn_code_; }
   void set_warn_code(unsigned warn_code) { warn_code_ = warn_code; }
@@ -45,10 +35,9 @@ public:
     warn_text_ = warn_text;
   }
 
-  void print(raw_ostream &os) const {
-    os << warn_code_ << " " << warn_agent_ << " \"" << warn_text_ << "\"";
-  }
-private:
+  void print(raw_ostream &os) const;
+
+ private:
   unsigned warn_code_;
   std::string warn_agent_;
   std::string warn_text_;
@@ -63,27 +52,20 @@ raw_ostream &operator<<(raw_ostream &os, const WarnParam &p) {
 class Warning :
   public Header,
   public has_multiple<WarnParam> {
-private:
+ private:
   DISALLOW_ASSIGN(Warning);
-  Warning(const Warning &other)
-    : Header(other), has_multiple(other) {}
-  virtual Warning *DoClone() const OVERRIDE {
-    return new Warning(*this);
-  }
-public:
-  Warning()
-    : Header(Header::HDR_WARNING) {}
-  Warning(const WarnParam &param)
-    : Header(Header::HDR_WARNING) { push_back(param); }
+  Warning(const Warning &other);
+  virtual Warning *DoClone() const OVERRIDE;
+
+ public:
+  Warning();
+  Warning(const WarnParam &param);
 
   scoped_ptr<Warning> Clone() const {
     return scoped_ptr<Warning>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

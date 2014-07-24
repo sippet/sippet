@@ -5,7 +5,9 @@
 #ifndef SIPPET_MESSAGE_HEADERS_WWW_AUTHENTICATE_H_
 #define SIPPET_MESSAGE_HEADERS_WWW_AUTHENTICATE_H_
 
+#include "sippet/message/header.h"
 #include "sippet/message/headers/bits/auth_setters.h"
+#include "sippet/message/headers/bits/has_auth_params.h"
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
@@ -19,46 +21,34 @@ class Challenge :
   public has_algorithm<Challenge>,
   public has_qop_options<Challenge>,
   public has_auth_params {
-public:
-  Challenge() {}
-  Challenge(Scheme s) : has_auth_params(s) {}
-  Challenge(const std::string &scheme) : has_auth_params(scheme) {}
-  Challenge(const Challenge &other) : has_auth_params(other) {}
-  ~Challenge() {}
+ public:
+  Challenge();
+  Challenge(Scheme s);
+  Challenge(const std::string &scheme);
+  Challenge(const Challenge &other);
+  ~Challenge();
 
-  std::string ToString() {
-    std::string result;
-    raw_string_ostream os(result);
-    has_auth_params::print(os);
-    return os.str();
-  }
+  std::string ToString();
 };
 
 class WwwAuthenticate :
   public Header,
   public Challenge {
-private:
+ private:
   DISALLOW_ASSIGN(WwwAuthenticate);
-  WwwAuthenticate(const WwwAuthenticate &other)
-    : Header(other), Challenge(other) {}
-  virtual WwwAuthenticate *DoClone() const OVERRIDE {
-    return new WwwAuthenticate(*this);
-  }
-public:
-  WwwAuthenticate() : Header(Header::HDR_WWW_AUTHENTICATE) {}
-  WwwAuthenticate(Scheme s)
-    : Header(Header::HDR_WWW_AUTHENTICATE), Challenge(s) {}
-  WwwAuthenticate(const std::string &scheme)
-    : Header(Header::HDR_WWW_AUTHENTICATE), Challenge(scheme) {}
+  WwwAuthenticate(const WwwAuthenticate &other);
+  virtual WwwAuthenticate *DoClone() const OVERRIDE;
+
+ public:
+  WwwAuthenticate();
+  WwwAuthenticate(Scheme s);
+  WwwAuthenticate(const std::string &scheme);
 
   scoped_ptr<WwwAuthenticate> Clone() const {
     return scoped_ptr<WwwAuthenticate>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    Challenge::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

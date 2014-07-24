@@ -16,17 +16,14 @@ namespace sippet {
 
 class MimeVersion :
   public Header {
-private:
+ private:
   DISALLOW_ASSIGN(MimeVersion);
-  MimeVersion(const MimeVersion &other)
-    : Header(other), major_(other.major_), minor_(other.minor_) {}
-  virtual MimeVersion *DoClone() const OVERRIDE {
-    return new MimeVersion(*this);
-  }
-public:
-  MimeVersion() : Header(Header::HDR_MIME_VERSION), major_(0), minor_(0) {}
-  MimeVersion(unsigned major, unsigned minor)
-    : Header(Header::HDR_MIME_VERSION), major_(major), minor_(minor) {}
+  MimeVersion(const MimeVersion &other);
+  virtual MimeVersion *DoClone() const OVERRIDE;
+
+ public:
+  MimeVersion();
+  MimeVersion(unsigned major, unsigned minor);
 
   scoped_ptr<MimeVersion> Clone() const {
     return scoped_ptr<MimeVersion>(DoClone());
@@ -38,10 +35,7 @@ public:
   void set_minor(unsigned minor) { minor_ = minor; }
   double minor() { return minor_; }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    os << major_ << "." << minor_;
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 
 private:
   unsigned major_;

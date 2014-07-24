@@ -5,6 +5,7 @@
 #ifndef SIPPET_MESSAGE_HEADER_H_
 #define SIPPET_MESSAGE_HEADER_H_
 
+#include "sippet/base/ilist.h"
 #include "sippet/base/ilist_node.h"
 #include "sippet/base/casting.h"
 #include "base/memory/scoped_ptr.h"
@@ -20,7 +21,7 @@ class class_name;
 class Generic;
 
 class Header : public ilist_node<Header> {
-public:
+ public:
   //! An enumeration to indicate the message header type.
   enum Type {
     #define X(class_name, compact_form, header_name, enum_name, format) \
@@ -30,18 +31,22 @@ public:
     HDR_GENERIC
   };
 
-private:
+ private:
   Type type_;
 
   Header &operator=(const Header &);
 
-protected:
-  Header(const Header &other) : type_(other.type_) {}
-  Header(Type type) : type_(type) {}
+ protected:
+  friend struct base::DefaultDeleter<Header>;
+  friend struct ilist_node_traits<Header>;
+
+  Header(const Header &other);
+  Header(Type type);
+  virtual ~Header();
 
   virtual Header *DoClone() const = 0;
 
-public:
+ public:
   static scoped_ptr<Header> Parse(const std::string &raw_header);
 
   Type type() const { return type_; }

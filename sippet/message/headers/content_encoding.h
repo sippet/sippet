@@ -16,28 +16,20 @@ namespace sippet {
 class ContentEncoding :
   public Header,
   public has_multiple<single_value<std::string> > {
-private:
+ private:
   DISALLOW_ASSIGN(ContentEncoding);
-  ContentEncoding(const ContentEncoding &other)
-    : Header(other), has_multiple(other) {}
-  virtual ContentEncoding *DoClone() const OVERRIDE {
-    return new ContentEncoding(*this);
-  }
-public:
-  ContentEncoding() : Header(Header::HDR_CONTENT_ENCODING) {}
-  ContentEncoding(const std::string &encoding)
-    : Header(Header::HDR_CONTENT_ENCODING) {
-    push_back(encoding);
-  }
+  ContentEncoding(const ContentEncoding &other);
+  virtual ContentEncoding *DoClone() const OVERRIDE;
+
+ public:
+  ContentEncoding();
+  ContentEncoding(const std::string &encoding);
 
   scoped_ptr<ContentEncoding> Clone() const {
     return scoped_ptr<ContentEncoding>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

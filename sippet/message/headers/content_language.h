@@ -15,29 +15,20 @@ namespace sippet {
 class ContentLanguage :
   public Header,
   public has_multiple<std::string> {
-private:
+ private:
   DISALLOW_ASSIGN(ContentLanguage);
-  ContentLanguage(const ContentLanguage &other)
-    : Header(other), has_multiple(other) {}
-  virtual ContentLanguage *DoClone() const OVERRIDE {
-    return new ContentLanguage(*this);
-  }
-public:
-  ContentLanguage()
-    : Header(Header::HDR_CONTENT_LANGUAGE) {}
-  ContentLanguage(const std::string &language)
-    : Header(Header::HDR_CONTENT_LANGUAGE) {
-    push_back(language);
-  }
+  ContentLanguage(const ContentLanguage &other);
+  virtual ContentLanguage *DoClone() const OVERRIDE;
+
+ public:
+  ContentLanguage();
+  ContentLanguage(const std::string &language);
 
   scoped_ptr<ContentLanguage> Clone() const {
     return scoped_ptr<ContentLanguage>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

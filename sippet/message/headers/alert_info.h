@@ -6,6 +6,7 @@
 #define SIPPET_MESSAGE_HEADERS_ALERT_INFO_H_
 
 #include <string>
+
 #include "sippet/message/header.h"
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/has_parameters.h"
@@ -18,25 +19,15 @@ namespace sippet {
 class AlertParam :
   public single_value<GURL>,
   public has_parameters {
-public:
-  AlertParam() {}
-  AlertParam(const AlertParam &other)
-    : has_parameters(other), single_value(other) {}
-  explicit AlertParam(const single_value::value_type &type)
-    : single_value(type) {}
+ public:
+  AlertParam();
+  AlertParam(const AlertParam &other);
+  explicit AlertParam(const single_value::value_type &type);
+  ~AlertParam();
 
-  ~AlertParam() {}
+  AlertParam &operator=(const AlertParam &other);
 
-  AlertParam &operator=(const AlertParam &other) {
-    single_value::operator=(other);
-    has_parameters::operator=(other);
-    return *this;
-  }
-
-  void print(raw_ostream &os) const {
-    os << "<" << value().spec() << ">";
-    has_parameters::print(os);
-  }
+  void print(raw_ostream &os) const;
 };
 
 inline
@@ -48,23 +39,19 @@ raw_ostream &operator<<(raw_ostream &os, const AlertParam &p) {
 class AlertInfo :
   public Header,
   public has_multiple<AlertParam> {
-private:
+ private:
   DISALLOW_ASSIGN(AlertInfo);
-  AlertInfo(const AlertInfo &other) : Header(other), has_multiple(other) {}
-  virtual AlertInfo *DoClone() const OVERRIDE {
-    return new AlertInfo(*this);
-  }
-public:
-  AlertInfo() : Header(Header::HDR_ALERT_INFO) {}
+  AlertInfo(const AlertInfo &other);
+  virtual AlertInfo *DoClone() const OVERRIDE;
+
+ public:
+  AlertInfo();
 
   scoped_ptr<AlertInfo> Clone() const {
     return scoped_ptr<AlertInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

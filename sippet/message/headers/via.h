@@ -23,31 +23,19 @@ class ViaParam :
   public has_received<ViaParam>,
   public has_branch<ViaParam>,
   public has_rport<ViaParam> {
-public:
-  ViaParam() : version_(2,0) {}
-  ViaParam(const ViaParam &other)
-    : version_(other.version_), protocol_(other.protocol_),
-      sent_by_(other.sent_by_), has_parameters(other) {}
+ public:
+  ViaParam();
+  ViaParam(const ViaParam &other);
   ViaParam(const Protocol &p,
-           const net::HostPortPair &sent_by)
-    : version_(2,0), protocol_(p), sent_by_(sent_by) {}
+           const net::HostPortPair &sent_by);
   ViaParam(const std::string &protocol,
-           const net::HostPortPair &sent_by)
-    : version_(2,0), protocol_(protocol), sent_by_(sent_by) {}
+           const net::HostPortPair &sent_by);
   ViaParam(const Version &version,
            const std::string &protocol,
-           const net::HostPortPair &sent_by)
-    : version_(version), protocol_(protocol), sent_by_(sent_by) {}
+           const net::HostPortPair &sent_by);
+  ~ViaParam();
 
-  ~ViaParam() {}
-
-  ViaParam &operator=(const ViaParam &other) {
-    version_ = other.version_;
-    protocol_ = other.protocol_;
-    sent_by_ = other.sent_by_;
-    has_parameters::operator=(other);
-    return *this;
-  }
+  ViaParam &operator=(const ViaParam &other);
 
   Version version() const { return version_; }
   void set_version(const Version &version) { version_ = version; }
@@ -60,23 +48,9 @@ public:
     sent_by_ = sent_by;
   }
 
-  void print(raw_ostream &os) const {
-    os << "SIP/"
-       << version_.major_value() << "."
-       << version_.minor_value() << "/"
-       << protocol_
-       << " ";
-    if (sent_by_.host().find(':') != std::string::npos)
-      os << "[" << sent_by_.host() << "]";
-    else
-      os << sent_by_.host();
-    if (sent_by_.port() != 0)
-      os << ":" << sent_by_.port();
-    if (!HasRport()) // RFC 3581
-      os << ";rport";
-    has_parameters::print(os);
-  }
-private:
+  void print(raw_ostream &os) const;
+
+ private:
   Version version_;
   Protocol protocol_;
   net::HostPortPair sent_by_;
@@ -91,27 +65,20 @@ raw_ostream &operator<<(raw_ostream &os, const ViaParam &p) {
 class Via :
   public Header,
   public has_multiple<ViaParam> {
-private:
+ private:
   DISALLOW_ASSIGN(Via);
-  Via(const Via &other)
-    : Header(other), has_multiple(other) {}
-  virtual Via *DoClone() const OVERRIDE {
-    return new Via(*this);
-  }
-public:
-  Via()
-    : Header(Header::HDR_VIA) {}
-  Via(const ViaParam &param)
-    : Header(Header::HDR_VIA) { push_back(param); }
+  Via(const Via &other);
+  virtual Via *DoClone() const OVERRIDE;
+
+ public:
+  Via();
+  Via(const ViaParam &param);
 
   scoped_ptr<Via> Clone() const {
     return scoped_ptr<Via>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

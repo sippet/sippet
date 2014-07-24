@@ -15,24 +15,18 @@ class From :
   public has_tag<From> {
 private:
   DISALLOW_ASSIGN(From);
-  From(const From &other)
-    : Header(other), ContactBase(other) {}
-  virtual From *DoClone() const OVERRIDE {
-    return new From(*this);
-  }
+  From(const From &other);
+  virtual From *DoClone() const OVERRIDE;
+
 public:
-  From() : Header(Header::HDR_FROM) {}
-  From(const GURL &address, const std::string &displayName="")
-    : Header(Header::HDR_FROM), ContactBase(address, displayName) {}
+  From();
+  From(const GURL &address, const std::string &displayName="");
 
   scoped_ptr<From> Clone() const {
     return scoped_ptr<From>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    ContactBase::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

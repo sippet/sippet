@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/ua/user_agent.h"
+#include "sippet/ua/ua_user_agent.h"
 #include "sippet/ua/dialog.h"
 #include "sippet/uri/uri.h"
 #include "sippet/base/tags.h"

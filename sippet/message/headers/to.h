@@ -13,26 +13,20 @@ class To :
   public Header,
   public ContactBase,
   public has_tag<To> {
-private:
+ private:
   DISALLOW_ASSIGN(To);
-  To(const To &other)
-    : Header(other), ContactBase(other) {}
-  virtual To *DoClone() const OVERRIDE {
-    return new To(*this);
-  }
-public:
-  To() : Header(Header::HDR_TO) {}
-  To(const GURL &address, const std::string &displayName="")
-    : Header(Header::HDR_TO), ContactBase(address, displayName) {}
+  To(const To &other);
+  virtual To *DoClone() const OVERRIDE;
+
+ public:
+  To();
+  To(const GURL &address, const std::string &displayName="");
 
   scoped_ptr<To> Clone() const {
     return scoped_ptr<To>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    ContactBase::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

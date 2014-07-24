@@ -12,28 +12,21 @@ namespace sippet {
 class ProxyAuthorization :
   public Header,
   public Credentials {
-private:
+ private:
   DISALLOW_ASSIGN(ProxyAuthorization);
-  ProxyAuthorization(const ProxyAuthorization &other)
-    : Header(other), Credentials(other) {}
-  virtual ProxyAuthorization *DoClone() const OVERRIDE {
-    return new ProxyAuthorization(*this);
-  }
-public:
-  ProxyAuthorization() : Header(Header::HDR_PROXY_AUTHORIZATION) {}
-  ProxyAuthorization(Scheme s)
-    : Header(Header::HDR_PROXY_AUTHORIZATION), Credentials(s) {}
-  ProxyAuthorization(const std::string &scheme)
-    : Header(Header::HDR_PROXY_AUTHORIZATION), Credentials(scheme) {}
+  ProxyAuthorization(const ProxyAuthorization &other);
+  virtual ProxyAuthorization *DoClone() const OVERRIDE;
+
+ public:
+  ProxyAuthorization();
+  ProxyAuthorization(Scheme s);
+  ProxyAuthorization(const std::string &scheme);
 
   scoped_ptr<ProxyAuthorization> Clone() const {
     return scoped_ptr<ProxyAuthorization>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    Credentials::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

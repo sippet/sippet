@@ -12,45 +12,32 @@ namespace sippet {
 class RouteParam :
   public ContactBase {
 public:
-  RouteParam() {}
-  RouteParam(const RouteParam &other)
-    : ContactBase(other) {}
+  RouteParam();
+  RouteParam(const RouteParam &other);
   explicit RouteParam(const GURL &address,
-                      const std::string &displayName="")
-    : ContactBase(address, displayName) {}
+                      const std::string &displayName="");
+  ~RouteParam();
 
-  ~RouteParam() {}
-
-  RouteParam &operator=(const RouteParam &other) {
-    ContactBase::operator=(other);
-    return *this;
-  }
+  RouteParam &operator=(const RouteParam &other);
 };
 
 class Route :
   public Header,
   public has_multiple<RouteParam> {
-private:
+ private:
   DISALLOW_ASSIGN(Route);
-  Route(const Route &other)
-    : Header(other), has_multiple(other) {}
-  virtual Route *DoClone() const OVERRIDE {
-    return new Route(*this);
-  }
-public:
-  Route()
-    : Header(Header::HDR_ROUTE) {}
-  Route(const RouteParam &param)
-    : Header(Header::HDR_ROUTE) { push_back(param); }
+  Route(const Route &other);
+  virtual Route *DoClone() const OVERRIDE;
+
+ public:
+  Route();
+  Route(const RouteParam &param);
 
   scoped_ptr<Route> Clone() const {
     return scoped_ptr<Route>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

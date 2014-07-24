@@ -19,27 +19,17 @@ class LanguageRange :
   public single_value<std::string>,
   public has_parameters,
   public has_qvalue<LanguageRange> {
-public:
-  LanguageRange() {}
-  LanguageRange(const LanguageRange &other)
-    : has_parameters(other), single_value(other) {}
-  explicit LanguageRange(const std::string &value)
-    : single_value(value) { /* TODO: convert to lower case */ }
+ public:
+  LanguageRange();
+  LanguageRange(const LanguageRange &other);
+  explicit LanguageRange(const std::string &value);
+  ~LanguageRange();
 
-  ~LanguageRange() {}
-
-  LanguageRange &operator=(const LanguageRange &other) {
-    single_value::operator=(other);
-    has_parameters::operator=(other);
-    return *this;
-  }
+  LanguageRange &operator=(const LanguageRange &other);
 
   bool AllowsAll() const { return value() == "*"; }
 
-  void print(raw_ostream &os) const {
-    os << value();
-    has_parameters::print(os);
-  }
+  void print(raw_ostream &os) const;
 };
 
 inline
@@ -51,15 +41,13 @@ raw_ostream &operator << (raw_ostream &os, const LanguageRange &l) {
 class AcceptLanguage :
   public Header,
   public has_multiple<LanguageRange> {
-private:
+ private:
   DISALLOW_ASSIGN(AcceptLanguage);
-  AcceptLanguage(const AcceptLanguage &other)
-    : Header(other), has_multiple(other) {}
-  virtual AcceptLanguage *DoClone() const OVERRIDE {
-    return new AcceptLanguage(*this);
-  }
-public:
-  AcceptLanguage() : Header(Header::HDR_ACCEPT_LANGUAGE) {}
+  AcceptLanguage(const AcceptLanguage &other);
+  virtual AcceptLanguage *DoClone() const OVERRIDE;
+
+ public:
+  AcceptLanguage();
 
   scoped_ptr<AcceptLanguage> Clone() const {
     return scoped_ptr<AcceptLanguage>(DoClone());
@@ -69,10 +57,7 @@ public:
     return !empty() && front().AllowsAll();
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

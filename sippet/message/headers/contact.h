@@ -6,6 +6,7 @@
 #define SIPPET_MESSAGE_HEADERS_CONTACT_H_
 
 #include <string>
+
 #include "sippet/message/header.h"
 #include "sippet/message/headers/bits/has_parameters.h"
 #include "sippet/message/headers/bits/has_multiple.h"
@@ -17,23 +18,14 @@ namespace sippet {
 
 class ContactBase :
   public has_parameters {
-public:
-  ContactBase() {}
-  ContactBase(const ContactBase &other)
-    : has_parameters(other), address_(other.address_),
-      display_name_(other.display_name_) {}
+ public:
+  ContactBase();
+  ContactBase(const ContactBase &other);
   explicit ContactBase(const GURL &address,
-                       const std::string &displayName="")
-    : address_(address), display_name_(displayName) {}
+                       const std::string &displayName="");
+  ~ContactBase();
 
-  ~ContactBase() {}
-
-  ContactBase &operator=(const ContactBase &other) {
-    address_ = other.address_;
-    display_name_ = other.display_name_;
-    has_parameters::operator=(other);
-    return *this;
-  }
+  ContactBase &operator=(const ContactBase &other);
 
   std::string display_name() const {
     return display_name_;
@@ -49,16 +41,9 @@ public:
     address_ = address;
   }
 
-  void print(raw_ostream &os) const {
-    if (!display_name_.empty()) {
-      os << "\"";
-      os.write_escaped(display_name_);
-      os << "\" ";
-    }
-    os << "<" << address_.spec() << ">";
-    has_parameters::print(os);
-  }
-private:
+  void print(raw_ostream &os) const;
+
+ private:
   GURL address_;
   std::string display_name_;
 };
@@ -73,60 +58,46 @@ class ContactInfo :
   public ContactBase,
   public has_qvalue<ContactInfo>,
   public has_expires<ContactInfo> {
-public:
-  ContactInfo() {}
-  ContactInfo(const ContactInfo &other)
-    : ContactBase(other) {}
+ public:
+  ContactInfo();
+  ContactInfo(const ContactInfo &other);
   explicit ContactInfo(const GURL &address,
-                       const std::string &displayName="")
-    : ContactBase(address, displayName) {}
+                       const std::string &displayName="");
+  ~ContactInfo();
 
-  ~ContactInfo() {}
-
-  ContactInfo &operator=(const ContactInfo &other) {
-    ContactBase::operator=(other);
-    return *this;
-  }
+  ContactInfo &operator=(const ContactInfo &other);
 };
 
 class Contact :
   public Header,
   public has_multiple<ContactInfo> {
-private:
+ private:
   DISALLOW_ASSIGN(Contact);
-  Contact(const Contact &other)
-    : Header(other), has_multiple(other), star_(other.star_) {}
-  virtual Contact *DoClone() const OVERRIDE {
-    return new Contact(*this);
-  }
-public:
+  Contact(const Contact &other);
+  virtual Contact *DoClone() const OVERRIDE;
+
+ public:
   enum _All { All };
 
-  Contact()
-    : Header(Header::HDR_CONTACT), star_(false) {}
-  Contact(_All)
-    : Header(Header::HDR_CONTACT), star_(true) {}
-  explicit Contact(const ContactInfo &info)
-    : Header(Header::HDR_CONTACT), star_(false) {
-    push_back(info);
-  }
+  Contact();
+  Contact(_All);
+  explicit Contact(const ContactInfo &info);
   Contact(const GURL &address,
-          const std::string &displayName="")
-    : Header(Header::HDR_CONTACT), star_(false) {
-    push_back(ContactInfo(address, displayName));
-  }
+          const std::string &displayName="");
 
   scoped_ptr<Contact> Clone() const {
     return scoped_ptr<Contact>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    if (star_)
-      os << "*";
-    else
-      has_multiple::print(os);
+  bool is_all() const {
+    return star_;
   }
+  void set_all(bool value) {
+    star_ = value;
+  }
+
+  virtual void print(raw_ostream &os) const OVERRIDE;
+
 private:
   bool star_;
 };
