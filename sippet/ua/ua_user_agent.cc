@@ -13,10 +13,29 @@
 namespace sippet {
 namespace ua {
 
+UserAgent::IncomingRequestContext::IncomingRequestContext(
+      const scoped_refptr<Request>& incoming_request)
+  : incoming_request_(incoming_request) {
+}
+
+UserAgent::IncomingRequestContext::~IncomingRequestContext() {
+}
+
+UserAgent::OutgoingRequestContext::OutgoingRequestContext(
+      const scoped_refptr<Request>& outgoing_request)
+  : outgoing_request_(outgoing_request) {
+}
+
+UserAgent::OutgoingRequestContext::~OutgoingRequestContext() {
+}
+
 UserAgent::UserAgent(AuthHandlerFactory *auth_handler_factory,
                      const net::BoundNetLog &net_log)
   : auth_handler_factory_(auth_handler_factory),
     net_log_(net_log) {
+}
+
+UserAgent::~UserAgent() {
 }
 
 void UserAgent::AppendHandler(Delegate *delegate) {
