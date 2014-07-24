@@ -15,25 +15,20 @@ namespace sippet {
 class Server :
   public Header,
   public single_value<std::string> {
-private:
+ private:
   DISALLOW_ASSIGN(Server);
-  Server(const Server &other) : Header(other), single_value(other) {}
-  virtual Server *DoClone() const OVERRIDE {
-    return new Server(*this);
-  }
-public:
-  Server() : Header(Header::HDR_SERVER) {}
-  Server(const single_value::value_type &subject)
-    : Header(Header::HDR_SERVER), single_value(subject) {}
+  Server(const Server &other);
+  virtual Server *DoClone() const OVERRIDE;
+
+ public:
+  Server();
+  Server(const single_value::value_type &subject);
 
   scoped_ptr<Server> Clone() const {
     return scoped_ptr<Server>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    single_value::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

@@ -12,18 +12,13 @@ namespace sippet {
 
 class MediaRange :
   public MediaType {
-public:
-  MediaRange() {}
-  MediaRange(const MediaRange &other)
-    : MediaType(other) {}
-  MediaRange(const std::string &type, const std::string &subtype)
-    : MediaType(type, subtype) {}
-  ~MediaRange() {}
+ public:
+  MediaRange();
+  MediaRange(const MediaRange &other);
+  MediaRange(const std::string &type, const std::string &subtype);
+  ~MediaRange();
 
-  MediaRange &operator=(const MediaRange &other) {
-    MediaType::operator=(other);
-    return *this;
-  }
+  MediaRange &operator=(const MediaRange &other);
 
   bool AllowsAll() { return type() == "*" && AllowsAllSubtypes(); }
   bool AllowsAllSubtypes() { return subtype() == "*"; }
@@ -38,23 +33,19 @@ raw_ostream &operator << (raw_ostream &os, const MediaRange &m) {
 class Accept :
   public Header,
   public has_multiple<MediaRange> {
-private:
+ private:
   DISALLOW_ASSIGN(Accept);
-  Accept(const Accept &other) : Header(other), has_multiple(other) {}
-  virtual Accept *DoClone() const OVERRIDE {
-    return new Accept(*this);
-  }
-public:
-  Accept() : Header(Header::HDR_ACCEPT) {}
+  Accept(const Accept &other);
+  virtual Accept *DoClone() const OVERRIDE;
+
+ public:
+  Accept();
 
   scoped_ptr<Accept> Clone() const {
     return scoped_ptr<Accept>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

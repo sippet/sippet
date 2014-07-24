@@ -15,25 +15,20 @@ namespace sippet {
 class UserAgent :
   public Header,
   public single_value<std::string> {
-private:
+ private:
   DISALLOW_ASSIGN(UserAgent);
-  UserAgent(const UserAgent &other) : Header(other), single_value(other) {}
-  virtual UserAgent *DoClone() const OVERRIDE {
-    return new UserAgent(*this);
-  }
-public:
-  UserAgent() : Header(Header::HDR_USER_AGENT) {}
-  UserAgent(const single_value::value_type &subject)
-    : Header(Header::HDR_USER_AGENT), single_value(subject) {}
+  UserAgent(const UserAgent &other);
+  virtual UserAgent *DoClone() const OVERRIDE;
+
+ public:
+  UserAgent();
+  UserAgent(const single_value::value_type &subject);
 
   scoped_ptr<UserAgent> Clone() const {
     return scoped_ptr<UserAgent>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    single_value::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

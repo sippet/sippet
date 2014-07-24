@@ -15,22 +15,19 @@ namespace sippet {
 class Priority :
   public Header,
   public single_value<std::string> {
-private:
+ private:
   DISALLOW_ASSIGN(Priority);
-  Priority(const Priority &other) : Header(other), single_value(other) {}
-  virtual Priority *DoClone() const OVERRIDE {
-    return new Priority(*this);
-  }
-public:
+  Priority(const Priority &other);
+  virtual Priority *DoClone() const OVERRIDE;
+
+ public:
   enum Level {
     emergency = 0, urgent, normal, non_urgent
   };
 
-  Priority() : Header(Header::HDR_PRIORITY) {}
-  Priority(Level l)
-    : Header(Header::HDR_PRIORITY) { set_value(l); }
-  Priority(const single_value::value_type &priority)
-    : Header(Header::HDR_PRIORITY), single_value(priority) {}
+  Priority();
+  Priority(Level l);
+  Priority(const single_value::value_type &priority);
 
   scoped_ptr<Priority> Clone() const {
     return scoped_ptr<Priority>(DoClone());
@@ -41,10 +38,7 @@ public:
     single_value::set_value(rep[static_cast<int>(l)]);
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    single_value::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

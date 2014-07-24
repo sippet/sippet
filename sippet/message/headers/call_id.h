@@ -15,26 +15,20 @@ namespace sippet {
 class CallId :
   public Header,
   public single_value<std::string> {
-private:
+ private:
   DISALLOW_ASSIGN(CallId);
-  CallId(const CallId &other)
-    : Header(other), single_value(other) {}
-  virtual CallId *DoClone() const OVERRIDE {
-    return new CallId(*this);
-  }
-public:
-  CallId() : Header(Header::HDR_CALL_ID) {}
-  CallId(const single_value::value_type &callid)
-    : Header(Header::HDR_CALL_ID), single_value(callid) {}
+  CallId(const CallId &other);
+  virtual CallId *DoClone() const OVERRIDE;
+
+ public:
+  CallId();
+  CallId(const single_value::value_type &callid);
 
   scoped_ptr<CallId> Clone() const {
     return scoped_ptr<CallId>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    single_value::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

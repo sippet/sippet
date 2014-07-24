@@ -14,17 +14,14 @@ namespace sippet {
 
 class Cseq :
   public Header {
-private:
+ private:
   DISALLOW_ASSIGN(Cseq);
-  Cseq(const Cseq &other)
-    : Header(other), sequence_(other.sequence_), method_(other.method_) {}
-  virtual Cseq *DoClone() const OVERRIDE {
-    return new Cseq(*this);
-  }
-public:
-  Cseq() : Header(Header::HDR_CSEQ) {}
-  Cseq(unsigned sequence, const Method &method)
-    : Header(Header::HDR_CSEQ), sequence_(sequence), method_(method) {}
+  Cseq(const Cseq &other);
+  virtual Cseq *DoClone() const OVERRIDE;
+
+ public:
+  Cseq();
+  Cseq(unsigned sequence, const Method &method);
 
   scoped_ptr<Cseq> Clone() const {
     return scoped_ptr<Cseq>(DoClone());
@@ -36,11 +33,9 @@ public:
   Method method() const { return method_; }
   void set_method(const Method &method) { method_ = method; }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    os << sequence_ << " " << method_;
-  }
-private:
+  virtual void print(raw_ostream &os) const OVERRIDE;
+
+ private:
   unsigned sequence_;
   Method method_;
 };

@@ -14,25 +14,20 @@ namespace sippet {
 class ContentLength :
   public Header,
   public single_value<unsigned> {
-private:
+ private:
   DISALLOW_ASSIGN(ContentLength);
-  ContentLength(const ContentLength &other) : Header(other), single_value(other) {}
-  virtual ContentLength *DoClone() const OVERRIDE {
-    return new ContentLength(*this);
-  }
-public:
-  ContentLength() : Header(Header::HDR_CONTENT_LENGTH) {}
-  ContentLength(const single_value::value_type &length)
-    : Header(Header::HDR_CONTENT_LENGTH), single_value(length) {}
+  ContentLength(const ContentLength &other);
+  virtual ContentLength *DoClone() const OVERRIDE;
+
+ public:
+  ContentLength();
+  ContentLength(const single_value::value_type &length);
 
   scoped_ptr<ContentLength> Clone() const {
     return scoped_ptr<ContentLength>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    single_value::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

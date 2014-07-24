@@ -20,25 +20,15 @@ class Info :
   public single_value<GURL>,
   public has_parameters,
   public has_purpose<Info> {
-public:
-  Info() {}
-  Info(const Info &other)
-    : has_parameters(other), single_value(other) {}
-  explicit Info(const single_value::value_type &type)
-    : single_value(type) {}
+ public:
+  Info();
+  Info(const Info &other);
+  explicit Info(const single_value::value_type &type);
+  ~Info();
 
-  ~Info() {}
+  Info &operator=(const Info &other);
 
-  Info &operator=(const Info &other) {
-    single_value::operator=(other);
-    has_parameters::operator=(other);
-    return *this;
-  }
-
-  void print(raw_ostream &os) const {
-    os << "<" << value().spec() << ">";
-    has_parameters::print(os);
-  }
+  void print(raw_ostream &os) const;
 };
 
 inline
@@ -50,23 +40,19 @@ raw_ostream &operator<<(raw_ostream &os, const Info &i) {
 class CallInfo :
   public Header,
   public has_multiple<Info> {
-private:
+ private:
   DISALLOW_ASSIGN(CallInfo);
-  CallInfo(const CallInfo &other) : Header(other), has_multiple(other) {}
-  virtual CallInfo *DoClone() const OVERRIDE {
-    return new CallInfo(*this);
-  }
-public:
-  CallInfo() : Header(Header::HDR_CALL_INFO) {}
+  CallInfo(const CallInfo &other);
+  virtual CallInfo *DoClone() const OVERRIDE;
+
+ public:
+  CallInfo();
 
   scoped_ptr<CallInfo> Clone() const {
     return scoped_ptr<CallInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

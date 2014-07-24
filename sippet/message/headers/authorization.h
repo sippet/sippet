@@ -24,39 +24,31 @@ class Credentials :
   public has_qop<Credentials>,
   public has_auth_params {
 public:
-  Credentials() {}
-  Credentials(Scheme s) : has_auth_params(s) {}
-  Credentials(const std::string &scheme) : has_auth_params(scheme) {}
-  Credentials(const Credentials &other)
-    : has_auth_params(other) {}
-  ~Credentials() {}
+  Credentials();
+  Credentials(Scheme s);
+  Credentials(const std::string &scheme);
+  Credentials(const Credentials &other);
+  ~Credentials();
 };
 
 class Authorization :
   public Header,
   public Credentials {
-private:
+ private:
   DISALLOW_ASSIGN(Authorization);
-  Authorization(const Authorization &other)
-    : Header(other), Credentials(other) {}
-  virtual Authorization *DoClone() const OVERRIDE {
-    return new Authorization(*this);
-  }
-public:
-  Authorization() : Header(Header::HDR_AUTHORIZATION) {}
-  Authorization(Scheme s)
-    : Header(Header::HDR_AUTHORIZATION), Credentials(s) {}
-  Authorization(const std::string &scheme)
-    : Header(Header::HDR_AUTHORIZATION), Credentials(scheme) {}
+  Authorization(const Authorization &other);
+  virtual Authorization *DoClone() const OVERRIDE;
+
+ public:
+  Authorization();
+  Authorization(Scheme s);
+  Authorization(const std::string &scheme);
 
   scoped_ptr<Authorization> Clone() const {
     return scoped_ptr<Authorization>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    Credentials::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

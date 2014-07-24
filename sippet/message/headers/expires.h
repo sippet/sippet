@@ -14,25 +14,20 @@ namespace sippet {
 class Expires :
   public Header,
   public single_value<unsigned> {
-private:
+ private:
   DISALLOW_ASSIGN(Expires);
-  Expires(const Expires &other) : Header(other), single_value(other) {}
-  virtual Expires *DoClone() const OVERRIDE {
-    return new Expires(*this);
-  }
-public:
-  Expires() : Header(Header::HDR_EXPIRES) {}
-  Expires(const single_value::value_type &seconds)
-    : Header(Header::HDR_EXPIRES), single_value(seconds) {}
+  Expires(const Expires &other);
+  virtual Expires *DoClone() const OVERRIDE;
+
+ public:
+  Expires();
+  Expires(const single_value::value_type &seconds);
 
   scoped_ptr<Expires> Clone() const {
     return scoped_ptr<Expires>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    single_value::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace
