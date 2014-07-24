@@ -10,6 +10,15 @@
 
 namespace sippet {
 
+SequencedWriteStreamSocket::PendingBlock::PendingBlock(
+        net::DrainableIOBuffer *io_buffer,
+        const net::CompletionCallback& callback)
+  : io_buffer_(io_buffer), callback_(callback) {
+}
+
+SequencedWriteStreamSocket::PendingBlock::~PendingBlock() {
+}
+
 SequencedWriteStreamSocket::SequencedWriteStreamSocket(
     net::StreamSocket *socket_to_wrap)
     : wrapped_socket_(socket_to_wrap),

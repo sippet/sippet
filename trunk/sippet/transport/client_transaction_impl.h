@@ -22,7 +22,6 @@ class ClientTransactionImpl : public ClientTransaction {
         const scoped_refptr<Channel> &channel,
         TransactionDelegate *delegate,
         TimeDeltaFactory *time_delta_factory);
-  virtual ~ClientTransactionImpl();
 
   // ClientTransaction methods:
   virtual const std::string& id() const OVERRIDE;
@@ -33,6 +32,9 @@ class ClientTransactionImpl : public ClientTransaction {
       const scoped_refptr<Response> &response) OVERRIDE;
   virtual void Close() OVERRIDE;
  private:
+  friend class base::RefCountedThreadSafe<ClientTransactionImpl>;
+  virtual ~ClientTransactionImpl();
+
   enum Mode {
     MODE_NORMAL,
     MODE_INVITE

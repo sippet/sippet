@@ -19,6 +19,9 @@ ChromeChannelFactory::ChromeChannelFactory(
   CHECK(client_socket_factory_);
 }
 
+ChromeChannelFactory::~ChromeChannelFactory() {
+}
+
 int ChromeChannelFactory::CreateChannel(
     const EndPoint &destination,
     Channel::Delegate *delegate,
