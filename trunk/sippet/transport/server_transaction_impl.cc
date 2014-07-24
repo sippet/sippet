@@ -96,6 +96,9 @@ void ServerTransactionImpl::OnSendWriteComplete(
         default: next_state_ = STATE_COMPLETED; break;
       }
       break;
+    default:
+      NOTREACHED();
+      break;
   }
   if (STATE_COMPLETED == next_state_
       && next_state_ != state) {
@@ -148,6 +151,9 @@ void ServerTransactionImpl::OnRepeatResponseWriteComplete(
         next_state_ = STATE_CONFIRMED;
       break;
     case STATE_CONFIRMED:
+      break;
+    default:
+      NOTREACHED();
       break;
   }
   if (STATE_CONFIRMED == next_state_

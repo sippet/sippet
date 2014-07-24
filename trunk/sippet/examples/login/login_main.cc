@@ -15,7 +15,7 @@
 #include "sippet/transport/channel_factory.h"
 #include "sippet/transport/chrome/chrome_channel_factory.h"
 #include "sippet/transport/network_layer.h"
-#include "sippet/ua/user_agent.h"
+#include "sippet/ua/ua_user_agent.h"
 #include "sippet/examples/login/url_request_context_getter.h"
 
 static void PrintUsage() {
