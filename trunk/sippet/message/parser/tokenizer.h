@@ -13,8 +13,8 @@ namespace sippet {
 class Tokenizer {
 public:
   Tokenizer(std::string::const_iterator string_begin,
-            std::string::const_iterator string_end)
-    : current_(string_begin), end_(string_end) {}
+            std::string::const_iterator string_end);
+  ~Tokenizer();
 
   std::string::const_iterator Skip(const base::StringPiece &chars) {
     for (; current_ != end_; ++current_) {

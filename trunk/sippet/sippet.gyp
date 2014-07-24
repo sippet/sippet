@@ -147,6 +147,7 @@
         'message/method.cc',
         'message/parser/parser.cc',
         'message/parser/tokenizer.h',
+        'message/parser/tokenizer.cc',
         'message/protocol.h',
         'message/protocol.cc',
         'message/request.h',
