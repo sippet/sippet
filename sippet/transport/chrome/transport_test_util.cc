@@ -84,7 +84,8 @@ class ChannelConnectedImpl : public ExpectNothing {
   ChannelConnectedImpl(const EndPoint &destination, int error)
     : has_error_(true), destination_(destination), error_(error) {}
   virtual ~ChannelConnectedImpl() {}
-  void OnChannelConnected(const EndPoint& destination, int error) OVERRIDE {
+  virtual void OnChannelConnected(
+      const EndPoint& destination, int error) OVERRIDE {
     EXPECT_EQ(destination_, destination);
     if (has_error_)
       EXPECT_EQ(error_, error);
@@ -100,7 +101,7 @@ class ChannelClosedImpl : public ExpectNothing {
   ChannelClosedImpl(const EndPoint &destination)
     : destination_(destination) {}
   virtual ~ChannelClosedImpl() {}
-  void OnChannelClosed(const EndPoint& destination) OVERRIDE {
+  virtual void OnChannelClosed(const EndPoint& destination) OVERRIDE {
     EXPECT_EQ(destination_, destination);
   }
  private:
