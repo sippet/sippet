@@ -86,6 +86,9 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
   network_session_ = new net::HttpNetworkSession(session_params);
 }
 
+ChromeStreamChannel::~ChromeStreamChannel() {
+}
+
 int ChromeStreamChannel::origin(EndPoint *origin) const {
   if (transport_.get() && transport_->socket()) {
     net::IPEndPoint endpoint;

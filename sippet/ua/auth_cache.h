@@ -5,6 +5,8 @@
 #ifndef SIPPET_UA_AUTH_CACHE_H_
 #define SIPPET_UA_AUTH_CACHE_H_
 
+#include <list>
+
 #include "net/base/auth.h"
 #include "sippet/ua/auth.h"
 #include "url/gurl.h"
@@ -126,3 +128,4 @@ class AuthCache {
 } // namespace sippet
 
 #endif // SIPPET_UA_AUTH_CACHE_H_
+

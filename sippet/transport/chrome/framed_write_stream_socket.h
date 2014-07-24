@@ -27,7 +27,8 @@ namespace sippet {
 // boundaries.
 //
 // There are no bounds on the local buffer size. Use carefully.
-class NET_EXPORT_PRIVATE FramedWriteStreamSocket : public net::StreamSocket {
+class FramedWriteStreamSocket
+  : public net::StreamSocket {
  public:
   FramedWriteStreamSocket(net::StreamSocket* socket_to_wrap);
   virtual ~FramedWriteStreamSocket();
@@ -63,8 +64,8 @@ class NET_EXPORT_PRIVATE FramedWriteStreamSocket : public net::StreamSocket {
 
   struct PendingFrame {
     PendingFrame(net::IOBuffer *buf, int buf_len,
-                 const net::CompletionCallback& callback)
-      : buf_(buf), buf_len_(buf_len), callback_(callback) {}
+                 const net::CompletionCallback& callback);
+    ~PendingFrame();
     scoped_refptr<net::IOBuffer> buf_;
     int buf_len_;
     net::CompletionCallback callback_;

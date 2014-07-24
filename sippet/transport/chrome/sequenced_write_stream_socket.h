@@ -62,8 +62,8 @@ class NET_EXPORT_PRIVATE SequencedWriteStreamSocket : public net::StreamSocket {
 
   struct PendingBlock {
     PendingBlock(net::DrainableIOBuffer *io_buffer,
-                 const net::CompletionCallback& callback)
-      : io_buffer_(io_buffer), callback_(callback) {}
+                 const net::CompletionCallback& callback);
+    ~PendingBlock();
     scoped_refptr<net::DrainableIOBuffer> io_buffer_;
     net::CompletionCallback callback_;
   };
