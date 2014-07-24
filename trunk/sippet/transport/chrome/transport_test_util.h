@@ -263,7 +263,7 @@ class UDPChannelAdapter : public MockChannelAdapter {
   virtual ~UDPChannelAdapter();
 
   // sippet::MockChannelAdapter methods:
-  virtual bool is_secure() const OVERRIDE { return false; }
+  virtual bool is_secure() const OVERRIDE;
   virtual int Connect(const net::HostPortPair &destination,
                       const net::CompletionCallback& callback) OVERRIDE;
   virtual int Read(net::IOBuffer* buf, int buf_len,
@@ -283,7 +283,7 @@ class TCPChannelAdapter : public MockChannelAdapter {
   virtual ~TCPChannelAdapter();
 
   // sippet::MockChannelAdapter methods:
-  virtual bool is_secure() const OVERRIDE { return false; }
+  virtual bool is_secure() const OVERRIDE;
   virtual int Connect(const net::HostPortPair &destination,
                       const net::CompletionCallback& callback) OVERRIDE;
   virtual int Read(net::IOBuffer* buf, int buf_len,
@@ -303,7 +303,7 @@ class TLSChannelAdapter : public MockChannelAdapter {
   virtual ~TLSChannelAdapter();
 
   // sippet::MockChannelAdapter methods:
-  virtual bool is_secure() const OVERRIDE { return false; }
+  virtual bool is_secure() const OVERRIDE;
   virtual int Connect(const net::HostPortPair &destination,
                       const net::CompletionCallback& callback) OVERRIDE;
   virtual int Read(net::IOBuffer* buf, int buf_len,
