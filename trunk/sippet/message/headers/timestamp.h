@@ -17,17 +17,14 @@ namespace sippet {
 
 class Timestamp :
   public Header {
-private:
+ private:
   DISALLOW_ASSIGN(Timestamp);
-  Timestamp(const Timestamp &other)
-    : Header(other), timestamp_(other.timestamp_), delay_(other.delay_) {}
-  virtual Timestamp *DoClone() const OVERRIDE {
-    return new Timestamp(*this);
-  }
-public:
-  Timestamp() : Header(Header::HDR_TIMESTAMP), timestamp_(0), delay_(0) {}
-  Timestamp(const double &timestamp, const double &delay=.0)
-    : Header(Header::HDR_TIMESTAMP), timestamp_(timestamp), delay_(delay) {}
+  Timestamp(const Timestamp &other);
+  virtual Timestamp *DoClone() const OVERRIDE;
+
+ public:
+  Timestamp();
+  Timestamp(const double &timestamp, const double &delay=.0);
 
   scoped_ptr<Timestamp> Clone() const {
     return scoped_ptr<Timestamp>(DoClone());
@@ -39,27 +36,11 @@ public:
   void set_delay(double delay) { delay_ = delay; }
   double delay() { return delay_; }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    print_double(os, timestamp_);
-    if (delay_ != 0) {
-      os << " ";
-      print_double(os, delay_);
-    }
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 
 private:
   double timestamp_;
   double delay_;
-
-  static void print_double(raw_ostream &os, double v) {
-    double i;
-    double frac = modf(v, &i);
-    if (frac == 0)
-      os << static_cast<int>(i);
-    else
-      os << base::DoubleToString(v);
-  }
 };
 
 } // End of sippet namespace

@@ -6,6 +6,7 @@
 #define SIPPET_MESSAGE_HEADERS_ACCEPT_ENCODING_H_
 
 #include <string>
+
 #include "sippet/message/header.h"
 #include "sippet/message/headers/bits/single_value.h"
 #include "sippet/message/headers/bits/has_multiple.h"
@@ -19,27 +20,17 @@ class Encoding :
   public single_value<std::string>,
   public has_parameters,
   public has_qvalue<Encoding> {
-public:
-  Encoding() {}
-  Encoding(const Encoding &other)
-    : has_parameters(other), single_value(other) {}
-  explicit Encoding(const single_value::value_type &value)
-    : single_value(value) { /* TODO: convert to lower case */ }
+ public:
+  Encoding();
+  Encoding(const Encoding &other);
+  explicit Encoding(const single_value::value_type &value);
+  ~Encoding();
 
-  Encoding &operator=(const Encoding &other) {
-    single_value::operator=(other);
-    has_parameters::operator=(other);
-    return *this;
-  }
-
-  ~Encoding() {}
+  Encoding &operator=(const Encoding &other);
 
   bool AllowsAll() const { return value() == "*"; }
 
-  void print(raw_ostream &os) const {
-    os << value();
-    has_parameters::print(os);
-  }
+  void print(raw_ostream &os) const;
 };
 
 inline
@@ -51,15 +42,13 @@ raw_ostream &operator << (raw_ostream &os, const Encoding &e) {
 class AcceptEncoding :
   public Header,
   public has_multiple<Encoding> {
-private:
+ private:
   DISALLOW_ASSIGN(AcceptEncoding);
-  AcceptEncoding(const AcceptEncoding &other)
-    : Header(other), has_multiple(other) {}
-  virtual AcceptEncoding *DoClone() const OVERRIDE {
-    return new AcceptEncoding(*this);
-  }
-public:
-  AcceptEncoding() : Header(Header::HDR_ACCEPT_ENCODING) {}
+  AcceptEncoding(const AcceptEncoding &other);
+  virtual AcceptEncoding *DoClone() const OVERRIDE;
+
+ public:
+  AcceptEncoding();
 
   scoped_ptr<AcceptEncoding> Clone() const {
     return scoped_ptr<AcceptEncoding>(DoClone());
@@ -69,10 +58,7 @@ public:
     return !empty() && front().AllowsAll();
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

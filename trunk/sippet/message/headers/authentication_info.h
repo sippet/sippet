@@ -19,24 +19,19 @@ class AuthenticationInfo :
   public has_cnonce<AuthenticationInfo>,
   public has_nc<AuthenticationInfo>,
   public has_auth_params {
-private:
+ private:
   DISALLOW_ASSIGN(AuthenticationInfo);
-  AuthenticationInfo(const AuthenticationInfo &other)
-    : Header(other), has_auth_params(other) {}
-  virtual AuthenticationInfo *DoClone() const OVERRIDE {
-    return new AuthenticationInfo(*this);
-  }
-public:
-  AuthenticationInfo() : Header(Header::HDR_AUTHENTICATION_INFO) {}
+  AuthenticationInfo(const AuthenticationInfo &other);
+  virtual AuthenticationInfo *DoClone() const OVERRIDE;
+
+ public:
+  AuthenticationInfo();
 
   scoped_ptr<AuthenticationInfo> Clone() const {
     return scoped_ptr<AuthenticationInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_auth_params::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

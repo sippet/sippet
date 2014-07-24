@@ -6,6 +6,7 @@
 #define SIPPET_MESSAGE_HEADERS_IN_REPLY_TO_H_
 
 #include <string>
+
 #include "sippet/message/header.h"
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/base/raw_ostream.h"
@@ -15,23 +16,19 @@ namespace sippet {
 class InReplyTo :
   public Header,
   public has_multiple<std::string> {
-private:
+ private:
   DISALLOW_ASSIGN(InReplyTo);
-  InReplyTo(const InReplyTo &other) : Header(other), has_multiple(other) {}
-  virtual InReplyTo *DoClone() const OVERRIDE {
-    return new InReplyTo(*this);
-  }
-public:
-  InReplyTo() : Header(Header::HDR_IN_REPLY_TO) {}
+  InReplyTo(const InReplyTo &other);
+  virtual InReplyTo *DoClone() const OVERRIDE;
+
+ public:
+  InReplyTo();
 
   scoped_ptr<InReplyTo> Clone() const {
     return scoped_ptr<InReplyTo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

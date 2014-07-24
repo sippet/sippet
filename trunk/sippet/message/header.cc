@@ -33,6 +33,17 @@ namespace {
   }
 }
 
+Header::Header(Type type)
+  : type_(type) {
+}
+
+Header::Header(const Header &other)
+  : type_(other.type_) {
+}
+
+Header::~Header() {
+}
+
 const char *Header::name() const {
   if (isa<Generic>(this))
     return dyn_cast<Generic>(this)->header_name_.c_str();

@@ -18,25 +18,15 @@ namespace sippet {
 class ErrorUri :
   public single_value<GURL>,
   public has_parameters {
-public:
-  ErrorUri() {}
-  ErrorUri(const ErrorUri &other)
-    : has_parameters(other), single_value(other) {}
-  explicit ErrorUri(const single_value::value_type &type)
-    : single_value(type) {}
+ public:
+  ErrorUri();
+  ErrorUri(const ErrorUri &other);
+  explicit ErrorUri(const single_value::value_type &type);
+  ~ErrorUri();
 
-  ~ErrorUri() {}
+  ErrorUri &operator=(const ErrorUri &other);
 
-  ErrorUri &operator=(const ErrorUri &other) {
-    single_value::operator=(other);
-    has_parameters::operator=(other);
-    return *this;
-  }
-
-  void print(raw_ostream &os) const {
-    os << "<" << value().spec() << ">";
-    has_parameters::print(os);
-  }
+  void print(raw_ostream &os) const;
 };
 
 inline
@@ -48,23 +38,19 @@ raw_ostream &operator<<(raw_ostream &os, const ErrorUri &u) {
 class ErrorInfo :
   public Header,
   public has_multiple<ErrorUri> {
-private:
+ private:
   DISALLOW_ASSIGN(ErrorInfo);
-  ErrorInfo(const ErrorInfo &other) : Header(other), has_multiple(other) {}
-  virtual ErrorInfo *DoClone() const OVERRIDE {
-    return new ErrorInfo(*this);
-  }
-public:
-  ErrorInfo() : Header(Header::HDR_ERROR_INFO) {}
+  ErrorInfo(const ErrorInfo &other);
+  virtual ErrorInfo *DoClone() const OVERRIDE;
+
+ public:
+  ErrorInfo();
 
   scoped_ptr<ErrorInfo> Clone() const {
     return scoped_ptr<ErrorInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

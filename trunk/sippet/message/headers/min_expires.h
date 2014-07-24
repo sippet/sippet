@@ -14,25 +14,20 @@ namespace sippet {
 class MinExpires :
   public Header,
   public single_value<unsigned> {
-private:
+ private:
   DISALLOW_ASSIGN(MinExpires);
-  MinExpires(const MinExpires &other) : Header(other), single_value(other) {}
-  virtual MinExpires *DoClone() const OVERRIDE {
-    return new MinExpires(*this);
-  }
-public:
-  MinExpires() : Header(Header::HDR_MIN_EXPIRES) {}
-  MinExpires(const single_value::value_type &seconds)
-    : Header(Header::HDR_MIN_EXPIRES), single_value(seconds) {}
+  MinExpires(const MinExpires &other);
+  virtual MinExpires *DoClone() const OVERRIDE;
+
+ public:
+  MinExpires();
+  MinExpires(const single_value::value_type &seconds);
 
   scoped_ptr<MinExpires> Clone() const {
     return scoped_ptr<MinExpires>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    single_value::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

@@ -6,6 +6,7 @@
 #define SIPPET_MESSAGE_HEADERS_ALLOW_H_
 
 #include <string>
+
 #include "sippet/message/header.h"
 #include "sippet/message/headers/bits/has_multiple.h"
 #include "sippet/message/headers/bits/has_parameters.h"
@@ -18,22 +19,17 @@ class Allow :
   public has_multiple<Method> {
 private:
   DISALLOW_ASSIGN(Allow);
-  Allow(const Allow &other)
-    : Header(other), has_multiple(other) {}
-  virtual Allow *DoClone() const OVERRIDE {
-    return new Allow(*this);
-  }
+  Allow(const Allow &other);
+  virtual Allow *DoClone() const OVERRIDE;
+
 public:
-  Allow() : Header(Header::HDR_ALLOW) {}
+  Allow();
 
   scoped_ptr<Allow> Clone() const {
     return scoped_ptr<Allow>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace

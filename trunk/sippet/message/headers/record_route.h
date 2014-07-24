@@ -12,27 +12,20 @@ namespace sippet {
 class RecordRoute :
   public Header,
   public has_multiple<RouteParam> {
-private:
+ private:
   DISALLOW_ASSIGN(RecordRoute);
-  RecordRoute(const RecordRoute &other)
-    : Header(other), has_multiple(other) {}
-  virtual RecordRoute *DoClone() const OVERRIDE {
-    return new RecordRoute(*this);
-  }
-public:
-  RecordRoute()
-    : Header(Header::HDR_RECORD_ROUTE) {}
-  RecordRoute(const RouteParam &param)
-    : Header(Header::HDR_RECORD_ROUTE) { push_back(param); }
+  RecordRoute(const RecordRoute &other);
+  virtual RecordRoute *DoClone() const OVERRIDE;
+
+ public:
+  RecordRoute();
+  RecordRoute(const RouteParam &param);
 
   scoped_ptr<RecordRoute> Clone() const {
     return scoped_ptr<RecordRoute>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE {
-    Header::print(os);
-    has_multiple::print(os);
-  }
+  virtual void print(raw_ostream &os) const OVERRIDE;
 };
 
 } // End of sippet namespace
