@@ -225,9 +225,11 @@ bool MatchMessage(const scoped_refptr<Message> &message,
 MockBranchFactory::MockBranchFactory(
           const char *branches[], size_t branches_count)
   : branches_(branches), branches_index_(0),
-    branches_count_(branches_count) {}
+    branches_count_(branches_count) {
+}
 
-MockBranchFactory::~MockBranchFactory() {}
+MockBranchFactory::~MockBranchFactory() {
+}
 
 std::string MockBranchFactory::CreateBranch() {
   DCHECK(branches_index_ < branches_count_);
@@ -390,9 +392,11 @@ MockEvent ExpectTransactionClose(std::string *transaction_id) {
 
 StaticNetworkLayerDelegate::StaticNetworkLayerDelegate(
               DataProvider *data_provider)
-  : data_provider_(data_provider) {}
+  : data_provider_(data_provider) {
+}
 
-StaticNetworkLayerDelegate::~StaticNetworkLayerDelegate() {}
+StaticNetworkLayerDelegate::~StaticNetworkLayerDelegate() {
+}
 
 void StaticNetworkLayerDelegate::OnChannelConnected(
     const EndPoint& destination, int error) {
@@ -431,9 +435,15 @@ void StaticNetworkLayerDelegate::OnTransportError(
 
 UDPChannelAdapter::UDPChannelAdapter(net::ClientSocketFactory *socket_factory,
                                      net::NetLog *net_log)
-  : socket_factory_(socket_factory), net_log_(net_log) {}
+  : socket_factory_(socket_factory), net_log_(net_log) {
+}
 
-UDPChannelAdapter::~UDPChannelAdapter() {}
+UDPChannelAdapter::~UDPChannelAdapter() {
+}
+
+bool UDPChannelAdapter::is_secure() const {
+  return false;
+}
 
 int UDPChannelAdapter::Connect(
         const net::HostPortPair &destination,
@@ -471,9 +481,15 @@ int UDPChannelAdapter::Write(
 
 TCPChannelAdapter::TCPChannelAdapter(net::ClientSocketFactory *socket_factory,
                                      net::NetLog *net_log)
-  : socket_factory_(socket_factory), net_log_(net_log) {}
+  : socket_factory_(socket_factory), net_log_(net_log) {
+}
 
-TCPChannelAdapter::~TCPChannelAdapter() {}
+TCPChannelAdapter::~TCPChannelAdapter() {
+}
+
+bool TCPChannelAdapter::is_secure() const {
+  return false;
+}
 
 int TCPChannelAdapter::Connect(
         const net::HostPortPair &destination,
@@ -516,7 +532,12 @@ TLSChannelAdapter::TLSChannelAdapter(net::ClientSocketFactory *socket_factory,
   context_.cert_verifier = cert_verifier_.get();
 }
 
-TLSChannelAdapter::~TLSChannelAdapter() {}
+TLSChannelAdapter::~TLSChannelAdapter() {
+}
+
+bool TLSChannelAdapter::is_secure() const {
+  return true;
+}
 
 int TLSChannelAdapter::Connect(
         const net::HostPortPair &destination,
@@ -583,9 +604,11 @@ MockChannel::MockChannel(MockChannelAdapter *channel_adapter,
       weak_factory_(this),
       destination_(destination),
       origin_(net::HostPortPair("192.0.2.33", 123),
-              destination.protocol()) {}
+              destination.protocol()) {
+}
 
-MockChannel::~MockChannel() {}
+MockChannel::~MockChannel() {
+}
 
 const int MockChannel::kBufferSize = 1500;
 
@@ -685,7 +708,8 @@ MockChannelFactory::MockChannelFactory(
   DCHECK(socket_factory);
 }
 
-MockChannelFactory::~MockChannelFactory() {}
+MockChannelFactory::~MockChannelFactory() {
+}
 
 int MockChannelFactory::CreateChannel(const EndPoint &destination,
                                       Channel::Delegate *delegate,
@@ -710,9 +734,11 @@ int MockChannelFactory::CreateChannel(const EndPoint &destination,
 
 MockClientTransaction::MockClientTransaction(
     DataProvider *data_provider)
-  : data_provider_(data_provider) {}
+  : data_provider_(data_provider) {
+}
 
-MockClientTransaction::~MockClientTransaction() {}
+MockClientTransaction::~MockClientTransaction() {
+}
 
 const std::string& MockClientTransaction::id() const {
   return transaction_id_;
@@ -742,9 +768,11 @@ void MockClientTransaction::Close() {
 }
 
 MockServerTransaction::MockServerTransaction(
-    DataProvider *data_provider) : data_provider_(data_provider) {}
+    DataProvider *data_provider) : data_provider_(data_provider) {
+}
 
-MockServerTransaction::~MockServerTransaction() {}
+MockServerTransaction::~MockServerTransaction() {
+}
 
 const std::string& MockServerTransaction::id() const {
   return transaction_id_;
@@ -780,9 +808,12 @@ void MockServerTransaction::Close() {
 }
 
 MockTransactionFactory::MockTransactionFactory(DataProvider *data_provider)
-  : data_provider_(data_provider) {}
+  : data_provider_(data_provider) {
+}
 
-MockTransactionFactory::~MockTransactionFactory() {}
+MockTransactionFactory::~MockTransactionFactory() {
+
+}
 
 MockClientTransaction*
       MockTransactionFactory::client_transaction(size_t index) const {
