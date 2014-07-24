@@ -79,15 +79,13 @@ std::string BuildUserAgentFromProduct(const std::string& product) {
     base::StringAppendF(
         &user_agent,
         " %s",
-        product.c_str()
-		);
+        product.c_str());
   }
 
   base::StringAppendF(
       &user_agent,
       " Mobile/%s",
-      kernel_version
-	  );
+      kernel_version);
 
   return user_agent;
 }

@@ -215,7 +215,11 @@
         ['OS == "ios"', {
           # iOS has different user-agent construction utilities.
           'sources!': [
-            'user_agent_util.cc',
+            'base/user_agent_util.cc',
+          ],
+        }, {  # OS != "ios"
+          'sources!': [
+            'base/user_agent_utils_ios.mm',
           ],
         }],
       ],
