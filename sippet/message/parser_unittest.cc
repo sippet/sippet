@@ -1,12 +1,26 @@
-// Copyright (c) 2013 The Sippet Authors. All rights reserved.
+// Copyright (c) 2013-2014 The Sippet Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <algorithm>
 #include "sippet/message/message.h"
-
 #include "testing/gtest/include/gtest/gtest.h"
 
-using namespace sippet;
+namespace sippet {
+
+namespace {
+
+struct name_is : public std::unary_function<const Header&, bool> {
+  std::string name_;
+  name_is(const char *name)
+    : name_(name) {
+  }
+  bool operator() (const Header& h) {
+    return name_ == h.name();
+  }
+};
+
+} // empty namespace
 
 TEST(SimpleMessages, Message1) {
   const char message_string[] =
@@ -144,6 +158,89 @@ TEST(SimpleMessages, TortuousMessage1) {
   EXPECT_EQ("", subject->value());
 }
 
+TEST(SimpleMessages, TortuousMessage2) {
+  const char message_string[] =
+    "!interesting-Method0123456789_*+`.%indeed'~ "
+      "sip:1_unusual.URI~(to-be!sure)"
+      "&isn't+it$/crazy?,/;;*:"
+      "&it+has=1,weird!*pas$wo~d_too.(doesn't-it)"
+      "@example.com SIP/2.0\r\n"
+    "Via: SIP/2.0/TCP host1.example.com;branch=z9hG4bK-.!%66*_+`'~\r\n"
+    "To: \"BEL:\\\x07 NUL:\\\x00 DEL:\\\x7f\" "
+      "<sip:1_unusual.URI~(to-be!sure)&isn't+it$/crazy?,/;;*@example.com>\r\n"
+    "From: token1~` token2'+_ token3*%!.- <sip:mundane@example.com>"
+      ";fromParam''~+*_!.-%=\"\xD1\x80\xD0\xB0\xD0\xB1\xD0\xBE\xD1\x82\xD0\xB0\xD1\x8E\xD1\x89\xD0\xB8\xD0\xB9\""
+      ";tag=_token~1'+`*%!-.\r\n"
+    "Call-ID: intmeth.word%ZK-!.*_+'@word`~)(><:\\/\"][?}{\r\n"
+    "CSeq: 139122385 !interesting-Method0123456789_*+`.%indeed'~\r\n"
+    "Max-Forwards: 255\r\n"
+    "extensionHeader-!.%*+_`'~: \xEF\xBB\xBF\xE5\xA4\xA7\xE5\x81\x9C\xE9\x9B\xBB\r\n"
+    "Content-Length: 0\r\n"
+    "\r\n";
+
+  scoped_refptr<Message> message = Message::Parse(
+    std::string(message_string, arraysize(message_string)-1));
+  ASSERT_TRUE(isa<Request>(message));
+
+  Request *request = dyn_cast<Request>(message);
+  EXPECT_TRUE(LowerCaseEqualsASCII(request->method().str(),
+    "!interesting-method0123456789_*+`.%indeed'~"));
+  EXPECT_EQ(GURL("sip:1_unusual.URI~(to-be!sure)"
+                   "&isn't+it$/crazy?,/;;*:"
+                   "&it+has=1,weird!*pas$wo~d_too.(doesn't-it)"
+                   "@example.com"),
+            request->request_uri());
+
+  Via *via = request->get<Via>();
+  ASSERT_TRUE(via);
+  ASSERT_FALSE(via->empty());
+  EXPECT_EQ("z9hG4bK-.!%66*_+`'~", via->front().branch());
+
+  To *to = request->get<To>();
+  ASSERT_TRUE(to);
+  const char to_name[] = "BEL:\x07 NUL:\x00 DEL:\x7f";
+  EXPECT_EQ(std::string(to_name, arraysize(to_name)-1),
+      to->display_name());
+  EXPECT_EQ(GURL("sip:1_unusual.URI~(to-be!sure)"
+                 "&isn't+it$/crazy?,/;;*@example.com"),
+            to->address());
+
+  From *from = request->get<From>();
+  ASSERT_TRUE(from);
+  const char from_name[] = "token1~` token2'+_ token3*%!.-";
+  EXPECT_EQ(std::string(from_name, arraysize(from_name)-1),
+      from->display_name());
+  has_parameters::const_param_iterator i =
+      from->param_find("fromParam''~+*_!.-%");
+  ASSERT_NE(i, from->param_end());
+  EXPECT_EQ("\xD1\x80\xD0\xB0\xD0\xB1\xD0\xBE\xD1\x82\xD0\xB0\xD1\x8E\xD1\x89\xD0\xB8\xD0\xB9",
+      i->second);
+  EXPECT_EQ("_token~1'+`*%!-.", from->tag());
+
+  CallId *call_id = request->get<CallId>();
+  ASSERT_TRUE(call_id);
+  EXPECT_EQ("intmeth.word%ZK-!.*_+'@word`~)(><:\\/\"][?}{", call_id->value());
+
+  Cseq *cseq = request->get<Cseq>();
+  ASSERT_TRUE(cseq);
+  EXPECT_TRUE(LowerCaseEqualsASCII(cseq->method().str(),
+    "!interesting-method0123456789_*+`.%indeed'~"));
+  EXPECT_EQ(139122385, cseq->sequence());
+
+  MaxForwards *max_forwards = request->get<MaxForwards>();
+  ASSERT_TRUE(max_forwards);
+  EXPECT_EQ(255, max_forwards->value());
+
+  Message::iterator j =
+      std::find_if(request->begin(), request->end(),
+          name_is("extensionHeader-!.%*+_`'~"));
+  ASSERT_NE(request->end(), j);
+  ASSERT_TRUE(isa<Generic>(j));
+  Generic *g = dyn_cast<Generic>(j);
+  ASSERT_EQ("\xEF\xBB\xBF\xE5\xA4\xA7\xE5\x81\x9C\xE9\x9B\xBB",
+      g->header_value());
+}
+
 TEST(Headers, Contact) {
   struct {
     const char *input;
@@ -204,3 +301,4 @@ TEST(Headers, Via) {
   }
 }
 
+} // namespace sippet

@@ -3,12 +3,44 @@
 // found in the LICENSE file.
 
 #include "sippet/message/message.h"
+#include "sippet/uri/uri.h"
+#include "net/base/ip_endpoint.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-using namespace sippet;
+namespace sippet {
 
-TEST(HeaderTest, Method) {
+class HeaderTest : public testing::Test {
+ public:
+  void HasExpectedRequestUri(const char *request_header,
+                             const char *expected_request_uri) {
+    scoped_refptr<Request> request(dyn_cast<Request>(Message::Parse(
+      request_header)));
+
+    ASSERT_TRUE(request.get());
+    ASSERT_TRUE(request->request_uri().is_valid());
+    ASSERT_TRUE(request->request_uri().SchemeIs("sip"));
+
+    SipURI uri(request->request_uri());
+    if (!expected_request_uri) {
+      ASSERT_FALSE(uri.is_valid());
+    } else {
+      ASSERT_TRUE(uri.is_valid());
+      EXPECT_EQ(GURL(expected_request_uri), request->request_uri());
+    }
+  }
+
+  void HasViaReceived(const char *via_header,
+                      const char *expected_received_parameter) {
+    scoped_ptr<Header> header(Header::Parse(via_header));
+    Via *via = dyn_cast<Via>(header);
+
+    ASSERT_FALSE(via->empty());
+    ASSERT_EQ(expected_received_parameter, via->front().received());
+  }
+};
+
+TEST_F(HeaderTest, Method) {
   Method null;
   EXPECT_EQ(Method::Unknown, null.type());
   EXPECT_STREQ("", null.str());
@@ -32,7 +64,7 @@ TEST(HeaderTest, Method) {
   EXPECT_STREQ("INVITE", coerce.str());
 }
 
-TEST(HeaderTest, Accept) {
+TEST_F(HeaderTest, Accept) {
   scoped_ptr<Accept> accept(new Accept);
 
   Header *h = accept.get();
@@ -54,7 +86,7 @@ TEST(HeaderTest, Accept) {
   EXPECT_EQ(1.0, accept->front().qvalue());
 }
 
-TEST(HeaderTest, AcceptEncoding) {
+TEST_F(HeaderTest, AcceptEncoding) {
   scoped_ptr<AcceptEncoding> accept_encoding(new AcceptEncoding);
 
   Header *h = accept_encoding.get();
@@ -73,7 +105,7 @@ TEST(HeaderTest, AcceptEncoding) {
   EXPECT_EQ("Accept-Encoding: gzip;q=0.1, 7zip", os.str());
 }
 
-TEST(HeaderTest, AcceptLanguage) {
+TEST_F(HeaderTest, AcceptLanguage) {
   scoped_ptr<AcceptLanguage> accept_language(new AcceptLanguage);
 
   Header *h = accept_language.get();
@@ -95,7 +127,7 @@ TEST(HeaderTest, AcceptLanguage) {
   EXPECT_EQ(0.9, accept_language->front().qvalue());
 }
 
-TEST(HeaderTest, AlertInfo) {
+TEST_F(HeaderTest, AlertInfo) {
   scoped_ptr<AlertInfo> alert_info(new AlertInfo);
   alert_info->push_back(AlertParam(GURL("http://www.example.com/sounds/moo.wav")));
 
@@ -109,7 +141,7 @@ TEST(HeaderTest, AlertInfo) {
   EXPECT_EQ("Alert-Info: <http://www.example.com/sounds/moo.wav>", os.str());
 }
 
-TEST(HeaderTest, Allow) {
+TEST_F(HeaderTest, Allow) {
   scoped_ptr<Allow> allow(new Allow);
   allow->push_back(Method("INVITE"));
   allow->push_back(Method::ACK);
@@ -139,7 +171,7 @@ TEST(HeaderTest, Allow) {
   EXPECT_EQ("Allow: REGISTER, CANCEL, INVITE, ACK, BYE", os.str());
 }
 
-TEST(HeaderTest, AuthenticationInfo) {
+TEST_F(HeaderTest, AuthenticationInfo) {
   scoped_ptr<AuthenticationInfo> authentication_info(new AuthenticationInfo);
   authentication_info->set_nextnonce("47364c23432d2e131a5fb210812c");
   authentication_info->set_qop(AuthenticationInfo::auth);
@@ -157,7 +189,7 @@ TEST(HeaderTest, AuthenticationInfo) {
   EXPECT_EQ("Authentication-Info: nextnonce=\"47364c23432d2e131a5fb210812c\", qop=auth, rspauth=\"xxx\", cnonce=\"0a4f113b\", nc=00000001", os.str());
 }
 
-TEST(HeaderTest, Authorization) {
+TEST_F(HeaderTest, Authorization) {
   scoped_ptr<Authorization> authorization(new Authorization(Authorization::Digest));
   authorization->set_username("Alice");
   authorization->set_realm("atlanta.com");
@@ -174,7 +206,7 @@ TEST(HeaderTest, Authorization) {
   EXPECT_EQ("Authorization: Digest username=\"Alice\", realm=\"atlanta.com\", nonce=\"84a4cc6f3082121f32b42a2187831a9e\", response=\"7587245234b3434cc3412213e5f113a5432\"", os.str());
 }
 
-TEST(HeaderTest, CallId) {
+TEST_F(HeaderTest, CallId) {
   scoped_ptr<CallId> callid(new CallId("f81d4fae-7dec-11d0-a765-00a0c91e6bf6@biloxi.com"));
 
   Header *h = callid.get();
@@ -187,7 +219,7 @@ TEST(HeaderTest, CallId) {
   EXPECT_EQ("i: f81d4fae-7dec-11d0-a765-00a0c91e6bf6@biloxi.com", os.str());
 }
 
-TEST(HeaderTest, CallInfo) {
+TEST_F(HeaderTest, CallInfo) {
   scoped_ptr<CallInfo> call_info(new CallInfo);
   call_info->push_back(Info(GURL("http://wwww.example.com/alice/photo.jpg")));
   call_info->back().set_purpose(Info::icon);
@@ -204,7 +236,7 @@ TEST(HeaderTest, CallInfo) {
   EXPECT_EQ("Call-Info: <http://wwww.example.com/alice/photo.jpg>;purpose=icon, <http://www.example.com/alice/>;purpose=info", os.str());
 }
 
-TEST(HeaderTest, Contact) {
+TEST_F(HeaderTest, Contact) {
   scoped_ptr<Contact> contact(new Contact);
 
   Header *h = contact.get();
@@ -224,7 +256,7 @@ TEST(HeaderTest, Contact) {
   EXPECT_EQ("m: \"John Doe\" <sip:foo@bar.com>;q=1.0, <sip:bar@foo.com>;expires=300", os.str());
 }
 
-TEST(HeaderTest, ContentDisposition) {
+TEST_F(HeaderTest, ContentDisposition) {
   scoped_ptr<ContentDisposition> content_disposition(new ContentDisposition("attachment"));
   content_disposition->param_set("filename","smime.p7m");
   content_disposition->set_handling(ContentDisposition::required);
@@ -239,7 +271,7 @@ TEST(HeaderTest, ContentDisposition) {
   EXPECT_EQ("Content-Disposition: attachment;filename=smime.p7m;handling=required", os.str());
 }
 
-TEST(HeaderTest, ContentEncoding) {
+TEST_F(HeaderTest, ContentEncoding) {
   scoped_ptr<ContentEncoding> content_encoding(new ContentEncoding("gzip"));
 
   Header *h = content_encoding.get();
@@ -252,7 +284,7 @@ TEST(HeaderTest, ContentEncoding) {
   EXPECT_EQ("e: gzip", os.str());
 }
 
-TEST(HeaderTest, ContentLanguage) {
+TEST_F(HeaderTest, ContentLanguage) {
   scoped_ptr<ContentLanguage> content_language(new ContentLanguage);
   content_language->push_back("en");
   content_language->push_back("pt-br");
@@ -267,7 +299,7 @@ TEST(HeaderTest, ContentLanguage) {
   EXPECT_EQ("Content-Language: en, pt-br", os.str());
 }
 
-TEST(HeaderTest, ContentLength) {
+TEST_F(HeaderTest, ContentLength) {
   scoped_ptr<ContentLength> content_length(new ContentLength(0));
   
   EXPECT_EQ(0, content_length->value());
@@ -282,7 +314,7 @@ TEST(HeaderTest, ContentLength) {
   EXPECT_EQ("l: 0", os.str());
 }
 
-TEST(HeaderTest, ContentType) {
+TEST_F(HeaderTest, ContentType) {
   scoped_ptr<ContentType> content_type(new ContentType(MediaType("application","sdp")));
 
   Header *h = content_type.get();
@@ -295,7 +327,7 @@ TEST(HeaderTest, ContentType) {
   EXPECT_EQ("c: application/sdp", os.str());
 }
 
-TEST(HeaderTest, Cseq) {
+TEST_F(HeaderTest, Cseq) {
   scoped_ptr<Cseq> cseq(new Cseq(1, Method::REGISTER));
 
   EXPECT_EQ(1, cseq->sequence());
@@ -311,7 +343,7 @@ TEST(HeaderTest, Cseq) {
   EXPECT_EQ("CSeq: 1 REGISTER", os.str());
 }
 
-TEST(HeaderTest, Date) {
+TEST_F(HeaderTest, Date) {
   base::Time t(base::Time::FromJsTime(62123.4512345));
   scoped_ptr<Date> date(new Date(t));
 
@@ -327,7 +359,7 @@ TEST(HeaderTest, Date) {
   EXPECT_EQ("Date: Thu, 01 Jan 1970 00:01:02 GMT", os.str());
 }
 
-TEST(HeaderTest, ErrorInfo) {
+TEST_F(HeaderTest, ErrorInfo) {
   scoped_ptr<ErrorInfo> error_info(new ErrorInfo);
   error_info->push_back(ErrorUri(GURL("sip:not-in-service-recording@atlanta.com")));
 
@@ -341,7 +373,7 @@ TEST(HeaderTest, ErrorInfo) {
   EXPECT_EQ("Error-Info: <sip:not-in-service-recording@atlanta.com>", os.str());
 }
 
-TEST(HeaderTest, Expires) {
+TEST_F(HeaderTest, Expires) {
   scoped_ptr<Expires> expires(new Expires(300));
 
   Header *h = expires.get();
@@ -354,7 +386,7 @@ TEST(HeaderTest, Expires) {
   EXPECT_EQ("Expires: 300", os.str());
 }
 
-TEST(HeaderTest, From) {
+TEST_F(HeaderTest, From) {
   scoped_ptr<From> from(new From(GURL("sip:agb@bell-telephone.com"), "A. G. Bell"));
   from->set_tag("a48s");
 
@@ -368,7 +400,7 @@ TEST(HeaderTest, From) {
   EXPECT_EQ("f: \"A. G. Bell\" <sip:agb@bell-telephone.com>;tag=a48s", os.str());
 }
 
-TEST(HeaderTest, InReplyTo) {
+TEST_F(HeaderTest, InReplyTo) {
   scoped_ptr<InReplyTo> in_reply_to(new InReplyTo);
   in_reply_to->push_back("70710@saturn.bell-tel.com");
   in_reply_to->push_back("17320@saturn.bell-tel.com");
@@ -383,7 +415,7 @@ TEST(HeaderTest, InReplyTo) {
   EXPECT_EQ("In-Reply-To: 70710@saturn.bell-tel.com, 17320@saturn.bell-tel.com", os.str());
 }
 
-TEST(HeaderTest, MaxForwards) {
+TEST_F(HeaderTest, MaxForwards) {
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
 
   EXPECT_EQ(70, max_forwards->value());
@@ -398,7 +430,7 @@ TEST(HeaderTest, MaxForwards) {
   EXPECT_EQ("Max-Forwards: 70", os.str());
 }
 
-TEST(HeaderTest, MimeVersion) {
+TEST_F(HeaderTest, MimeVersion) {
   scoped_ptr<MimeVersion> mime_version(new MimeVersion(1,0));
 
   EXPECT_EQ(1, mime_version->major());
@@ -414,7 +446,7 @@ TEST(HeaderTest, MimeVersion) {
   EXPECT_EQ("MIME-Version: 1.0", os.str());
 }
 
-TEST(HeaderTest, MinExpires) {
+TEST_F(HeaderTest, MinExpires) {
   scoped_ptr<MinExpires> min_expires(new MinExpires(5));
 
   EXPECT_EQ(5, min_expires->value());
@@ -429,7 +461,7 @@ TEST(HeaderTest, MinExpires) {
   EXPECT_EQ("Min-Expires: 5", os.str());
 }
 
-TEST(HeaderTest, Organization) {
+TEST_F(HeaderTest, Organization) {
   scoped_ptr<Organization> organization(new Organization("Boxes by Bob"));
 
   EXPECT_EQ("Boxes by Bob", organization->value());
@@ -444,7 +476,7 @@ TEST(HeaderTest, Organization) {
   EXPECT_EQ("Organization: Boxes by Bob", os.str());
 }
 
-TEST(HeaderTest, Priority) {
+TEST_F(HeaderTest, Priority) {
   scoped_ptr<Priority> priority(new Priority(Priority::emergency));
 
   EXPECT_EQ("emergency", priority->value());
@@ -459,7 +491,7 @@ TEST(HeaderTest, Priority) {
   EXPECT_EQ("Priority: emergency", os.str());
 }
 
-TEST(HeaderTest, ProxyAuthenticate) {
+TEST_F(HeaderTest, ProxyAuthenticate) {
   scoped_ptr<ProxyAuthenticate> proxy_authenticate(new ProxyAuthenticate(ProxyAuthenticate::Digest));
   proxy_authenticate->set_realm("atlanta.com");
   proxy_authenticate->set_domain("sip:ss1.carrier.com");
@@ -479,7 +511,7 @@ TEST(HeaderTest, ProxyAuthenticate) {
   EXPECT_EQ("Proxy-Authenticate: Digest realm=\"atlanta.com\", domain=\"sip:ss1.carrier.com\", qop=\"auth\", nonce=\"f84f1cec41e6cbe5aea9c8e88d359\", opaque=\"\", stale=false, algorithm=MD5", os.str());
 }
 
-TEST(HeaderTest, ProxyAuthorization) {
+TEST_F(HeaderTest, ProxyAuthorization) {
   scoped_ptr<ProxyAuthorization> proxy_authorization(new ProxyAuthorization(ProxyAuthorization::Digest));
   proxy_authorization->set_username("Alice");
   proxy_authorization->set_realm("atlanta.com");
@@ -496,7 +528,7 @@ TEST(HeaderTest, ProxyAuthorization) {
   EXPECT_EQ("Proxy-Authorization: Digest username=\"Alice\", realm=\"atlanta.com\", nonce=\"c60f3082ee1212b402a21831ae\", response=\"245f23415f11432b3434341c022\"", os.str());   
 }
 
-TEST(HeaderTest, ProxyRequire) {
+TEST_F(HeaderTest, ProxyRequire) {
   scoped_ptr<ProxyRequire> proxy_require(new ProxyRequire);
   proxy_require->push_back("foo");
 
@@ -510,7 +542,7 @@ TEST(HeaderTest, ProxyRequire) {
   EXPECT_EQ("Proxy-Require: foo", os.str());
 }
 
-TEST(HeaderTest, RecordRoute) {
+TEST_F(HeaderTest, RecordRoute) {
   scoped_ptr<RecordRoute> record_route(new RecordRoute(RouteParam(GURL("sip:p2.example.com;lr"))));
   record_route->push_back(RouteParam(GURL("sip:p1.example.com;lr")));
 
@@ -524,7 +556,7 @@ TEST(HeaderTest, RecordRoute) {
   EXPECT_EQ("Record-Route: <sip:p2.example.com;lr>, <sip:p1.example.com;lr>", os.str());
 }
 
-TEST(HeaderTest, ReplyTo) {
+TEST_F(HeaderTest, ReplyTo) {
   scoped_ptr<ReplyTo> reply_to(new ReplyTo(GURL("sip:bob@biloxi.com"),"Bob"));
 
   Header *h = reply_to.get();
@@ -537,7 +569,7 @@ TEST(HeaderTest, ReplyTo) {
   EXPECT_EQ("Reply-To: \"Bob\" <sip:bob@biloxi.com>", os.str());
 }
 
-TEST(HeaderTest, Require) {
+TEST_F(HeaderTest, Require) {
   scoped_ptr<Require> require(new Require("100rel"));
 
   Header *h = require.get();
@@ -550,7 +582,7 @@ TEST(HeaderTest, Require) {
   EXPECT_EQ("Require: 100rel", os.str());
 }
 
-TEST(HeaderTest, RetryAfter) {
+TEST_F(HeaderTest, RetryAfter) {
   scoped_ptr<RetryAfter> retry_after(new RetryAfter(300));
 
   Header *h = retry_after.get();
@@ -563,7 +595,7 @@ TEST(HeaderTest, RetryAfter) {
   EXPECT_EQ("Retry-After: 300", os.str());
 }
 
-TEST(HeaderTest, Route) {
+TEST_F(HeaderTest, Route) {
   scoped_ptr<Route> route(new Route(RouteParam(GURL("sip:alice@atlanta.com"))));
 
   Header *h = route.get();
@@ -576,7 +608,7 @@ TEST(HeaderTest, Route) {
   EXPECT_EQ("Route: <sip:alice@atlanta.com>", os.str());
 }
 
-TEST(HeaderTest, Subject) {
+TEST_F(HeaderTest, Subject) {
   scoped_ptr<Subject> subject(new Subject("Need more boxes"));
 
   Header *h = subject.get();
@@ -589,7 +621,7 @@ TEST(HeaderTest, Subject) {
   EXPECT_EQ("s: Need more boxes", os.str());
 }
 
-TEST(HeaderTest, Supported) {
+TEST_F(HeaderTest, Supported) {
   scoped_ptr<Supported> supported(new Supported("100rel"));
 
   Header *h = supported.get();
@@ -602,7 +634,7 @@ TEST(HeaderTest, Supported) {
   EXPECT_EQ("k: 100rel", os.str());
 }
 
-TEST(HeaderTest, Timestamp) {
+TEST_F(HeaderTest, Timestamp) {
   scoped_ptr<Timestamp> timestamp(new Timestamp(100, 2.2345));
 
   Header *h = timestamp.get();
@@ -615,7 +647,7 @@ TEST(HeaderTest, Timestamp) {
   EXPECT_EQ("Timestamp: 100 2.2345", os.str());
 }
 
-TEST(HeaderTest, To) {
+TEST_F(HeaderTest, To) {
   scoped_ptr<To> to(new To(GURL("sip:operator@cs.columbia.edu"),"The Operator"));
   to->set_tag("287447");
 
@@ -629,7 +661,7 @@ TEST(HeaderTest, To) {
   EXPECT_EQ("t: \"The Operator\" <sip:operator@cs.columbia.edu>;tag=287447", os.str());
 }
 
-TEST(HeaderTest, Unsupported) {
+TEST_F(HeaderTest, Unsupported) {
   scoped_ptr<Unsupported> unsupported(new Unsupported("foo"));
 
   Header *h = unsupported.get();
@@ -642,7 +674,7 @@ TEST(HeaderTest, Unsupported) {
   EXPECT_EQ("Unsupported: foo", os.str());
 }
 
-TEST(HeaderTest, UserAgent) {
+TEST_F(HeaderTest, UserAgent) {
   scoped_ptr<UserAgent> user_agent(new UserAgent("Softphone Beta1.5"));
 
   Header *h = user_agent.get();
@@ -655,7 +687,7 @@ TEST(HeaderTest, UserAgent) {
   EXPECT_EQ("User-Agent: Softphone Beta1.5", os.str());
 }
 
-TEST(HeaderTest, Via) {
+TEST_F(HeaderTest, Via) {
   scoped_ptr<Via> via(new Via);
   via->push_back(ViaParam(Protocol::UDP, net::HostPortPair("pc33.atlanta.com",0)));
   via->back().set_branch("z9hG4bK776asdhds");
@@ -670,7 +702,7 @@ TEST(HeaderTest, Via) {
   EXPECT_EQ("v: SIP/2.0/UDP pc33.atlanta.com;rport;branch=z9hG4bK776asdhds", os.str());
 }
 
-TEST(HeaderTest, Warning) {
+TEST_F(HeaderTest, Warning) {
   scoped_ptr<Warning> warning(new Warning);
   warning->push_back(WarnParam(370, "devnull", "Choose a bigger pipe"));
   warning->push_back(WarnParam(307, "isi.edu", "Session parameter 'foo' not understood"));
@@ -685,7 +717,7 @@ TEST(HeaderTest, Warning) {
   EXPECT_EQ("Warning: 370 devnull \"Choose a bigger pipe\", 307 isi.edu \"Session parameter 'foo' not understood\"", os.str());
 }
 
-TEST(HeaderTest, WwwAuthenticate) {
+TEST_F(HeaderTest, WwwAuthenticate) {
   scoped_ptr<WwwAuthenticate> www_authenticate(new WwwAuthenticate(WwwAuthenticate::Digest));
   www_authenticate->set_realm("atlanta.com");
   www_authenticate->set_domain("sip:boxesbybob.com");
@@ -704,3 +736,91 @@ TEST(HeaderTest, WwwAuthenticate) {
 
   EXPECT_EQ("WWW-Authenticate: Digest realm=\"atlanta.com\", domain=\"sip:boxesbybob.com\", qop=\"auth\", nonce=\"f84f1cec41e6cbe5aea9c8e88d359\", opaque=\"\", stale=false, algorithm=MD5", os.str());
 }
+
+TEST_F(HeaderTest, TortureIpv6Good) {
+  scoped_refptr<Request> request(dyn_cast<Request>(Message::Parse(
+    "REGISTER sip:[2001:db8::10] SIP/2.0\r\n"
+    "To: sip:user@[2001:db8::10]\r\n"
+    "From: sip:user@[2001:db8::10];tag=81x2\r\n"
+    "Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111\r\n"
+    "Contact: \"Caller\" <sip:caller@[2001:db8::1]>\r\n"
+    "Route: <sip:[2001:db8::2]>\r\n"
+    "Record-Route: <sip:[2001:db8::3]>\r\n"
+    "\r\n"
+    )));
+
+  EXPECT_EQ(GURL("sip:[2001:db8::10]"), request->request_uri());
+
+  To* to = request->get<To>();
+  ASSERT_TRUE(to);
+  EXPECT_EQ(GURL("sip:user@[2001:db8::10]"), to->address());
+
+  From* from = request->get<From>();
+  ASSERT_TRUE(from);
+  EXPECT_EQ(GURL("sip:user@[2001:db8::10]"), to->address());
+
+  Via* via = request->get<Via>();
+  ASSERT_TRUE(via);
+  ASSERT_FALSE(via->empty());
+  // parser always assume default port
+  EXPECT_TRUE(net::HostPortPair("2001:db8::9:1", 5060)
+    .Equals(via->front().sent_by()));
+
+  Contact* contact = request->get<Contact>();
+  ASSERT_TRUE(contact);
+  ASSERT_FALSE(contact->empty());
+  EXPECT_EQ(GURL("sip:caller@[2001:db8::1]"), contact->front().address());
+
+  Route* route = request->get<Route>();
+  ASSERT_TRUE(route);
+  ASSERT_FALSE(route->empty());
+  EXPECT_EQ(GURL("sip:[2001:db8::2]"), route->front().address());
+
+  RecordRoute* record_route = request->get<RecordRoute>();
+  ASSERT_TRUE(record_route);
+  ASSERT_FALSE(record_route->empty());
+  EXPECT_EQ(GURL("sip:[2001:db8::3]"), record_route->front().address());
+}
+
+TEST_F(HeaderTest, TortureIpv6Bad) {
+  HasExpectedRequestUri(
+    "REGISTER sip:2001:db8::10 SIP/2.0\r\n"
+    "\r\n",
+    NULL);
+}
+
+TEST_F(HeaderTest, TorturePortAmbiguous) {
+  HasExpectedRequestUri(
+    "REGISTER sip:[2001:db8::10:5070] SIP/2.0\r\n"
+    "\r\n",
+    "sip:[2001:db8::10:5070]");
+}
+
+TEST_F(HeaderTest, TorturePortUnambiguous) {
+  HasExpectedRequestUri(
+    "REGISTER sip:[2001:db8::10]:5070 SIP/2.0\r\n"
+    "\r\n",
+    "sip:[2001:db8::10]:5070");
+}
+
+TEST_F(HeaderTest, TortureViaReceivedDelims) {
+  // Implementations must follow the Robustness Principle [RFC1122] and be
+  // liberal in accepting a "received" parameter with or without the
+  // delimiting "[" and "]" tokens.
+  HasViaReceived(
+    "Via: SIP/2.0/UDP [2001:db8::9:1];received=[2001:db8::9:255]",
+    "2001:db8::9:255");
+  HasViaReceived(
+    "Via: SIP/2.0/UDP [2001:db8::9:1];received=2001:db8::9:255",
+    "2001:db8::9:255");
+
+  // When sending a request, implementations must not put the delimiting "["
+  // and "]" tokens.
+  scoped_ptr<Via> via(new Via(ViaParam(Protocol::UDP,
+    net::HostPortPair("2001:db8::9:1", 0))));
+  via->front().set_received("[2001:db8::9:255]");
+  EXPECT_EQ("v: SIP/2.0/UDP [2001:db8::9:1];rport;received=2001:db8::9:255",
+    via->ToString());
+}
+
+} // namespace sippet
