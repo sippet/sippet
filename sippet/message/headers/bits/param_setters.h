@@ -32,7 +32,6 @@ public:                                                             \
 
 string_token_param_template(has_tag,        tag,        Tag         )
 string_token_param_template(has_maddr,      maddr,      Maddr       )
-string_token_param_template(has_received,   received,   Received    )
 string_token_param_template(has_branch,     branch,     Branch      )
 
 #undef string_token_param_template
@@ -149,6 +148,33 @@ public:
 
   void set_handling(const std::string &handling) {
     static_cast<T*>(this)->param_set("handling", handling);
+  }
+};
+
+template<class T>
+class has_received {
+ public:
+  bool HasReceived() const {
+    return static_cast<const T*>(this)->param_find("received") !=
+           static_cast<const T*>(this)->param_end();
+  }
+
+  std::string received() const {
+    assert(HasReceived() && "Cannot read received");
+    return remove_sqb(
+      static_cast<const T*>(this)->param_find("received")->second);
+  }
+
+  void set_received(const std::string& received) {
+    static_cast<T*>(this)->param_set("received", remove_sqb(received));
+  }
+
+ private:
+  static std::string remove_sqb(const std::string& input) {
+    if (input.front() == '[' && input.back() == ']')
+      return input.substr(1, input.size()-2);
+    else
+      return input;
   }
 };
 
