@@ -45,11 +45,6 @@ class GenericParametersIterator {
 
     std::string::const_iterator equals = std::find(value_begin_, value_end_, '=');
     if (equals != value_end_ && equals != value_begin_) {
-      for (std::string::const_iterator it = value_begin_; it != equals; ++it) {
-        if (net::HttpUtil::IsQuote(*it))
-          return valid_ = false;  // Malformed, quote appears before equals sign
-      }
-
       name_begin_ = value_begin_;
       name_end_ = equals;
       value_begin_ = equals + 1;
