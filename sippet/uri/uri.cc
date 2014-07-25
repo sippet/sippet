@@ -68,6 +68,27 @@ bool InitCanonicalTelURI(const STR& input_spec,
   return success;
 }
 
+std::pair<bool, std::string> LookupKeyValue(
+    const std::string &spec,
+    const std::string &name,
+    uri::Component query,
+    bool (*extractor)(const char*, uri::Component*,
+        uri::Component*, uri::Component*)) {
+  uri::Component key, value;
+  while ((*extractor)(
+          spec.data(), &query, &key, &value)) {
+      std::string unescaped_key(
+          uri_details::UnescapedComponentString(spec, key));
+      if (unescaped_key.length() != name.length())
+        continue;
+      if (base::strncasecmp(name.data(),
+          unescaped_key.data(), unescaped_key.length()) == 0)
+        return std::make_pair(true,
+            uri_details::UnescapedComponentString(spec, value));
+  }
+  return std::make_pair(false, "");
+}
+
 } // End of empty namespace
 
 // SipURI --------------------------------------------------------------------
@@ -275,6 +296,16 @@ const SipURI& SipURI::EmptyURI() {
   return empty;
 }
 
+std::pair<bool, std::string> SipURI::parameter(const std::string &name) const {
+  return LookupKeyValue(spec_, name, parsed_.parameters,
+      &uri::ExtractParametersKeyValue);
+}
+
+std::pair<bool, std::string> SipURI::header(const std::string &name) const {
+  return LookupKeyValue(spec_, name, parsed_.headers,
+      &uri::ExtractHeadersKeyValue);
+}
+
 // TelURI --------------------------------------------------------------------
 
 TelURI::TelURI() : is_valid_(false) {
@@ -408,6 +439,11 @@ void TelURI::Swap(TelURI* other) {
 const TelURI& TelURI::EmptyURI() {
   static TelURI empty;
   return empty;
+}
+
+std::pair<bool, std::string> TelURI::parameter(const std::string &name) const {
+  return LookupKeyValue(spec_, name, parsed_.parameters,
+      &uri::ExtractParametersKeyValue);
 }
 
 } // End of sippet namespace
