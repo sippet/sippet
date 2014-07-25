@@ -5,7 +5,7 @@
 #ifndef SIPPET_MESSAGE_CANON_H_
 #define SIPPET_MESSAGE_CANON_H_
 
-#include "sippet/uri/uri.h"
+#include "url/url_canon.h"
 
 namespace sippet {
 namespace uri {

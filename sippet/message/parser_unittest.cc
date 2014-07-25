@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include "sippet/message/message.h"
+#include "sippet/uri/uri.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace sippet {
@@ -19,6 +20,18 @@ struct name_is : public std::unary_function<const Header&, bool> {
     return name_ == h.name();
   }
 };
+
+void ExpectSipURIHaving(const GURL& url,
+                        const char *uri,
+                        const char *username,
+                        const char *host) {
+  ASSERT_TRUE(url.SchemeIs("sip"));
+  EXPECT_EQ(GURL(uri), url);
+  SipURI sip_uri(url);
+  EXPECT_EQ(username, sip_uri.username());
+  EXPECT_EQ(host, sip_uri.host());
+}
+
 
 } // empty namespace
 
@@ -87,7 +100,7 @@ TEST(SimpleMessages, Message1) {
   EXPECT_EQ(0, clen->value());
 }
 
-TEST(SimpleMessages, TortuousMessage1) {
+TEST(SimpleMessages, TortureMessage1) {
   const char message_string[] =
     "INVITE sip:vivekg@chair-dnrc.example.com;unknownparam SIP/2.0\r\n"
     "TO :\r\n"
@@ -158,7 +171,7 @@ TEST(SimpleMessages, TortuousMessage1) {
   EXPECT_EQ("", subject->value());
 }
 
-TEST(SimpleMessages, TortuousMessage2) {
+TEST(SimpleMessages, TortureMessage2) {
   const char message_string[] =
     "!interesting-Method0123456789_*+`.%indeed'~ "
       "sip:1_unusual.URI~(to-be!sure)"
@@ -241,6 +254,46 @@ TEST(SimpleMessages, TortuousMessage2) {
       g->header_value());
 }
 
+TEST(SimpleMessages, EscapedUris) {
+  const char message_string[] =
+    "INVITE sip:sips%3Auser%40example.com@example.net SIP/2.0\r\n"
+    "To: sip:%75se%72@example.com\r\n"
+    "From: <sip:I%20have%20spaces@example.net>;tag=938\r\n"
+    "Contact: <sip:cal%6Cer@host5.example.net;%6C%72;n%61me=v%61lue%25%34%31>\r\n"
+    "\r\n";
+
+  scoped_refptr<Message> message = Message::Parse(message_string);
+  ASSERT_TRUE(isa<Request>(message));
+
+  Request *request = dyn_cast<Request>(message);
+  ExpectSipURIHaving(request->request_uri(),
+      "sip:sips%3Auser%40example.com@example.net",
+      "sips:user@example.com",
+      "example.net");
+
+  To *to = request->get<To>();
+  ASSERT_TRUE(to);
+  ExpectSipURIHaving(to->address(),
+      "sip:%75se%72@example.com",
+      "user",
+      "example.com");
+
+  From *from = request->get<From>();
+  ASSERT_TRUE(from);
+  ExpectSipURIHaving(from->address(),
+      "sip:I%20have%20spaces@example.net",
+      "I have spaces",
+      "example.net");
+
+  Contact *contact = request->get<Contact>();
+  ASSERT_TRUE(contact);
+  ASSERT_FALSE(contact->empty());
+  ExpectSipURIHaving(contact->front().address(),
+      "sip:cal%6Cer@host5.example.net;%6C%72;n%61me=v%61lue%25%34%31",
+      "caller",
+      "host5.example.net");
+}
+
 TEST(Headers, Contact) {
   struct {
     const char *input;
@@ -253,6 +306,8 @@ TEST(Headers, Contact) {
     { "Contact: \"foo\\\"bar\" <sip:bob@192.0.2.4>", "sip:bob@192.0.2.4", "foo\"bar" },
     { "Contact: \"\x4f\x60\x59\x7d\" <sip:bob@192.0.2.4>", "sip:bob@192.0.2.4", "\x4f\x60\x59\x7d" },
     { "Contact: \x4f\x60\x59\x7d <sip:bob@192.0.2.4>", "sip:bob@192.0.2.4", "\x4f\x60\x59\x7d" },
+    // No LWS between Display Name
+    { "Contact: caller<sip:caller@example.com>;tag=323", "sip:caller@example.com", "caller" },
     // Some torture tests
     { "Contact: < sip:bob@192.0.2.4 >", "sip:bob@192.0.2.4", "" },
   };

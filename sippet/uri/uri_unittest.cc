@@ -66,6 +66,10 @@ TEST(SipURI, Parser) {
     {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", false },
     {"tel:+358 (555) 1234567;pOstd=pP2;isUb=1411", false },
     {"*", false},
+    // Escaped characters
+    {"sip:user;par=u%40example.net@example.com", true,
+     "example.com", -1, 5060, true, "user;par=u@example.net", false,
+     "", "", ""},
   };
 
   for (int i = 0; i < ARRAYSIZE_UNSAFE(tests); ++i) {
@@ -89,6 +93,36 @@ TEST(SipURI, Parser) {
         EXPECT_EQ(tests[i].headers, uri.headers());
     }
   }
+}
+
+TEST(SipURI, ParameterAndHeaders) {
+  SipURI uri("sip:alice@atlanta.com;param=%40route66?subject=Project%20X");
+  ASSERT_TRUE(uri.is_valid());
+  
+  std::pair<bool, std::string> p =
+    uri.parameter("param");
+  EXPECT_TRUE(p.first);
+  EXPECT_EQ("@route66", p.second);
+
+  std::pair<bool, std::string> h =
+    uri.header("Subject");
+  EXPECT_TRUE(h.first);
+  EXPECT_EQ("Project X", h.second);
+}
+
+TEST(SipURI, OnlyHeaders) {
+  SipURI uri("sip:alice@atlanta.com?to=sip%3Aalice%40atlanta.com&subject=Project%20X");
+  ASSERT_TRUE(uri.is_valid());
+  
+  std::pair<bool, std::string> h1 =
+    uri.header("Subject");
+  EXPECT_TRUE(h1.first);
+  EXPECT_EQ("Project X", h1.second);
+
+  std::pair<bool, std::string> h2 =
+    uri.header("To");
+  EXPECT_TRUE(h2.first);
+  EXPECT_EQ("sip:alice@atlanta.com", h2.second);
 }
 
 TEST(TelURI, Parser) {

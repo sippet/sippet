@@ -3,9 +3,6 @@
 // found in the LICENSE file.
 
 #include "sippet/uri/uri.h"
-#include "sippet/uri/uri_parse.h"
-#include "sippet/uri/uri_canon.h"
-#include "sippet/uri/uri_util.h"
 #include "sippet/base/stl_extras.h"
 #include "base/logging.h"
 
@@ -222,7 +219,7 @@ std::string SipURI::HostNoBrackets() const {
     h.begin++;
     h.len -= 2;
   }
-  return ComponentString(h);
+  return uri_details::ComponentString(spec_, h);
 }
 
 bool SipURI::DomainIs(const char* lower_ascii_domain, int domain_len) const {

@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "sippet/uri/uri.h"
-#include "sippet/uri/uri_parse.h"
 #include "sippet/uri/uri_parse_internal.h"
 
 #include "base/logging.h"
@@ -15,10 +14,11 @@ namespace uri {
 namespace {
 
 template<typename CHAR>
-bool DoExtractParametersKeyValue(const CHAR* spec,
-                                 Component* query,
-                                 Component* key,
-                                 Component* value) {
+bool DoExtractKeyValues(const CHAR* spec,
+                        Component* query,
+                        Component* key,
+                        Component* value,
+                        char separator) {
   if (!query->is_nonempty())
     return false;
 
@@ -29,7 +29,7 @@ bool DoExtractParametersKeyValue(const CHAR* spec,
   // We assume the beginning of the input is the beginning of the "key" and we
   // skip to the end of it.
   key->begin = cur;
-  while (cur < end && spec[cur] != ';' && spec[cur] != '=')
+  while (cur < end && spec[cur] != separator && spec[cur] != '=')
     cur++;
   key->len = cur - key->begin;
 
@@ -39,17 +39,33 @@ bool DoExtractParametersKeyValue(const CHAR* spec,
 
   // Find the value part.
   value->begin = cur;
-  while (cur < end && spec[cur] != ';')
+  while (cur < end && spec[cur] != separator)
     cur++;
   value->len = cur - value->begin;
 
   // Finally skip the next separator if any
-  if (cur < end && spec[cur] == ';')
+  if (cur < end && spec[cur] == separator)
     cur++;
 
   // Save the new query
   *query = uri::MakeRange(cur, end);
   return true;
+}
+
+template<typename CHAR>
+bool DoExtractParametersKeyValue(const CHAR* spec,
+                                 Component* query,
+                                 Component* key,
+                                 Component* value) {
+  return DoExtractKeyValues(spec, query, key, value, ';');
+}
+
+template<typename CHAR>
+bool DoExtractHeadersKeyValue(const CHAR* spec,
+                              Component* query,
+                              Component* key,
+                              Component* value) {
+  return DoExtractKeyValues(spec, query, key, value, '&');
 }
 
 } // End of empty namespace
@@ -331,6 +347,20 @@ bool ExtractParametersKeyValue(const base::char16* uri,
                                Component* key,
                                Component* value) {
   return DoExtractParametersKeyValue(uri, query, key, value);
+}
+
+bool ExtractHeadersKeyValue(const char* uri,
+                            Component* query,
+                            Component* key,
+                            Component* value) {
+  return DoExtractHeadersKeyValue(uri, query, key, value);
+}
+
+bool ExtractHeadersKeyValue(const base::char16* uri,
+                            Component* query,
+                            Component* key,
+                            Component* value) {
+  return DoExtractHeadersKeyValue(uri, query, key, value);
 }
 
 void ParseAfterAuthorityInternal(const char* spec,

@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef SIPPET_URI_URI_UTIL_H_
+#define SIPPET_URI_URI_UTIL_H_
+
 #include "url/url_util.h"
-#include "sippet/uri/uri_canon.h"
 
 namespace sippet {
 namespace uri {
@@ -59,5 +61,11 @@ bool Canonicalize(const base::char16* spec,
                   uri::CanonOutput* output,
                   uri::Parsed* output_parsed);
 
+// Unescapes the given string using URL escaping rules.
+void DecodeURIEscapeSequences(const char* input, int length,
+                              uri::CanonOutput* output);
+
 } // End of uri namespace
 } // End of sippet namespace
+
+#endif // SIPPET_URI_URI_UTIL_H_

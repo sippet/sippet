@@ -803,6 +803,13 @@ TEST_F(HeaderTest, TorturePortUnambiguous) {
     "sip:[2001:db8::10]:5070");
 }
 
+TEST_F(HeaderTest, TortureSemicolonInRequestUri) {
+  HasExpectedRequestUri(
+    "OPTIONS sip:user;par=u%40example.net@example.com SIP/2.0\r\n"
+    "\r\n",
+    "sip:user;par=u%40example.net@example.com");
+}
+
 TEST_F(HeaderTest, TortureViaReceivedDelims) {
   // Implementations must follow the Robustness Principle [RFC1122] and be
   // liberal in accepting a "received" parameter with or without the

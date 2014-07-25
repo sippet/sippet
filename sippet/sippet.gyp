@@ -165,6 +165,7 @@
         'uri/uri_canon_internal.cc',
         'uri/uri_parse.h',
         'uri/uri_parse.cc',
+        'uri/uri_parse_internal.h',
         'uri/uri_util.h',
         'uri/uri_util.cc',
         'transport/aliases_map.h',
