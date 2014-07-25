@@ -23,6 +23,7 @@ TEST(SipURI, Parser) {
     const char *parameters;
     const char *headers;
   } tests[] = {
+#if 0
     {"sip:sip.domain.com", true,
      "sip.domain.com", -1, 5060, false, "", false, "", "", "" },
     {"sip:user@sip.domain.com", true,
@@ -66,6 +67,7 @@ TEST(SipURI, Parser) {
     {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", false },
     {"tel:+358 (555) 1234567;pOstd=pP2;isUb=1411", false },
     {"*", false},
+#endif
     // Escaped characters
     {"sip:user;par=u%40example.net@example.com", true,
      "example.com", -1, 5060, true, "user;par=u@example.net", false,

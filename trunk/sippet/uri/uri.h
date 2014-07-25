@@ -32,29 +32,8 @@ std::string UnescapedComponentString(const std::string &spec,
   std::string unescaped;
   url_canon::StdStringCanonOutput output(&unescaped);
   uri::DecodeURIEscapeSequences(spec.data() + comp.begin, comp.len, &output);
+  output.Complete();
   return unescaped;
-}
-
-// Lookup value based on a given key-value extractor.
-inline
-std::pair<bool, std::string> LookupKeyValue(
-    const std::string &spec,
-    const std::string &name,
-    uri::Component query,
-    bool (*extractor)(const char*, uri::Component*,
-        uri::Component*, uri::Component*)) {
-  uri::Component key, value;
-  while ((*extractor)(
-          spec.data(), &query, &key, &value)) {
-      std::string unescaped_key(UnescapedComponentString(spec, key));
-      if (unescaped_key.length() != name.length())
-        continue;
-      if (base::strncasecmp(name.data(),
-          unescaped_key.data(), unescaped_key.length()) == 0)
-        return std::make_pair(true,
-          UnescapedComponentString(spec, value));
-  }
-  return std::make_pair(false, "");
 }
 
 } // End of uri_details namespace
@@ -281,16 +260,10 @@ class SipURI {
   static const SipURI& EmptyURI();
 
   // Returns the given parameter if available.
-  std::pair<bool, std::string> parameter(const std::string &name) const {
-    return uri_details::LookupKeyValue(spec_, name, parsed_.parameters,
-        &uri::ExtractParametersKeyValue);
-  }
+  std::pair<bool, std::string> parameter(const std::string &name) const;
 
   // Returns the given header if available.
-  std::pair<bool, std::string> header(const std::string &name) const {
-    return uri_details::LookupKeyValue(spec_, name, parsed_.headers,
-        &uri::ExtractHeadersKeyValue);
-  }
+  std::pair<bool, std::string> header(const std::string &name) const;
 
  private:
   // The actual text of the URI, in canonical ASCII form.
@@ -444,10 +417,7 @@ class TelURI {
   static const TelURI& EmptyURI();
 
   // Returns the given parameter if available.
-  std::pair<bool, std::string> parameter(const std::string &name) const {
-    return uri_details::LookupKeyValue(spec_, name, parsed_.parameters,
-        &uri::ExtractParametersKeyValue);
-  }
+  std::pair<bool, std::string> parameter(const std::string &name) const;
 
  private:
   // The actual text of the URI, in canonical ASCII form.
