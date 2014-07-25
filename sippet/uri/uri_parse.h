@@ -255,6 +255,18 @@ bool ExtractParametersKeyValue(const base::char16* uri,
                                Component* key,
                                Component* value);
 
+// Extract the first key/value from the range defined by |*headers|. Updates
+// |*headers| to start at the end of the extracted key/value pair. This works
+// exactly the same as for the parameters.
+bool ExtractHeadersKeyValue(const char* uri,
+                            Component* headers,
+                            Component* key,
+                            Component* value);
+bool ExtractHeadersKeyValue(const base::char16* uri,
+                            Component* headers,
+                            Component* key,
+                            Component* value);
+
 } // End of uri namespace
 } // End of sippet namespace
 
