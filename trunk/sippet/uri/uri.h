@@ -7,40 +7,60 @@
 
 #include "url/gurl.h"
 #include "sippet/uri/uri_parse.h"
+#include "sippet/uri/uri_canon.h"
+#include "sippet/uri/uri_util.h"
 #include "base/strings/string_util.h"
 
 namespace sippet {
 
 namespace uri_details {
 
-// Query parameters
-template<class T>
-struct has_parameters {
-  std::pair<bool, std::string> parameter(const std::string &name) const {
-    const std::string &spec =
-      static_cast<const T*>(this)->spec();
-    const uri::Parsed& parsed =
-      static_cast<const T*>(this)->parsed_for_possibly_invalid_spec();
-    uri::Component parameters = parsed.parameters;
-    uri::Component key, value;
-    while (uri::ExtractParametersKeyValue(
-           spec.data(), &parameters, &key, &value)) {
-        if (key.len != name.length())
-          continue;
-        if (base::strncasecmp(name.data(),
-            spec.data() + key.begin, key.len) == 0)
-          return std::make_pair(true,
-            static_cast<const T*>(this)->ComponentString(value));
-    }
-    return std::make_pair(false, "");
+// Returns the substring of the input identified by the given component.
+inline
+std::string ComponentString(const std::string &spec,
+                            const uri::Component& comp) {
+  if (comp.len <= 0)
+    return std::string();
+  return std::string(spec, comp.begin, comp.len);
+}
+
+// Returns the unescaped substring of the input identified by the given
+// component.
+inline
+std::string UnescapedComponentString(const std::string &spec,
+                                     const uri::Component& comp) {
+  std::string unescaped;
+  url_canon::StdStringCanonOutput output(&unescaped);
+  uri::DecodeURIEscapeSequences(spec.data() + comp.begin, comp.len, &output);
+  return unescaped;
+}
+
+// Lookup value based on a given key-value extractor.
+inline
+std::pair<bool, std::string> LookupKeyValue(
+    const std::string &spec,
+    const std::string &name,
+    uri::Component query,
+    bool (*extractor)(const char*, uri::Component*,
+        uri::Component*, uri::Component*)) {
+  uri::Component key, value;
+  while ((*extractor)(
+          spec.data(), &query, &key, &value)) {
+      std::string unescaped_key(UnescapedComponentString(spec, key));
+      if (unescaped_key.length() != name.length())
+        continue;
+      if (base::strncasecmp(name.data(),
+          unescaped_key.data(), unescaped_key.length()) == 0)
+        return std::make_pair(true,
+          UnescapedComponentString(spec, value));
   }
-};
+  return std::make_pair(false, "");
+}
 
 } // End of uri_details namespace
 
 // The SipURI object accepts sip and sips schemes.
-class SipURI :
-  public uri_details::has_parameters<SipURI> {
+class SipURI {
  public:
   // Creates an empty, invalid SIP-URI.
   SipURI();
@@ -168,28 +188,28 @@ class SipURI :
   // Getters for various components of the URI. The returned string will be
   // empty if the component is empty or is not present.
   std::string scheme() const {  // Not including the colon. See also SchemeIs.
-    return ComponentString(parsed_.scheme);
+    return uri_details::ComponentString(spec_, parsed_.scheme);
   }
   std::string username() const {
-    return ComponentString(parsed_.username);
+    return uri_details::UnescapedComponentString(spec_, parsed_.username);
   }
   std::string password() const {
-    return ComponentString(parsed_.password);
+    return uri_details::UnescapedComponentString(spec_, parsed_.password);
   }
   // Note that this may be a hostname, an IPv4 address, or an IPv6 literal
   // surrounded by square brackets, like "[2001:db8::1]".  To exclude these
   // brackets, use HostNoBrackets() below.
   std::string host() const {
-    return ComponentString(parsed_.host);
+    return uri_details::ComponentString(spec_, parsed_.host);
   }
   std::string port() const {  // Returns -1 if "default"
-    return ComponentString(parsed_.port);
+    return uri_details::ComponentString(spec_, parsed_.port);
   }
   std::string parameters() const {  // Including first semicolon following host
-    return ComponentString(parsed_.parameters);
+    return uri_details::ComponentString(spec_, parsed_.parameters);
   }
   std::string headers() const {  // Stuff following '?'
-    return ComponentString(parsed_.headers);
+    return uri_details::ComponentString(spec_, parsed_.headers);
   }
 
   // Existance querying. These functions will return true if the corresponding
@@ -260,16 +280,19 @@ class SipURI :
   // This function may be called from any thread.
   static const SipURI& EmptyURI();
 
- private:
-  friend struct uri_details::has_parameters<SipURI>;
-
-  // Returns the substring of the input identified by the given component.
-  std::string ComponentString(const uri::Component& comp) const {
-    if (comp.len <= 0)
-      return std::string();
-    return std::string(spec_, comp.begin, comp.len);
+  // Returns the given parameter if available.
+  std::pair<bool, std::string> parameter(const std::string &name) const {
+    return uri_details::LookupKeyValue(spec_, name, parsed_.parameters,
+        &uri::ExtractParametersKeyValue);
   }
 
+  // Returns the given header if available.
+  std::pair<bool, std::string> header(const std::string &name) const {
+    return uri_details::LookupKeyValue(spec_, name, parsed_.headers,
+        &uri::ExtractHeadersKeyValue);
+  }
+
+ private:
   // The actual text of the URI, in canonical ASCII form.
   std::string spec_;
 
@@ -283,8 +306,7 @@ class SipURI :
 };
 
 // The TelURI object accepts only TEL-URI schemes.
-class TelURI :
-  public uri_details::has_parameters<SipURI> {
+class TelURI {
  public:
   // Creates an empty, invalid TEL-URI.
   TelURI();
@@ -389,13 +411,13 @@ class TelURI :
   // Getters for various components of the URI. The returned string will be
   // empty if the component is empty or is not present.
   std::string scheme() const {  // Not including the colon. See also SchemeIs.
-    return ComponentString(parsed_.scheme);
+    return uri_details::ComponentString(spec_, parsed_.scheme);
   }
   std::string telephone_subscriber() const {
-    return ComponentString(parsed_.username);
+    return uri_details::ComponentString(spec_, parsed_.username);
   }
   std::string parameters() const {  // Including first semicolon following host
-    return ComponentString(parsed_.parameters);
+    return uri_details::ComponentString(spec_, parsed_.parameters);
   }
 
   // Existance querying. These functions will return true if the corresponding
@@ -421,16 +443,13 @@ class TelURI :
   // This function may be called from any thread.
   static const TelURI& EmptyURI();
 
- private:
-  friend struct uri_details::has_parameters<TelURI>;
-
-  // Returns the substring of the input identified by the given component.
-  std::string ComponentString(const uri::Component& comp) const {
-    if (comp.len <= 0)
-      return std::string();
-    return std::string(spec_, comp.begin, comp.len);
+  // Returns the given parameter if available.
+  std::pair<bool, std::string> parameter(const std::string &name) const {
+    return uri_details::LookupKeyValue(spec_, name, parsed_.parameters,
+        &uri::ExtractParametersKeyValue);
   }
 
+ private:
   // The actual text of the URI, in canonical ASCII form.
   std::string spec_;
 

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/uri/uri.h"
-#include "sippet/uri/uri_util.h"
+#include "url/url_canon_internal.h"
 
 namespace sippet {
 namespace uri {
@@ -58,6 +58,25 @@ bool DoCanonicalize(const CHAR* in_spec, int in_spec_len,
   return success;
 }
 
+template<typename CHAR>
+void DoDecodeURIEscapeSequences(const CHAR* input, int length,
+                                uri::CanonOutput* output) {
+  for (int i = 0; i < length; i++) {
+    if (input[i] == '%') {
+      unsigned char ch;
+      if (url_canon::DecodeEscaped(input, &i, length, &ch)) {
+        output->push_back(ch);
+      } else {
+        // Invalid escape sequence, copy the percent literal.
+        output->push_back('%');
+      }
+    } else {
+      // Regular non-escaped 8-bit character.
+      output->push_back(input[i]);
+    }
+  }
+}
+
 } // End of empty namespace
 
 bool Canonicalize(const char* spec,
@@ -76,6 +95,11 @@ bool Canonicalize(const base::char16* spec,
                   uri::Parsed* output_parsed) {
   return DoCanonicalize(spec, spec_len, charset_converter,
                         output, output_parsed);
+}
+
+void DecodeURIEscapeSequences(const char* input, int length,
+                              uri::CanonOutput* output) {
+  DoDecodeURIEscapeSequences(input, length, output);
 }
 
 } // End of uri namespace
