@@ -13,6 +13,10 @@ vars = {
   "chromium_trunk": "http://src.chromium.org/chrome/trunk",
 
   "chromium_revision": "238260",
+
+  # PJSIP is used for testing purposes
+  "pjsip_trunk": "http://svn.pjsip.org/repos/pjproject/trunk",
+  "pjsip_revision": "4796",  # Corresponds to version 2.2.1
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -87,6 +91,9 @@ deps = {
 
   "third_party/libxml":
     Var("chromium_trunk") + "/src/third_party/libxml@" + Var("chromium_revision"),
+
+  "third_party/pjsip/source":
+    Var("pjsip_trunk") + "@" + Var("pjsip_revision"),
 
   "tools":
     File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
