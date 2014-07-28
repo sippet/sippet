@@ -55,6 +55,21 @@ pjsip_module mod_app =
     NULL,	// on_tsx_state()
 };
 
+pj_status_t LookupCredentials(pj_pool_t *pool,
+    const pj_str_t *realm, const pj_str_t *acc_name,
+    pjsip_cred_info *cred_info) {
+  if (pj_strcmp2(realm, "no-biloxi.com")
+      && pj_strcmp2(realm, "test")
+      && pj_strcmp2(&cred_info->scheme, "digest")) {
+    cred_info->realm = pj_str("no-biloxi.com");
+    cred_info->username = pj_str("test");
+    cred_info->data_type = PJSIP_CRED_DATA_PLAIN_PASSWD;
+    cred_info->data = pj_str("1234");
+  }
+  return PJ_ENOTFOUND;
+}
+
+
 } // empty namespace
 
 struct EmbeddedTestServer::ControlStruct {
@@ -62,12 +77,14 @@ struct EmbeddedTestServer::ControlStruct {
   pjsip_endpoint* endpoint_;
   pj_pool_t* pool_;
   pj_thread_t* thread_;
+  pjsip_auth_srv auth_srv_;
 
   ControlStruct()
     : endpoint_(NULL),
       pool_(NULL),
       thread_(NULL) {
     memset(&caching_pool_, 0, sizeof(caching_pool_));
+    memset(&auth_srv_, 0, sizeof(auth_srv_));
   }
 
   ~ControlStruct() {
@@ -135,6 +152,14 @@ struct EmbeddedTestServer::ControlStruct {
     status = pjsip_endpt_register_module(endpoint_, &mod_app);
     return status == PJ_SUCCESS;
   }
+
+  bool StartAuthentication() {
+    pj_status_t status;
+    pj_str_t realm = pj_str("no-biloxi.com");
+    status = pjsip_auth_srv_init(pool_, &auth_srv_,
+      &realm, &LookupCredentials, 0);
+    return status == PJ_SUCCESS;
+  }
 };
 
 EmbeddedTestServer::EmbeddedTestServer(const Protocol &protocol)
@@ -197,14 +222,37 @@ void EmbeddedTestServer::OnReceiveRequest(pjsip_rx_data *rdata) {
   if (rdata->msg_info.msg->line.req.method.id == PJSIP_CANCEL_METHOD)
     return;
 
-  VerifyRequest(rdata);
+  if (!VerifyRequest(rdata))
+    return;
+
+  if (rdata->msg_info.msg->line.req.method.id == PJSIP_REGISTER_METHOD) {
+    // Authentication was OK, so just return success
+    pj_status_t status;
+    pjsip_tx_data *tdata = NULL;
+    do {
+      status = pjsip_endpt_create_response(control_struct_->endpoint_,
+          rdata, PJSIP_SC_OK, NULL, &tdata);
+      if (status != PJ_SUCCESS)
+        break;
+      pjsip_transaction *uas_tsx;
+      status = pjsip_tsx_create_uas(NULL, rdata, &uas_tsx);
+      if (status != PJ_SUCCESS)
+        break;
+      pjsip_tsx_recv_msg(uas_tsx, rdata);
+      pjsip_tsx_send_msg(uas_tsx, tdata);
+      return;
+    } while (0);
+    if (tdata)
+      pjsip_tx_data_dec_ref(tdata);
+	  pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
+					PJSIP_SC_INTERNAL_SERVER_ERROR, 
+					NULL, NULL, NULL);
+  }
 }
 
 bool EmbeddedTestServer::VerifyRequest(pjsip_rx_data *rdata) {
+  pj_status_t status;
   const pj_str_t STR_REQUIRE = {"Require", 7};
-  const pj_str_t STR_AUTHORIZATION = {"Authorization", 13};
-
-  // RFC 3261 Section 16.3 Request Validation
 
   // A valid message must pass the following checks:
   // 1. Reasonable Syntax
@@ -233,10 +281,37 @@ bool EmbeddedTestServer::VerifyRequest(pjsip_rx_data *rdata) {
   }
 
   // 4. Authorization
-  if (pjsip_msg_find_hdr_by_name(rdata->msg_info.msg, &STR_AUTHORIZATION,
-      NULL) != NULL) {
+  int status_code;
+  status = pjsip_auth_srv_verify(&control_struct_->auth_srv_, rdata,
+      &status_code);
+  if (status == PJSIP_EAUTHNOAUTH) {
+    pjsip_tx_data *tdata = NULL;
+    do {
+      status = pjsip_endpt_create_response(control_struct_->endpoint_,
+          rdata, status_code, NULL, &tdata);
+      if (status != PJ_SUCCESS)
+        break;
+      status = pjsip_auth_srv_challenge(&control_struct_->auth_srv_,
+          NULL, NULL, NULL, PJ_FALSE, tdata);
+      if (status != PJ_SUCCESS)
+        break;
+      pjsip_transaction *uas_tsx;
+      status = pjsip_tsx_create_uas(NULL, rdata, &uas_tsx);
+      if (status != PJ_SUCCESS)
+        break;
+      pjsip_tsx_recv_msg(uas_tsx, rdata);
+      pjsip_tsx_send_msg(uas_tsx, tdata);
+      return false;
+    } while (0);
+    if (tdata)
+      pjsip_tx_data_dec_ref(tdata);
+	  pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
+					PJSIP_SC_INTERNAL_SERVER_ERROR, 
+					NULL, NULL, NULL);
+    return false;
+  } else if (status != PJ_SUCCESS) {
     pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
-        PJSIP_SC_UNAUTHORIZED, NULL, NULL, NULL);
+        PJSIP_SC_FORBIDDEN, NULL, NULL, NULL);
     return false;
   }
 
@@ -253,7 +328,8 @@ void EmbeddedTestServer::InitializeOnIOThread() {
   control_struct_.reset(new ControlStruct);
   if (!control_struct_->Init()
       || !control_struct_->ListenTo(protocol_, port_)
-      || !control_struct_->RegisterModule())
+      || !control_struct_->RegisterModule()
+      || !control_struct_->StartAuthentication())
     ShutdownOnIOThread();
 }
 
