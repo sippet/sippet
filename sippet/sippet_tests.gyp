@@ -42,7 +42,6 @@
         '<(DEPTH)/net/net.gyp:net_test_support',
         '<(DEPTH)/third_party/icu/icu.gyp:icui18n',
         '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
-        '<(DEPTH)/third_party/pjsip/pjsip.gyp:*',
         'sippet.gyp:sippet',
       ],
       'export_dependent_settings': [
@@ -58,5 +57,30 @@
         'ua/auth_handler_mock.cc',
       ],
     },  # target sippet_test_support
+    {
+      'target_name': 'sippet_embedded_test_server',
+      'type': 'static_library',
+      'dependencies': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gmock.gyp:gmock',
+        '<(DEPTH)/net/net.gyp:net',
+        '<(DEPTH)/net/net.gyp:net_test_support',
+        '<(DEPTH)/third_party/icu/icu.gyp:icui18n',
+        '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
+        '<(DEPTH)/third_party/pjsip/pjsip.gyp:*',
+        'sippet.gyp:sippet',
+      ],
+      'export_dependent_settings': [
+        '<(DEPTH)/net/net.gyp:net',
+        '<(DEPTH)/net/net.gyp:net_test_support',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gmock.gyp:gmock',
+        'sippet.gyp:sippet',
+      ],
+      'sources': [
+        'test/embedded_test_server/embedded_test_server.h',
+        'test/embedded_test_server/embedded_test_server.cc',
+      ],
+    },  # target sippet_embedded_test_server
   ],
 }
