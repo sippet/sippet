@@ -95,6 +95,9 @@ deps = {
   "third_party/pjsip/source":
     Var("pjsip_trunk") + "@" + Var("pjsip_revision"),
 
+  "third_party/speex":
+    Var("chromium_trunk") + "/deps/third_party/speex@198168",
+
   "tools":
     File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
 

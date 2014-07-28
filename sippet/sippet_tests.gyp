@@ -42,6 +42,7 @@
         '<(DEPTH)/net/net.gyp:net_test_support',
         '<(DEPTH)/third_party/icu/icu.gyp:icui18n',
         '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
+        '<(DEPTH)/third_party/pjsip/pjsip.gyp:*',
         'sippet.gyp:sippet',
       ],
       'export_dependent_settings': [
