@@ -21,6 +21,16 @@
     'dependencies': [
       '<(DEPTH)/third_party/speex/speex.gyp:libspeex',
     ],
+    'direct_dependent_settings': {
+      'include_dirs': [
+        './overrides',
+        './<(pjsip_source)/pjlib/include',
+        './<(pjsip_source)/pjlib-util/include',
+        './<(pjsip_source)/pjmedia/include',
+        './<(pjsip_source)/pjnath/include',
+        './<(pjsip_source)/pjsip/include',
+      ],
+    },
     'conditions': [
       ['OS=="win"', {
         'msvs_disabled_warnings': [ 4005, 4267 ],
