@@ -11,7 +11,9 @@
 #include "base/logging.h"
 #include "base/values.h"
 #include "base/file_util.h"
+#include "base/bind.h"
 #include "base/message_loop/message_loop.h"
+#include "net/base/net_errors.h"
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "net/dns/host_resolver.h"
@@ -29,6 +31,14 @@ static void PrintUsage() {
   printf("login --username=username\n"
          "      --password=password\n"
          "      [--tcp|--udp|--tls|--ws|--wss]\n");
+}
+
+void RequestSent(int error) {
+  printf(">> REGISTER completed");
+  if (error != net::OK) {
+    printf(", error = %d (%s)", error, net::ErrorToString(error));
+  }
+  printf("\n");
 }
 
 int main(int argc, char **argv) {
@@ -124,7 +134,7 @@ int main(int argc, char **argv) {
           GURL("sip:test@localhost"),
           GURL("sip:test@localhost"));
 
-  user_agent->Send(request, net::CompletionCallback());
+  user_agent->Send(request, base::Bind(&RequestSent));
 
   /*
   // Set the network layer and start the login process
