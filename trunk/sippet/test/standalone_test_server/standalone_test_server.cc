@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/test/embedded_test_server/embedded_test_server.h"
+#include "sippet/test/standalone_test_server/standalone_test_server.h"
 
 #include "base/bind.h"
 #include "base/message_loop/message_loop.h"
@@ -12,7 +12,7 @@
 #include "base/strings/stringprintf.h"
 #include "base/threading/thread_restrictions.h"
 #include "net/base/ip_endpoint.h"
-#include "net/base/net_errors.h"
+#include "net/base/net_errors.h"  
 
 #include <pjsip.h>
 #include <pjlib-util.h>
@@ -21,11 +21,11 @@
 namespace sippet {
 
 namespace {
-// There can exist just one Embedded server at a time
-EmbeddedTestServer *g_server = NULL;
+// There can exist just one Standalone server at a time
+StandaloneTestServer *g_server = NULL;
 }
 
-struct EmbeddedTestServerCallbacks {
+struct StandaloneTestServerCallbacks {
   static pj_bool_t on_rx_request(pjsip_rx_data *rdata) {
     g_server->OnReceiveRequest(rdata);
     return PJ_TRUE;
@@ -48,8 +48,8 @@ pjsip_module mod_app =
     NULL,	// start()
     NULL, // stop()
     NULL, // unload()
-    &EmbeddedTestServerCallbacks::on_rx_request,	// on_rx_request()
-    &EmbeddedTestServerCallbacks::on_rx_response, // on_rx_response()
+    &StandaloneTestServerCallbacks::on_rx_request,	// on_rx_request()
+    &StandaloneTestServerCallbacks::on_rx_response, // on_rx_response()
     NULL, // on_tx_request()
     NULL,	// on_tx_response()
     NULL,	// on_tsx_state()
@@ -72,7 +72,7 @@ pj_status_t LookupCredentials(pj_pool_t *pool,
 
 } // empty namespace
 
-struct EmbeddedTestServer::ControlStruct {
+struct StandaloneTestServer::ControlStruct {
   pj_caching_pool caching_pool_;
   pjsip_endpoint* endpoint_;
   pj_pool_t* pool_;
@@ -123,25 +123,47 @@ struct EmbeddedTestServer::ControlStruct {
     return true;
   }
 
-  bool ListenTo(const Protocol& protocol, int port) {
+  bool ListenTo(const Protocol& protocol, int &port,
+                StandaloneTestServer::SSLOptions &options) {
     pj_status_t status;
 
     pj_sockaddr_in addr;
     pj_str_t localhost = pj_str("127.0.0.1");
     addr.sin_family = pj_AF_INET();
     pj_inet_pton(PJ_AF_INET, &localhost, &addr.sin_addr.s_addr);
-    addr.sin_port = pj_htons((pj_uint16_t)port);
+    addr.sin_port = port;
 
     if (Protocol::UDP == protocol) {
-      status = pjsip_udp_transport_start(endpoint_, &addr, NULL, 1, NULL);
-    } else if (Protocol::TCP == protocol) {
-      status = pjsip_tcp_transport_start(endpoint_, &addr, 1, NULL);
-    } else if (Protocol::TLS == protocol) {
-      pjsip_tls_setting opt;
-      pjsip_tls_setting_default(&opt);
-      // TODO: add other TLS settings, like self-signed certificate here
-      status = pjsip_tls_transport_start(endpoint_, &opt, &addr,
-        NULL, 1, NULL);
+      pjsip_transport *tp = NULL;
+      status = pjsip_udp_transport_start(endpoint_, &addr, NULL, 1, &tp);
+      if (status == PJ_SUCCESS)
+        port = tp->local_name.port;
+    } else {
+      pjsip_tpfactory *tf = NULL;
+      if (Protocol::TCP == protocol) {
+        status = pjsip_tcp_transport_start(endpoint_, &addr, 1, &tf);
+      } else if (Protocol::TLS == protocol) {
+        pjsip_tls_setting opt;
+        pjsip_tls_setting_default(&opt);
+        opt.method = PJSIP_TLSV1_METHOD;
+        opt.require_client_cert =
+          options.request_client_certificate ? PJ_TRUE : PJ_FALSE;
+        std::string certificate_file(options.certificate_file.AsUTF8Unsafe());
+        if (!certificate_file.empty())
+          opt.cert_file = pj_str(const_cast<char*>(certificate_file.c_str()));
+        std::string privatekey_file(options.privatekey_file.AsUTF8Unsafe());
+        if (!privatekey_file.empty())
+          opt.privkey_file = pj_str(const_cast<char*>(privatekey_file.c_str()));
+        if (!options.password.empty())
+          opt.password = pj_str(const_cast<char*>(options.password.c_str()));
+        status = pjsip_tls_transport_start(endpoint_, &opt, &addr,
+          NULL, 1, &tf);
+      } else {
+        NOTREACHED() << "Unknown protocol";
+        return false;
+      }
+      if (status == PJ_SUCCESS)
+        port = tf->addr_name.port;
     }
 
     return status == PJ_SUCCESS;
@@ -162,63 +184,73 @@ struct EmbeddedTestServer::ControlStruct {
   }
 };
 
-EmbeddedTestServer::EmbeddedTestServer(const Protocol &protocol)
-  : port_(-1) {
-  DCHECK(!g_server);
-  DCHECK(thread_checker_.CalledOnValidThread());
-  std::ostringstream uri;
-  if (Protocol::UDP == protocol) {
-    uri << "sip:127.0.0.1";
-    port_ = 5060;
-  } else if (Protocol::TCP == protocol) {
-    uri << "sip:127.0.0.1;transport=TCP";
-    port_ = 5060;
-  } else if (Protocol::TLS == protocol) {
-    uri << "sips:127.0.0.1";
-    port_ = 5061;
-  }
-  base_uri_ = GURL(uri.str());
-  g_server = this;
+StandaloneTestServer::SSLOptions::SSLOptions()
+    : request_client_certificate(false) {
 }
 
-EmbeddedTestServer::~EmbeddedTestServer() {
+StandaloneTestServer::SSLOptions::~SSLOptions() {
+}
+
+StandaloneTestServer::StandaloneTestServer(const Protocol &protocol,
+    int port) {
+  Init(protocol, port, NULL);
+}
+
+StandaloneTestServer::StandaloneTestServer(const Protocol &protocol,
+    const SSLOptions &ssl_options, int port) {
+  Init(protocol, port, &ssl_options);
+}
+
+StandaloneTestServer::~StandaloneTestServer() {
   DCHECK(thread_checker_.CalledOnValidThread());
 
   if (Started() && !ShutdownAndWaitUntilComplete()) {
-    LOG(ERROR) << "EmbeddedTestServer failed to shut down.";
+    LOG(ERROR) << "StandaloneTestServer failed to shut down.";
   }
   
   g_server = NULL;
 }
 
-bool EmbeddedTestServer::InitializeAndWaitUntilReady() {
+void StandaloneTestServer::Init(const Protocol &protocol, int port,
+    const SSLOptions *ssl_options) {
+  DCHECK(port >= 0);
+  DCHECK(!g_server);
+  DCHECK(thread_checker_.CalledOnValidThread());
+  port_ = port;  
+  protocol_ = protocol;
+  if (ssl_options)
+    ssl_options_ = *ssl_options;
+  g_server = this;
+}
+
+bool StandaloneTestServer::InitializeAndWaitUntilReady() {
   base::Thread::Options thread_options;
   thread_options.message_loop_type = base::MessageLoop::TYPE_IO;
-  io_thread_.reset(new base::Thread("EmbeddedTestServer io thread"));
+  io_thread_.reset(new base::Thread("StandaloneTestServer io thread"));
   CHECK(io_thread_->StartWithOptions(thread_options));
 
   DCHECK(thread_checker_.CalledOnValidThread());
 
   if (!PostTaskToIOThreadAndWait(base::Bind(
-          &EmbeddedTestServer::InitializeOnIOThread, base::Unretained(this)))) {
+          &StandaloneTestServer::InitializeOnIOThread, base::Unretained(this)))) {
     return false;
   }
 
   return Started();
 }
 
-bool EmbeddedTestServer::ShutdownAndWaitUntilComplete() {
+bool StandaloneTestServer::ShutdownAndWaitUntilComplete() {
   DCHECK(thread_checker_.CalledOnValidThread());
 
   return PostTaskToIOThreadAndWait(base::Bind(
-      &EmbeddedTestServer::ShutdownOnIOThread, base::Unretained(this)));
+      &StandaloneTestServer::ShutdownOnIOThread, base::Unretained(this)));
 }
 
-bool EmbeddedTestServer::Started() const {
+bool StandaloneTestServer::Started() const {
   return control_struct_.get() != NULL;
 }
 
-void EmbeddedTestServer::OnReceiveRequest(pjsip_rx_data *rdata) {
+void StandaloneTestServer::OnReceiveRequest(pjsip_rx_data *rdata) {
   if (rdata->msg_info.msg->line.req.method.id == PJSIP_CANCEL_METHOD)
     return;
 
@@ -250,7 +282,7 @@ void EmbeddedTestServer::OnReceiveRequest(pjsip_rx_data *rdata) {
   }
 }
 
-bool EmbeddedTestServer::VerifyRequest(pjsip_rx_data *rdata) {
+bool StandaloneTestServer::VerifyRequest(pjsip_rx_data *rdata) {
   pj_status_t status;
   const pj_str_t STR_REQUIRE = {"Require", 7};
 
@@ -318,33 +350,46 @@ bool EmbeddedTestServer::VerifyRequest(pjsip_rx_data *rdata) {
   return true;
 }
 
-void EmbeddedTestServer::OnReceiveResponse(pjsip_rx_data *rdata) {
+void StandaloneTestServer::OnReceiveResponse(pjsip_rx_data *rdata) {
 }
 
-void EmbeddedTestServer::InitializeOnIOThread() {
+void StandaloneTestServer::InitializeOnIOThread() {
   DCHECK(io_thread_->message_loop_proxy()->BelongsToCurrentThread());
   DCHECK(!Started());
 
   control_struct_.reset(new ControlStruct);
   if (!control_struct_->Init()
-      || !control_struct_->ListenTo(protocol_, port_)
+      || !control_struct_->ListenTo(protocol_, port_, ssl_options_)
       || !control_struct_->RegisterModule()
-      || !control_struct_->StartAuthentication())
+      || !control_struct_->StartAuthentication()) {
     ShutdownOnIOThread();
+  } else {
+    std::ostringstream uri;
+    if (Protocol::UDP == protocol_) {
+      uri << "sip:127.0.0.1:" << port_;
+    } else if (Protocol::TCP == protocol_) {
+      uri << "sip:127.0.0.1:" << port_ << ";transport=TCP";
+    } else if (Protocol::TLS == protocol_) {
+      uri << "sips:127.0.0.1:" << port_;
+    } else {
+      NOTREACHED() << "Unknown protocol";
+    }
+    base_uri_ = GURL(uri.str());
+  }
 }
 
-void EmbeddedTestServer::ShutdownOnIOThread() {
+void StandaloneTestServer::ShutdownOnIOThread() {
   DCHECK(io_thread_->message_loop_proxy()->BelongsToCurrentThread());
 
   control_struct_.reset(NULL);
   pj_shutdown();
 }
 
-bool EmbeddedTestServer::PostTaskToIOThreadAndWait(
+bool StandaloneTestServer::PostTaskToIOThreadAndWait(
     const base::Closure& closure) {
   // Note that PostTaskAndReply below requires base::MessageLoopProxy::current()
   // to return a loop for posting the reply task. However, in order to make
-  // EmbeddedTestServer universally usable, it needs to cope with the situation
+  // StandaloneTestServer universally usable, it needs to cope with the situation
   // where it's running on a thread on which a message loop is not (yet)
   // available or as has been destroyed already.
   //

@@ -1,4 +1,4 @@
-# Copyright (c) 2013 The Sippet Authors. All rights reserved.
+# Copyright (c) 2014 The Sippet Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -20,6 +20,7 @@
     ],
     'dependencies': [
       '<(DEPTH)/third_party/speex/speex.gyp:libspeex',
+      '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
     ],
     'direct_dependent_settings': {
       'include_dirs': [
@@ -31,6 +32,10 @@
         './<(pjsip_source)/pjsip/include',
       ],
     },
+    'export_dependent_settings': [
+      '<(DEPTH)/third_party/speex/speex.gyp:libspeex',
+      '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
+    ],
     'conditions': [
       ['OS=="win"', {
         'msvs_disabled_warnings': [ 4005, 4267 ],
@@ -39,6 +44,7 @@
     'defines': [
       'PJMEDIA_HAS_SRTP=0',
       'PJMEDIA_RESAMPLE_IMP=PJMEDIA_RESAMPLE_NONE',
+      'PJ_HAS_SSL_SOCK=1',
     ]
   },
   'targets': [
@@ -65,8 +71,12 @@
         '<(pjsip_source)/pjlib/src/pj/rbtree.c',
         '<(pjsip_source)/pjlib/src/pj/ssl_sock_common.c',
         '<(pjsip_source)/pjlib/src/pj/ssl_sock_dump.c',
+        # PJSIP launches libeay32 and ssleay32 undesirable dependencies, so:
+        'overrides/src/pj/ssl_sock_ossl.c',
         '<(pjsip_source)/pjlib/src/pj/sock_common.c',
         '<(pjsip_source)/pjlib/src/pj/sock_qos_common.c',
+        '<(pjsip_source)/pjlib/src/pj/sock_qos_bsd.c',
+        '<(pjsip_source)/pjlib/src/pj/sock_qos_dummy.c',
         '<(pjsip_source)/pjlib/src/pj/string.c',
         '<(pjsip_source)/pjlib/src/pj/types.c',
         '<(pjsip_source)/pjlib/src/pj/hash.c',
@@ -76,7 +86,6 @@
         '<(pjsip_source)/pjlib/src/pj/pool_policy_malloc.c',
         '<(pjsip_source)/pjlib/src/pj/sock_bsd.c',
         '<(pjsip_source)/pjlib/src/pj/sock_select.c',
-        '<(pjsip_source)/pjlib/src/pj/sock_qos_dummy.c',
         '<(pjsip_source)/pjlib/src/pj/symbols.c',
         '<(pjsip_source)/pjlib/src/pj/timer.c',
       ],
@@ -112,8 +121,6 @@
             '<(pjsip_source)/pjlib/src/pj/os_timestamp_common.c',
             '<(pjsip_source)/pjlib/src/pj/pool_policy_malloc.c',
             '<(pjsip_source)/pjlib/src/pj/sock_bsd.c',
-            '<(pjsip_source)/pjlib/src/pj/sock_qos_common.c',
-            '<(pjsip_source)/pjlib/src/pj/sock_qos_bsd.c',
             '<(pjsip_source)/pjlib/src/pj/sock_select.c',
             '<(pjsip_source)/pjlib/src/pj/ioqueue_select.c',
             '<(pjsip_source)/pjlib/src/pj/guid_simple.c',

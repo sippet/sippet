@@ -58,29 +58,37 @@
       ],
     },  # target sippet_test_support
     {
-      'target_name': 'sippet_embedded_test_server',
+      'target_name': 'sippet_standalone_test_server',
       'type': 'static_library',
       'dependencies': [
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/testing/gmock.gyp:gmock',
-        '<(DEPTH)/net/net.gyp:net',
-        '<(DEPTH)/net/net.gyp:net_test_support',
-        '<(DEPTH)/third_party/icu/icu.gyp:icui18n',
-        '<(DEPTH)/third_party/icu/icu.gyp:icuuc',
         '<(DEPTH)/third_party/pjsip/pjsip.gyp:*',
         'sippet.gyp:sippet',
       ],
-      'export_dependent_settings': [
-        '<(DEPTH)/net/net.gyp:net',
-        '<(DEPTH)/net/net.gyp:net_test_support',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/testing/gmock.gyp:gmock',
-        'sippet.gyp:sippet',
+      'include_dirs': [
+        '<(DEPTH)',
+        '<(DEPTH)/third_party',
       ],
       'sources': [
-        'test/embedded_test_server/embedded_test_server.h',
-        'test/embedded_test_server/embedded_test_server.cc',
+        'test/standalone_test_server/standalone_test_server.h',
+        'test/standalone_test_server/standalone_test_server.cc',
       ],
-    },  # target sippet_embedded_test_server
+    },  # target sippet_test_support
+    {
+      'target_name': 'sippet_standalone_test_server_unittest',
+      'type': 'executable',
+      'dependencies': [
+        '<(DEPTH)/base/base.gyp:run_all_unittests',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/testing/gmock.gyp:gmock',
+        'sippet_standalone_test_server',
+      ],
+      'include_dirs': [
+        '<(DEPTH)',
+        '<(DEPTH)/third_party',
+      ],
+      'sources': [
+        'test/standalone_test_server/standalone_test_server_unittest.cc',
+      ],
+    },  # target sippet_standalone_test_server
   ],
 }
