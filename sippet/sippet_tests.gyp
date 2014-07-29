@@ -89,6 +89,20 @@
       'sources': [
         'test/standalone_test_server/standalone_test_server_unittest.cc',
       ],
-    },  # target sippet_standalone_test_server
+    },  # target sippet_standalone_test_server_unittest
+    {
+      'target_name': 'sippet_standalone_test_server_main',
+      'type': 'executable',
+      'dependencies': [
+        'sippet_standalone_test_server',
+      ],
+      'include_dirs': [
+        '<(DEPTH)',
+        '<(DEPTH)/third_party',
+      ],
+      'sources': [
+        'test/standalone_test_server/main.cc',
+      ],
+    },  # target sippet_standalone_test_server_main
   ],
 }

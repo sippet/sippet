@@ -15,20 +15,12 @@ namespace sippet {
 
 class StandaloneTestServerTest: public testing::Test {
  public:
-  StandaloneTestServerTest()
-      : num_responses_received_(0),
-        num_responses_expected_(0),
-        io_thread_("io_thread") {
-  }
-
-  virtual void SetUp() OVERRIDE {
-    base::Thread::Options thread_options;
-    thread_options.message_loop_type = base::MessageLoop::TYPE_IO;
-    ASSERT_TRUE(io_thread_.StartWithOptions(thread_options));
+  StandaloneTestServerTest() {
   }
 
   virtual void TearDown() OVERRIDE {
-    ASSERT_TRUE(server_->ShutdownAndWaitUntilComplete());
+    if (server_)
+      ASSERT_TRUE(server_->ShutdownAndWaitUntilComplete());
   }
 
   void Init(const Protocol &protocol) {
@@ -43,9 +35,6 @@ class StandaloneTestServerTest: public testing::Test {
   }
 
  protected:
-  int num_responses_received_;
-  int num_responses_expected_;
-  base::Thread io_thread_;
   scoped_ptr<StandaloneTestServer> server_;
 };
 
