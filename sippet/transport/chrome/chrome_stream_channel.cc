@@ -42,7 +42,9 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
               net::BoundNetLog::Make(
                   request_context_getter->GetURLRequestContext()->net_log(),
                   net::NetLog::SOURCE_SOCKET)),
-          weak_factory_(this) {
+          weak_factory_(this),
+          dest_host_port_pair_(destination.host(), destination.port()),
+          delegate_(delegate) {
   DCHECK(request_context_getter.get());
   net::URLRequestContext* request_context =
       request_context_getter->GetURLRequestContext();
@@ -50,6 +52,7 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
   DCHECK(!dest_host_port_pair_.host().empty());
   DCHECK_GT(dest_host_port_pair_.port(), 0);
   DCHECK(proxy_url_.is_valid());
+  DCHECK(delegate_);
 
   net::HttpNetworkSession::Params session_params;
   session_params.client_socket_factory = client_socket_factory;

@@ -9,10 +9,13 @@
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
+#include "base/values.h"
+#include "base/file_util.h"
 #include "base/message_loop/message_loop.h"
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "net/dns/host_resolver.h"
+#include "net/base/net_log_logger.h"
 #include "sippet/transport/channel_factory.h"
 #include "sippet/transport/chrome/chrome_channel_factory.h"
 #include "sippet/transport/network_layer.h"
@@ -43,6 +46,7 @@ int main(int argc, char **argv) {
     printf("Error: could not initialize logging. Exiting.\n");
     return -1;
   }
+  logging::SetMinLogLevel(-10);
 
   if (command_line->GetSwitches().empty() ||
       command_line->HasSwitch("help")) {
@@ -90,23 +94,21 @@ int main(int argc, char **argv) {
   scoped_refptr<net::URLRequestContextGetter> request_context_getter(
       new URLRequestContextGetter(message_loop.message_loop_proxy()));
 
-  net::SSLConfig ssl_config;
-
   net::ClientSocketFactory *client_socket_factory =
       net::ClientSocketFactory::GetDefaultFactory();
-
-  net::BoundNetLog net_log;
   scoped_ptr<net::HostResolver> host_resolver(
       net::HostResolver::CreateDefaultResolver(NULL));
   scoped_ptr<AuthHandlerFactory> auth_handler_factory(
       AuthHandlerFactory::CreateDefault(host_resolver.get()));
 
+  net::BoundNetLog net_log;
   scoped_refptr<ua::UserAgent> user_agent(
       new ua::UserAgent(auth_handler_factory.get(), net_log));
   scoped_refptr<NetworkLayer> network_layer;
   network_layer = new NetworkLayer(user_agent.get());
 
   // Register the channel factory
+  net::SSLConfig ssl_config;
   scoped_ptr<ChromeChannelFactory> channel_factory(
       new ChromeChannelFactory(client_socket_factory,
                                        request_context_getter, ssl_config));
@@ -118,7 +120,7 @@ int main(int argc, char **argv) {
   scoped_refptr<Request> request =
       user_agent->CreateRequest(
           Method::REGISTER,
-          GURL("sip:localhost"),
+          GURL("sip:localhost;transport=TCP"),
           GURL("sip:test@localhost"),
           GURL("sip:test@localhost"));
 
