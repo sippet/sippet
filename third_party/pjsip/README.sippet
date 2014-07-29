@@ -1,0 +1,26 @@
+Name: pjsip
+URL: http://www.pjsip.org/download.htm
+Version: 2.2.1
+License: GPL
+License File: source/COPYING
+
+Description:
+This is PJSIP, the a free and open source multimedia communication library,
+which is used *only* in the following cases:
+
+ - For Sippet/EmbeddedTestServer, only on Desktop platforms (Windows, Mac OSX
+   and Linux), to implement a testing SIP server.
+
+   There's no plans to use PJSIP inside sippet.
+
+This means that the library must be built for these systems:
+
+  Linux/x86
+  Linux/x86_64
+  Darwin/x86
+  Darwin/x86_64
+  Windows/x86
+  Windows/x86_64
+
+Whenever you change it, try to rebuild Sippet for all these systems.
+

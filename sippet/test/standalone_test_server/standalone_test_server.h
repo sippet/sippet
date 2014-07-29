@@ -9,6 +9,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/threading/thread.h"
 #include "base/threading/thread_checker.h"
+#include "base/files/file_path.h"
 #include "sippet/message/protocol.h"
 #include "url/gurl.h"
 
@@ -18,12 +19,36 @@ struct pjsip_rx_data;
 
 namespace sippet {
 
-class EmbeddedTestServer {
+class StandaloneTestServer {
  public:
+  // Container for various options to control how the SIPS or WSS server is
+  // initialized.
+  struct SSLOptions {
+    // Initialize a new empty SSLOptions.
+    SSLOptions();
+    ~SSLOptions();
+
+    // Returns the relative filename of the file that contains the
+    // |server_certificate|.
+    base::FilePath certificate_file;
+
+    // Optional private key of the endpoint certificate to be used.
+    base::FilePath privatekey_file;
+
+    // Optional password to open the private key.
+    std::string password;
+
+    // True if a CertificateRequest should be sent to the client during
+    // handshaking.
+    bool request_client_certificate;
+  };
+
   // Creates a SIP test server. InitializeAndWaitUntilReady() must be called
   // to start the server.
-  EmbeddedTestServer(const Protocol &protocol);
-  virtual ~EmbeddedTestServer();
+  StandaloneTestServer(const Protocol &protocol, int port = 0);
+  StandaloneTestServer(const Protocol &protocol,
+      const SSLOptions &ssl_options, int port = 0);
+  virtual ~StandaloneTestServer();
 
   // Initializes and waits until the server is ready to accept requests.
   bool InitializeAndWaitUntilReady() WARN_UNUSED_RESULT;
@@ -52,7 +77,11 @@ class EmbeddedTestServer {
   const Protocol &protocol() const { return protocol_; }
 
  private:
-  friend struct EmbeddedTestServerCallbacks;
+  friend struct StandaloneTestServerCallbacks;
+
+  // Initializes the StandaloneTestServer.
+  void Init(const Protocol &protocol, int port,
+      const SSLOptions *ssl_options);
 
   // Initializes and starts the server. If initialization succeeds, Starts()
   // will return true.
@@ -83,8 +112,9 @@ class EmbeddedTestServer {
 
   struct ControlStruct;
   scoped_ptr<ControlStruct> control_struct_;
+  SSLOptions ssl_options_;
 
-  DISALLOW_COPY_AND_ASSIGN(EmbeddedTestServer);
+  DISALLOW_COPY_AND_ASSIGN(StandaloneTestServer);
 };
 
 } // namespace sippet
