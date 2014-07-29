@@ -17,6 +17,8 @@ vars = {
   # PJSIP is used for testing purposes
   "pjsip_trunk": "http://svn.pjsip.org/repos/pjproject/trunk",
   "pjsip_revision": "4796",  # Corresponds to version 2.2.1
+
+  "openssl_revision": "236537",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -95,8 +97,11 @@ deps = {
   "third_party/pjsip/source":
     Var("pjsip_trunk") + "@" + Var("pjsip_revision"),
 
+  "third_party/openssl/openssl":
+    Var("chromium_trunk") + "/deps/third_party/openssl/openssl@" + Var("openssl_revision"),
+
   "third_party/speex":
-    Var("chromium_trunk") + "/deps/third_party/speex@198168",
+    From("chromium_deps", "src/third_party/speex"),
 
   "tools":
     File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
@@ -181,9 +186,6 @@ deps_os = {
   "unix": {
     "third_party/gold":
       From("chromium_deps", "src/third_party/gold"),
-
-    "third_party/openssl":
-      From("chromium_deps", "src/third_party/openssl"),
   },
 
   "android": {
@@ -197,9 +199,6 @@ deps_os = {
 
     "third_party/android_testrunner":
       Var("chromium_trunk") + "/src/third_party/android_testrunner@" + Var("chromium_revision"),
-
-    "third_party/openssl":
-      From("chromium_deps", "src/third_party/openssl"),
   },
 }
 
