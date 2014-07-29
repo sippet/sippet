@@ -56,7 +56,7 @@ class NET_EXPORT_PRIVATE SequencedWriteStreamSocket : public net::StreamSocket {
   virtual bool GetSSLInfo(net::SSLInfo* ssl_info) OVERRIDE;
 
  private:
-  scoped_ptr<net::StreamSocket> wrapped_socket_;
+  net::StreamSocket* wrapped_socket_;
   base::WeakPtrFactory<SequencedWriteStreamSocket> weak_factory_;
   int error_;
 

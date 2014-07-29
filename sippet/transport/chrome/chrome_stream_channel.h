@@ -6,6 +6,7 @@
 #define SIPPET_TRANSPORT_CHROME_CHROME_STREAM_CHANNEL_H_
 
 #include "sippet/transport/channel.h"
+#include "sippet/transport/chrome/sequenced_write_stream_socket.h"
 #include "base/memory/weak_ptr.h"
 #include "net/proxy/proxy_info.h"
 #include "net/proxy/proxy_service.h"
@@ -73,6 +74,7 @@ class ChromeStreamChannel : public Channel {
 
   // The transport socket.
   scoped_ptr<net::ClientSocketHandle> transport_;
+  scoped_ptr<SequencedWriteStreamSocket> stream_socket_;
 
   const net::SSLConfig ssl_config_;
   net::ProxyService::PacRequest* pac_request_;

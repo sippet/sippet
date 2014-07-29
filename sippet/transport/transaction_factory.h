@@ -15,6 +15,7 @@ namespace sippet {
 class ClientTransaction;
 class ServerTransaction;
 class TransactionDelegate;
+class TimeDeltaFactory;
 
 class TransactionFactory {
  public:
@@ -24,12 +25,14 @@ class TransactionFactory {
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
+      TimeDeltaFactory *time_delta_factory,
       TransactionDelegate *delegate) = 0;
 
   virtual ServerTransaction *CreateServerTransaction(
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
+      TimeDeltaFactory *time_delta_factory,
       TransactionDelegate *delegate) = 0;
 
   // Returns the default TransactionFactory.
