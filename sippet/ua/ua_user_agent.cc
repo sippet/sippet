@@ -71,11 +71,6 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   // Max-Forwards header field is always 70.
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
   request->push_back(max_forwards.PassAs<Header>());
-
-  // Contact: TODO
-
-
-  NOTIMPLEMENTED();
   return request;
 }
 

@@ -42,25 +42,13 @@ int main(int argc, char *argv[]) {
   if (command_line->HasSwitch("port"))
     port = command_line->GetSwitchValueASCII("port");
 
-  std::string registrar_uri;
-  struct {
-    const char *cmd_switch_;
-    const char *registrar_uri_;
-  } args[] = {
-    { "udp", "sip:localhost" },
-    { "tcp", "sip:localhost;transport=TCP" },
-    { "tls", "sips:localhost" },
-    { "ws", "sip:localhost;transport=WS" },
-    { "wss", "sips:localhost;transport=WS" },
-  };
-
   scoped_ptr<StandaloneTestServer> server;
   if (command_line->HasSwitch("udp")) {
-    server.reset(new StandaloneTestServer(Protocol::UDP));
+    server.reset(new StandaloneTestServer(Protocol::UDP, 5060));
   } else if (command_line->HasSwitch("tcp")) {
-    server.reset(new StandaloneTestServer(Protocol::UDP));
+    server.reset(new StandaloneTestServer(Protocol::TCP, 5060));
   } else if (command_line->HasSwitch("tls")) {
-    server.reset(new StandaloneTestServer(Protocol::TLS));
+    server.reset(new StandaloneTestServer(Protocol::TLS, 5061));
   }
 
   if (!server->InitializeAndWaitUntilReady()) {
