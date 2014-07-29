@@ -12,11 +12,15 @@
 #include "base/message_loop/message_loop.h"
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context_getter.h"
+#include "net/dns/host_resolver.h"
 #include "sippet/transport/channel_factory.h"
 #include "sippet/transport/chrome/chrome_channel_factory.h"
 #include "sippet/transport/network_layer.h"
 #include "sippet/ua/ua_user_agent.h"
+#include "sippet/ua/auth_handler_factory.h"
 #include "sippet/examples/login/url_request_context_getter.h"
+
+using namespace sippet;
 
 static void PrintUsage() {
   printf("login --username=username\n"
@@ -91,16 +95,34 @@ int main(int argc, char **argv) {
   net::ClientSocketFactory *client_socket_factory =
       net::ClientSocketFactory::GetDefaultFactory();
 
-  scoped_refptr<sippet::ua::UserAgent> user_agent(new sippet::ua::UserAgent);
-  scoped_refptr<sippet::NetworkLayer> network_layer;
-  network_layer = new sippet::NetworkLayer(user_agent.get());
+  net::BoundNetLog net_log;
+  scoped_ptr<net::HostResolver> host_resolver(
+      net::HostResolver::CreateDefaultResolver(NULL));
+  scoped_ptr<AuthHandlerFactory> auth_handler_factory(
+      AuthHandlerFactory::CreateDefault(host_resolver.get()));
+
+  scoped_refptr<ua::UserAgent> user_agent(
+      new ua::UserAgent(auth_handler_factory.get(), net_log));
+  scoped_refptr<NetworkLayer> network_layer;
+  network_layer = new NetworkLayer(user_agent.get());
 
   // Register the channel factory
-  scoped_ptr<sippet::ChromeChannelFactory> channel_factory(
-      new sippet::ChromeChannelFactory(client_socket_factory,
+  scoped_ptr<ChromeChannelFactory> channel_factory(
+      new ChromeChannelFactory(client_socket_factory,
                                        request_context_getter, ssl_config));
-  network_layer->RegisterChannelFactory(sippet::Protocol::TCP, channel_factory.get());
-  network_layer->RegisterChannelFactory(sippet::Protocol::TLS, channel_factory.get());
+  network_layer->RegisterChannelFactory(Protocol::TCP, channel_factory.get());
+  network_layer->RegisterChannelFactory(Protocol::TLS, channel_factory.get());
+
+  user_agent->SetNetworkLayer(network_layer.get());
+
+  scoped_refptr<Request> request =
+      user_agent->CreateRequest(
+          Method::REGISTER,
+          GURL("sip:localhost"),
+          GURL("sip:test@localhost"),
+          GURL("sip:test@localhost"));
+
+  user_agent->Send(request, net::CompletionCallback());
 
   /*
   // Set the network layer and start the login process
