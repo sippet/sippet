@@ -69,7 +69,6 @@ pj_status_t LookupCredentials(pj_pool_t *pool,
   return PJ_ENOTFOUND;
 }
 
-
 } // empty namespace
 
 struct StandaloneTestServer::ControlStruct {
@@ -88,6 +87,8 @@ struct StandaloneTestServer::ControlStruct {
   }
 
   ~ControlStruct() {
+    if (thread_)
+      StopWorkerThread();
     if (endpoint_)
       pjsip_endpt_destroy(endpoint_);
     if (pool_)
@@ -102,6 +103,8 @@ struct StandaloneTestServer::ControlStruct {
     status = pj_init();
     if (status != PJ_SUCCESS)
       return false;
+
+    pj_log_set_level(6);
 
     status = pjlib_util_init();
     if (status != PJ_SUCCESS)
@@ -131,7 +134,7 @@ struct StandaloneTestServer::ControlStruct {
     pj_str_t localhost = pj_str("127.0.0.1");
     addr.sin_family = pj_AF_INET();
     pj_inet_pton(PJ_AF_INET, &localhost, &addr.sin_addr.s_addr);
-    addr.sin_port = port;
+    addr.sin_port = pj_htons((pj_uint16_t)port);
 
     if (Protocol::UDP == protocol) {
       pjsip_transport *tp = NULL;
@@ -182,7 +185,33 @@ struct StandaloneTestServer::ControlStruct {
       &realm, &LookupCredentials, 0);
     return status == PJ_SUCCESS;
   }
+
+  bool StartWorkerThread() {
+    pj_status_t status;
+    quit_flag_ = false;
+    status = pj_thread_create(pool_, "embedsrv", &WorkerThread,
+			      this, 0, 0, &thread_);
+    return status == PJ_SUCCESS;
+  }
+
+  void StopWorkerThread() {
+    quit_flag_ = true;
+    pj_thread_join(thread_);
+    thread_ = NULL;
+  }
+
+  static bool quit_flag_;
+
+  static int WorkerThread(void *p) {
+    pj_time_val delay = {0, 10};
+    ControlStruct *self = (ControlStruct *)p;
+    while (!quit_flag_)
+      pjsip_endpt_handle_events(self->endpoint_, &delay);
+    return 0;
+  }
 };
+
+bool StandaloneTestServer::ControlStruct::quit_flag_;
 
 StandaloneTestServer::SSLOptions::SSLOptions()
     : request_client_certificate(false) {
@@ -216,7 +245,7 @@ void StandaloneTestServer::Init(const Protocol &protocol, int port,
   DCHECK(port >= 0);
   DCHECK(!g_server);
   DCHECK(thread_checker_.CalledOnValidThread());
-  port_ = port;  
+  port_ = port;
   protocol_ = protocol;
   if (ssl_options)
     ssl_options_ = *ssl_options;
@@ -361,7 +390,8 @@ void StandaloneTestServer::InitializeOnIOThread() {
   if (!control_struct_->Init()
       || !control_struct_->ListenTo(protocol_, port_, ssl_options_)
       || !control_struct_->RegisterModule()
-      || !control_struct_->StartAuthentication()) {
+      || !control_struct_->StartAuthentication()
+      || !control_struct_->StartWorkerThread()) {
     ShutdownOnIOThread();
   } else {
     std::ostringstream uri;

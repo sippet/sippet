@@ -153,7 +153,7 @@ int ChromeStreamChannel::Send(const scoped_refptr<Message> &message,
   if (transport_.get() && transport_->socket()) {
     scoped_refptr<net::StringIOBuffer> string_buffer =
         new net::StringIOBuffer(message->ToString());
-    return transport_->socket()->Write(
+    return stream_socket_->Write(
         string_buffer.get(),
         string_buffer->size(),
         callback);
@@ -238,6 +238,8 @@ void ChromeStreamChannel::ProcessConnectDone(int status) {
     CloseTransportSocket();
   } else {
     ReportSuccessfulProxyConnection();
+    stream_socket_.reset(
+        new SequencedWriteStreamSocket(transport_->socket()));
   }
   RunUserConnectCallback(status);
 }
@@ -323,6 +325,7 @@ void ChromeStreamChannel::CloseTransportSocket() {
   if (transport_.get() && transport_->socket())
     transport_->socket()->Disconnect();
   transport_.reset();
+  stream_socket_.reset();
 }
 
 } // End of sippet namespace

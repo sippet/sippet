@@ -60,9 +60,13 @@ void Request::print(raw_ostream &os) const {
 }
 
 std::string Request::GetDialogId() {
+  std::string from_tag;
+  std::string to_tag;
   std::string call_id(get<CallId>()->value());
-  std::string from_tag(get<From>()->tag());
-  std::string to_tag(get<To>()->tag());
+  if (get<From>()->HasTag())
+    from_tag = get<From>()->tag();
+  if (get<To>()->HasTag())
+    to_tag = get<To>()->tag();
   std::ostringstream oss;
   oss << call_id << ":";
   if (direction() == Outgoing) {
