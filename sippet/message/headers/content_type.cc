@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/message/headers/content_type.h"
+#include "base/strings/string_util.h"
 
 namespace sippet {
 
@@ -14,8 +15,7 @@ MediaType::MediaType(const MediaType &other)
 }
 
 MediaType::MediaType(const std::string &type, const std::string &subtype)
-  : type_(type), subtype_(subtype) {
-  /* TODO: convert to lower case */
+  : type_(StringToLowerASCII(type)), subtype_(StringToLowerASCII(subtype)) {
 }
 
 MediaType::~MediaType() {
