@@ -53,18 +53,22 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   scoped_ptr<To> to(new To(to_uri));
   request->push_back(to.PassAs<Header>());
   
-  // Add the From header and a local tag (32-bit random string)
+  // Add the From header and a local tag (48-bit random string)
   scoped_ptr<From> from(new From(from_uri));
   from->set_tag(CreateTag());
   request->push_back(from.PassAs<Header>());
   
-  // The Call-ID is formed by a 32-bit random string
+  // The Call-ID is formed by a 120-bit random string
   scoped_ptr<CallId> call_id(new CallId(CreateCallId()));
   request->push_back(call_id.PassAs<Header>());
   
   // Cseq always contain the request method and a new (random) local sequence
-  if (local_sequence == 0)
+  if (local_sequence == 0) {
     local_sequence = Create16BitRandomInteger();
+    if (local_sequence == 0)
+      local_sequence = 1;
+  }
+
   scoped_ptr<Cseq> cseq(new Cseq(local_sequence, method));
   request->push_back(cseq.PassAs<Header>());
 
@@ -82,14 +86,6 @@ int UserAgent::Send(
     HandleDialogStateOnResponse(response);
   }
   return network_layer_->Send(message, callback);
-}
-
-std::string UserAgent::CreateTag() {
-  return Create32BitRandomString();
-}
-
-std::string UserAgent::CreateCallId() {
-  return Create32BitRandomString();
 }
 
 scoped_refptr<Dialog> UserAgent::HandleDialogStateOnResponse(
