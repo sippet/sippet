@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/message/headers/accept_encoding.h"
+#include "base/strings/string_util.h"
 
 namespace sippet {
 
@@ -14,8 +15,7 @@ Encoding::Encoding(const Encoding &other)
 }
 
 Encoding::Encoding(const single_value::value_type &value)
-  : single_value(value) {
-  /* TODO: convert to lower case */
+  : single_value(StringToLowerASCII(value)) {
 }
 
 Encoding &Encoding::operator=(const Encoding &other) {

@@ -177,7 +177,7 @@ void ChromeStreamChannel::Close() {
 }
 
 void ChromeStreamChannel::CloseWithError(int err) {
-  // TODO
+  stream_socket_->CloseWithError(err);
 }
 
 void ChromeStreamChannel::DetachDelegate() {
