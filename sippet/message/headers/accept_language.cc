@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/message/headers/accept_language.h"
+#include "base/strings/string_util.h"
 
 namespace sippet {
 
@@ -14,8 +15,7 @@ LanguageRange::LanguageRange(const LanguageRange &other)
 }
 
 LanguageRange::LanguageRange(const std::string &value)
-  : single_value(value) {
-  /* TODO: convert to lower case */
+  : single_value(StringToLowerASCII(value)) {
 }
 
 LanguageRange::~LanguageRange() {

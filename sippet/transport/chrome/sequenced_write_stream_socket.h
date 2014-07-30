@@ -55,6 +55,8 @@ class NET_EXPORT_PRIVATE SequencedWriteStreamSocket : public net::StreamSocket {
   virtual net::NextProto GetNegotiatedProtocol() const OVERRIDE;
   virtual bool GetSSLInfo(net::SSLInfo* ssl_info) OVERRIDE;
 
+  void CloseWithError(int err);
+
  private:
   net::StreamSocket* wrapped_socket_;
   base::WeakPtrFactory<SequencedWriteStreamSocket> weak_factory_;
@@ -70,7 +72,6 @@ class NET_EXPORT_PRIVATE SequencedWriteStreamSocket : public net::StreamSocket {
 
   std::deque<PendingBlock*> pending_messages_;
 
-  void CloseWithError(int err);
   void DidWrite(int result);
   void DidConsume(int result);
   void Pop(int result);
