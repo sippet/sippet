@@ -146,12 +146,6 @@ class UserAgent :
       OutgoingRequestMap;
   OutgoingRequestMap outgoing_requests_;
 
-  // Create a local tag
-  static std::string CreateTag();
-
-  // Create an unique Call-ID
-  static std::string CreateCallId();
-
   scoped_refptr<Dialog> HandleDialogStateOnResponse(
       const scoped_refptr<Response> &response);
   scoped_refptr<Dialog> HandleDialogStateOnError(

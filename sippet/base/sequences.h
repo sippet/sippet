@@ -12,10 +12,11 @@ namespace sippet {
 // Create a non-zero 16-bit random integer.
 inline
 unsigned Create16BitRandomInteger() {
-  char bytes[2];
+  unsigned char bytes[2];
   crypto::RandBytes(bytes, sizeof(bytes));
-  return static_cast<unsigned>(bytes[0]) |
-      (static_cast<unsigned>(bytes[1]) << 8);
+  unsigned result = bytes[0];
+  result = bytes[1] << 8;
+  return result;
 }
 
 } // End of sippet namespace

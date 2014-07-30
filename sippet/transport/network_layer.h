@@ -144,9 +144,6 @@ class NetworkLayer :
   NetworkLayer(Delegate *delegate,
                const NetworkSettings &network_settings = NetworkSettings());
 
-  // This is the magic cookie "z9hG4bK" defined in RFC 3261
-  static const char kMagicCookie[];
-
   // Register a ChannelFactory, responsible for opening client channels.
   // Registered managers are not owned and won't be deleted on |NetworkLayer|
   // destruction.

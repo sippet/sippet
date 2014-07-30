@@ -315,6 +315,10 @@ bool StandaloneTestServer::VerifyRequest(pjsip_rx_data *rdata) {
   pj_status_t status;
   const pj_str_t STR_REQUIRE = {"Require", 7};
 
+  char buf[1024];
+  pj_ssize_t size = pjsip_msg_print(rdata->msg_info.msg, buf, sizeof(buf));
+  VLOG(1) << "Incoming request:\n" << std::string(buf, size) << "\n";
+
   // A valid message must pass the following checks:
   // 1. Reasonable Syntax
   // 2. URI scheme
