@@ -18,6 +18,7 @@ class ClientSocketFactory;
 class ClientSocketHandle;
 class URLRequestContextGetter;
 class HttpNetworkSession;
+class IOBufferWithSize;
 }
 
 namespace sippet {
@@ -51,6 +52,15 @@ class ChromeStreamChannel : public Channel {
   virtual void DetachDelegate() OVERRIDE;
 
  private:
+  enum AsyncIOState {
+    // An I/O op is not in progress.
+    IDLE,
+    // A function has been posted to do the I/O.
+    POSTED,
+    // An async I/O operation is pending.
+    PENDING,
+  };
+
   friend class base::RefCountedThreadSafe<Channel>;
   virtual ~ChromeStreamChannel();
 
@@ -62,6 +72,12 @@ class ChromeStreamChannel : public Channel {
   void RunUserConnectCallback(int status);
   int ReconsiderProxyAfterError(int error);
   void ReportSuccessfulProxyConnection();
+
+  // Read loop functions.
+  void PostDoRead();
+  void DoRead();
+  void ProcessReadDone(int status);
+  void ProcessReceivedData();
 
   EndPoint destination_;
   Channel::Delegate *delegate_;
@@ -76,6 +92,7 @@ class ChromeStreamChannel : public Channel {
   scoped_ptr<net::ClientSocketHandle> transport_;
   scoped_ptr<SequencedWriteStreamSocket> stream_socket_;
 
+  bool is_connecting_;
   const net::SSLConfig ssl_config_;
   net::ProxyService::PacRequest* pac_request_;
   net::ProxyInfo proxy_info_;
@@ -84,10 +101,16 @@ class ChromeStreamChannel : public Channel {
   bool tried_direct_connect_fallback_;
   net::BoundNetLog bound_net_log_;
 
+  AsyncIOState read_state_;
+  scoped_refptr<net::IOBufferWithSize> read_buf_;
+  scoped_refptr<net::DrainableIOBuffer> drainable_read_buf_;
+  char *read_end_;
+  scoped_refptr<Message> current_message_;
+
   // The callback passed to Connect().
   net::CompletionCallback user_connect_callback_;
 
-  base::WeakPtrFactory<ChromeStreamChannel> weak_factory_;
+  base::WeakPtrFactory<ChromeStreamChannel> weak_ptr_factory_;
 
   DISALLOW_COPY_AND_ASSIGN(ChromeStreamChannel);
 };

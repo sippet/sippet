@@ -20,6 +20,9 @@
 
 namespace sippet {
 
+// This number will couple with quite long SIP messages
+const size_t kReadBufSize = 64U * 1024U;
+
 ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
       Channel::Delegate *delegate,
       net::ClientSocketFactory* client_socket_factory,
@@ -42,9 +45,13 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
               net::BoundNetLog::Make(
                   request_context_getter->GetURLRequestContext()->net_log(),
                   net::NetLog::SOURCE_SOCKET)),
-          weak_factory_(this),
+          weak_ptr_factory_(this),
           dest_host_port_pair_(destination.host(), destination.port()),
-          delegate_(delegate) {
+          delegate_(delegate),
+          read_buf_(new net::IOBufferWithSize(kReadBufSize)),
+          read_end_(0),
+          is_connecting_(false),
+          read_state_(IDLE) {
   DCHECK(request_context_getter.get());
   net::URLRequestContext* request_context =
       request_context_getter->GetURLRequestContext();
@@ -53,7 +60,7 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
   DCHECK_GT(dest_host_port_pair_.port(), 0);
   DCHECK(proxy_url_.is_valid());
   DCHECK(delegate_);
-
+  
   net::HttpNetworkSession::Params session_params;
   session_params.client_socket_factory = client_socket_factory;
   session_params.host_resolver = request_context->host_resolver();
@@ -125,7 +132,8 @@ bool ChromeStreamChannel::is_stream() const {
 }
 
 void ChromeStreamChannel::Connect() {
-  // TODO: check double call to Connect
+  DCHECK(!is_connecting_);
+
   tried_direct_connect_fallback_ = false;
  
   // First we try and resolve the proxy.
@@ -144,8 +152,10 @@ void ChromeStreamChannel::Connect() {
     message_loop->PostTask(
         FROM_HERE,
         base::Bind(&ChromeStreamChannel::ProcessProxyResolveDone,
-                   weak_factory_.GetWeakPtr(), status));
+                   weak_ptr_factory_.GetWeakPtr(), status));
   }
+
+  is_connecting_ = true;
 }
 
 int ChromeStreamChannel::Send(const scoped_refptr<Message> &message,
@@ -176,6 +186,7 @@ void ChromeStreamChannel::DetachDelegate() {
 
 void ChromeStreamChannel::RunUserConnectCallback(int status) {
   DCHECK_LE(status, net::OK);
+  is_connecting_ = false;
   delegate_->OnChannelConnected(this, status);
 }
 
@@ -240,6 +251,7 @@ void ChromeStreamChannel::ProcessConnectDone(int status) {
     ReportSuccessfulProxyConnection();
     stream_socket_.reset(
         new SequencedWriteStreamSocket(transport_->socket()));
+    PostDoRead();
   }
   RunUserConnectCallback(status);
 }
@@ -309,7 +321,7 @@ int ChromeStreamChannel::ReconsiderProxyAfterError(int error) {
     message_loop->PostTask(
         FROM_HERE,
         base::Bind(&ChromeStreamChannel::ProcessProxyResolveDone,
-                   weak_factory_.GetWeakPtr(), rv));
+                   weak_ptr_factory_.GetWeakPtr(), rv));
     // Since we potentially have another try to go (trying the direct connect)
     // set the return code code to ERR_IO_PENDING.
     rv = net::ERR_IO_PENDING;
@@ -326,6 +338,162 @@ void ChromeStreamChannel::CloseTransportSocket() {
     transport_->socket()->Disconnect();
   transport_.reset();
   stream_socket_.reset();
+  is_connecting_ = false;
+}
+
+void ChromeStreamChannel::PostDoRead() {
+  DCHECK(is_connected());
+  DCHECK_EQ(read_state_, IDLE);
+  base::MessageLoop* message_loop = base::MessageLoop::current();
+  CHECK(message_loop);
+  message_loop->PostTask(
+      FROM_HERE,
+      base::Bind(&ChromeStreamChannel::DoRead,
+                 weak_ptr_factory_.GetWeakPtr()));
+  read_state_ = POSTED;
+}
+
+void ChromeStreamChannel::DoRead() {
+  // It can happen case some previous callback destroys the channel
+  if (!is_connected())
+    return;
+
+  DCHECK_EQ(read_state_, POSTED);
+
+  // Once we call Read(), we cannot call StartTls() until the read
+  // finishes.  This is okay, as StartTls() is called only from a read
+  // handler (i.e., after a read finishes and before another read is
+  // done).
+  if (!drainable_read_buf_)
+    drainable_read_buf_ = new net::DrainableIOBuffer(read_buf_, read_buf_->size());
+  int status =
+      transport_->socket()->Read(
+          drainable_read_buf_.get(), drainable_read_buf_->size(),
+          base::Bind(&ChromeStreamChannel::ProcessReadDone,
+                     weak_ptr_factory_.GetWeakPtr()));
+  read_state_ = PENDING;
+  if (status != net::ERR_IO_PENDING) {
+    ProcessReadDone(status);
+  }
+}
+
+void ChromeStreamChannel::ProcessReadDone(int status) {
+  // It can happen case some previous callback destroys the channel
+  if (!is_connected())
+    return;
+
+  DCHECK_NE(status, net::ERR_IO_PENDING);
+  DCHECK_EQ(read_state_, PENDING);
+
+  read_state_ = IDLE;
+  if (status > 0) {
+    read_end_ = drainable_read_buf_->data() + static_cast<size_t>(status);
+    ProcessReceivedData();
+  } else if (status == 0) {
+    // Other side closed the connection.
+    delegate_->OnChannelClosed(this, net::OK);
+    Close();
+  } else {  // status < 0
+    delegate_->OnChannelClosed(this, status);
+    Close();
+  }
+}
+
+void ChromeStreamChannel::ProcessReceivedData() {
+  // Move to the buffer start, as we may have asked to read more data
+  if (drainable_read_buf_->data() > read_buf_->data())
+    drainable_read_buf_->SetOffset(0);
+
+  for (;;) {
+    if (!current_message_.get()) {
+      // Eliminate all blanks from the message start. They're used as
+      // keep-alive by several implementations.
+      while (drainable_read_buf_->data() != read_end_) {
+        switch (drainable_read_buf_->data()[0]) {
+          case '\r': case '\n':
+            drainable_read_buf_->DidConsume(1);
+            continue;
+        }
+        break;
+      }
+      if (drainable_read_buf_->data() == read_end_) {
+        // The reading buffer was full of empty lines, read more...
+        break;
+      }
+      base::StringPiece string_piece(drainable_read_buf_->data(),
+          read_end_ - drainable_read_buf_->data());
+      // CRLF is the standard, but we're accepting just LF
+      size_t end_size = 4;
+      size_t end = string_piece.find("\r\n\r\n");
+      if (end == base::StringPiece::npos) {
+        end = string_piece.find("\n\n");
+        end_size = 2;
+      }
+      if (end == base::StringPiece::npos) {
+        // Read more...
+        break;
+      }
+      std::string header(drainable_read_buf_->data(), end + end_size);
+      drainable_read_buf_->DidConsume(end + end_size);
+      current_message_ = Message::Parse(header);
+      if (!current_message_) {
+        // Close connection: bad protocol
+        delegate_->OnChannelClosed(this, net::ERR_INVALID_RESPONSE);
+        Close();
+        return;
+      }
+    }
+
+    DCHECK(current_message_);
+
+    // If there's no Content-Length, then we accept as if the content is empty
+    ContentLength *content_length = current_message_->get<ContentLength>();
+    if (content_length) {
+      if (content_length->value() > kReadBufSize) {
+        // Close the connection immediately: the server is trying to send a
+        // too large content. Maximum size allowed is 64kb.
+        delegate_->OnChannelClosed(this, net::ERR_MSG_TOO_BIG);
+        Close();
+        return;
+      }
+      if (content_length->value() >
+          static_cast<unsigned>(read_end_ - drainable_read_buf_->data())) {
+        // Read more...
+        break;
+      } else if (content_length->value() > 0) {
+        std::string content(drainable_read_buf_->data(),
+                            content_length->value());
+        drainable_read_buf_->DidConsume(content_length->value());
+        current_message_->set_content(content);
+      }
+    }
+    
+    delegate_->OnIncomingMessage(this, current_message_);
+    current_message_ = NULL;
+
+  } while (read_end_ - drainable_read_buf_->data() > 0);
+
+  if (drainable_read_buf_->data() == read_buf_->data()) {
+    // Close the connection: the server is trying to send a message (header
+    // or content) that exceeds the maximum size allowed (64kb).
+    delegate_->OnChannelClosed(this, net::ERR_MSG_TOO_BIG);
+    Close();
+    return;
+  }
+  
+  if (read_end_ - drainable_read_buf_->data() > 0) {
+    // Rearrange the still pending data to the beginning of the buffer.
+    size_t pending_bytes = read_end_ - drainable_read_buf_->data();
+    memmove(read_buf_->data(), drainable_read_buf_->data(), pending_bytes);
+
+    // Move the reading buffer after the pending bytes
+    drainable_read_buf_->SetOffset(pending_bytes);
+  } else {
+    // The next read will take a clean buffer
+    drainable_read_buf_->SetOffset(0);
+  }
+
+  PostDoRead();
 }
 
 } // End of sippet namespace
