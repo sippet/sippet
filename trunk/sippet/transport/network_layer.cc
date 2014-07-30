@@ -7,6 +7,7 @@
 #include "base/stl_util.h"
 #include "base/strings/string_util.h"
 #include "net/base/net_errors.h"
+#include "sippet/base/tags.h"
 #include "sippet/message/headers/via.h"
 #include "sippet/message/headers/cseq.h"
 #include "sippet/transport/channel.h"
@@ -15,8 +16,6 @@
 #include "sippet/transport/time_delta_factory.h"
 
 namespace sippet {
-
-const char NetworkLayer::kMagicCookie[] = "z9hG4bK";
 
 NetworkLayer::ChannelContext::ChannelContext()
   : refs_(0) {

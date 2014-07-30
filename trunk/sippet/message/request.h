@@ -87,9 +87,6 @@ private:
   int CreateAck(const std::string &remote_tag,
                 scoped_refptr<Request> &ack);
 
-  // Create a local tag for responses.
-  static std::string CreateTag();
-
   scoped_refptr<Response> CreateResponseInternal(
       int response_code,
       const std::string &reason_phrase);

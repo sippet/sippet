@@ -155,10 +155,6 @@ int Request::CreateCancel(scoped_refptr<Request> &cancel) {
   return net::OK;
 }
 
-std::string Request::CreateTag() {
-  return Create32BitRandomString();
-}
-
 scoped_refptr<Response> Request::CreateResponseInternal(
     int response_code,
     const std::string &reason_phrase) {

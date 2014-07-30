@@ -30,6 +30,7 @@
         'base/stl_extras.h',
         'base/string_extras.h',
         'base/tags.h',
+        'base/tags.cc',
         'base/type_traits.h',
         'base/user_agent_utils.h',
         'base/user_agent_utils.cc',

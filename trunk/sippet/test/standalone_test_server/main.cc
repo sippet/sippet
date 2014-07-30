@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
     printf("Error: could not initialize logging. Exiting.\n");
     return -1;
   }
+  logging::SetMinLogLevel(-10);
 
   if (command_line->GetSwitches().empty() ||
       command_line->HasSwitch("help")) {
