@@ -61,13 +61,15 @@ EndPoint EndPoint::FromString(const std::string& str) {
 EndPoint EndPoint::FromSipURI(const SipURI& uri) {
   std::pair<bool, std::string> result =
     uri.parameter("transport");
+  // There should be no transport parameter when using SIPS
+  if (uri.SchemeIsSecure() && result.first) {
+    NOTREACHED() << "'sips' scheme doesn't accept transport parameter";
+    return EndPoint();
+  }
   // The default transport is UDP.
   Protocol protocol = (!result.first)
-                    ? Protocol::UDP
+                    ? (uri.SchemeIsSecure() ? Protocol::TLS : Protocol::UDP)
                     : Protocol(result.second);
-  // There's no UDP when SIPS
-  if (protocol == Protocol::UDP && uri.SchemeIs("sips"))
-    return EndPoint();
   return EndPoint(uri.host(), uri.EffectiveIntPort(), protocol);
 }
 

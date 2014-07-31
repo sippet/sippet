@@ -70,6 +70,7 @@ class ChromeStreamChannel : public Channel {
 
   void CloseTransportSocket();
   void RunUserConnectCallback(int status);
+  void RunUserChannelClosed(int status);
   int ReconsiderProxyAfterError(int error);
   void ReportSuccessfulProxyConnection();
 
@@ -79,6 +80,10 @@ class ChromeStreamChannel : public Channel {
   void ProcessReadDone(int status);
   void ProcessReceivedData();
 
+  // TLS related functions
+  void StartTls();
+  void ProcessSSLConnectDone(int status);
+
   EndPoint destination_;
   Channel::Delegate *delegate_;
 
@@ -87,6 +92,8 @@ class ChromeStreamChannel : public Channel {
   net::CompletionCallback connect_callback_;
 
   scoped_refptr<net::HttpNetworkSession> network_session_;
+  scoped_refptr<net::URLRequestContextGetter> request_context_getter_;
+  net::ClientSocketFactory* client_socket_factory_;
 
   // The transport socket.
   scoped_ptr<net::ClientSocketHandle> transport_;
