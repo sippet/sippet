@@ -119,9 +119,10 @@ int main(int argc, char **argv) {
 
   // Register the channel factory
   net::SSLConfig ssl_config;
+  ssl_config.version_min = net::SSL_PROTOCOL_VERSION_TLS1;
   scoped_ptr<ChromeChannelFactory> channel_factory(
       new ChromeChannelFactory(client_socket_factory,
-                                       request_context_getter, ssl_config));
+                               request_context_getter, ssl_config));
   network_layer->RegisterChannelFactory(Protocol::TCP, channel_factory.get());
   network_layer->RegisterChannelFactory(Protocol::TLS, channel_factory.get());
 
@@ -130,13 +131,13 @@ int main(int argc, char **argv) {
   scoped_refptr<Request> request =
       user_agent->CreateRequest(
           Method::REGISTER,
-          GURL("sip:localhost;transport=TCP"),
+          GURL(registrar_uri),
           GURL("sip:test@localhost"),
           GURL("sip:test@localhost"));
 
   user_agent->Send(request, base::Bind(&RequestSent));
 
-  /*
+  /* TODO
   // Set the network layer and start the login process
   login_handler->SetNetworkLayer(network_layer.get());
   login_handler->Login(username, password, username, SipURI(registrar_uri));
