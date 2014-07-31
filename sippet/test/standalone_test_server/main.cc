@@ -8,6 +8,7 @@
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
+#include "base/path_service.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/message_loop/message_loop.h"
 #include "sippet/uri/uri.h"
@@ -61,6 +62,13 @@ int main(int argc, char *argv[]) {
   } else if (command_line->HasSwitch("tls")) {
     protocol = Protocol::TLS;
     if (port == -1) port = 5061;
+
+    base::FilePath certs_dir;
+    PathService::Get(base::DIR_SOURCE_ROOT, &certs_dir);
+    certs_dir = certs_dir.Append(FILE_PATH_LITERAL("net/data/ssl/certificates"));
+    certs_dir = certs_dir.NormalizePathSeparators();
+
+    ssl_options.certificate_file = certs_dir.AppendASCII("ok_cert.pem");
   }
 
   scoped_ptr<StandaloneTestServer> server(
