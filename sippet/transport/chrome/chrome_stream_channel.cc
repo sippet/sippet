@@ -13,6 +13,7 @@
 #include "net/base/net_errors.h"
 #include "net/http/http_network_session.h"
 #include "net/socket/client_socket_handle.h"
+#include "net/socket/client_socket_factory.h"
 #include "net/socket/client_socket_pool_manager.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_getter.h"
@@ -37,8 +38,8 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
           ssl_config_(ssl_config),
           pac_request_(NULL),
           destination_(destination),
-          // Assume that we intend to do TLS on this socket; all
-          // current use cases do.
+          // Assume that we intend to do TLS on this socket; that means that
+          // if a proxy is found, then CONNECT will be used on it first.
           proxy_url_("https://" + destination.hostport().ToString()),
           tried_direct_connect_fallback_(false),
           bound_net_log_(
@@ -49,9 +50,11 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
           dest_host_port_pair_(destination.host(), destination.port()),
           delegate_(delegate),
           read_buf_(new net::IOBufferWithSize(kReadBufSize)),
-          read_end_(0),
+          read_end_(NULL),
           is_connecting_(false),
-          read_state_(IDLE) {
+          read_state_(IDLE),
+          request_context_getter_(request_context_getter),
+          client_socket_factory_(client_socket_factory) {
   DCHECK(request_context_getter.get());
   net::URLRequestContext* request_context =
       request_context_getter->GetURLRequestContext();
@@ -190,6 +193,12 @@ void ChromeStreamChannel::RunUserConnectCallback(int status) {
   delegate_->OnChannelConnected(this, status);
 }
 
+void ChromeStreamChannel::RunUserChannelClosed(int status) {
+  DCHECK_LE(status, net::OK);
+  is_connecting_ = false;
+  delegate_->OnChannelClosed(this, status);
+}
+
 // Always runs asynchronously.
 void ChromeStreamChannel::ProcessProxyResolveDone(int status) {
   pac_request_ = NULL;
@@ -251,9 +260,19 @@ void ChromeStreamChannel::ProcessConnectDone(int status) {
     ReportSuccessfulProxyConnection();
     stream_socket_.reset(
         new SequencedWriteStreamSocket(transport_->socket()));
-    PostDoRead();
   }
-  RunUserConnectCallback(status);
+  if (status != net::OK) {
+    // If the connection failed, notify immediately
+    RunUserConnectCallback(status);
+  } else if (destination_.protocol() != Protocol::TLS) {
+    // If it's a normal TCP connection, start reading and report to delegate
+    // that the connection was successful
+    PostDoRead();
+    RunUserConnectCallback(net::OK);
+  } else {
+    // Otherwise, start TLS now
+    StartTls();
+  }
 }
 
 int ChromeStreamChannel::ReconsiderProxyAfterError(int error) {
@@ -339,6 +358,7 @@ void ChromeStreamChannel::CloseTransportSocket() {
   transport_.reset();
   stream_socket_.reset();
   is_connecting_ = false;
+  weak_ptr_factory_.InvalidateWeakPtrs();
 }
 
 void ChromeStreamChannel::PostDoRead() {
@@ -354,10 +374,7 @@ void ChromeStreamChannel::PostDoRead() {
 }
 
 void ChromeStreamChannel::DoRead() {
-  // It can happen case some previous callback destroys the channel
-  if (!is_connected())
-    return;
-
+  DCHECK(is_connected());
   DCHECK_EQ(read_state_, POSTED);
 
   // Once we call Read(), we cannot call StartTls() until the read
@@ -378,10 +395,6 @@ void ChromeStreamChannel::DoRead() {
 }
 
 void ChromeStreamChannel::ProcessReadDone(int status) {
-  // It can happen case some previous callback destroys the channel
-  if (!is_connected())
-    return;
-
   DCHECK_NE(status, net::ERR_IO_PENDING);
   DCHECK_EQ(read_state_, PENDING);
 
@@ -391,15 +404,17 @@ void ChromeStreamChannel::ProcessReadDone(int status) {
     ProcessReceivedData();
   } else if (status == 0) {
     // Other side closed the connection.
-    delegate_->OnChannelClosed(this, net::OK);
-    Close();
+    RunUserChannelClosed(net::OK);
   } else {  // status < 0
-    delegate_->OnChannelClosed(this, status);
-    Close();
+    RunUserChannelClosed(status);
   }
 }
 
 void ChromeStreamChannel::ProcessReceivedData() {
+  DCHECK(is_connected());
+  DCHECK(read_end_);
+  DCHECK_EQ(read_state_, IDLE);
+
   // Move to the buffer start, as we may have asked to read more data
   if (drainable_read_buf_->data() > read_buf_->data())
     drainable_read_buf_->SetOffset(0);
@@ -438,8 +453,7 @@ void ChromeStreamChannel::ProcessReceivedData() {
       current_message_ = Message::Parse(header);
       if (!current_message_) {
         // Close connection: bad protocol
-        delegate_->OnChannelClosed(this, net::ERR_INVALID_RESPONSE);
-        Close();
+        RunUserChannelClosed(net::ERR_INVALID_RESPONSE);
         return;
       }
     }
@@ -452,8 +466,7 @@ void ChromeStreamChannel::ProcessReceivedData() {
       if (content_length->value() > kReadBufSize) {
         // Close the connection immediately: the server is trying to send a
         // too large content. Maximum size allowed is 64kb.
-        delegate_->OnChannelClosed(this, net::ERR_MSG_TOO_BIG);
-        Close();
+        RunUserChannelClosed(net::ERR_MSG_TOO_BIG);
         return;
       }
       if (content_length->value() >
@@ -476,8 +489,7 @@ void ChromeStreamChannel::ProcessReceivedData() {
   if (drainable_read_buf_->data() == read_buf_->data()) {
     // Close the connection: the server is trying to send a message (header
     // or content) that exceeds the maximum size allowed (64kb).
-    delegate_->OnChannelClosed(this, net::ERR_MSG_TOO_BIG);
-    Close();
+    RunUserChannelClosed(net::ERR_MSG_TOO_BIG);
     return;
   }
   
@@ -493,6 +505,55 @@ void ChromeStreamChannel::ProcessReceivedData() {
     drainable_read_buf_->SetOffset(0);
   }
 
+  read_end_ = NULL;
+
+  PostDoRead();
+}
+
+void ChromeStreamChannel::StartTls() {
+  DCHECK(is_connected());
+  DCHECK(destination_.protocol().Equals(Protocol::TLS));
+  DCHECK_EQ(read_state_, IDLE);
+
+  scoped_ptr<net::ClientSocketHandle> socket_handle(
+      new net::ClientSocketHandle());
+  socket_handle->SetSocket(transport_->PassSocket().Pass());
+
+  net::SSLClientSocketContext context;
+  context.cert_verifier =
+      request_context_getter_->GetURLRequestContext()->cert_verifier();
+  context.server_bound_cert_service =
+      request_context_getter_->GetURLRequestContext()->server_bound_cert_service();
+  context.transport_security_state =
+      request_context_getter_->GetURLRequestContext()->transport_security_state();
+
+  DCHECK(context.transport_security_state);
+
+  transport_->SetSocket(
+      client_socket_factory_->CreateSSLClientSocket(
+          socket_handle.Pass(), dest_host_port_pair_, ssl_config_, context)
+                .PassAs<net::StreamSocket>());
+  
+  int status = transport_->socket()->Connect(
+      base::Bind(&ChromeStreamChannel::ProcessSSLConnectDone,
+                 weak_ptr_factory_.GetWeakPtr()));
+  if (status != net::ERR_IO_PENDING) {
+    base::MessageLoop* message_loop = base::MessageLoop::current();
+    CHECK(message_loop);
+    message_loop->PostTask(
+        FROM_HERE,
+        base::Bind(&ChromeStreamChannel::ProcessSSLConnectDone,
+                   weak_ptr_factory_.GetWeakPtr(), status));
+  }
+}
+
+void ChromeStreamChannel::ProcessSSLConnectDone(int status) {
+  DCHECK_NE(status, net::ERR_IO_PENDING);
+  DCHECK_EQ(read_state_, IDLE);
+  DCHECK(!read_end_);
+  RunUserConnectCallback(status);
+  if (status != net::OK)
+    return;
   PostDoRead();
 }
 
