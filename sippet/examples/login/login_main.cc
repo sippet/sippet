@@ -86,10 +86,10 @@ int main(int argc, char **argv) {
   	const char *registrar_uri_;
   } args[] = {
 	  { "udp", "sip:localhost" },
-	  { "tcp", "sip:localhost;transport=TCP" },
+	  { "tcp", "sip:localhost;transport=tcp" },
 	  { "tls", "sips:localhost" },
-	  { "ws", "sip:localhost;transport=WS" },
-	  { "wss", "sips:localhost;transport=WS" },
+	  { "ws", "sip:localhost;transport=ws" },
+	  { "wss", "sips:localhost;transport=ws" },
   };
 
   for (int i = 0; i < arraysize(args); i++) {
