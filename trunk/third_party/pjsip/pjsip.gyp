@@ -22,6 +22,13 @@
       '<(DEPTH)/third_party/speex/speex.gyp:libspeex',
       '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
     ],
+    'link_settings': {
+      'msvs_settings': {
+        'VCLinkerTool': {
+          'IgnoreDefaultLibraryNames': ['libeay32.lib', 'ssleay32.lib'],
+        },
+      }
+    },
     'direct_dependent_settings': {
       'include_dirs': [
         './overrides',
@@ -71,8 +78,7 @@
         '<(pjsip_source)/pjlib/src/pj/rbtree.c',
         '<(pjsip_source)/pjlib/src/pj/ssl_sock_common.c',
         '<(pjsip_source)/pjlib/src/pj/ssl_sock_dump.c',
-        # PJSIP launches libeay32 and ssleay32 undesirable dependencies, so:
-        'overrides/src/pj/ssl_sock_ossl.c',
+        '<(pjsip_source)/pjlib/src/pj/ssl_sock_ossl.c',
         '<(pjsip_source)/pjlib/src/pj/sock_common.c',
         '<(pjsip_source)/pjlib/src/pj/sock_qos_common.c',
         '<(pjsip_source)/pjlib/src/pj/sock_qos_bsd.c',
