@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
     certs_dir = certs_dir.NormalizePathSeparators();
 
     ssl_options.certificate_file = certs_dir.AppendASCII("ok_cert.pem");
+    ssl_options.privatekey_file = certs_dir.AppendASCII("ok_cert.pem");
   }
 
   scoped_ptr<StandaloneTestServer> server(

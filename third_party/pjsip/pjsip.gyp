@@ -78,7 +78,7 @@
         '<(pjsip_source)/pjlib/src/pj/rbtree.c',
         '<(pjsip_source)/pjlib/src/pj/ssl_sock_common.c',
         '<(pjsip_source)/pjlib/src/pj/ssl_sock_dump.c',
-        '<(pjsip_source)/pjlib/src/pj/ssl_sock_ossl.c',
+        'overrides/src/pj/ssl_sock_ossl.c',
         '<(pjsip_source)/pjlib/src/pj/sock_common.c',
         '<(pjsip_source)/pjlib/src/pj/sock_qos_common.c',
         '<(pjsip_source)/pjlib/src/pj/sock_qos_bsd.c',

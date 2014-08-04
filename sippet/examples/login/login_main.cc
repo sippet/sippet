@@ -12,6 +12,7 @@
 #include "base/values.h"
 #include "base/file_util.h"
 #include "base/bind.h"
+#include "base/path_service.h"
 #include "base/message_loop/message_loop.h"
 #include "net/base/net_errors.h"
 #include "net/socket/client_socket_factory.h"
@@ -120,6 +121,21 @@ int main(int argc, char **argv) {
   // Register the channel factory
   net::SSLConfig ssl_config;
   ssl_config.version_min = net::SSL_PROTOCOL_VERSION_TLS1;
+
+#if 0
+  base::FilePath certs_dir;
+  PathService::Get(base::DIR_SOURCE_ROOT, &certs_dir);
+  certs_dir = certs_dir.Append(FILE_PATH_LITERAL("net/data/ssl/certificates"));
+  certs_dir = certs_dir.NormalizePathSeparators();
+
+  base::FilePath cert_path = certs_dir.AppendASCII("ok_cert.pem");
+  std::string cert_data;
+  base::ReadFileToString(cert_path, &cert_data);
+  net::CertificateList certs_in_file =
+      net::X509Certificate::CreateCertificateListFromBytes(
+          cert_data.data(), cert_data.size(), net::X509Certificate::FORMAT_AUTO);
+#endif
+
   scoped_ptr<ChromeChannelFactory> channel_factory(
       new ChromeChannelFactory(client_socket_factory,
                                request_context_getter, ssl_config));
