@@ -100,7 +100,7 @@ class ChromeStreamChannel : public Channel {
   scoped_ptr<SequencedWriteStreamSocket> stream_socket_;
 
   bool is_connecting_;
-  const net::SSLConfig ssl_config_;
+  net::SSLConfig ssl_config_;
   net::ProxyService::PacRequest* pac_request_;
   net::ProxyInfo proxy_info_;
   const net::HostPortPair dest_host_port_pair_;
