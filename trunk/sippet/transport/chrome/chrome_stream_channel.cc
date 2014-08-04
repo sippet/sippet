@@ -9,6 +9,7 @@
 #include "base/bind_helpers.h"
 #include "base/compiler_specific.h"
 #include "base/logging.h"
+#include "base/strings/string_number_conversions.h"
 #include "net/base/io_buffer.h"
 #include "net/base/net_errors.h"
 #include "net/http/http_network_session.h"
@@ -17,6 +18,7 @@
 #include "net/socket/client_socket_pool_manager.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_getter.h"
+#include "net/ssl/ssl_cert_request_info.h"
 #include "sippet/message/message.h"
 
 namespace sippet {
@@ -227,20 +229,32 @@ void ChromeStreamChannel::ProcessProxyResolveDone(int status) {
     } else {
       CloseTransportSocket();
       RunUserConnectCallback(status);
+      // |this| may be deleted after this call.
       return;
     }
   }
 
   transport_.reset(new net::ClientSocketHandle);
   // Now that we have resolved the proxy, we need to connect.
-  status = net::InitSocketHandleForRawConnect(
-      dest_host_port_pair_, network_session_.get(), proxy_info_, ssl_config_,
-      ssl_config_, net::kPrivacyModeDisabled, bound_net_log_, transport_.get(),
-      connect_callback_);
-  if (status != net::ERR_IO_PENDING) {
-    // Since this method is always called asynchronously. it is OK to call
-    // ProcessConnectDone synchronously.
-    ProcessConnectDone(status);
+  if (destination_.protocol() == Protocol::WS) {
+    /* TODO
+    status = net::InitSocketHandleForWebSocketRequest(
+        GURL("http://" + destination_.hostport().ToString() + "/"),
+        request_extra_headers, 0, net::DEFAULT_PRIORITY, network_session_,
+        proxy_info_, false, false, ssl_config_, ssl_config_,
+        net::kPrivacyModeDisabled, bound_net_log_, transport_.get(),
+        resolution_callback_, connect_callback_);
+     */
+  } else {
+    status = net::InitSocketHandleForRawConnect(
+        dest_host_port_pair_, network_session_.get(), proxy_info_, ssl_config_,
+        ssl_config_, net::kPrivacyModeDisabled, bound_net_log_, transport_.get(),
+        connect_callback_);
+    if (status != net::ERR_IO_PENDING) {
+      // Since this method is always called asynchronously. it is OK to call
+      // ProcessConnectDone synchronously.
+      ProcessConnectDone(status);
+    }
   }
 }
 
@@ -264,11 +278,13 @@ void ChromeStreamChannel::ProcessConnectDone(int status) {
   if (status != net::OK) {
     // If the connection failed, notify immediately
     RunUserConnectCallback(status);
+    // |this| may be deleted after this call.
   } else if (destination_.protocol() != Protocol::TLS) {
     // If it's a normal TCP connection, start reading and report to delegate
     // that the connection was successful
     PostDoRead();
     RunUserConnectCallback(net::OK);
+    // |this| may be deleted after this call.
   } else {
     // Otherwise, start TLS now
     StartTls();
@@ -377,10 +393,6 @@ void ChromeStreamChannel::DoRead() {
   DCHECK(is_connected());
   DCHECK_EQ(read_state_, POSTED);
 
-  // Once we call Read(), we cannot call StartTls() until the read
-  // finishes.  This is okay, as StartTls() is called only from a read
-  // handler (i.e., after a read finishes and before another read is
-  // done).
   if (!drainable_read_buf_)
     drainable_read_buf_ = new net::DrainableIOBuffer(read_buf_, read_buf_->size());
   int status =
@@ -551,10 +563,42 @@ void ChromeStreamChannel::ProcessSSLConnectDone(int status) {
   DCHECK_NE(status, net::ERR_IO_PENDING);
   DCHECK_EQ(read_state_, IDLE);
   DCHECK(!read_end_);
-  RunUserConnectCallback(status);
-  if (status != net::OK)
+
+  net::SSLClientSocket *ssl_socket =
+    static_cast<net::SSLClientSocket*>(transport_->socket());
+  net::SSLInfo ssl_info;
+  ssl_socket->GetSSLInfo(&ssl_info);
+
+#if 0
+  // Add the bad certificate to the set of allowed certificates in the
+  // SSL config object. This data structure will be consulted after calling
+  // RestartIgnoringLastError(). And the user will be asked interactively
+  // before RestartIgnoringLastError() is ever called.
+  net::SSLConfig::CertAndStatus bad_cert;
+
+  // |ssl_info_.cert| may be NULL if we failed to create
+  // X509Certificate for whatever reason, but normally it shouldn't
+  // happen, unless this code is used inside sandbox.
+  if (ssl_info.cert.get() == NULL ||
+      !net::X509Certificate::GetDEREncoded(ssl_info.cert->os_cert_handle(),
+                                           &bad_cert.der_cert)) {
     return;
-  PostDoRead();
+  }
+  bad_cert.cert_status = ssl_info.cert_status;
+  ssl_config_.allowed_bad_certs.push_back(bad_cert);
+
+  int load_flags = 0; // TODO
+  if (session_->params().ignore_certificate_errors)
+    load_flags |= net::LOAD_IGNORE_ALL_CERT_ERRORS;
+  if (ssl_socket->IgnoreCertError(status, load_flags))
+    return OK;
+  return error;
+#endif
+  
+  if (status == net::OK)
+    PostDoRead();
+  RunUserConnectCallback(status);
+  // |this| may be deleted after this call.
 }
 
 } // End of sippet namespace
