@@ -6,6 +6,7 @@
 #define SIPPET_TRANSPORT_CLIENT_TRANSACTION_IMPL_H_
 
 #include "base/timer/timer.h"
+#include "base/memory/weak_ptr.h"
 #include "sippet/transport/client_transaction.h"
 #include "sippet/transport/transaction_delegate.h"
 #include "sippet/transport/time_delta_factory.h"

@@ -26,34 +26,13 @@ namespace sippet {
 // Each enqueued frame will be notified after write completion.
 //
 // There are no bounds on the local buffer size. Use carefully.
-class NET_EXPORT_PRIVATE SequencedWriteStreamSocket : public net::StreamSocket {
+class SequencedWriteStreamSocket {
  public:
   SequencedWriteStreamSocket(net::StreamSocket* socket_to_wrap);
   virtual ~SequencedWriteStreamSocket();
 
-  // Socket interface
-  virtual int Read(net::IOBuffer* buf, int buf_len,
-                   const net::CompletionCallback& callback) OVERRIDE;
-  virtual int Write(net::IOBuffer* buf, int buf_len,
-                    const net::CompletionCallback& callback) OVERRIDE;
-  virtual bool SetReceiveBufferSize(int32 size) OVERRIDE;
-  virtual bool SetSendBufferSize(int32 size) OVERRIDE;
-
-  // StreamSocket interface
-  virtual int Connect(const net::CompletionCallback& callback) OVERRIDE;
-  virtual void Disconnect() OVERRIDE;
-  virtual bool IsConnected() const OVERRIDE;
-  virtual bool IsConnectedAndIdle() const OVERRIDE;
-  virtual int GetPeerAddress(net::IPEndPoint* address) const OVERRIDE;
-  virtual int GetLocalAddress(net::IPEndPoint* address) const OVERRIDE;
-  virtual const net::BoundNetLog& NetLog() const OVERRIDE;
-  virtual void SetSubresourceSpeculation() OVERRIDE;
-  virtual void SetOmniboxSpeculation() OVERRIDE;
-  virtual bool WasEverUsed() const OVERRIDE;
-  virtual bool UsingTCPFastOpen() const OVERRIDE;
-  virtual bool WasNpnNegotiated() const OVERRIDE;
-  virtual net::NextProto GetNegotiatedProtocol() const OVERRIDE;
-  virtual bool GetSSLInfo(net::SSLInfo* ssl_info) OVERRIDE;
+  int Write(net::IOBuffer* buf, int buf_len,
+            const net::CompletionCallback& callback);
 
   void CloseWithError(int err);
 
