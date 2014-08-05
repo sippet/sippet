@@ -98,6 +98,13 @@ void ClientTransactionImpl::HandleIncomingResponse(
       return;
   }
 
+  if (mode_ == MODE_INVITE) {
+    if (next_state_ != STATE_CALLING)
+      retryTimer_.Stop();
+  } else {
+    if (next_state_ == STATE_COMPLETED)
+      retryTimer_.Stop();
+  }
   if (mode_ == MODE_INVITE
       && response_code/100 >= 3) {
     SendAck(response->get<To>()->tag());
@@ -123,10 +130,11 @@ void ClientTransactionImpl::Close() {
 
 void ClientTransactionImpl::OnRetransmit() {
   DCHECK(!channel_->is_stream());
-  if (MODE_INVITE == mode_)
+  if (MODE_INVITE == mode_) {
     DCHECK(STATE_CALLING == next_state_);
-  else
+  } else {
     DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
+  }
   int result = channel_->Send(initial_request_,
     base::Bind(&ClientTransactionImpl::OnWrite, this));
   if (net::ERR_IO_PENDING != result)
@@ -134,10 +142,11 @@ void ClientTransactionImpl::OnRetransmit() {
 }
 
 void ClientTransactionImpl::OnTimedOut() {
-  if (MODE_INVITE == mode_)
+  if (MODE_INVITE == mode_) {
     DCHECK(STATE_CALLING == next_state_);
-  else
+  } else {
     DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
+  }
   next_state_ = STATE_TERMINATED;
   delegate_->OnTimedOut(initial_request_);
   Terminate();
@@ -153,8 +162,7 @@ void ClientTransactionImpl::OnTerminated() {
 void ClientTransactionImpl::OnWrite(int result) {
   if (net::OK == result) {
     ScheduleRetry();
-  }
-  else if (net::ERR_IO_PENDING != result) {
+  } else if (net::ERR_IO_PENDING != result) {
     delegate_->OnTransportError(initial_request_, result);
   }
 }
@@ -173,23 +181,23 @@ void ClientTransactionImpl::SendAck(const std::string &to_tag) {
 
 void ClientTransactionImpl::ScheduleRetry() {
   retryTimer_.Start(FROM_HERE,
-    time_delta_provider_->GetNextRetryDelay(),
-    base::Bind(&ClientTransactionImpl::OnRetransmit,
-      weak_factory_.GetWeakPtr()));
+      time_delta_provider_->GetNextRetryDelay(),
+      base::Bind(&ClientTransactionImpl::OnRetransmit,
+          weak_factory_.GetWeakPtr()));
 }
 
 void ClientTransactionImpl::ScheduleTimeout() {
   timedOutTimer_.Start(FROM_HERE,
-    time_delta_provider_->GetTimeoutDelay(),
-    base::Bind(&ClientTransactionImpl::OnTimedOut,
-      weak_factory_.GetWeakPtr()));
+      time_delta_provider_->GetTimeoutDelay(),
+      base::Bind(&ClientTransactionImpl::OnTimedOut,
+          weak_factory_.GetWeakPtr()));
 }
 
 void ClientTransactionImpl::ScheduleTerminate() {
   terminateTimer_.Start(FROM_HERE,
-    time_delta_provider_->GetTerminateDelay(),
-    base::Bind(&ClientTransactionImpl::OnTerminated,
-      weak_factory_.GetWeakPtr()));
+      time_delta_provider_->GetTerminateDelay(),
+      base::Bind(&ClientTransactionImpl::OnTerminated,
+          weak_factory_.GetWeakPtr()));
 }
 
 void ClientTransactionImpl::Terminate() {

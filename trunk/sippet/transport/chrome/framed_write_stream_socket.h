@@ -17,6 +17,7 @@ class TimeDelta;
 namespace net {
 class IPEndPoint;
 class IOBufferWithSize;
+class DatagramClientSocket;
 }
 
 namespace sippet {
@@ -27,38 +28,18 @@ namespace sippet {
 // boundaries.
 //
 // There are no bounds on the local buffer size. Use carefully.
-class FramedWriteStreamSocket
-  : public net::StreamSocket {
+class FramedWriteStreamSocket {
  public:
-  FramedWriteStreamSocket(net::StreamSocket* socket_to_wrap);
+  FramedWriteStreamSocket(net::Socket* socket_to_wrap);
   virtual ~FramedWriteStreamSocket();
 
-  // Socket interface
-  virtual int Read(net::IOBuffer* buf, int buf_len,
-                   const net::CompletionCallback& callback) OVERRIDE;
-  virtual int Write(net::IOBuffer* buf, int buf_len,
-                    const net::CompletionCallback& callback) OVERRIDE;
-  virtual bool SetReceiveBufferSize(int32 size) OVERRIDE;
-  virtual bool SetSendBufferSize(int32 size) OVERRIDE;
+  int Write(net::IOBuffer* buf, int buf_len,
+            const net::CompletionCallback& callback);
 
-  // StreamSocket interface
-  virtual int Connect(const net::CompletionCallback& callback) OVERRIDE;
-  virtual void Disconnect() OVERRIDE;
-  virtual bool IsConnected() const OVERRIDE;
-  virtual bool IsConnectedAndIdle() const OVERRIDE;
-  virtual int GetPeerAddress(net::IPEndPoint* address) const OVERRIDE;
-  virtual int GetLocalAddress(net::IPEndPoint* address) const OVERRIDE;
-  virtual const net::BoundNetLog& NetLog() const OVERRIDE;
-  virtual void SetSubresourceSpeculation() OVERRIDE;
-  virtual void SetOmniboxSpeculation() OVERRIDE;
-  virtual bool WasEverUsed() const OVERRIDE;
-  virtual bool UsingTCPFastOpen() const OVERRIDE;
-  virtual bool WasNpnNegotiated() const OVERRIDE;
-  virtual net::NextProto GetNegotiatedProtocol() const OVERRIDE;
-  virtual bool GetSSLInfo(net::SSLInfo* ssl_info) OVERRIDE;
+  void CloseWithError(int err);
 
  private:
-  scoped_ptr<net::StreamSocket> wrapped_socket_;
+  net::Socket *wrapped_socket_;
   base::WeakPtrFactory<FramedWriteStreamSocket> weak_factory_;
   int error_;
 
@@ -73,7 +54,6 @@ class FramedWriteStreamSocket
 
   std::deque<PendingFrame*> pending_messages_;
 
-  void CloseWithError(int err);
   void DidWrite(int result);
   void DidConsume();
   void Pop(int result);

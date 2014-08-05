@@ -106,15 +106,15 @@ ChromeStreamChannel::~ChromeStreamChannel() {
 
 int ChromeStreamChannel::origin(EndPoint *origin) const {
   if (transport_.get() && transport_->socket()) {
-    net::IPEndPoint endpoint;
-    int rv = transport_->socket()->GetLocalAddress(&endpoint);
+    net::IPEndPoint ip_endpoint;
+    int rv = transport_->socket()->GetLocalAddress(&ip_endpoint);
     if (net::OK != rv)
       return rv;
-    *origin = EndPoint(net::HostPortPair::FromIPEndPoint(endpoint),
+    *origin = EndPoint(net::HostPortPair::FromIPEndPoint(ip_endpoint),
         destination_.protocol());
     return net::OK;
   }
-  NOTREACHED();
+  NOTREACHED() << "not connected";
   return net::ERR_SOCKET_NOT_CONNECTED;
 }
 
@@ -182,23 +182,27 @@ void ChromeStreamChannel::Close() {
 }
 
 void ChromeStreamChannel::CloseWithError(int err) {
-  stream_socket_->CloseWithError(err);
+  if (stream_socket_.get()) {
+    stream_socket_->CloseWithError(err);
+  }
 }
 
 void ChromeStreamChannel::DetachDelegate() {
-  delegate_ = 0;
+  delegate_ = NULL;
 }
 
 void ChromeStreamChannel::RunUserConnectCallback(int status) {
   DCHECK_LE(status, net::OK);
   is_connecting_ = false;
-  delegate_->OnChannelConnected(this, status);
+  if (delegate_)
+    delegate_->OnChannelConnected(this, status);
 }
 
 void ChromeStreamChannel::RunUserChannelClosed(int status) {
   DCHECK_LE(status, net::OK);
   is_connecting_ = false;
-  delegate_->OnChannelClosed(this, status);
+  if (delegate_)
+    delegate_->OnChannelClosed(this, status);
 }
 
 // Always runs asynchronously.
@@ -449,10 +453,10 @@ void ChromeStreamChannel::ProcessReceivedData() {
       }
       base::StringPiece string_piece(drainable_read_buf_->data(),
           read_end_ - drainable_read_buf_->data());
-      // CRLF is the standard, but we're accepting just LF
       size_t end_size = 4;
       size_t end = string_piece.find("\r\n\r\n");
       if (end == base::StringPiece::npos) {
+        // CRLF is the standard, but we're accepting just LF
         end = string_piece.find("\n\n");
         end_size = 2;
       }
@@ -474,10 +478,12 @@ void ChromeStreamChannel::ProcessReceivedData() {
 
     // If there's no Content-Length, then we accept as if the content is empty
     ContentLength *content_length = current_message_->get<ContentLength>();
-    if (content_length) {
+    if (content_length && content_length->value() > 0) {
       if (content_length->value() > kReadBufSize) {
         // Close the connection immediately: the server is trying to send a
         // too large content. Maximum size allowed is 64kb.
+        VLOG(1) << "Trying to receive a too large message content: "
+                << content_length->value() << ", max = " << kReadBufSize;
         RunUserChannelClosed(net::ERR_MSG_TOO_BIG);
         return;
       }
@@ -485,15 +491,15 @@ void ChromeStreamChannel::ProcessReceivedData() {
           static_cast<unsigned>(read_end_ - drainable_read_buf_->data())) {
         // Read more...
         break;
-      } else if (content_length->value() > 0) {
-        std::string content(drainable_read_buf_->data(),
-                            content_length->value());
-        drainable_read_buf_->DidConsume(content_length->value());
-        current_message_->set_content(content);
       }
+      std::string content(drainable_read_buf_->data(),
+                          content_length->value());
+      drainable_read_buf_->DidConsume(content_length->value());
+      current_message_->set_content(content);
     }
     
-    delegate_->OnIncomingMessage(this, current_message_);
+    if (delegate_)
+      delegate_->OnIncomingMessage(this, current_message_);
     current_message_ = NULL;
 
   } while (read_end_ - drainable_read_buf_->data() > 0);

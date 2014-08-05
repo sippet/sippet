@@ -30,13 +30,9 @@ SequencedWriteStreamSocket::~SequencedWriteStreamSocket() {
   STLDeleteElements(&pending_messages_);
 }
 
-int SequencedWriteStreamSocket::Read(net::IOBuffer* buf, int buf_len,
-                                  const net::CompletionCallback& callback) {
-  return wrapped_socket_->Read(buf, buf_len, callback);
-}
-
-int SequencedWriteStreamSocket::Write(net::IOBuffer* buf, int buf_len,
-                                   const net::CompletionCallback& callback) {
+int SequencedWriteStreamSocket::Write(
+    net::IOBuffer* buf, int buf_len,
+    const net::CompletionCallback& callback) {
   if (error_ != net::OK)
     return error_;
 
@@ -52,71 +48,6 @@ int SequencedWriteStreamSocket::Write(net::IOBuffer* buf, int buf_len,
 
   pending_messages_.push_back(new PendingBlock(io_buffer, callback));
   return net::ERR_IO_PENDING;
-}
-
-bool SequencedWriteStreamSocket::SetReceiveBufferSize(int32 size) {
-  return wrapped_socket_->SetReceiveBufferSize(size);
-}
-
-bool SequencedWriteStreamSocket::SetSendBufferSize(int32 size) {
-  return wrapped_socket_->SetSendBufferSize(size);
-}
-
-int SequencedWriteStreamSocket::Connect(const net::CompletionCallback& callback) {
-  return wrapped_socket_->Connect(callback);
-}
-
-void SequencedWriteStreamSocket::Disconnect() {
-  wrapped_socket_->Disconnect();
-  CloseWithError(net::ERR_CONNECTION_RESET);
-}
-
-bool SequencedWriteStreamSocket::IsConnected() const {
-  return wrapped_socket_->IsConnected();
-}
-
-bool SequencedWriteStreamSocket::IsConnectedAndIdle() const {
-  return wrapped_socket_->IsConnectedAndIdle();
-}
-
-int SequencedWriteStreamSocket::GetPeerAddress(net::IPEndPoint* address) const {
-  return wrapped_socket_->GetPeerAddress(address);
-}
-
-int SequencedWriteStreamSocket::GetLocalAddress(net::IPEndPoint* address) const {
-  return wrapped_socket_->GetLocalAddress(address);
-}
-
-const net::BoundNetLog& SequencedWriteStreamSocket::NetLog() const {
-  return wrapped_socket_->NetLog();
-}
-
-void SequencedWriteStreamSocket::SetSubresourceSpeculation() {
-  wrapped_socket_->SetSubresourceSpeculation();
-}
-
-void SequencedWriteStreamSocket::SetOmniboxSpeculation() {
-  wrapped_socket_->SetOmniboxSpeculation();
-}
-
-bool SequencedWriteStreamSocket::WasEverUsed() const {
-  return wrapped_socket_->WasEverUsed();
-}
-
-bool SequencedWriteStreamSocket::UsingTCPFastOpen() const {
-  return wrapped_socket_->UsingTCPFastOpen();
-}
-
-bool SequencedWriteStreamSocket::WasNpnNegotiated() const {
-  return wrapped_socket_->WasNpnNegotiated();
-}
-
-net::NextProto SequencedWriteStreamSocket::GetNegotiatedProtocol() const {
-  return wrapped_socket_->GetNegotiatedProtocol();
-}
-
-bool SequencedWriteStreamSocket::GetSSLInfo(net::SSLInfo* ssl_info) {
-  return wrapped_socket_->GetSSLInfo(ssl_info);
 }
 
 void SequencedWriteStreamSocket::CloseWithError(int err) {
