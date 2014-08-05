@@ -4,6 +4,7 @@
 
 #include "sippet/transport/chrome/chrome_channel_factory.h"
 #include "sippet/transport/chrome/chrome_stream_channel.h"
+#include "sippet/transport/chrome/chrome_datagram_channel.h"
 #include "net/base/net_errors.h"
 #include "net/socket/client_socket_factory.h"
 
@@ -30,6 +31,11 @@ int ChromeChannelFactory::CreateChannel(
       || destination.protocol() == sippet::Protocol::TLS) {
     *channel = new ChromeStreamChannel(destination, delegate,
         client_socket_factory_, request_context_getter_, ssl_config_);
+    return net::OK;
+  }
+  else if (destination.protocol() == sippet::Protocol::UDP) {
+    *channel = new ChromeDatagramChannel(destination, delegate,
+        client_socket_factory_, request_context_getter_);
     return net::OK;
   }
   return net::ERR_NOT_IMPLEMENTED;

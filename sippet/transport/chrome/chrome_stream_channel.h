@@ -19,6 +19,7 @@ class ClientSocketHandle;
 class URLRequestContextGetter;
 class HttpNetworkSession;
 class IOBufferWithSize;
+class DrainableIOBuffer;
 }
 
 namespace sippet {
@@ -113,9 +114,6 @@ class ChromeStreamChannel : public Channel {
   scoped_refptr<net::DrainableIOBuffer> drainable_read_buf_;
   char *read_end_;
   scoped_refptr<Message> current_message_;
-
-  // The callback passed to Connect().
-  net::CompletionCallback user_connect_callback_;
 
   base::WeakPtrFactory<ChromeStreamChannel> weak_ptr_factory_;
 

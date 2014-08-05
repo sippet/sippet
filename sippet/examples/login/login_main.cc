@@ -139,6 +139,7 @@ int main(int argc, char **argv) {
   scoped_ptr<ChromeChannelFactory> channel_factory(
       new ChromeChannelFactory(client_socket_factory,
                                request_context_getter, ssl_config));
+  network_layer->RegisterChannelFactory(Protocol::UDP, channel_factory.get());
   network_layer->RegisterChannelFactory(Protocol::TCP, channel_factory.get());
   network_layer->RegisterChannelFactory(Protocol::TLS, channel_factory.get());
 
