@@ -197,6 +197,14 @@ void UserAgent::OnChannelClosed(const EndPoint &destination) {
   }
 }
 
+void UserAgent::OnSSLCertificateError(const EndPoint &destination,
+    const net::SSLInfo &ssl_info, bool fatal) {
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnSSLCertificateError(destination, ssl_info, fatal);
+  }
+}
+
 void UserAgent::OnIncomingRequest(
     const scoped_refptr<Request> &request) {
   scoped_refptr<Dialog> dialog = GetDialog(request).first;

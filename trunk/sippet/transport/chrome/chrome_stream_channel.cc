@@ -238,8 +238,12 @@ void ChromeStreamChannel::ProcessProxyResolveDone(int status) {
     }
   }
 
-  transport_.reset(new net::ClientSocketHandle);
   // Now that we have resolved the proxy, we need to connect.
+  DoTcpConnect();
+}
+
+void ChromeStreamChannel::DoTcpConnect() {
+  transport_.reset(new net::ClientSocketHandle);
   if (destination_.protocol() == Protocol::WS) {
     /* TODO
     status = net::InitSocketHandleForWebSocketRequest(
@@ -250,12 +254,12 @@ void ChromeStreamChannel::ProcessProxyResolveDone(int status) {
         resolution_callback_, connect_callback_);
      */
   } else {
-    status = net::InitSocketHandleForRawConnect(
+    int status = net::InitSocketHandleForRawConnect(
         dest_host_port_pair_, network_session_.get(), proxy_info_, ssl_config_,
         ssl_config_, net::kPrivacyModeDisabled, bound_net_log_, transport_.get(),
         connect_callback_);
     if (status != net::ERR_IO_PENDING) {
-      // Since this method is always called asynchronously. it is OK to call
+      // Since this method is always called asynchronously. It is OK to call
       // ProcessConnectDone synchronously.
       ProcessConnectDone(status);
     }
@@ -565,42 +569,144 @@ void ChromeStreamChannel::StartTls() {
   }
 }
 
+int ChromeStreamChannel::HandleCertificateRequest(int result,
+    net::SSLConfig* ssl_config) {
+  if (ssl_config->send_client_cert) {
+    // We already have performed SSL client authentication once and failed.
+    return result;
+  }
+
+  DCHECK(transport_->socket());
+  scoped_refptr<net::SSLCertRequestInfo> cert_request_info =
+      new net::SSLCertRequestInfo;
+  net::SSLClientSocket* ssl_socket =
+      static_cast<net::SSLClientSocket*>(transport_->socket());
+  ssl_socket->GetSSLCertRequestInfo(cert_request_info.get());
+
+  DCHECK(network_session_);
+
+  // If the user selected one of the certificates in client_certs or declined
+  // to provide one for this server before, use the past decision
+  // automatically.
+  scoped_refptr<net::X509Certificate> client_cert;
+  if (!network_session_->ssl_client_auth_cache()->Lookup(
+          cert_request_info->host_and_port, &client_cert)) {
+    return result;
+  }
+
+  // Note: |client_cert| may be NULL, indicating that the caller
+  // wishes to proceed anonymously (eg: continue the handshake
+  // without sending a client cert)
+  //
+  // Check that the certificate selected is still a certificate the server
+  // is likely to accept, based on the criteria supplied in the
+  // CertificateRequest message.
+  const std::vector<std::string>& cert_authorities =
+      cert_request_info->cert_authorities;
+  if (client_cert.get() && !cert_authorities.empty() &&
+      !client_cert->IsIssuedByEncoded(cert_authorities)) {
+    return result;
+  }
+
+  ssl_config->send_client_cert = true;
+  ssl_config->client_cert = client_cert;
+  return net::OK;
+}
+
+int ChromeStreamChannel::HandleCertificateError(int result) {
+  DCHECK(net::IsCertificateError(result));
+  net::SSLClientSocket* ssl_socket =
+      static_cast<net::SSLClientSocket*>(transport_->socket());
+  DCHECK(ssl_socket);
+
+  net::URLRequestContext *context =
+      request_context_getter_->GetURLRequestContext();
+  if (net::SSLClientSocket::IgnoreCertError(result,
+      net::LOAD_IGNORE_ALL_CERT_ERRORS)) {
+    const net::HttpNetworkSession::Params* session_params =
+        context->GetNetworkSessionParams();
+    if (session_params && session_params->ignore_certificate_errors)
+      return net::OK;
+  }
+
+  net::SSLInfo ssl_info;
+  ssl_socket->GetSSLInfo(&ssl_info);
+
+  net::TransportSecurityState::DomainState domain_state;
+  const bool fatal = context->transport_security_state() &&
+      context->transport_security_state()->GetDomainState(destination_.host(),
+          net::SSLConfigService::IsSNIAvailable(context->ssl_config_service()),
+          &domain_state) &&
+      domain_state.ShouldSSLErrorsBeFatal();
+
+  delegate_->OnSSLCertificateError(this, ssl_info, fatal);
+  return net::ERR_IO_PENDING;
+}
+
+bool ChromeStreamChannel::AllowCertErrorForReconnection(net::SSLConfig* ssl_config) {
+  DCHECK(ssl_config);
+  // The SSL handshake didn't finish, or the server closed the SSL connection.
+  // So, we should restart establishing connection with the certificate in
+  // allowed bad certificates in |ssl_config|.
+  // See also net/http/http_network_transaction.cc HandleCertificateError() and
+  // RestartIgnoringLastError().
+  net::SSLClientSocket* ssl_socket =
+      static_cast<net::SSLClientSocket*>(transport_->socket());
+  net::SSLInfo ssl_info;
+  ssl_socket->GetSSLInfo(&ssl_info);
+  if (ssl_info.cert.get() == NULL ||
+      ssl_config->IsAllowedBadCert(ssl_info.cert.get(), NULL)) {
+    // If we already have the certificate in the set of allowed bad
+    // certificates, we did try it and failed again, so we should not
+    // retry again: the connection should fail at last.
+    return false;
+  }
+  // Add the bad certificate to the set of allowed certificates in the
+  // SSL config object.
+  net::SSLConfig::CertAndStatus bad_cert;
+  if (!net::X509Certificate::GetDEREncoded(ssl_info.cert->os_cert_handle(),
+                                           &bad_cert.der_cert)) {
+    return false;
+  }
+  bad_cert.cert_status = ssl_info.cert_status;
+  ssl_config->allowed_bad_certs.push_back(bad_cert);
+  return true;
+}
+
 void ChromeStreamChannel::ProcessSSLConnectDone(int status) {
   DCHECK_NE(status, net::ERR_IO_PENDING);
   DCHECK_EQ(read_state_, IDLE);
   DCHECK(!read_end_);
 
-  net::SSLClientSocket *ssl_socket =
-    static_cast<net::SSLClientSocket*>(transport_->socket());
-  net::SSLInfo ssl_info;
-  ssl_socket->GetSSLInfo(&ssl_info);
-
-#if 0
-  // Add the bad certificate to the set of allowed certificates in the
-  // SSL config object. This data structure will be consulted after calling
-  // RestartIgnoringLastError(). And the user will be asked interactively
-  // before RestartIgnoringLastError() is ever called.
-  net::SSLConfig::CertAndStatus bad_cert;
-
-  // |ssl_info_.cert| may be NULL if we failed to create
-  // X509Certificate for whatever reason, but normally it shouldn't
-  // happen, unless this code is used inside sandbox.
-  if (ssl_info.cert.get() == NULL ||
-      !net::X509Certificate::GetDEREncoded(ssl_info.cert->os_cert_handle(),
-                                           &bad_cert.der_cert)) {
-    return;
+  if (net::ERR_SSL_CLIENT_AUTH_CERT_NEEDED == status) {
+    // This will recover past used client certificates case it has been
+    // selected by the user in the previous session.
+    status = HandleCertificateRequest(status, &ssl_config_);
+    if (net::OK == status) {
+      DoTcpConnect();
+      return;
+    }
   }
-  bad_cert.cert_status = ssl_info.cert_status;
-  ssl_config_.allowed_bad_certs.push_back(bad_cert);
 
-  int load_flags = 0; // TODO
-  if (session_->params().ignore_certificate_errors)
-    load_flags |= net::LOAD_IGNORE_ALL_CERT_ERRORS;
-  if (ssl_socket->IgnoreCertError(status, load_flags))
-    return OK;
-  return error;
-#endif
-  
+  if (net::IsCertificateError(status)) {
+    status = HandleCertificateError(status);
+    if (net::ERR_IO_PENDING == status) {
+      return;
+    } else if (net::OK == status) {
+      if (!transport_->socket()->IsConnectedAndIdle()) {
+        if (AllowCertErrorForReconnection(&ssl_config_)) {
+          // Restart connection ignoring the bad certificate.
+          DoTcpConnect();
+          return;
+        }
+        status = net::ERR_UNEXPECTED;
+      } else if (!transport_->socket()
+                 || !transport_->socket()->IsConnected()) {
+        status = net::ERR_CONNECTION_FAILED;
+      }
+    }
+  }
+
   if (status == net::OK)
     PostDoRead();
   RunUserConnectCallback(status);

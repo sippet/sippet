@@ -41,6 +41,10 @@ class UserAgent :
 
     virtual void OnChannelClosed(const EndPoint &destination) = 0;
 
+    virtual void OnSSLCertificateError(const EndPoint &destination,
+                                       const net::SSLInfo &ssl_info,
+                                       bool fatal) = 0;
+
     virtual void OnIncomingRequest(
         const scoped_refptr<Request> &incoming_request,
         const scoped_refptr<Dialog> &dialog) = 0;
@@ -167,6 +171,8 @@ class UserAgent :
   virtual void OnChannelConnected(
       const EndPoint &destination, int err) OVERRIDE;
   virtual void OnChannelClosed(const EndPoint &destination) OVERRIDE;
+  virtual void OnSSLCertificateError(const EndPoint &destination,
+      const net::SSLInfo &ssl_info, bool fatal) OVERRIDE;
   virtual void OnIncomingRequest(
       const scoped_refptr<Request> &request) OVERRIDE;
   virtual void OnIncomingResponse(

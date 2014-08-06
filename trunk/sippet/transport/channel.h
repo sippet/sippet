@@ -12,6 +12,10 @@
 #include "base/memory/ref_counted.h"
 #include "sippet/transport/end_point.h"
 
+namespace net {
+class SSLInfo;
+}
+
 namespace sippet {
 
 class Message;
@@ -36,6 +40,11 @@ class NET_EXPORT_PRIVATE Channel :
     // Called when the channel is closed.
     virtual void OnChannelClosed(const scoped_refptr<Channel> &channel,
                                  int error) = 0;
+
+    // Called when there's a SSL certificate error.
+    virtual void OnSSLCertificateError(const scoped_refptr<Channel> &channel,
+                                       const net::SSLInfo &ssl_info,
+                                       bool fatal) = 0;
   };
 
   Channel() {}
