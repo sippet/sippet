@@ -91,6 +91,19 @@ void ChromeDatagramChannel::Connect() {
                   weak_ptr_factory_.GetWeakPtr(), net::OK));
 }
 
+int ChromeDatagramChannel::ReconnectIgnoringLastError() {
+  // If we're going to support DTLS, this will need to be changed
+  VLOG(1) << "Trying to reconnect a raw UDP channel";
+  return net::ERR_UNEXPECTED;
+}
+
+int ChromeDatagramChannel::ReconnectWithCertificate(
+    net::X509Certificate* client_cert) {
+  // If we're going to support DTLS, this will need to be changed
+  VLOG(1) << "Trying to add certificate to a raw UDP channel";
+  return net::ERR_ADD_USER_CERT_FAILED;
+}
+
 void ChromeDatagramChannel::RunUserConnectCallback(int result) {
   DCHECK_NE(net::ERR_IO_PENDING, result);
   if (net::OK == result)

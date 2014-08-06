@@ -163,6 +163,31 @@ void ChromeStreamChannel::Connect() {
   is_connecting_ = true;
 }
 
+int ChromeStreamChannel::ReconnectIgnoringLastError() {
+  base::MessageLoop* message_loop = base::MessageLoop::current();
+  CHECK(message_loop);
+  message_loop->PostTask(
+      FROM_HERE,
+      base::Bind(&ChromeStreamChannel::DoTcpConnect,
+                  weak_ptr_factory_.GetWeakPtr()));
+  return net::ERR_IO_PENDING;
+}
+
+int ChromeStreamChannel::ReconnectWithCertificate(
+    net::X509Certificate* client_cert) {
+  ssl_config_.send_client_cert = true;
+  ssl_config_.client_cert = client_cert;
+  network_session_->ssl_client_auth_cache()->Add(
+      destination_.hostport().ToString(), client_cert);
+  base::MessageLoop* message_loop = base::MessageLoop::current();
+  CHECK(message_loop);
+  message_loop->PostTask(
+      FROM_HERE,
+      base::Bind(&ChromeStreamChannel::DoTcpConnect,
+                  weak_ptr_factory_.GetWeakPtr()));
+  return net::ERR_IO_PENDING;
+}
+
 int ChromeStreamChannel::Send(const scoped_refptr<Message> &message,
         const net::CompletionCallback& callback) {
   if (transport_.get() && transport_->socket()) {

@@ -40,6 +40,10 @@ static void PrintUsage() {
 class UserAgentHandler
   : public ua::UserAgent::Delegate {
  public:
+  UserAgentHandler(NetworkLayer *network_layer)
+      : network_layer_(network_layer) {
+  }
+
   virtual void OnChannelConnected(const EndPoint &destination,
                                   int err) OVERRIDE {
     std::cout << "Channel " << destination.ToString()
@@ -121,7 +125,8 @@ class UserAgentHandler
       }
     }
 
-    base::MessageLoop::current()->Quit();
+    std::cout << "Accepting the certificate\n";
+    network_layer_->ReconnectIgnoringLastError(destination);
   }
 
   virtual void OnIncomingRequest(
@@ -171,6 +176,9 @@ class UserAgentHandler
 
     base::MessageLoop::current()->Quit();
   }
+
+ private:
+  NetworkLayer *network_layer_;
 };
 
 void RequestSent(int error) {
@@ -275,7 +283,8 @@ int main(int argc, char **argv) {
   network_layer->RegisterChannelFactory(Protocol::TLS, channel_factory.get());
   user_agent->SetNetworkLayer(network_layer.get());
 
-  scoped_ptr<UserAgentHandler> handler(new UserAgentHandler);
+  scoped_ptr<UserAgentHandler> handler(
+      new UserAgentHandler(network_layer.get()));
   user_agent->AppendHandler(handler.get());
 
   scoped_refptr<Request> request =

@@ -22,6 +22,10 @@
 #include "sippet/transport/aliases_map.h"
 #include "sippet/transport/network_settings.h"
 
+namespace net {
+class X509Certificate;
+}
+
 namespace sippet {
 
 class ChannelFactory;
@@ -172,6 +176,17 @@ class NetworkLayer :
   // and |NetworkLayer::Delegate::OnChannelConnected| is called when completed.
   // Otherwise, |net::OK| is just returned.
   int Connect(const EndPoint &destination);
+
+  // Restarts the some previous connection attempt, ignoring the last error.
+  // This method is used to continue past various SSL related errors.
+  //
+  // Not all errors can be ignored using this method.  See error code
+  // descriptions for details about errors that can be ignored.
+  int ReconnectIgnoringLastError(const EndPoint &destination);
+
+  // Restarts the internal channel with a client certificate.
+  int ReconnectWithCertificate(const EndPoint &destination,
+                               net::X509Certificate* client_cert);
 
   // Get the origin |EndPoint| of a given destination. This function returns
   // |net::OK| only if there is a channel available for that destination.
