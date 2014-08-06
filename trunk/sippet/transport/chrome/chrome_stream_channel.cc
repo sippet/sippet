@@ -268,7 +268,10 @@ void ChromeStreamChannel::ProcessProxyResolveDone(int status) {
 }
 
 void ChromeStreamChannel::DoTcpConnect() {
-  transport_.reset(new net::ClientSocketHandle);
+  if (!transport_.get()) {
+    transport_.reset(new net::ClientSocketHandle);
+  }
+
   if (destination_.protocol() == Protocol::WS) {
     /* TODO
     status = net::InitSocketHandleForWebSocketRequest(
@@ -562,35 +565,46 @@ void ChromeStreamChannel::StartTls() {
   DCHECK(destination_.protocol().Equals(Protocol::TLS));
   DCHECK_EQ(read_state_, IDLE);
 
-  scoped_ptr<net::ClientSocketHandle> socket_handle(
-      new net::ClientSocketHandle());
-  socket_handle->SetSocket(transport_->PassSocket().Pass());
+  net::SSLInfo ssl_info;
+  if (!transport_->socket()->GetSSLInfo(&ssl_info)) {
+    scoped_ptr<net::ClientSocketHandle> socket_handle(
+        new net::ClientSocketHandle());
+    socket_handle->SetSocket(transport_->PassSocket().Pass());
 
-  net::SSLClientSocketContext context;
-  context.cert_verifier =
-      request_context_getter_->GetURLRequestContext()->cert_verifier();
-  context.server_bound_cert_service =
-      request_context_getter_->GetURLRequestContext()->server_bound_cert_service();
-  context.transport_security_state =
-      request_context_getter_->GetURLRequestContext()->transport_security_state();
+    net::SSLClientSocketContext context;
+    context.cert_verifier =
+        request_context_getter_->GetURLRequestContext()->cert_verifier();
+    context.server_bound_cert_service =
+        request_context_getter_->GetURLRequestContext()->server_bound_cert_service();
+    context.transport_security_state =
+        request_context_getter_->GetURLRequestContext()->transport_security_state();
 
-  DCHECK(context.transport_security_state);
+    DCHECK(context.transport_security_state);
 
-  transport_->SetSocket(
-      client_socket_factory_->CreateSSLClientSocket(
-          socket_handle.Pass(), dest_host_port_pair_, ssl_config_, context)
-                .PassAs<net::StreamSocket>());
+    transport_->SetSocket(
+        client_socket_factory_->CreateSSLClientSocket(
+            socket_handle.Pass(), dest_host_port_pair_, ssl_config_, context)
+                  .PassAs<net::StreamSocket>());
   
-  int status = transport_->socket()->Connect(
-      base::Bind(&ChromeStreamChannel::ProcessSSLConnectDone,
-                 weak_ptr_factory_.GetWeakPtr()));
-  if (status != net::ERR_IO_PENDING) {
+    int status = transport_->socket()->Connect(
+        base::Bind(&ChromeStreamChannel::ProcessSSLConnectDone,
+                   weak_ptr_factory_.GetWeakPtr()));
+    if (status != net::ERR_IO_PENDING) {
+      base::MessageLoop* message_loop = base::MessageLoop::current();
+      CHECK(message_loop);
+      message_loop->PostTask(
+          FROM_HERE,
+          base::Bind(&ChromeStreamChannel::ProcessSSLConnectDone,
+                     weak_ptr_factory_.GetWeakPtr(), status));
+    }
+  } else {
+    // The socket is already connected, so let's continue
     base::MessageLoop* message_loop = base::MessageLoop::current();
     CHECK(message_loop);
     message_loop->PostTask(
         FROM_HERE,
         base::Bind(&ChromeStreamChannel::ProcessSSLConnectDone,
-                   weak_ptr_factory_.GetWeakPtr(), status));
+                    weak_ptr_factory_.GetWeakPtr(), net::OK));
   }
 }
 
