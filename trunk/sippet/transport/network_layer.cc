@@ -77,6 +77,21 @@ int NetworkLayer::Connect(const EndPoint &destination) {
   return net::ERR_IO_PENDING;
 }
 
+int NetworkLayer::ReconnectIgnoringLastError(const EndPoint &destination) {
+  ChannelContext *channel_context = GetChannelContext(destination);
+  if (!channel_context)
+    return net::ERR_CONNECTION_CLOSED;
+  return channel_context->channel_->ReconnectIgnoringLastError();
+}
+
+int NetworkLayer::ReconnectWithCertificate(const EndPoint &destination,
+                                           net::X509Certificate* client_cert) {
+  ChannelContext *channel_context = GetChannelContext(destination);
+  if (!channel_context)
+    return net::ERR_CONNECTION_CLOSED;
+  return channel_context->channel_->ReconnectWithCertificate(client_cert);
+}
+
 int NetworkLayer::GetOriginOf(const EndPoint& destination, EndPoint *origin) {
   ChannelContext *channel_context = GetChannelContext(destination);
   if (!channel_context)

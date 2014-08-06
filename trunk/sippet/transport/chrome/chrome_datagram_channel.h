@@ -41,6 +41,9 @@ class ChromeDatagramChannel : public Channel {
   virtual bool is_stream() const OVERRIDE;
 
   virtual void Connect() OVERRIDE;
+  virtual int ReconnectIgnoringLastError() OVERRIDE;
+  virtual int ReconnectWithCertificate(
+      net::X509Certificate* client_cert) OVERRIDE;
 
   virtual int Send(const scoped_refptr<Message> &message,
                    const net::CompletionCallback& callback) OVERRIDE;

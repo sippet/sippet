@@ -14,6 +14,7 @@
 
 namespace net {
 class SSLInfo;
+class X509Certificate;
 }
 
 namespace sippet {
@@ -67,6 +68,16 @@ class NET_EXPORT_PRIVATE Channel :
   // Opens the connection on the IO thread.
   // Once the connection is established, calls delegate's OnChannelConnected.
   virtual void Connect() = 0;
+
+  // Restarts the some previous connection attempt, ignoring the last error.
+  // This method is used to continue past various SSL related errors.
+  //
+  // Not all errors can be ignored using this method.  See error code
+  // descriptions for details about errors that can be ignored.
+  virtual int ReconnectIgnoringLastError() = 0;
+
+  // Restarts the internal channel with a client certificate.
+  virtual int ReconnectWithCertificate(net::X509Certificate* client_cert) = 0;
 
   // Writes the message to the underlying socket.
   // ERR_IO_PENDING is returned if the operation could not be completed
