@@ -14,11 +14,14 @@
 #include "base/bind.h"
 #include "base/path_service.h"
 #include "base/message_loop/message_loop.h"
+#include "base/i18n/icu_util.h"
+#include "base/i18n/time_formatting.h"
 #include "net/base/net_errors.h"
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "net/dns/host_resolver.h"
 #include "net/base/net_log_logger.h"
+#include "net/ssl/ssl_info.h"
 #include "sippet/transport/channel_factory.h"
 #include "sippet/transport/chrome/chrome_channel_factory.h"
 #include "sippet/transport/network_layer.h"
@@ -29,22 +32,155 @@
 using namespace sippet;
 
 static void PrintUsage() {
-  printf("login --username=username\n"
-         "      --password=password\n"
-         "      [--tcp|--udp|--tls|--ws|--wss]\n");
+  std::cout << "login --username=username\n"
+            << "      --password=password\n"
+            << "      [--tcp|--udp|--tls|--ws|--wss]\n";
 }
 
-void RequestSent(int error) {
-  printf(">> REGISTER completed");
-  if (error != net::OK) {
-    printf(", error = %d (%s)", error, net::ErrorToString(error));
+class UserAgentHandler
+  : public ua::UserAgent::Delegate {
+ public:
+  virtual void OnChannelConnected(const EndPoint &destination,
+                                  int err) OVERRIDE {
+    std::cout << "Channel " << destination.ToString()
+              << " connected, status = " << err << "\n";
   }
-  printf("\n");
+
+  virtual void OnChannelClosed(const EndPoint &destination) OVERRIDE {
+    std::cout << "Channel " << destination.ToString()
+              << " closed.\n";
+  }
+
+  virtual void OnSSLCertificateError(const EndPoint &destination,
+                                     const net::SSLInfo &ssl_info,
+                                     bool fatal) OVERRIDE {
+    std::cout << "SSL certificate error for channel "
+              << destination.ToString()
+              << "\n";
+
+    std::cout << "-- gravity: "
+              << (fatal ? "fatal" : "non-fatal")
+              << "\n";
+
+    std::cout << "-- issued by "
+              << (ssl_info.is_issued_by_known_root ? "known" : "unknown")
+              << " root\n";
+
+    if (ssl_info.cert) {
+      std::cout << "-- issuer: "
+                << ssl_info.cert->issuer().GetDisplayName()
+                << "\n";
+
+      std::cout << "-- subject: "
+                << ssl_info.cert->subject().GetDisplayName()
+                << "\n";
+
+      size_t size;
+      net::X509Certificate::PublicKeyType public_key_type;
+      ssl_info.cert->GetPublicKeyInfo(ssl_info.cert->os_cert_handle(),
+          &size, &public_key_type);
+      const char *key_type;
+      if (public_key_type == net::X509Certificate::kPublicKeyTypeDH) {
+        key_type = "DH";
+      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeDSA) {
+        key_type = "DSA";
+      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeECDH) {
+        key_type = "ECDH";
+      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeECDSA) {
+        key_type = "ECDSA";
+      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeRSA) {
+        key_type = "RSA";
+      } else {
+        key_type = "Unknown";
+      }
+      std::cout << "-- public key: "
+                << key_type
+                << " (" << size << " bits)"
+                << "\n";
+
+      std::vector<std::string> dns_names;
+      ssl_info.cert->GetDNSNames(&dns_names);
+      std::cout << "-- DNS names: ";
+      for (std::vector<std::string>::iterator i = dns_names.begin(),
+           ie = dns_names.end(); i != ie; i++) {
+        if (i != dns_names.begin())
+          std::cout << ", ";
+        std::cout << *i;
+      }
+      std::cout << "\n";
+
+      if (!ssl_info.cert->valid_start().is_null()
+          && !ssl_info.cert->valid_expiry().is_null()) {
+        base::string16 start =
+            base::TimeFormatShortDateAndTime(ssl_info.cert->valid_start());
+        base::string16 end =
+            base::TimeFormatShortDateAndTime(ssl_info.cert->valid_expiry());
+        std::cout << "-- Valid from " << start << " to " << end << "\n";
+      }
+    }
+  }
+
+  virtual void OnIncomingRequest(
+      const scoped_refptr<Request> &incoming_request,
+      const scoped_refptr<Dialog> &dialog) OVERRIDE {
+    std::cout << "Incoming request "
+              << incoming_request->method().str()
+              << "\n";
+    if (dialog)
+      std::cout << "-- Using dialog " << dialog->id() << "\n";
+  }
+
+  virtual void OnIncomingResponse(
+      const scoped_refptr<Response> &incoming_response,
+      const scoped_refptr<Dialog> &dialog) OVERRIDE {
+    std::cout << "Incoming response "
+              << incoming_response->response_code()
+              << " "
+              << incoming_response->reason_phrase()
+              << "\n";
+    if (dialog)
+      std::cout << "-- Using dialog " << dialog->id() << "\n";
+  }
+
+  virtual void OnTimedOut(
+      const scoped_refptr<Request> &request,
+      const scoped_refptr<Dialog> &dialog) OVERRIDE {
+    std::cout << "Timed out sending request "
+              << request->method().str()
+              << "\n";
+    if (dialog)
+      std::cout << "-- Using dialog " << dialog->id() << "\n";
+  }
+
+  virtual void OnTransportError(
+      const scoped_refptr<Request> &request, int error,
+      const scoped_refptr<Dialog> &dialog) OVERRIDE {
+    std::cout << "Transport error sending request "
+              << request->method().str()
+              << "\n";
+    if (dialog)
+      std::cout << "-- Using dialog " << dialog->id() << "\n";
+  }
+};
+
+void RequestSent(int error) {
+  std::cout << ">> REGISTER completed";
+  if (error != net::OK) {
+    std::cout << ", error = " << error
+              << " (" << net::ErrorToString(error) << ")";
+  }
+  std::cout << "\n";
 }
 
 int main(int argc, char **argv) {
   base::AtExitManager at_exit_manager;
   base::MessageLoopForIO message_loop;
+
+  // Initialize ICU library
+  if (!base::i18n::InitializeICU()) {
+    std::cerr << "Couldn't open ICU library, exiting...\n";
+    return -1;
+  }
 
   // Process command line
   CommandLine::Init(argc, argv);
@@ -54,7 +190,7 @@ int main(int argc, char **argv) {
   settings.logging_dest = logging::LOG_TO_ALL;
   settings.log_file = FILE_PATH_LITERAL("login.log");
   if (!logging::InitLogging(settings)) {
-    printf("Error: could not initialize logging. Exiting.\n");
+    std::cout << "Error: could not initialize logging. Exiting.\n";
     return -1;
   }
   logging::SetMinLogLevel(-10);
@@ -142,8 +278,10 @@ int main(int argc, char **argv) {
   network_layer->RegisterChannelFactory(Protocol::UDP, channel_factory.get());
   network_layer->RegisterChannelFactory(Protocol::TCP, channel_factory.get());
   network_layer->RegisterChannelFactory(Protocol::TLS, channel_factory.get());
-
   user_agent->SetNetworkLayer(network_layer.get());
+
+  scoped_ptr<UserAgentHandler> handler(new UserAgentHandler);
+  user_agent->AppendHandler(handler.get());
 
   scoped_refptr<Request> request =
       user_agent->CreateRequest(
@@ -151,7 +289,6 @@ int main(int argc, char **argv) {
           GURL(registrar_uri),
           GURL("sip:test@localhost"),
           GURL("sip:test@localhost"));
-
   user_agent->Send(request, base::Bind(&RequestSent));
 
   /* TODO

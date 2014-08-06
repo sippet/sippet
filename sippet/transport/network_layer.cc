@@ -666,6 +666,13 @@ void NetworkLayer::OnChannelClosed(const scoped_refptr<Channel> &channel,
   delegate_->OnChannelClosed(destination);
 }
 
+void NetworkLayer::OnSSLCertificateError(const scoped_refptr<Channel> &channel,
+                                         const net::SSLInfo &ssl_info,
+                                         bool fatal) {
+  EndPoint destination(channel->destination());
+  delegate_->OnSSLCertificateError(destination, ssl_info, fatal);
+}
+
 void NetworkLayer::OnIncomingResponse(const scoped_refptr<Response> &response) {
   delegate_->OnIncomingResponse(response);
 }
