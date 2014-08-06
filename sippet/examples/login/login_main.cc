@@ -49,6 +49,8 @@ class UserAgentHandler
   virtual void OnChannelClosed(const EndPoint &destination) OVERRIDE {
     std::cout << "Channel " << destination.ToString()
               << " closed.\n";
+
+    base::MessageLoop::current()->Quit();
   }
 
   virtual void OnSSLCertificateError(const EndPoint &destination,
@@ -118,6 +120,8 @@ class UserAgentHandler
         std::cout << "-- Valid from " << start << " to " << end << "\n";
       }
     }
+
+    base::MessageLoop::current()->Quit();
   }
 
   virtual void OnIncomingRequest(
@@ -140,6 +144,8 @@ class UserAgentHandler
               << "\n";
     if (dialog)
       std::cout << "-- Using dialog " << dialog->id() << "\n";
+
+    base::MessageLoop::current()->Quit();
   }
 
   virtual void OnTimedOut(
@@ -150,6 +156,8 @@ class UserAgentHandler
               << "\n";
     if (dialog)
       std::cout << "-- Using dialog " << dialog->id() << "\n";
+
+    base::MessageLoop::current()->Quit();
   }
 
   virtual void OnTransportError(
@@ -160,6 +168,8 @@ class UserAgentHandler
               << "\n";
     if (dialog)
       std::cout << "-- Using dialog " << dialog->id() << "\n";
+
+    base::MessageLoop::current()->Quit();
   }
 };
 
@@ -257,21 +267,6 @@ int main(int argc, char **argv) {
   // Register the channel factory
   net::SSLConfig ssl_config;
   ssl_config.version_min = net::SSL_PROTOCOL_VERSION_TLS1;
-
-#if 0
-  base::FilePath certs_dir;
-  PathService::Get(base::DIR_SOURCE_ROOT, &certs_dir);
-  certs_dir = certs_dir.Append(FILE_PATH_LITERAL("net/data/ssl/certificates"));
-  certs_dir = certs_dir.NormalizePathSeparators();
-
-  base::FilePath cert_path = certs_dir.AppendASCII("ok_cert.pem");
-  std::string cert_data;
-  base::ReadFileToString(cert_path, &cert_data);
-  net::CertificateList certs_in_file =
-      net::X509Certificate::CreateCertificateListFromBytes(
-          cert_data.data(), cert_data.size(), net::X509Certificate::FORMAT_AUTO);
-#endif
-
   scoped_ptr<ChromeChannelFactory> channel_factory(
       new ChromeChannelFactory(client_socket_factory,
                                request_context_getter, ssl_config));
@@ -290,12 +285,6 @@ int main(int argc, char **argv) {
           GURL("sip:test@localhost"),
           GURL("sip:test@localhost"));
   user_agent->Send(request, base::Bind(&RequestSent));
-
-  /* TODO
-  // Set the network layer and start the login process
-  login_handler->SetNetworkLayer(network_layer.get());
-  login_handler->Login(username, password, username, SipURI(registrar_uri));
-  */
 
   message_loop.Run();
   return 0;
