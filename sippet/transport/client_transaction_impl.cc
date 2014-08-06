@@ -35,17 +35,18 @@ scoped_refptr<Channel> ClientTransactionImpl::channel() const {
 void ClientTransactionImpl::Start(
       const scoped_refptr<Request> &outgoing_request) {
   DCHECK(outgoing_request);
+
   initial_request_ = outgoing_request;
   if (Method::INVITE == outgoing_request->method()) {
     mode_ = MODE_INVITE;
     next_state_ = STATE_CALLING;
     time_delta_provider_.reset(time_delta_factory_->CreateClientInvite());
-  }
-  else {
+  } else {
     mode_ = MODE_NORMAL;
     next_state_ = STATE_TRYING;
     time_delta_provider_.reset(time_delta_factory_->CreateClientNonInvite());
   }
+
   if (!channel_->is_stream())
     ScheduleRetry();
   ScheduleTimeout();
@@ -105,23 +106,26 @@ void ClientTransactionImpl::HandleIncomingResponse(
     if (next_state_ == STATE_COMPLETED)
       retryTimer_.Stop();
   }
+
   if (mode_ == MODE_INVITE
       && response_code/100 >= 3) {
     SendAck(response->get<To>()->tag());
   }
+
   if (STATE_CALLING == state
       && STATE_PROCEED_CALLING == next_state_) {
     StopTimers();
   }
+
   if (STATE_COMPLETED == next_state_) {
     if (channel_->is_stream())
       next_state_ = STATE_TERMINATED;
     else if (next_state_ != state)
       ScheduleTerminate();
   }
-  if (STATE_TERMINATED == next_state_) {
+
+  if (STATE_TERMINATED == next_state_)
     Terminate();
-  }
 }
 
 void ClientTransactionImpl::Close() {
@@ -130,13 +134,15 @@ void ClientTransactionImpl::Close() {
 
 void ClientTransactionImpl::OnRetransmit() {
   DCHECK(!channel_->is_stream());
+
   if (MODE_INVITE == mode_) {
     DCHECK(STATE_CALLING == next_state_);
   } else {
     DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
   }
+
   int result = channel_->Send(initial_request_,
-    base::Bind(&ClientTransactionImpl::OnWrite, this));
+    base::Bind(&ClientTransactionImpl::OnWrite, weak_factory_.GetWeakPtr()));
   if (net::ERR_IO_PENDING != result)
     OnWrite(result);
 }
@@ -147,6 +153,7 @@ void ClientTransactionImpl::OnTimedOut() {
   } else {
     DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
   }
+
   next_state_ = STATE_TERMINATED;
   delegate_->OnTimedOut(initial_request_);
   Terminate();
@@ -155,6 +162,7 @@ void ClientTransactionImpl::OnTimedOut() {
 void ClientTransactionImpl::OnTerminated() {
   DCHECK(!channel_->is_stream());
   DCHECK(STATE_COMPLETED == next_state_);
+
   next_state_ = STATE_TERMINATED;
   Terminate();
 }
