@@ -67,6 +67,7 @@ class ChromeStreamChannel : public Channel {
 
   // Proxy resolution and connection functions.
   void ProcessProxyResolveDone(int status);
+  void DoTcpConnect();
   void ProcessConnectDone(int status);
 
   void CloseTransportSocket();
@@ -74,6 +75,9 @@ class ChromeStreamChannel : public Channel {
   void RunUserChannelClosed(int status);
   int ReconsiderProxyAfterError(int error);
   void ReportSuccessfulProxyConnection();
+  int HandleCertificateRequest(int result, net::SSLConfig* ssl_config);
+  int HandleCertificateError(int result);
+  bool AllowCertErrorForReconnection(net::SSLConfig* ssl_config);
 
   // Read loop functions.
   void PostDoRead();

@@ -106,6 +106,11 @@ class NetworkLayer :
     // port unreachable) is detected by the network layer.
     virtual void OnChannelClosed(const EndPoint &destination) = 0;
 
+    // Called when there's a SSL certificate error.
+    virtual void OnSSLCertificateError(const EndPoint &destination,
+                                       const net::SSLInfo &ssl_info,
+                                       bool fatal) = 0;
+
     // Called whenever a new request is received.
     virtual void OnIncomingRequest(
         const scoped_refptr<Request> &request) = 0;
@@ -322,6 +327,9 @@ class NetworkLayer :
   virtual void OnIncomingMessage(const scoped_refptr<Channel> &,
                                  const scoped_refptr<Message> &) OVERRIDE;
   virtual void OnChannelClosed(const scoped_refptr<Channel> &, int) OVERRIDE;
+  virtual void OnSSLCertificateError(const scoped_refptr<Channel> &channel,
+                                     const net::SSLInfo &ssl_info,
+                                     bool fatal) OVERRIDE;
 
   // sippet::TransactionDelegate methods:
   virtual void OnIncomingResponse(const scoped_refptr<Response> &) OVERRIDE;
