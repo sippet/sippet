@@ -11,7 +11,6 @@
 #include "base/memory/ref_counted.h"
 #include "base/system_monitor/system_monitor.h"
 #include "base/gtest_prod_util.h"
-#include "base/power_monitor/power_observer.h"
 #include "net/base/completion_callback.h"
 #include "sippet/message/protocol.h"
 #include "sippet/message/message.h"
@@ -88,7 +87,6 @@ class TransactionFactory;
 //   }
 //   
 class NetworkLayer :
-  public base::PowerObserver,
   public TransactionDelegate,
   public Channel::Delegate,
   public base::RefCountedThreadSafe<NetworkLayer> {
@@ -212,10 +210,6 @@ class NetworkLayer :
   // Just for testing purposes
   friend class NetworkLayerTest;
 
-  // base::SystemMonitor::PowerObserver methods:
-  virtual void OnSuspend() OVERRIDE;
-  virtual void OnResume() OVERRIDE;
-
   struct ChannelContext {
     // Holds the channel instance.
     scoped_refptr<Channel> channel_;
@@ -253,7 +247,6 @@ class NetworkLayer :
   ClientTransactionsMap client_transactions_;
   ServerTransactionsMap server_transactions_;
   base::WeakPtrFactory<NetworkLayer> weak_factory_;
-  bool suspended_;
 
   int SendRequest(scoped_refptr<Request> &request,
       const net::CompletionCallback& callback);

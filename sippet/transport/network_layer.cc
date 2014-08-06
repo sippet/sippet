@@ -36,7 +36,6 @@ NetworkLayer::NetworkLayer(Delegate *delegate,
                            const NetworkSettings &network_settings)
   : delegate_(delegate),
     network_settings_(network_settings),
-    suspended_(false),
     weak_factory_(this) {
   DCHECK(delegate);
 }
@@ -106,24 +105,6 @@ bool NetworkLayer::AddAlias(const EndPoint &destination, const EndPoint &alias) 
   if (channel_context)
     aliases_map_.AddAlias(destination, alias);
   return channel_context ? true : false;
-}
-
-void NetworkLayer::OnSuspend() {
-  if (!suspended_) {
-    for (ChannelsMap::iterator i = channels_.begin(), ie = channels_.end();
-         i != ie;) {
-      scoped_refptr<Channel> channel = (i++)->second->channel_;
-      OnChannelClosed(channel, net::ERR_ABORTED);
-    }
-    suspended_ = true;
-  }
-}
-
-void NetworkLayer::OnResume() {
-  if (suspended_) {
-    // TODO
-    suspended_ = false;
-  }
 }
 
 int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
