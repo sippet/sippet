@@ -41,8 +41,7 @@ void ServerTransactionImpl::Start(
     next_state_ = STATE_PROCEED_CALLING;
     time_delta_provider_.reset(time_delta_factory_->CreateServerInvite());
     ScheduleProvisionalResponse();
-  }
-  else {
+  } else {
     mode_ = MODE_NORMAL;
     next_state_ = STATE_TRYING;
     time_delta_provider_.reset(time_delta_factory_->CreateServerNonInvite());
@@ -63,7 +62,8 @@ void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
 
   latest_response_ = response;
   int result = channel_->Send(response,
-    base::Bind(&ServerTransactionImpl::OnSendWriteComplete, this, response));
+      base::Bind(&ServerTransactionImpl::OnSendWriteComplete,
+          weak_factory_.GetWeakPtr(), response));
   if (net::ERR_IO_PENDING != result)
     OnSendWriteComplete(response, result);
 }
@@ -100,20 +100,22 @@ void ServerTransactionImpl::OnSendWriteComplete(
       NOTREACHED();
       break;
   }
+
   if (STATE_COMPLETED == next_state_
       && next_state_ != state) {
     if (MODE_INVITE == mode_) {
       if (!channel_->is_stream())
         ScheduleRetry();
       ScheduleTimeout();
-    }
-    else {
-      if (channel_->is_stream())
+    } else {
+      if (channel_->is_stream()) {
         next_state_ = STATE_TERMINATED;
-      else
+      } else {
         ScheduleTerminate();
+      }
     }
   }
+
   if (STATE_TERMINATED == next_state_) {
     Terminate();
   }
@@ -133,6 +135,7 @@ void ServerTransactionImpl::HandleIncomingRequest(
       base::Bind(&ServerTransactionImpl::OnRepeatResponseWriteComplete,
         this, request));
   }
+
   if (net::ERR_IO_PENDING != result)
     OnRepeatResponseWriteComplete(request, result);
 }
@@ -156,14 +159,17 @@ void ServerTransactionImpl::OnRepeatResponseWriteComplete(
       NOTREACHED();
       break;
   }
+
   if (STATE_CONFIRMED == next_state_
       && next_state_ != state) {
     StopTimers();
-    if (channel_->is_stream())
+    if (channel_->is_stream()) {
       next_state_ = STATE_TERMINATED;
-    else
+    } else {
       ScheduleTerminate();
+    }
   }
+
   if (STATE_TERMINATED == next_state_) {
     Terminate();
   }
@@ -177,8 +183,11 @@ void ServerTransactionImpl::OnRetransmit() {
   DCHECK(!channel_->is_stream());
   DCHECK(MODE_INVITE == mode_);
   DCHECK(STATE_COMPLETED == next_state_);
+
   int result = channel_->Send(latest_response_,
-    base::Bind(&ServerTransactionImpl::OnRetransmitWriteComplete, this));
+      base::Bind(&ServerTransactionImpl::OnRetransmitWriteComplete,
+          weak_factory_.GetWeakPtr()));
+
   if (net::ERR_IO_PENDING != result)
     OnRetransmitWriteComplete(result);
 }
@@ -186,6 +195,7 @@ void ServerTransactionImpl::OnRetransmit() {
 void ServerTransactionImpl::OnTimedOut() {
   DCHECK(MODE_INVITE == mode_);
   DCHECK(STATE_COMPLETED == next_state_);
+
   next_state_ = STATE_TERMINATED;
   delegate_->OnTimedOut(initial_request_);
   Terminate();
@@ -193,19 +203,25 @@ void ServerTransactionImpl::OnTimedOut() {
 
 void ServerTransactionImpl::OnTerminated() {
   DCHECK(!channel_->is_stream());
-  if (MODE_INVITE == mode_)
+
+  if (MODE_INVITE == mode_) {
     DCHECK(STATE_CONFIRMED == next_state_);
-  else
+  } else {
     DCHECK(STATE_COMPLETED == next_state_);
+  }
+
   next_state_ = STATE_TERMINATED;
   Terminate();
 }
 
 void ServerTransactionImpl::OnSendProvisionalResponse() {
   DCHECK(MODE_INVITE == mode_ && STATE_PROCEEDING == next_state_);
+
   scoped_refptr<Response> response = initial_request_->CreateResponse(SIP_TRYING);
   int result = channel_->Send(response,
-    base::Bind(&ServerTransactionImpl::OnSendProvisionalResponseWriteComplete, this));
+      base::Bind(&ServerTransactionImpl::OnSendProvisionalResponseWriteComplete,
+          weak_factory_.GetWeakPtr()));
+
   if (net::ERR_IO_PENDING != result)
     OnSendProvisionalResponseWriteComplete(result);
 }
@@ -213,8 +229,7 @@ void ServerTransactionImpl::OnSendProvisionalResponse() {
 void ServerTransactionImpl::OnRetransmitWriteComplete(int result) {
   if (net::OK == result) {
     ScheduleRetry();
-  }
-  else if (net::ERR_IO_PENDING != result) {
+  } else if (net::ERR_IO_PENDING != result) {
     delegate_->OnTransportError(initial_request_, result);
   }
 }
@@ -238,30 +253,30 @@ void ServerTransactionImpl::StopProvisionalResponse() {
 
 void ServerTransactionImpl::ScheduleRetry() {
   retryTimer_.Start(FROM_HERE,
-    time_delta_provider_->GetNextRetryDelay(),
-    base::Bind(&ServerTransactionImpl::OnRetransmit,
-      weak_factory_.GetWeakPtr()));
+      time_delta_provider_->GetNextRetryDelay(),
+      base::Bind(&ServerTransactionImpl::OnRetransmit,
+          weak_factory_.GetWeakPtr()));
 }
 
 void ServerTransactionImpl::ScheduleTimeout() {
   timedOutTimer_.Start(FROM_HERE,
-    time_delta_provider_->GetTimeoutDelay(),
-    base::Bind(&ServerTransactionImpl::OnTimedOut,
-      weak_factory_.GetWeakPtr()));
+      time_delta_provider_->GetTimeoutDelay(),
+      base::Bind(&ServerTransactionImpl::OnTimedOut,
+          weak_factory_.GetWeakPtr()));
 }
 
 void ServerTransactionImpl::ScheduleTerminate() {
   terminateTimer_.Start(FROM_HERE,
-    time_delta_provider_->GetTerminateDelay(),
-    base::Bind(&ServerTransactionImpl::OnTerminated,
-      weak_factory_.GetWeakPtr()));
+      time_delta_provider_->GetTerminateDelay(),
+      base::Bind(&ServerTransactionImpl::OnTerminated,
+          weak_factory_.GetWeakPtr()));
 }
 
 void ServerTransactionImpl::ScheduleProvisionalResponse() {
   provisionalTimer_.Start(FROM_HERE,
-    base::TimeDelta::FromMilliseconds(200),
-    base::Bind(&ServerTransactionImpl::OnSendProvisionalResponse,
-      weak_factory_.GetWeakPtr()));
+      base::TimeDelta::FromMilliseconds(200),
+      base::Bind(&ServerTransactionImpl::OnSendProvisionalResponse,
+          weak_factory_.GetWeakPtr()));
 }
 
 void ServerTransactionImpl::Terminate() {
