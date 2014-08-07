@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/transport/chrome/framed_write_stream_socket.h"
+#include "sippet/transport/chrome/chrome_datagram_writer.h"
 
 #include "base/stl_util.h"
 #include "net/base/io_buffer.h"
@@ -10,27 +10,27 @@
 
 namespace sippet {
 
-FramedWriteStreamSocket::PendingFrame::PendingFrame(
+ChromeDatagramWriter::PendingFrame::PendingFrame(
         net::IOBuffer *buf, int buf_len,
         const net::CompletionCallback& callback)
   : buf_(buf), buf_len_(buf_len), callback_(callback) {
 }
 
-FramedWriteStreamSocket::PendingFrame::~PendingFrame() {
+ChromeDatagramWriter::PendingFrame::~PendingFrame() {
 }
 
-FramedWriteStreamSocket::FramedWriteStreamSocket(
+ChromeDatagramWriter::ChromeDatagramWriter(
     net::Socket *socket_to_wrap)
     : wrapped_socket_(socket_to_wrap),
       weak_factory_(this),
       error_(net::OK) {
 }
 
-FramedWriteStreamSocket::~FramedWriteStreamSocket() {
+ChromeDatagramWriter::~ChromeDatagramWriter() {
   STLDeleteElements(&pending_messages_);
 }
 
-int FramedWriteStreamSocket::Write(net::IOBuffer* buf, int buf_len,
+int ChromeDatagramWriter::Write(net::IOBuffer* buf, int buf_len,
                                    const net::CompletionCallback& callback) {
   if (error_ != net::OK)
     return error_;
@@ -47,13 +47,13 @@ int FramedWriteStreamSocket::Write(net::IOBuffer* buf, int buf_len,
   return net::ERR_IO_PENDING;
 }
 
-void FramedWriteStreamSocket::CloseWithError(int err) {
+void ChromeDatagramWriter::CloseWithError(int err) {
   error_ = err;
   while (!pending_messages_.empty())
     Pop(err);
 }
 
-void FramedWriteStreamSocket::DidWrite(int result) {
+void ChromeDatagramWriter::DidWrite(int result) {
   DCHECK(!pending_messages_.empty());
 
   if (result > 0)
@@ -65,7 +65,7 @@ void FramedWriteStreamSocket::DidWrite(int result) {
   }
 }
 
-void FramedWriteStreamSocket::DidConsume() {
+void ChromeDatagramWriter::DidConsume() {
   for (;;) {
     Pop(net::OK);
     if (pending_messages_.empty())
@@ -80,16 +80,16 @@ void FramedWriteStreamSocket::DidConsume() {
   }
 }
 
-void FramedWriteStreamSocket::Pop(int result) {
+void ChromeDatagramWriter::Pop(int result) {
   PendingFrame *pending = pending_messages_.front();
   pending->callback_.Run(result);
   delete pending;
   pending_messages_.pop_front();
 }
 
-int FramedWriteStreamSocket::Drain(net::IOBuffer* buf, int buf_len) {
+int ChromeDatagramWriter::Drain(net::IOBuffer* buf, int buf_len) {
   int res = wrapped_socket_->Write(buf, buf_len,
-        base::Bind(&FramedWriteStreamSocket::DidWrite,
+        base::Bind(&ChromeDatagramWriter::DidWrite,
                    base::Unretained(this)));
   if (res > 0) {
     // Pretend the whole buffer has been sent, return OK

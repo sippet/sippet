@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/transport/chrome/sequenced_write_stream_socket.h"
+#include "sippet/transport/chrome/chrome_stream_writer.h"
 
 #include "base/stl_util.h"
 #include "net/base/io_buffer.h"
@@ -10,27 +10,27 @@
 
 namespace sippet {
 
-SequencedWriteStreamSocket::PendingBlock::PendingBlock(
+ChromeStreamWriter::PendingBlock::PendingBlock(
         net::DrainableIOBuffer *io_buffer,
         const net::CompletionCallback& callback)
   : io_buffer_(io_buffer), callback_(callback) {
 }
 
-SequencedWriteStreamSocket::PendingBlock::~PendingBlock() {
+ChromeStreamWriter::PendingBlock::~PendingBlock() {
 }
 
-SequencedWriteStreamSocket::SequencedWriteStreamSocket(
+ChromeStreamWriter::ChromeStreamWriter(
     net::StreamSocket *socket_to_wrap)
     : wrapped_socket_(socket_to_wrap),
       weak_factory_(this),
       error_(net::OK) {
 }
 
-SequencedWriteStreamSocket::~SequencedWriteStreamSocket() {
+ChromeStreamWriter::~ChromeStreamWriter() {
   STLDeleteElements(&pending_messages_);
 }
 
-int SequencedWriteStreamSocket::Write(
+int ChromeStreamWriter::Write(
     net::IOBuffer* buf, int buf_len,
     const net::CompletionCallback& callback) {
   if (error_ != net::OK)
@@ -50,13 +50,13 @@ int SequencedWriteStreamSocket::Write(
   return net::ERR_IO_PENDING;
 }
 
-void SequencedWriteStreamSocket::CloseWithError(int err) {
+void ChromeStreamWriter::CloseWithError(int err) {
   error_ = err;
   while (!pending_messages_.empty())
     Pop(err);
 }
 
-void SequencedWriteStreamSocket::DidWrite(int result) {
+void ChromeStreamWriter::DidWrite(int result) {
   DCHECK(!pending_messages_.empty());
 
   if (result > 0)
@@ -68,7 +68,7 @@ void SequencedWriteStreamSocket::DidWrite(int result) {
   }
 }
 
-void SequencedWriteStreamSocket::DidConsume(int result) {
+void ChromeStreamWriter::DidConsume(int result) {
   PendingBlock *pending = pending_messages_.front();
   pending->io_buffer_->DidConsume(result);
   for (;;) {
@@ -90,19 +90,19 @@ void SequencedWriteStreamSocket::DidConsume(int result) {
   }
 }
 
-void SequencedWriteStreamSocket::Pop(int result) {
+void ChromeStreamWriter::Pop(int result) {
   PendingBlock *pending = pending_messages_.front();
   pending->callback_.Run(result);
   delete pending;
   pending_messages_.pop_front();
 }
 
-int SequencedWriteStreamSocket::Drain(net::DrainableIOBuffer* buf) {
+int ChromeStreamWriter::Drain(net::DrainableIOBuffer* buf) {
   int res;
   do {
     res = wrapped_socket_->Write(
         buf, buf->BytesRemaining(),
-        base::Bind(&SequencedWriteStreamSocket::DidWrite,
+        base::Bind(&ChromeStreamWriter::DidWrite,
                    base::Unretained(this)));
     if (res > 0) {
       buf->DidConsume(res);

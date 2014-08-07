@@ -6,7 +6,7 @@
 #define SIPPET_TRANSPORT_CHROME_CHROME_DATAGRAM_CHANNEL_H_
 
 #include "sippet/transport/channel.h"
-#include "sippet/transport/chrome/framed_write_stream_socket.h"
+#include "sippet/transport/chrome/chrome_datagram_writer.h"
 #include "base/memory/weak_ptr.h"
 #include "net/base/address_list.h"
 #include "net/dns/host_resolver.h"
@@ -97,7 +97,7 @@ class ChromeDatagramChannel : public Channel {
 
   net::ClientSocketFactory* client_socket_factory_;
   scoped_ptr<net::DatagramClientSocket> socket_;
-  scoped_ptr<FramedWriteStreamSocket> datagram_socket_;
+  scoped_ptr<ChromeDatagramWriter> socket_writer_;
   net::BoundNetLog bound_net_log_;
 
   bool is_connected_;
