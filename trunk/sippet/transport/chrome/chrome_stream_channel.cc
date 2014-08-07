@@ -190,7 +190,7 @@ int ChromeStreamChannel::Send(const scoped_refptr<Message> &message,
   if (transport_.get() && transport_->socket()) {
     scoped_refptr<net::StringIOBuffer> string_buffer =
         new net::StringIOBuffer(message->ToString());
-    return stream_socket_->Write(
+    return stream_writer_->Write(
         string_buffer.get(),
         string_buffer->size(),
         callback);
@@ -204,8 +204,8 @@ void ChromeStreamChannel::Close() {
 }
 
 void ChromeStreamChannel::CloseWithError(int err) {
-  if (stream_socket_.get()) {
-    stream_socket_->CloseWithError(err);
+  if (stream_writer_.get()) {
+    stream_writer_->CloseWithError(err);
   }
 }
 
@@ -305,9 +305,8 @@ void ChromeStreamChannel::ProcessConnectDone(int status) {
     CloseTransportSocket();
   } else {
     ReportSuccessfulProxyConnection();
-    stream_socket_.reset(
-        new SequencedWriteStreamSocket(transport_->socket()));
     stream_reader_.reset(new ChromeStreamReader(transport_->socket()));
+    stream_writer_.reset(new ChromeStreamWriter(transport_->socket()));
   }
   if (status != net::OK) {
     // If the connection failed, notify immediately
@@ -406,8 +405,8 @@ void ChromeStreamChannel::CloseTransportSocket() {
   if (transport_.get() && transport_->socket())
     transport_->socket()->Disconnect();
   transport_.reset();
-  stream_socket_.reset();
   stream_reader_.reset();
+  stream_writer_.reset();
   is_connecting_ = false;
   weak_ptr_factory_.InvalidateWeakPtrs();
 }

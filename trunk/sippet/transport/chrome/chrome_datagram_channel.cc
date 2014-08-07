@@ -182,7 +182,7 @@ int ChromeDatagramChannel::DoResolveHostComplete(int result) {
       rv = socket->Connect(*i);
       if (rv == net::OK) {
         is_connected_ = true;
-        datagram_socket_.reset(new FramedWriteStreamSocket(socket.get()));
+        socket_writer_.reset(new ChromeDatagramWriter(socket.get()));
         break;
       }
     }
@@ -198,10 +198,10 @@ int ChromeDatagramChannel::DoResolveHostComplete(int result) {
 
 int ChromeDatagramChannel::Send(const scoped_refptr<Message> &message,
                                 const net::CompletionCallback& callback) {
-  if (is_connected_ && datagram_socket_.get()) {
+  if (is_connected_ && socket_writer_.get()) {
     scoped_refptr<net::StringIOBuffer> string_buffer =
         new net::StringIOBuffer(message->ToString());
-    return datagram_socket_->Write(
+    return socket_writer_->Write(
         string_buffer.get(),
         string_buffer->size(),
         callback);
@@ -215,8 +215,8 @@ void ChromeDatagramChannel::Close() {
 }
 
 void ChromeDatagramChannel::CloseWithError(int err) {
-  if (datagram_socket_.get()) {
-    datagram_socket_->CloseWithError(err);
+  if (socket_writer_.get()) {
+    socket_writer_->CloseWithError(err);
   }
 }
 
@@ -228,7 +228,7 @@ void ChromeDatagramChannel::CloseTransportSocket() {
   if (socket_.get())
     socket_->Close();
   socket_.reset();
-  datagram_socket_.reset();
+  socket_writer_.reset();
   is_connected_ = false;
   weak_ptr_factory_.InvalidateWeakPtrs();
 }
