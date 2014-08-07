@@ -3,12 +3,18 @@
 // found in the LICENSE file.
 
 #include "sippet/ua/ua_user_agent.h"
+
+#include "base/md5.h"
+#include "base/build_time.h"
+#include "base/strings/stringprintf.h"
+#include "base/strings/utf_string_conversions.h"
+#include "base/i18n/time_formatting.h"
+#include "net/base/net_errors.h"
 #include "sippet/ua/dialog.h"
 #include "sippet/uri/uri.h"
 #include "sippet/base/tags.h"
 #include "sippet/base/sequences.h"
 #include "sippet/base/stl_extras.h"
-#include "net/base/net_errors.h"
 
 namespace sippet {
 namespace ua {
@@ -75,6 +81,30 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   // Max-Forwards header field is always 70.
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
   request->push_back(max_forwards.PassAs<Header>());
+
+  scoped_ptr<Supported> supported(new Supported);
+  supported->push_back("path");
+  supported->push_back("outbound");
+  request->push_back(supported.PassAs<Header>());
+
+  std::string contact_address("sip:");
+  contact_address += "domain.invalid";
+  scoped_ptr<Contact> contact(new Contact(GURL(contact_address)));
+  // Now uses the build time to generate a single instance ID
+  base::string16 build_time =
+    base::TimeFormatShortDateAndTime(base::GetBuildTime());
+  std::string instance = base::MD5String(base::WideToUTF8(build_time));
+  std::string instance_id = base::StringPrintf("\"<urn:uuid:%s-%s-%s-%s-%s>\"",
+    instance.substr(0, 8).c_str(),
+    instance.substr(8, 4).c_str(),
+    instance.substr(12, 4).c_str(),
+    instance.substr(16, 4).c_str(),
+    instance.substr(20, 12).c_str());
+  contact->front().param_set("+sip.instance", instance_id);
+  if (Method::REGISTER == method) {
+    contact->front().param_set("reg-id", "1");
+  }
+  request->push_back(contact.PassAs<Header>());
   return request;
 }
 

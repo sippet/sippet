@@ -8,6 +8,7 @@
 #include "base/strings/string_util.h"
 #include "net/base/net_errors.h"
 #include "sippet/base/tags.h"
+#include "sippet/uri/uri.h"
 #include "sippet/message/headers/via.h"
 #include "sippet/message/headers/cseq.h"
 #include "sippet/transport/channel.h"
@@ -139,20 +140,7 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
 
   ChannelContext *channel_context = GetChannelContext(destination);
   if (channel_context) {
-    if (!channel_context->channel_->is_connected()) {
-      DVLOG(1) << "Cannot send a request yet";
-      return net::ERR_SOCKET_NOT_CONNECTED;
-    }
-    // Case the upper layer didn't copy a previous Via, create a new one
-    if (request->end() == request->find_first<Via>())
-      StampClientTopmostVia(request, channel_context->channel_);
-    // Send ACKs out of transactions
-    if (Method::ACK != request->method()) {
-      // The created transaction will handle the response processing.
-      // Requests don't need to be passed to client transactions.
-      ignore_result(CreateClientTransaction(request, channel_context));
-    }
-    return channel_context->channel_->Send(request, callback);
+    return SendRequestUsingChannelContext(request, channel_context, callback);
   }
   else {
     if (Method::ACK == request->method()) {
@@ -169,6 +157,27 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
     // the connect event will occur in the next event loop.
     return net::ERR_IO_PENDING;
   }
+}
+
+int NetworkLayer::SendRequestUsingChannelContext(scoped_refptr<Request> &request,
+    ChannelContext *channel_context,
+    const net::CompletionCallback& callback) {
+  if (!channel_context->channel_->is_connected()) {
+    DVLOG(1) << "Cannot send a request yet";
+    return net::ERR_SOCKET_NOT_CONNECTED;
+  }
+  // Case the upper layer didn't copy a previous Via, create a new one
+  if (request->end() == request->find_first<Via>())
+    StampClientTopmostVia(request, channel_context->channel_);
+  // Substitute the existing Contact by the real one
+  StampContact(request, channel_context->channel_);
+  // Send ACKs out of transactions
+  if (Method::ACK != request->method()) {
+    // The created transaction will handle the response processing.
+    // Requests don't need to be passed to client transactions.
+    ignore_result(CreateClientTransaction(request, channel_context));
+  }
+  return channel_context->channel_->Send(request, callback);
 }
 
 int NetworkLayer::SendResponse(const scoped_refptr<Response> &response,
@@ -327,8 +336,9 @@ std::string NetworkLayer::CreateBranch() {
   return network_settings_.branch_factory()->CreateBranch();
 }
 
-void NetworkLayer::StampClientTopmostVia(scoped_refptr<Request> &request,
-        const scoped_refptr<Channel> &channel) {
+void NetworkLayer::StampClientTopmostVia(
+    const scoped_refptr<Request> &request,
+    const scoped_refptr<Channel> &channel) {
   EndPoint origin;
   int rv = channel->origin(&origin);
   CHECK(net::OK == rv);
@@ -339,8 +349,9 @@ void NetworkLayer::StampClientTopmostVia(scoped_refptr<Request> &request,
   request->push_front(via.PassAs<Header>());
 }
 
-void NetworkLayer::StampServerTopmostVia(scoped_refptr<Request> &request,
-        const scoped_refptr<Channel> &channel) {
+void NetworkLayer::StampServerTopmostVia(
+    const scoped_refptr<Request> &request,
+    const scoped_refptr<Channel> &channel) {
   EndPoint destination(channel->destination());
   Message::iterator topmost_via = request->find_first<Via>();
   if (topmost_via == request->end()) {
@@ -357,6 +368,42 @@ void NetworkLayer::StampServerTopmostVia(scoped_refptr<Request> &request,
       via->front().set_received(destination.host());
     if (via->front().sent_by().port() != destination.port())
       via->front().set_rport(destination.port());
+  }
+}
+
+void NetworkLayer::StampContact(
+    const scoped_refptr<Request> &request,
+    const scoped_refptr<Channel> &channel) {
+  Contact *contact = request->get<Contact>();
+  if (!contact)
+    return;
+  std::string contact_address("sip:");
+  EndPoint endpoint;
+  ignore_result(channel->origin(&endpoint));
+  if (endpoint.IsEmpty())
+    return;
+  contact_address += endpoint.hostport().ToString();
+  if (Protocol::UDP == channel->destination().protocol()) {
+    // do nothing
+  } else if (Protocol::TCP == channel->destination().protocol()) {
+    contact_address += ";transport=tcp";
+  } else if (Protocol::TLS == channel->destination().protocol()) {
+    contact_address += ";transport=tls";
+  } else if (Protocol::WS == channel->destination().protocol()) {
+    contact_address += ";transport=ws";
+  } else if (Protocol::WSS == channel->destination().protocol()) {
+    contact_address += ";transport=wss";
+  }
+  if (Method::REGISTER != request->method()) {
+    contact_address += ";ob";
+  }
+  for (has_multiple<ContactInfo>::iterator i = contact->begin(),
+       ie = contact->end(); i != ie; i++) {
+    if (i->address().SchemeIs("sip") || i->address().SchemeIs("sips")) {
+      SipURI uri(i->address());
+      if ("domain.invalid" == uri.host())
+        i->set_address(GURL(contact_address));
+    }
   }
 }
 
@@ -588,13 +635,8 @@ void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel,
   delegate_->OnChannelConnected(destination, initial_result);
   if (result == net::OK) {
     if (channel_context->initial_request_) {
-      StampClientTopmostVia(channel_context->initial_request_,
-        channel_context->channel_);
-      ignore_result(CreateClientTransaction(
-        channel_context->initial_request_, channel_context));
-      // The result is now related to send operation
-      result = channel_context->channel_->Send(
-        channel_context->initial_request_, channel_context->initial_callback_);
+      result = SendRequestUsingChannelContext(channel_context->initial_request_,
+        channel_context, channel_context->initial_callback_);
       if (result == net::OK) {
         if (!channel_context->initial_callback_.is_null()) {
           // Complete the pending send callback now
