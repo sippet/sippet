@@ -598,7 +598,8 @@ void ChromeStreamChannel::StartTls() {
                      weak_ptr_factory_.GetWeakPtr(), status));
     }
   } else {
-    // The socket is already connected, so let's continue
+    // The socket is already connected, so let's continue as if it has
+    // just connected without problems
     base::MessageLoop* message_loop = base::MessageLoop::current();
     CHECK(message_loop);
     message_loop->PostTask(
@@ -735,6 +736,8 @@ void ChromeStreamChannel::ProcessSSLConnectDone(int status) {
       if (!transport_->socket()->IsConnectedAndIdle()) {
         if (AllowCertErrorForReconnection(&ssl_config_)) {
           // Restart connection ignoring the bad certificate.
+          transport_->socket()->Disconnect();
+          transport_->Reset();
           DoTcpConnect();
           return;
         }

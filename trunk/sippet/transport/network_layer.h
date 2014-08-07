@@ -270,6 +270,9 @@ class NetworkLayer :
 
   int SendRequest(scoped_refptr<Request> &request,
       const net::CompletionCallback& callback);
+  int SendRequestUsingChannelContext(scoped_refptr<Request> &request,
+      ChannelContext *channel_context,
+      const net::CompletionCallback& callback);
   int SendResponse(const scoped_refptr<Response> &message,
       const net::CompletionCallback& callback);
 
@@ -300,10 +303,13 @@ class NetworkLayer :
   // Set of utility functions used internally
   std::string CreateBranch();
   void StampClientTopmostVia(
-      scoped_refptr<Request> &request,
+      const scoped_refptr<Request> &request,
       const scoped_refptr<Channel> &channel);
   void StampServerTopmostVia(
-      scoped_refptr<Request> &request,
+      const scoped_refptr<Request> &request,
+      const scoped_refptr<Channel> &channel);
+  void StampContact(
+      const scoped_refptr<Request> &request,
       const scoped_refptr<Channel> &channel);
   static std::string ClientTransactionId(
       const scoped_refptr<Request> &request);
