@@ -7,6 +7,7 @@
 
 #include "sippet/transport/channel.h"
 #include "sippet/transport/chrome/sequenced_write_stream_socket.h"
+#include "sippet/transport/chrome/chrome_stream_reader.h"
 #include "base/memory/weak_ptr.h"
 #include "net/proxy/proxy_info.h"
 #include "net/proxy/proxy_service.h"
@@ -18,8 +19,6 @@ class ClientSocketFactory;
 class ClientSocketHandle;
 class URLRequestContextGetter;
 class HttpNetworkSession;
-class IOBufferWithSize;
-class DrainableIOBuffer;
 }
 
 namespace sippet {
@@ -56,15 +55,6 @@ class ChromeStreamChannel : public Channel {
   virtual void DetachDelegate() OVERRIDE;
 
  private:
-  enum AsyncIOState {
-    // An I/O op is not in progress.
-    IDLE,
-    // A function has been posted to do the I/O.
-    POSTED,
-    // An async I/O operation is pending.
-    PENDING,
-  };
-
   friend class base::RefCountedThreadSafe<Channel>;
   virtual ~ChromeStreamChannel();
 
@@ -82,11 +72,9 @@ class ChromeStreamChannel : public Channel {
   int HandleCertificateError(int result);
   bool AllowCertErrorForReconnection(net::SSLConfig* ssl_config);
 
-  // Read loop functions.
   void PostDoRead();
   void DoRead();
-  void ProcessReadDone(int status);
-  void ProcessReceivedData();
+  void OnReadComplete(int result);
 
   // TLS related functions
   void StartTls();
@@ -106,6 +94,7 @@ class ChromeStreamChannel : public Channel {
   // The transport socket.
   scoped_ptr<net::ClientSocketHandle> transport_;
   scoped_ptr<SequencedWriteStreamSocket> stream_socket_;
+  scoped_ptr<ChromeStreamReader> stream_reader_;
 
   bool is_connecting_;
   net::SSLConfig ssl_config_;
@@ -115,12 +104,6 @@ class ChromeStreamChannel : public Channel {
   const GURL proxy_url_;
   bool tried_direct_connect_fallback_;
   net::BoundNetLog bound_net_log_;
-
-  AsyncIOState read_state_;
-  scoped_refptr<net::IOBufferWithSize> read_buf_;
-  scoped_refptr<net::DrainableIOBuffer> drainable_read_buf_;
-  char *read_end_;
-  scoped_refptr<Message> current_message_;
 
   base::WeakPtrFactory<ChromeStreamChannel> weak_ptr_factory_;
 
