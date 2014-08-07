@@ -51,10 +51,7 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
           weak_ptr_factory_(this),
           dest_host_port_pair_(destination.host(), destination.port()),
           delegate_(delegate),
-          read_buf_(new net::IOBufferWithSize(kReadBufSize)),
-          read_end_(NULL),
           is_connecting_(false),
-          read_state_(IDLE),
           request_context_getter_(request_context_getter),
           client_socket_factory_(client_socket_factory) {
   DCHECK(request_context_getter.get());
@@ -310,6 +307,7 @@ void ChromeStreamChannel::ProcessConnectDone(int status) {
     ReportSuccessfulProxyConnection();
     stream_socket_.reset(
         new SequencedWriteStreamSocket(transport_->socket()));
+    stream_reader_.reset(new ChromeStreamReader(transport_->socket()));
   }
   if (status != net::OK) {
     // If the connection failed, notify immediately
@@ -409,161 +407,45 @@ void ChromeStreamChannel::CloseTransportSocket() {
     transport_->socket()->Disconnect();
   transport_.reset();
   stream_socket_.reset();
+  stream_reader_.reset();
   is_connecting_ = false;
   weak_ptr_factory_.InvalidateWeakPtrs();
 }
 
 void ChromeStreamChannel::PostDoRead() {
-  DCHECK(is_connected());
-  DCHECK_EQ(read_state_, IDLE);
   base::MessageLoop* message_loop = base::MessageLoop::current();
   CHECK(message_loop);
   message_loop->PostTask(
       FROM_HERE,
       base::Bind(&ChromeStreamChannel::DoRead,
                  weak_ptr_factory_.GetWeakPtr()));
-  read_state_ = POSTED;
 }
 
 void ChromeStreamChannel::DoRead() {
-  DCHECK(is_connected());
-  DCHECK_EQ(read_state_, POSTED);
-
-  if (!drainable_read_buf_)
-    drainable_read_buf_ = new net::DrainableIOBuffer(read_buf_, read_buf_->size());
-  int status =
-      transport_->socket()->Read(
-          drainable_read_buf_.get(), drainable_read_buf_->size(),
-          base::Bind(&ChromeStreamChannel::ProcessReadDone,
-                     weak_ptr_factory_.GetWeakPtr()));
-  read_state_ = PENDING;
-  if (status != net::ERR_IO_PENDING) {
-    ProcessReadDone(status);
-  }
-}
-
-void ChromeStreamChannel::ProcessReadDone(int status) {
-  DCHECK_NE(status, net::ERR_IO_PENDING);
-  DCHECK_EQ(read_state_, PENDING);
-
-  read_state_ = IDLE;
-  if (status > 0) {
-    read_end_ = drainable_read_buf_->data() + static_cast<size_t>(status);
-    ProcessReceivedData();
-  } else if (status == 0) {
-    // Other side closed the connection.
-    RunUserChannelClosed(net::OK);
-  } else {  // status < 0
-    RunUserChannelClosed(status);
-  }
-}
-
-void ChromeStreamChannel::ProcessReceivedData() {
-  DCHECK(is_connected());
-  DCHECK(read_end_);
-  DCHECK_EQ(read_state_, IDLE);
-
-  // Move to the buffer start, as we may have asked to read more data
-  if (drainable_read_buf_->data() > read_buf_->data())
-    drainable_read_buf_->SetOffset(0);
-
-  for (;;) {
-    if (!current_message_.get()) {
-      // Eliminate all blanks from the message start. They're used as
-      // keep-alive by several implementations.
-      while (drainable_read_buf_->data() != read_end_) {
-        switch (drainable_read_buf_->data()[0]) {
-          case '\r': case '\n':
-            drainable_read_buf_->DidConsume(1);
-            continue;
-        }
-        break;
-      }
-      if (drainable_read_buf_->data() == read_end_) {
-        // The reading buffer was full of empty lines, read more...
-        break;
-      }
-      base::StringPiece string_piece(drainable_read_buf_->data(),
-          read_end_ - drainable_read_buf_->data());
-      size_t end_size = 4;
-      size_t end = string_piece.find("\r\n\r\n");
-      if (end == base::StringPiece::npos) {
-        // CRLF is the standard, but we're accepting just LF
-        end = string_piece.find("\n\n");
-        end_size = 2;
-      }
-      if (end == base::StringPiece::npos) {
-        // Read more...
-        break;
-      }
-      std::string header(drainable_read_buf_->data(), end + end_size);
-      drainable_read_buf_->DidConsume(end + end_size);
-      current_message_ = Message::Parse(header);
-      if (!current_message_) {
-        // Close connection: bad protocol
-        RunUserChannelClosed(net::ERR_INVALID_RESPONSE);
-        return;
-      }
-    }
-
-    DCHECK(current_message_);
-
-    // If there's no Content-Length, then we accept as if the content is empty
-    ContentLength *content_length = current_message_->get<ContentLength>();
-    if (content_length && content_length->value() > 0) {
-      if (content_length->value() > kReadBufSize) {
-        // Close the connection immediately: the server is trying to send a
-        // too large content. Maximum size allowed is 64kb.
-        VLOG(1) << "Trying to receive a too large message content: "
-                << content_length->value() << ", max = " << kReadBufSize;
-        RunUserChannelClosed(net::ERR_MSG_TOO_BIG);
-        return;
-      }
-      if (content_length->value() >
-          static_cast<unsigned>(read_end_ - drainable_read_buf_->data())) {
-        // Read more...
-        break;
-      }
-      std::string content(drainable_read_buf_->data(),
-                          content_length->value());
-      drainable_read_buf_->DidConsume(content_length->value());
-      current_message_->set_content(content);
-    }
-    
-    if (delegate_)
-      delegate_->OnIncomingMessage(this, current_message_);
-    current_message_ = NULL;
-
-  } while (read_end_ - drainable_read_buf_->data() > 0);
-
-  if (drainable_read_buf_->data() == read_buf_->data()) {
-    // Close the connection: the server is trying to send a message (header
-    // or content) that exceeds the maximum size allowed (64kb).
-    RunUserChannelClosed(net::ERR_MSG_TOO_BIG);
+  DCHECK(stream_reader_.get());
+  int result = stream_reader_->Read(
+      base::Bind(&ChromeStreamChannel::OnReadComplete,
+                 weak_ptr_factory_.GetWeakPtr()));
+  if (net::ERR_IO_PENDING == result)
     return;
+  OnReadComplete(result);
+}
+
+void ChromeStreamChannel::OnReadComplete(int result) {
+  DCHECK_NE(net::ERR_IO_PENDING, result);
+  if (net::OK == result) {
+    PostDoRead();
+    delegate_->OnIncomingMessage(this, stream_reader_->GetIncomingMessage());
+  } else if (result < 0) {
+    RunUserChannelClosed(result);
+    // |this| may be deleted after this call.
   }
-  
-  if (read_end_ - drainable_read_buf_->data() > 0) {
-    // Rearrange the still pending data to the beginning of the buffer.
-    size_t pending_bytes = read_end_ - drainable_read_buf_->data();
-    memmove(read_buf_->data(), drainable_read_buf_->data(), pending_bytes);
-
-    // Move the reading buffer after the pending bytes
-    drainable_read_buf_->SetOffset(pending_bytes);
-  } else {
-    // The next read will take a clean buffer
-    drainable_read_buf_->SetOffset(0);
-  }
-
-  read_end_ = NULL;
-
-  PostDoRead();
 }
 
 void ChromeStreamChannel::StartTls() {
   DCHECK(is_connected());
   DCHECK(destination_.protocol().Equals(Protocol::TLS));
-  DCHECK_EQ(read_state_, IDLE);
+  DCHECK(stream_reader_->is_idle());
 
   net::SSLInfo ssl_info;
   if (!transport_->socket()->GetSSLInfo(&ssl_info)) {
@@ -715,8 +597,7 @@ bool ChromeStreamChannel::AllowCertErrorForReconnection(net::SSLConfig* ssl_conf
 
 void ChromeStreamChannel::ProcessSSLConnectDone(int status) {
   DCHECK_NE(status, net::ERR_IO_PENDING);
-  DCHECK_EQ(read_state_, IDLE);
-  DCHECK(!read_end_);
+  DCHECK(stream_reader_->is_idle());
 
   if (net::ERR_SSL_CLIENT_AUTH_CERT_NEEDED == status) {
     // This will recover past used client certificates case it has been
