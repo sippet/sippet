@@ -203,6 +203,8 @@
         'transport/chrome/chrome_stream_channel.cc',
         'transport/chrome/chrome_datagram_channel.h',
         'transport/chrome/chrome_datagram_channel.cc',
+        'transport/chrome/chrome_stream_reader.h',
+        'transport/chrome/chrome_stream_reader.cc',
         'ua/ua_user_agent.h',
         'ua/ua_user_agent.cc',
         'ua/dialog.h',
