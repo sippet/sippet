@@ -5,7 +5,7 @@
 #ifndef SIPPET_TRANSPORT_CHROME_CHROME_STREAM_READER_H_
 #define SIPPET_TRANSPORT_CHROME_CHROME_STREAM_READER_H_
 
-#include "sippet/transport/message_reader.h"
+#include "sippet/transport/chrome/message_reader.h"
 
 namespace net {
 class Socket;
