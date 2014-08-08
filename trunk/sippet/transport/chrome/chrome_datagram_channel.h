@@ -7,6 +7,7 @@
 
 #include "sippet/transport/channel.h"
 #include "sippet/transport/chrome/chrome_datagram_writer.h"
+#include "sippet/transport/chrome/chrome_datagram_reader.h"
 #include "base/memory/weak_ptr.h"
 #include "net/base/address_list.h"
 #include "net/dns/host_resolver.h"
@@ -64,12 +65,6 @@ class ChromeDatagramChannel : public Channel {
     STATE_NONE,
   };
 
-  enum ReadIOState {
-    READ_IDLE,
-    READ_POSTED,
-    READ_PENDING,
-  };
-
   void RunUserConnectCallback(int result);
   void RunUserChannelClosed(int result);
 
@@ -79,13 +74,11 @@ class ChromeDatagramChannel : public Channel {
   int DoResolveHost();
   int DoResolveHostComplete(int result);
 
-  // Read loop functions.
+  void CloseTransportSocket();
+
   void PostDoRead();
   void DoRead();
-  void ProcessReadDone(int status);
-  int ProcessReceivedData(int read_bytes);
-
-  void CloseTransportSocket();
+  void OnReadComplete(int result);
 
   State next_state_;
 
@@ -97,13 +90,11 @@ class ChromeDatagramChannel : public Channel {
 
   net::ClientSocketFactory* client_socket_factory_;
   scoped_ptr<net::DatagramClientSocket> socket_;
-  scoped_ptr<ChromeDatagramWriter> socket_writer_;
+  scoped_ptr<ChromeDatagramReader> datagram_reader_;
+  scoped_ptr<ChromeDatagramWriter> datagram_writer_;
   net::BoundNetLog bound_net_log_;
 
   bool is_connected_;
-
-  ReadIOState read_state_;
-  scoped_refptr<net::IOBufferWithSize> read_buf_;
 
   base::WeakPtrFactory<ChromeDatagramChannel> weak_ptr_factory_;
 

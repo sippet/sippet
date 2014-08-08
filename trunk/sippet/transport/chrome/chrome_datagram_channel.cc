@@ -37,9 +37,7 @@ ChromeDatagramChannel::ChromeDatagramChannel(const EndPoint& destination,
         net::BoundNetLog::Make(
             request_context_getter->GetURLRequestContext()->net_log(),
             net::NetLog::SOURCE_SOCKET)),
-    read_state_(READ_IDLE),
-    next_state_(STATE_NONE),
-    read_buf_(new net::IOBufferWithSize(kReadBufSize)) {
+    next_state_(STATE_NONE) {
   DCHECK(!destination_.IsEmpty());
   DCHECK(client_socket_factory_);
   DCHECK(delegate_);
@@ -182,7 +180,8 @@ int ChromeDatagramChannel::DoResolveHostComplete(int result) {
       rv = socket->Connect(*i);
       if (rv == net::OK) {
         is_connected_ = true;
-        socket_writer_.reset(new ChromeDatagramWriter(socket.get()));
+        datagram_reader_.reset(new ChromeDatagramReader(socket.get()));
+        datagram_writer_.reset(new ChromeDatagramWriter(socket.get()));
         break;
       }
     }
@@ -198,10 +197,10 @@ int ChromeDatagramChannel::DoResolveHostComplete(int result) {
 
 int ChromeDatagramChannel::Send(const scoped_refptr<Message> &message,
                                 const net::CompletionCallback& callback) {
-  if (is_connected_ && socket_writer_.get()) {
+  if (is_connected_ && datagram_writer_.get()) {
     scoped_refptr<net::StringIOBuffer> string_buffer =
         new net::StringIOBuffer(message->ToString());
-    return socket_writer_->Write(
+    return datagram_writer_->Write(
         string_buffer.get(),
         string_buffer->size(),
         callback);
@@ -215,8 +214,8 @@ void ChromeDatagramChannel::Close() {
 }
 
 void ChromeDatagramChannel::CloseWithError(int err) {
-  if (socket_writer_.get()) {
-    socket_writer_->CloseWithError(err);
+  if (datagram_writer_.get()) {
+    datagram_writer_->CloseWithError(err);
   }
 }
 
@@ -228,123 +227,40 @@ void ChromeDatagramChannel::CloseTransportSocket() {
   if (socket_.get())
     socket_->Close();
   socket_.reset();
-  socket_writer_.reset();
+  datagram_reader_.reset();
+  datagram_writer_.reset();
   is_connected_ = false;
   weak_ptr_factory_.InvalidateWeakPtrs();
 }
 
 void ChromeDatagramChannel::PostDoRead() {
-  DCHECK(is_connected());
-  DCHECK_EQ(read_state_, READ_IDLE);
   base::MessageLoop* message_loop = base::MessageLoop::current();
   CHECK(message_loop);
   message_loop->PostTask(
       FROM_HERE,
       base::Bind(&ChromeDatagramChannel::DoRead,
                  weak_ptr_factory_.GetWeakPtr()));
-  read_state_ = READ_POSTED;
 }
 
 void ChromeDatagramChannel::DoRead() {
-  DCHECK(is_connected());
-  DCHECK_EQ(read_state_, READ_POSTED);
-
-  int status =
-      socket_->Read(
-          read_buf_.get(), read_buf_->size(),
-          base::Bind(&ChromeDatagramChannel::ProcessReadDone,
-                     weak_ptr_factory_.GetWeakPtr()));
-  read_state_ = READ_PENDING;
-  if (status != net::ERR_IO_PENDING) {
-    ProcessReadDone(status);
-  }
+  DCHECK(datagram_reader_.get());
+  int result = datagram_reader_->Read(
+      base::Bind(&ChromeDatagramChannel::OnReadComplete,
+                 weak_ptr_factory_.GetWeakPtr()));
+  if (net::ERR_IO_PENDING == result)
+    return;
+  OnReadComplete(result);
 }
 
-void ChromeDatagramChannel::ProcessReadDone(int status) {
-  DCHECK_NE(status, net::ERR_IO_PENDING);
-  DCHECK_EQ(read_state_, READ_PENDING);
-
-  read_state_ = READ_IDLE;
-  if (status > 0) {
-    int rv = ProcessReceivedData(status);
-    if (rv != net::OK) {
-      RunUserChannelClosed(rv);
-    } else {
-      PostDoRead();
-    }
-  } else if (status == 0) {
-    // Other side closed the connection.
-    RunUserChannelClosed(net::OK);
-  } else {  // status < 0
-    RunUserChannelClosed(status);
+void ChromeDatagramChannel::OnReadComplete(int result) {
+  DCHECK_NE(net::ERR_IO_PENDING, result);
+  if (net::OK == result) {
+    PostDoRead();
+    delegate_->OnIncomingMessage(this, datagram_reader_->GetIncomingMessage());
+  } else if (result < 0) {
+    RunUserChannelClosed(result);
+    // |this| may be deleted after this call.
   }
-}
-
-int ChromeDatagramChannel::ProcessReceivedData(int read_bytes) {
-  DCHECK(is_connected());
-  DCHECK_EQ(read_state_, READ_IDLE);
-
-  // The datagram processing is simpler: interpret just one
-  // frame and discard any extra data 
-  char *read_start = read_buf_->data();
-  char *read_end = read_buf_->data() + read_bytes;
-
-  // Eliminate all blanks from the message start.
-  while (read_start != read_end) {
-    switch (read_start[0]) {
-      case '\r': case '\n':
-        read_start += 1;
-        continue;
-    }
-    break;
-  }
-  if (read_start == read_end) {
-    // It was just a keep-alive, ignore.
-    return net::OK;
-  }
-
-  base::StringPiece string_piece(read_start, read_end - read_start);
-  size_t end_size = 4;
-  size_t end = string_piece.find("\r\n\r\n");
-  if (end == base::StringPiece::npos) {
-    // CRLF is the standard, but we're accepting just LF
-    end = string_piece.find("\n\n");
-    end_size = 2;
-  }
-  if (end == base::StringPiece::npos) {
-    // End of message wasn't found, discarding...
-    VLOG(1) << "Discarded incoming datagram: end of SIP header not found";
-    return net::ERR_INVALID_RESPONSE;
-  }
-  std::string header(read_start, end + end_size);
-  read_start += end + end_size;
-  scoped_refptr<Message> message = Message::Parse(header);
-  if (!message) {
-    // Close connection: bad protocol
-    return net::ERR_INVALID_RESPONSE;
-  }
-
-  // If there's no Content-Length, then we accept as if the content is empty
-  ContentLength *content_length = message->get<ContentLength>();
-  if (content_length && content_length->value() > 0) {
-    if (content_length->value() > kReadBufSize) {
-      // Close the connection immediately: the server is trying to send a
-      // too large content. Maximum size allowed is 64kb.
-      VLOG(1) << "Trying to receive a too large message content: "
-              << content_length->value() << ", max = " << kReadBufSize;
-      return net::ERR_MSG_TOO_BIG;
-    }
-    if (content_length->value() >
-        static_cast<unsigned>(read_end - read_start)) {
-      return net::ERR_MSG_TOO_BIG;
-    }
-    std::string content(read_start, content_length->value());
-    message->set_content(content);
-  }
-    
-  if (delegate_)
-    delegate_->OnIncomingMessage(this, message);
-  return net::OK;
 }
 
 } // namespace sippet
