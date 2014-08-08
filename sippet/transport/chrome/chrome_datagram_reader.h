@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_TRANSPORT_CHROME_CHROME_STREAM_READER_H_
-#define SIPPET_TRANSPORT_CHROME_CHROME_STREAM_READER_H_
+#ifndef SIPPET_TRANSPORT_CHROME_CHROME_DATAGRAM_READER_H_
+#define SIPPET_TRANSPORT_CHROME_CHROME_DATAGRAM_READER_H_
 
 #include "sippet/transport/message_reader.h"
 
 namespace net {
-class StreamSocket;
+class DatagramClientSocket;
 class IOBufferWithSize;
 class DrainableIOBuffer;
 }
@@ -17,11 +17,11 @@ namespace sippet {
 
 class Message;
 
-class ChromeStreamReader
+class ChromeDatagramReader
   : public MessageReader {
  public:
-  ChromeStreamReader(net::StreamSocket* socket_to_wrap);
-  virtual ~ChromeStreamReader();
+  ChromeDatagramReader(net::DatagramClientSocket* socket_to_wrap);
+  virtual ~ChromeDatagramReader();
 
  private:
   virtual int DoIORead(const net::CompletionCallback& callback) OVERRIDE;
@@ -30,19 +30,20 @@ class ChromeStreamReader
   virtual int BytesRemaining() const OVERRIDE;
   virtual void DidConsume(int bytes) OVERRIDE;
 
-  void ReceiveDataComplete(int result);
+  void OnReceiveDataComplete(int result);
+  void ReceivedData(size_t bytes);
   void DoCallback(int result);
 
-  net::StreamSocket* wrapped_socket_;
+  net::DatagramClientSocket* wrapped_socket_;
   scoped_refptr<net::IOBufferWithSize> read_buf_;
-  scoped_refptr<net::DrainableIOBuffer> drainable_read_buf_;
   net::CompletionCallback callback_;
   net::CompletionCallback read_complete_;
+  char *read_start_;
   char *read_end_;
 
-  DISALLOW_COPY_AND_ASSIGN(ChromeStreamReader);
+  DISALLOW_COPY_AND_ASSIGN(ChromeDatagramReader);
 };
 
 } // namespace sippet
 
-#endif // SIPPET_TRANSPORT_CHROME_CHROME_STREAM_READER_H_
+#endif // SIPPET_TRANSPORT_CHROME_CHROME_DATAGRAM_READER_H_
