@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_TRANSPORT_MESSAGE_READER_H_
-#define SIPPET_TRANSPORT_MESSAGE_READER_H_
+#ifndef SIPPET_TRANSPORT_CHROME_MESSAGE_READER_H_
+#define SIPPET_TRANSPORT_CHROME_MESSAGE_READER_H_
 
 #include "base/memory/scoped_ptr.h"
 #include "net/base/completion_callback.h"
@@ -82,4 +82,4 @@ class MessageReader {
 
 } // namespace sippet
 
-#endif // SIPPET_TRANSPORT_MESSAGE_READER_H_
+#endif // SIPPET_TRANSPORT_CHROME_MESSAGE_READER_H_
