@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_TRANSPORT_CHROME_SOCKET_CHANNEL_FACTORY_H_
-#define SIPPET_TRANSPORT_CHROME_SOCKET_CHANNEL_FACTORY_H_
+#ifndef SIPPET_TRANSPORT_CHROME_CHROME_SOCKET_CHANNEL_FACTORY_H_
+#define SIPPET_TRANSPORT_CHROME_CHROME_SOCKET_CHANNEL_FACTORY_H_
 
 #include "sippet/transport/channel_factory.h"
 #include "base/memory/ref_counted.h"
@@ -38,4 +38,4 @@ class ChromeChannelFactory : public ChannelFactory {
 
 } /// End of sippet namespace
 
-#endif // SIPPET_TRANSPORT_CHROME_SOCKET_CHANNEL_FACTORY_H_
+#endif // SIPPET_TRANSPORT_CHROME_CHROME_SOCKET_CHANNEL_FACTORY_H_

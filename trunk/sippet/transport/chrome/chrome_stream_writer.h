@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_TRANSPORT_CHROME_SEQUENCED_WRITE_STREAM_SOCKET_H_
-#define SIPPET_TRANSPORT_CHROME_SEQUENCED_WRITE_STREAM_SOCKET_H_
+#ifndef SIPPET_TRANSPORT_CHROME_CHROME_STREAM_WRITER_H_
+#define SIPPET_TRANSPORT_CHROME_CHROME_STREAM_WRITER_H_
 
 #include <deque>
 #include "base/memory/weak_ptr.h"
@@ -61,4 +61,4 @@ class ChromeStreamWriter {
 
 } // End of sippet namespace
 
-#endif // SIPPET_TRANSPORT_CHROME_SEQUENCED_WRITE_STREAM_SOCKET_H_
+#endif // SIPPET_TRANSPORT_CHROME_CHROME_STREAM_WRITER_H_
