@@ -7,6 +7,7 @@
 #include "base/stl_util.h"
 #include "net/base/io_buffer.h"
 #include "net/base/net_errors.h"
+#include "net/socket/socket.h"
 
 namespace sippet {
 
@@ -20,7 +21,7 @@ ChromeStreamWriter::PendingBlock::~PendingBlock() {
 }
 
 ChromeStreamWriter::ChromeStreamWriter(
-    net::StreamSocket *socket_to_wrap)
+    net::Socket *socket_to_wrap)
     : wrapped_socket_(socket_to_wrap),
       weak_factory_(this),
       error_(net::OK) {

@@ -6,14 +6,14 @@
 
 #include "net/base/net_errors.h"
 #include "net/base/io_buffer.h"
-#include "net/socket/stream_socket.h"
+#include "net/socket/socket.h"
 
 namespace sippet {
 
 // This number will couple with quite long SIP messages
 static const size_t kReadBufSize = 64U * 1024U;
 
-ChromeStreamReader::ChromeStreamReader(net::StreamSocket* socket_to_wrap)
+ChromeStreamReader::ChromeStreamReader(net::Socket* socket_to_wrap)
     : wrapped_socket_(socket_to_wrap),
       read_buf_(new net::IOBufferWithSize(kReadBufSize)),
       read_complete_(base::Bind(&ChromeStreamReader::ReceiveDataComplete,

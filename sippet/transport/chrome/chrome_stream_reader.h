@@ -8,7 +8,7 @@
 #include "sippet/transport/message_reader.h"
 
 namespace net {
-class StreamSocket;
+class Socket;
 class IOBufferWithSize;
 class DrainableIOBuffer;
 }
@@ -20,7 +20,7 @@ class Message;
 class ChromeStreamReader
   : public MessageReader {
  public:
-  ChromeStreamReader(net::StreamSocket* socket_to_wrap);
+  ChromeStreamReader(net::Socket* socket_to_wrap);
   virtual ~ChromeStreamReader();
 
  private:
@@ -33,7 +33,7 @@ class ChromeStreamReader
   void ReceiveDataComplete(int result);
   void DoCallback(int result);
 
-  net::StreamSocket* wrapped_socket_;
+  net::Socket* wrapped_socket_;
   scoped_refptr<net::IOBufferWithSize> read_buf_;
   scoped_refptr<net::DrainableIOBuffer> drainable_read_buf_;
   net::CompletionCallback callback_;
