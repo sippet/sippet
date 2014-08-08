@@ -8,7 +8,7 @@
 #include <deque>
 #include "base/memory/weak_ptr.h"
 #include "net/base/net_log.h"
-#include "net/socket/stream_socket.h"
+#include "net/base/completion_callback.h"
 
 namespace base {
 class TimeDelta;
@@ -16,8 +16,8 @@ class TimeDelta;
 
 namespace net {
 class IPEndPoint;
-class IOBufferWithSize;
-class DatagramClientSocket;
+class IOBuffer;
+class Socket;
 }
 
 namespace sippet {
@@ -39,12 +39,12 @@ class ChromeDatagramWriter {
   void CloseWithError(int err);
 
  private:
-  net::Socket *wrapped_socket_;
+  net::Socket* wrapped_socket_;
   base::WeakPtrFactory<ChromeDatagramWriter> weak_factory_;
   int error_;
 
   struct PendingFrame {
-    PendingFrame(net::IOBuffer *buf, int buf_len,
+    PendingFrame(net::IOBuffer* buf, int buf_len,
                  const net::CompletionCallback& callback);
     ~PendingFrame();
     scoped_refptr<net::IOBuffer> buf_;

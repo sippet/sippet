@@ -6,7 +6,7 @@
 
 #include "net/base/net_errors.h"
 #include "net/base/io_buffer.h"
-#include "net/udp/datagram_client_socket.h"
+#include "net/socket/socket.h"
 
 namespace sippet {
 
@@ -14,7 +14,7 @@ namespace sippet {
 static const size_t kReadBufSize = 64U * 1024U;
 
 ChromeDatagramReader::ChromeDatagramReader(
-    net::DatagramClientSocket* socket_to_wrap)
+    net::Socket* socket_to_wrap)
     : wrapped_socket_(socket_to_wrap),
       read_buf_(new net::IOBufferWithSize(kReadBufSize)),
       read_complete_(base::Bind(&ChromeDatagramReader::OnReceiveDataComplete,

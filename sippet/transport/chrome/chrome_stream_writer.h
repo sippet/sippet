@@ -8,7 +8,7 @@
 #include <deque>
 #include "base/memory/weak_ptr.h"
 #include "net/base/net_log.h"
-#include "net/socket/stream_socket.h"
+#include "net/base/completion_callback.h"
 
 namespace base {
 class TimeDelta;
@@ -16,7 +16,9 @@ class TimeDelta;
 
 namespace net {
 class IPEndPoint;
+class IOBuffer;
 class DrainableIOBuffer;
+class Socket;
 }
 
 namespace sippet {
@@ -28,7 +30,7 @@ namespace sippet {
 // There are no bounds on the local buffer size. Use carefully.
 class ChromeStreamWriter {
  public:
-  ChromeStreamWriter(net::StreamSocket* socket_to_wrap);
+  ChromeStreamWriter(net::Socket* socket_to_wrap);
   virtual ~ChromeStreamWriter();
 
   int Write(net::IOBuffer* buf, int buf_len,
@@ -37,12 +39,12 @@ class ChromeStreamWriter {
   void CloseWithError(int err);
 
  private:
-  net::StreamSocket* wrapped_socket_;
+  net::Socket* wrapped_socket_;
   base::WeakPtrFactory<ChromeStreamWriter> weak_factory_;
   int error_;
 
   struct PendingBlock {
-    PendingBlock(net::DrainableIOBuffer *io_buffer,
+    PendingBlock(net::DrainableIOBuffer* io_buffer,
                  const net::CompletionCallback& callback);
     ~PendingBlock();
     scoped_refptr<net::DrainableIOBuffer> io_buffer_;
