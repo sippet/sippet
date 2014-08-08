@@ -8,9 +8,8 @@
 #include "sippet/transport/message_reader.h"
 
 namespace net {
-class DatagramClientSocket;
+class Socket;
 class IOBufferWithSize;
-class DrainableIOBuffer;
 }
 
 namespace sippet {
@@ -20,7 +19,7 @@ class Message;
 class ChromeDatagramReader
   : public MessageReader {
  public:
-  ChromeDatagramReader(net::DatagramClientSocket* socket_to_wrap);
+  ChromeDatagramReader(net::Socket* socket_to_wrap);
   virtual ~ChromeDatagramReader();
 
  private:
@@ -34,7 +33,7 @@ class ChromeDatagramReader
   void ReceivedData(size_t bytes);
   void DoCallback(int result);
 
-  net::DatagramClientSocket* wrapped_socket_;
+  net::Socket* wrapped_socket_;
   scoped_refptr<net::IOBufferWithSize> read_buf_;
   net::CompletionCallback callback_;
   net::CompletionCallback read_complete_;
