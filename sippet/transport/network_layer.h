@@ -188,6 +188,10 @@ class NetworkLayer :
   int ReconnectWithCertificate(const EndPoint &destination,
                                net::X509Certificate* client_cert);
 
+  // Dismiss previous connection attempt, forwarding the last error. This
+  // method is used to clean up past various SSL related errors.
+  int DismissLastConnectionAttempt(const EndPoint &destination);
+
   // Get the origin |EndPoint| of a given destination. This function returns
   // |net::OK| only if there is a channel available for that destination.
   int GetOriginOf(const EndPoint& destination, EndPoint *origin);
@@ -361,6 +365,8 @@ class NetworkLayer :
 
   // Timer callbacks
   void OnIdleChannelTimedOut(const EndPoint &endpoint);
+
+  void PostOnChannelClosed(const EndPoint &destination);
 };
 
 } // End of sippet namespace
