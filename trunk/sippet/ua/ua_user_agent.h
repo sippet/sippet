@@ -64,8 +64,7 @@ class UserAgent :
 
   // Construct a |UserAgent|.
   UserAgent(AuthHandlerFactory *auth_handler_factory,
-            const net::BoundNetLog &net_log
-            /*const UserAgentSettings &user_agent_settings = UserAgentSettings()*/);
+            const net::BoundNetLog &net_log);
 
   void SetNetworkLayer(NetworkLayer *network_layer) {
     network_layer_ = network_layer;
