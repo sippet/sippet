@@ -93,6 +93,17 @@ int NetworkLayer::ReconnectWithCertificate(const EndPoint &destination,
   return channel_context->channel_->ReconnectWithCertificate(client_cert);
 }
 
+int NetworkLayer::DismissLastConnectionAttempt(const EndPoint &destination) {
+  ChannelContext *channel_context = GetChannelContext(destination);
+  if (!channel_context)
+    return net::ERR_CONNECTION_CLOSED;
+  scoped_refptr<Channel> channel(channel_context->channel_);
+  DestroyChannelContext(channel_context);
+  channel->Close();
+  PostOnChannelClosed(destination);
+  return net::OK;
+}
+
 int NetworkLayer::GetOriginOf(const EndPoint& destination, EndPoint *origin) {
   ChannelContext *channel_context = GetChannelContext(destination);
   if (!channel_context)
@@ -759,6 +770,15 @@ void NetworkLayer::OnTransactionTerminated(const std::string &transaction_id) {
 void NetworkLayer::OnIdleChannelTimedOut(const EndPoint &endpoint) {
   ChannelContext *channel_context = GetChannelContext(endpoint);
   OnChannelClosed(channel_context->channel_, net::ERR_TIMED_OUT);
+}
+
+void NetworkLayer::PostOnChannelClosed(const EndPoint &destination) {
+  base::MessageLoop* message_loop = base::MessageLoop::current();
+  CHECK(message_loop);
+  message_loop->PostTask(
+      FROM_HERE,
+      base::Bind(&NetworkLayer::Delegate::OnChannelClosed,
+          base::Unretained(delegate_), destination));
 }
 
 } // End of sippet namespace
