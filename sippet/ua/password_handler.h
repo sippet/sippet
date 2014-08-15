@@ -2,6 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef SIPPET_UA_PASSWORD_HANDLER_H_
+#define SIPPET_UA_PASSWORD_HANDLER_H_
+
+#include "base/memory/scoped_ptr.h"
+#include "base/strings/string16.h"
+#include "net/base/completion_callback.h"
+
+namespace net {
+class AuthChallengeInfo;
+}
+
 namespace sippet {
 
 // This is the interface for the application-specific class that will route
@@ -28,3 +39,5 @@ class PasswordHandler {
 };
 
 } // namespace sippet
+
+#endif // SIPPET_UA_PASSWORD_HANDLER_H_

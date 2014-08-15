@@ -2,24 +2,38 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef SIPPET_UA_SSL_CERT_ERROR_HANDLER_H_
+#define SIPPET_UA_SSL_CERT_ERROR_HANDLER_H_
+
+#include "base/memory/scoped_ptr.h"
+#include "base/memory/ref_counted.h"
+#include "net/base/completion_callback.h"
+
+namespace net {
+class SSLInfo;
+class X509Certificate;
+}
+
 namespace sippet {
+
+class EndPoint;
 
 // This is the interface for the application-specific class that will route
 // SSL certificate errors to the user and ask his action to continue or dismiss
 // the connection attempt.
-class SSLCertificateErrorHandler {
+class SSLCertErrorHandler {
  public:
   class Factory {
    public:
     virtual ~Factory() {}
 
-    // Returns the application-specific |SSLCertificateErrorHandler|
+    // Returns the application-specific |SSLCertErrorHandler|
     // implementation.
-    virtual scoped_ptr<SSLCertificateErrorHandler>
+    virtual scoped_ptr<SSLCertErrorHandler>
         CreateSSLCertificateErrorHandler() = 0;
   };
 
-  virtual ~SSLCertificateErrorHandler() {}
+  virtual ~SSLCertErrorHandler() {}
 
   // Checks if the SSL information returned by the server is acceptable. If the
   // application has to display a UI dialog to the user, this function shall
@@ -43,3 +57,5 @@ class SSLCertificateErrorHandler {
 };
 
 } // namespace sippet
+
+#endif // SIPPET_UA_SSL_CERT_ERROR_HANDLER_H_

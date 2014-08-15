@@ -16,6 +16,7 @@
 #include "base/message_loop/message_loop.h"
 #include "base/i18n/icu_util.h"
 #include "base/i18n/time_formatting.h"
+#include "base/i18n/icu_string_conversions.h"
 #include "net/base/net_errors.h"
 #include "net/socket/client_socket_factory.h"
 #include "net/url_request/url_request_context_getter.h"
@@ -181,6 +182,84 @@ class UserAgentHandler
   NetworkLayer *network_layer_;
 };
 
+class StaticPasswordHandler : public PasswordHandler {
+ public:
+  class Factory : public PasswordHandler::Factory {
+   public:
+    Factory(const string16 &username, const string16 &password)
+      : username_(username), password_(password) {
+    }
+    virtual ~Factory() {}
+
+    virtual scoped_ptr<PasswordHandler>
+        CreatePasswordHandler() OVERRIDE {
+      scoped_ptr<PasswordHandler> password_handler(
+        new StaticPasswordHandler(username_, password_));
+      return password_handler.Pass();
+    }
+
+   private:
+    string16 username_;
+    string16 password_;
+  };
+
+  StaticPasswordHandler(const string16 &username, const string16 &password)
+    : username_(username), password_(password) {
+  }
+
+  virtual ~StaticPasswordHandler() {}
+
+  virtual int GetCredentials(
+      const net::AuthChallengeInfo* auth_info,
+      string16 *username,
+      string16 *password,
+      const net::CompletionCallback& callback) OVERRIDE {
+    *username = username_;
+    *password = password_;
+    return net::OK;
+  }
+
+ private:
+  string16 username_;
+  string16 password_;
+};
+
+class UserSSLCertErrorHandler : public SSLCertErrorHandler {
+ public:
+  class Factory : public SSLCertErrorHandler::Factory {
+   public:
+    Factory() {}
+    virtual ~Factory() {}
+
+    virtual scoped_ptr<SSLCertErrorHandler>
+         CreateSSLCertificateErrorHandler() OVERRIDE {
+      scoped_ptr<SSLCertErrorHandler> ssl_cert_error_handler(
+        new UserSSLCertErrorHandler);
+      return ssl_cert_error_handler.Pass();
+    }
+  };
+
+  UserSSLCertErrorHandler() {}
+  virtual ~UserSSLCertErrorHandler() {}
+
+  virtual int GetUserApproval(
+      const EndPoint &destination,
+      const net::SSLInfo &ssl_info,
+      bool *is_accepted,
+      const net::CompletionCallback& callback) OVERRIDE {
+    *is_accepted = true;
+    return net::OK;
+  }
+
+  virtual int GetClientCert(
+      const EndPoint &destination,
+      const net::SSLInfo &ssl_info,
+      scoped_refptr<net::X509Certificate> *client_cert,
+      const net::CompletionCallback& callback) OVERRIDE {
+    return net::ERR_FAILED;
+  }
+};
+
 void RequestSent(int error) {
   std::cout << ">> REGISTER completed";
   if (error != net::OK) {
@@ -219,17 +298,19 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  std::string username;
+  string16 username;
   if (command_line->HasSwitch("username")) {
-    username = command_line->GetSwitchValueASCII("username");
+    base::CodepageToUTF16(command_line->GetSwitchValueASCII("username"),
+        NULL, base::OnStringConversionError::FAIL, &username);
   } else {
     PrintUsage();
     return -1;
   }
 
-  std::string password;
+  string16 password;
   if (command_line->HasSwitch("password")) {
-    password = command_line->GetSwitchValueASCII("password");
+    base::CodepageToUTF16(command_line->GetSwitchValueASCII("password"),
+        NULL, base::OnStringConversionError::FAIL, &password);
   } else {
     PrintUsage();
     return -1;
@@ -267,8 +348,13 @@ int main(int argc, char **argv) {
       AuthHandlerFactory::CreateDefault(host_resolver.get()));
 
   net::BoundNetLog net_log;
+  StaticPasswordHandler::Factory static_password_handler_factory(
+      username, password);
+  UserSSLCertErrorHandler::Factory ssl_cert_error_handler_factory;
   scoped_refptr<ua::UserAgent> user_agent(
-      new ua::UserAgent(auth_handler_factory.get(), net_log));
+      new ua::UserAgent(auth_handler_factory.get(),
+          &static_password_handler_factory, &ssl_cert_error_handler_factory,
+          net_log));
   scoped_refptr<NetworkLayer> network_layer;
   network_layer = new NetworkLayer(user_agent.get());
 
