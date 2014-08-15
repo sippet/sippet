@@ -18,6 +18,8 @@
 #include <pjlib-util.h>
 #include <pjlib.h>
 
+#define THIS_FILE "standalone_test_server.cc"
+
 namespace sippet {
 
 namespace {
@@ -33,6 +35,34 @@ struct StandaloneTestServerCallbacks {
   static pj_bool_t on_rx_response(pjsip_rx_data *rdata) {
     g_server->OnReceiveResponse(rdata);
     return PJ_TRUE;
+  }
+  static pj_bool_t logging_on_rx_msg(pjsip_rx_data *rdata) {
+    PJ_LOG(4,(THIS_FILE, "RX %d bytes %s from %s %s:%d:\n"
+        "%.*s\n"
+        "--end msg--",
+        rdata->msg_info.len,
+        pjsip_rx_data_get_info(rdata),
+        rdata->tp_info.transport->type_name,
+        rdata->pkt_info.src_name,
+        rdata->pkt_info.src_port,
+        (int)rdata->msg_info.len,
+        rdata->msg_info.msg_buf));
+    return PJ_FALSE;
+  }
+
+  static pj_status_t logging_on_tx_msg(pjsip_tx_data *tdata)
+  {
+    PJ_LOG(4,(THIS_FILE, "TX %d bytes %s to %s %s:%d:\n"
+        "%.*s\n"
+        "--end msg--",
+        (tdata->buf.cur - tdata->buf.start),
+        pjsip_tx_data_get_info(tdata),
+        tdata->tp_info.transport->type_name,
+        tdata->tp_info.dst_name,
+        tdata->tp_info.dst_port,
+        (int)(tdata->buf.cur - tdata->buf.start),
+        tdata->buf.start));
+    return PJ_SUCCESS;
   }
 };
 
@@ -55,16 +85,34 @@ pjsip_module mod_app =
     NULL,	// on_tsx_state()
 };
 
+pjsip_module msg_logger =
+{
+    NULL, NULL,
+    { "mod-msg-log", 11 },
+    -1,
+    PJSIP_MOD_PRIORITY_TRANSPORT_LAYER-1,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    &StandaloneTestServerCallbacks::logging_on_rx_msg,
+    &StandaloneTestServerCallbacks::logging_on_rx_msg,
+    &StandaloneTestServerCallbacks::logging_on_tx_msg,
+    &StandaloneTestServerCallbacks::logging_on_tx_msg,
+    NULL,
+};
+
 pj_status_t LookupCredentials(pj_pool_t *pool,
     const pj_str_t *realm, const pj_str_t *acc_name,
     pjsip_cred_info *cred_info) {
-  if (pj_strcmp2(realm, "no-biloxi.com")
-      && pj_strcmp2(realm, "test")
-      && pj_strcmp2(&cred_info->scheme, "digest")) {
+  if (pj_strcmp2(realm, "no-biloxi.com") == 0
+      || pj_strcmp2(realm, "test") == 0
+      || pj_strcmp2(&cred_info->scheme, "digest") == 0) {
     cred_info->realm = pj_str("no-biloxi.com");
     cred_info->username = pj_str("test");
     cred_info->data_type = PJSIP_CRED_DATA_PLAIN_PASSWD;
     cred_info->data = pj_str("1234");
+    return PJ_SUCCESS;
   }
   return PJ_ENOTFOUND;
 }
@@ -104,7 +152,7 @@ struct StandaloneTestServer::ControlStruct {
     if (status != PJ_SUCCESS)
       return false;
 
-    pj_log_set_level(6);
+    pj_log_set_level(PJ_LOG_MAX_LEVEL);
 
     status = pjlib_util_init();
     if (status != PJ_SUCCESS)
@@ -120,6 +168,8 @@ struct StandaloneTestServer::ControlStruct {
     status = pjsip_tsx_layer_init_module(endpoint_);
     if (status != PJ_SUCCESS)
       return false;
+
+    pjsip_endpt_register_module(endpoint_, &msg_logger);
 
     pool_ = pj_pool_create(&caching_pool_.factory, "embedsrv",
 			4000, 4000, NULL);
@@ -314,10 +364,6 @@ void StandaloneTestServer::OnReceiveRequest(pjsip_rx_data *rdata) {
 bool StandaloneTestServer::VerifyRequest(pjsip_rx_data *rdata) {
   pj_status_t status;
   const pj_str_t STR_REQUIRE = {"Require", 7};
-
-  char buf[1024];
-  pj_ssize_t size = pjsip_msg_print(rdata->msg_info.msg, buf, sizeof(buf));
-  VLOG(1) << "Incoming request:\n" << std::string(buf, size) << "\n";
 
   // A valid message must pass the following checks:
   // 1. Reasonable Syntax
