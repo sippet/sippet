@@ -7,9 +7,9 @@
 
 #include "sippet/transport/network_layer.h"
 #include "sippet/ua/dialog.h"
-#include "sippet/ua/auth_controller.h"
+#include "sippet/ua/auth_transaction.h"
 #include "sippet/ua/auth_cache.h"
-#include "sippet/ua/auth_handler.h"
+#include "sippet/ua/ssl_cert_error_handler.h"
 
 #include <map>
 #include <vector>
@@ -64,6 +64,8 @@ class UserAgent :
 
   // Construct a |UserAgent|.
   UserAgent(AuthHandlerFactory *auth_handler_factory,
+            PasswordHandler::Factory *password_handler_factory,
+            SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory,
             const net::BoundNetLog &net_log);
 
   void SetNetworkLayer(NetworkLayer *network_layer) {
@@ -116,6 +118,9 @@ class UserAgent :
   AuthCache auth_cache_;
   AuthHandlerFactory *auth_handler_factory_;
   net::BoundNetLog net_log_;
+  PasswordHandler::Factory *password_handler_factory_;
+  SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory_;
+  base::WeakPtrFactory<UserAgent> weak_factory_;
 
   // TODO
   struct IncomingRequestContext {
@@ -139,13 +144,17 @@ class UserAgent :
     // First sent time
     base::Time parted_time_;
     // Used to manage authentication
-    scoped_refptr<AuthController> auth_controller_;
+    scoped_ptr<AuthTransaction> auth_transaction_;
+    // Used to hold the last matched dialog (when authenticating)
+    scoped_refptr<Dialog> last_dialog_;
+    // Used to hold the last received response
+    scoped_refptr<Response> last_response_;
 
     OutgoingRequestContext(const scoped_refptr<Request>& outgoing_request);
     ~OutgoingRequestContext();
   };
 
-  typedef std::map<std::string, OutgoingRequestContext>
+  typedef std::map<std::string, OutgoingRequestContext*>
       OutgoingRequestMap;
   OutgoingRequestMap outgoing_requests_;
 
@@ -153,8 +162,12 @@ class UserAgent :
       const scoped_refptr<Response> &response);
   scoped_refptr<Dialog> HandleDialogStateOnError(
       const scoped_refptr<Request> &request);
+
   bool HandleChallengeAuthentication(
-      const scoped_refptr<Response> &response);
+      const scoped_refptr<Response> &response,
+      const scoped_refptr<Dialog> &dialog);
+  void OnAuthenticationComplete(const std::string &request_id, int rv);
+  void OnResendRequestComplete(const std::string &request_id, int rv);
 
   template <class Message>
   std::pair<scoped_refptr<Dialog>, DialogMapType::iterator>
@@ -179,6 +192,17 @@ class UserAgent :
   virtual void OnTimedOut(const scoped_refptr<Request> &request) OVERRIDE;
   virtual void OnTransportError(
       const scoped_refptr<Request> &request, int err) OVERRIDE;
+
+  void RunUserIncomingRequestCallback(
+      const scoped_refptr<Request> &request,
+      const scoped_refptr<Dialog> &dialog);
+  void RunUserIncomingResponseCallback(
+      const scoped_refptr<Response> &response,
+      const scoped_refptr<Dialog> &dialog);
+  void RunUserTransportErrorCallback(
+      const scoped_refptr<Request> &request,
+      int error,
+      const scoped_refptr<Dialog> &dialog);
 };
 
 } // End of ua namespace

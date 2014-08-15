@@ -6,6 +6,7 @@
 
 #include "base/md5.h"
 #include "base/build_time.h"
+#include "base/stl_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/i18n/time_formatting.h"
@@ -36,12 +37,22 @@ UserAgent::OutgoingRequestContext::~OutgoingRequestContext() {
 }
 
 UserAgent::UserAgent(AuthHandlerFactory *auth_handler_factory,
-                     const net::BoundNetLog &net_log)
-  : auth_handler_factory_(auth_handler_factory),
-    net_log_(net_log) {
+    PasswordHandler::Factory *password_handler_factory,
+    SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory,
+    const net::BoundNetLog &net_log)
+    : auth_handler_factory_(auth_handler_factory),
+      net_log_(net_log),
+      password_handler_factory_(password_handler_factory),
+      ssl_cert_error_handler_factory_(ssl_cert_error_handler_factory),
+      weak_factory_(this) {
+  DCHECK(auth_handler_factory);
+  DCHECK(password_handler_factory);
+  DCHECK(ssl_cert_error_handler_factory);
 }
 
 UserAgent::~UserAgent() {
+  STLDeleteContainerPairSecondPointers(
+      outgoing_requests_.begin(), outgoing_requests_.end());
 }
 
 void UserAgent::AppendHandler(Delegate *delegate) {
@@ -114,6 +125,10 @@ int UserAgent::Send(
   if (isa<Response>(message)) {
     scoped_refptr<Response> response = dyn_cast<Response>(message);
     HandleDialogStateOnResponse(response);
+  } else {
+    scoped_refptr<Request> request = dyn_cast<Request>(message);
+    outgoing_requests_.insert(std::make_pair(request->id(),
+        new OutgoingRequestContext(request)));
   }
   return network_layer_->Send(message, callback);
 }
@@ -181,7 +196,8 @@ scoped_refptr<Dialog> UserAgent::HandleDialogStateOnError(
 }
 
 bool UserAgent::HandleChallengeAuthentication(
-    const scoped_refptr<Response> &response) {
+    const scoped_refptr<Response> &response,
+    const scoped_refptr<Dialog> &dialog) {
   int response_code = response->response_code();
   if (SIP_UNAUTHORIZED != response_code
       && SIP_PROXY_AUTHENTICATION_REQUIRED != response_code)
@@ -190,27 +206,58 @@ bool UserAgent::HandleChallengeAuthentication(
   OutgoingRequestMap::iterator i = outgoing_requests_.find(request->id());
   if (outgoing_requests_.end() == i)
     return false;
-  if (!i->second.auth_controller_.get()) {
-    i->second.auth_controller_ = new AuthController(&auth_cache_,
-        auth_handler_factory_);
+  if (!i->second->auth_transaction_.get()) {
+    i->second->auth_transaction_.reset(new AuthTransaction(&auth_cache_,
+        auth_handler_factory_, password_handler_factory_, net_log_));
   }
-  int rv = i->second.auth_controller_->HandleAuthChallenge(response, net_log_);
-  if (net::OK != rv)
-    return false;
-  if (!i->second.auth_controller_->HaveAuthHandler())
-    return false;
-  if (i->second.auth_controller_->auth_info()) {
-    // TODO: collect user credentials here
+  i->second->last_dialog_ = dialog;
+  i->second->last_response_ = response;
+  int rv = i->second->auth_transaction_->HandleChallengeAuthentication(
+      response, base::Bind(&UserAgent::OnAuthenticationComplete,
+          weak_factory_.GetWeakPtr(), request->id()));
+  if (net::ERR_IO_PENDING == rv) {
+    return true;
+  } else if (net::OK == rv) {
+    OnAuthenticationComplete(request->id(), rv);
+    return true;
   }
-  // TODO: handle asynchronous cases here
-  rv = i->second.auth_controller_->AddAuthorizationHeaders(
-      request, net::CompletionCallback(), net_log_);
-  if (net::OK != rv)
-    return false;
-  // TODO: reissue the request + authentication tokens on the network
-  rv = network_layer_->Send(request, net::CompletionCallback());
-  // TODO: get the callback set in the Send method in case of errors
-  return true;
+  return false;
+}
+
+void UserAgent::OnAuthenticationComplete(
+    const std::string &request_id, int rv) {
+  DCHECK_NE(rv, net::ERR_IO_PENDING);
+  OutgoingRequestMap::iterator i = outgoing_requests_.find(request_id);
+  if (outgoing_requests_.end() == i)
+    return;
+  if (net::OK == rv) {
+    // Remove topmost Via header
+    Message::iterator j = i->second->outgoing_request_->find_first<Via>();
+    if (i->second->outgoing_request_->end() != j) {
+      i->second->outgoing_request_->erase(j);
+    }
+    rv = network_layer_->Send(i->second->outgoing_request_,
+        base::Bind(&UserAgent::OnResendRequestComplete,
+            weak_factory_.GetWeakPtr(), request_id));
+    if (net::ERR_IO_PENDING != rv) {
+      OnResendRequestComplete(request_id, rv);
+    }
+  } else {
+    RunUserIncomingResponseCallback(i->second->last_response_,
+        i->second->last_dialog_);
+  }
+}
+
+void UserAgent::OnResendRequestComplete(
+    const std::string &request_id, int rv) {
+  DCHECK_NE(rv, net::ERR_IO_PENDING);
+  OutgoingRequestMap::iterator i = outgoing_requests_.find(request_id);
+  if (outgoing_requests_.end() == i)
+    return;
+  if (net::OK != rv) {
+    RunUserTransportErrorCallback(i->second->outgoing_request_, rv,
+        i->second->last_dialog_);
+  }
 }
 
 void UserAgent::OnChannelConnected(const EndPoint &destination, int err) {
@@ -238,21 +285,15 @@ void UserAgent::OnSSLCertificateError(const EndPoint &destination,
 void UserAgent::OnIncomingRequest(
     const scoped_refptr<Request> &request) {
   scoped_refptr<Dialog> dialog = GetDialog(request).first;
-  for (std::vector<Delegate*>::iterator i = handlers_.begin();
-       i != handlers_.end(); i++) {
-    (*i)->OnIncomingRequest(request, dialog);
-  }
+  RunUserIncomingRequestCallback(request, dialog);
 }
 
 void UserAgent::OnIncomingResponse(
     const scoped_refptr<Response> &response) {
-  if (HandleChallengeAuthentication(response))
-    return;
   scoped_refptr<Dialog> dialog = HandleDialogStateOnResponse(response);
-  for (std::vector<Delegate*>::iterator i = handlers_.begin();
-       i != handlers_.end(); i++) {
-    (*i)->OnIncomingResponse(response, dialog);
-  }
+  if (HandleChallengeAuthentication(response, dialog))
+    return;
+  RunUserIncomingResponseCallback(response, dialog);
 }
 
 void UserAgent::OnTimedOut(const scoped_refptr<Request> &request) {
@@ -269,6 +310,34 @@ void UserAgent::OnTransportError(
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
     (*i)->OnTransportError(request, err, dialog);
+  }
+}
+
+void UserAgent::RunUserIncomingRequestCallback(
+    const scoped_refptr<Request> &request,
+    const scoped_refptr<Dialog> &dialog) {
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnIncomingRequest(request, dialog);
+  }
+}
+
+void UserAgent::RunUserIncomingResponseCallback(
+    const scoped_refptr<Response> &response,
+    const scoped_refptr<Dialog> &dialog) {
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnIncomingResponse(response, dialog);
+  }
+}
+
+void UserAgent::RunUserTransportErrorCallback(
+      const scoped_refptr<Request> &request,
+      int error,
+      const scoped_refptr<Dialog> &dialog) {
+  for (std::vector<Delegate*>::iterator i = handlers_.begin();
+       i != handlers_.end(); i++) {
+    (*i)->OnTransportError(request, error, dialog);
   }
 }
 
