@@ -233,6 +233,8 @@
         'ua/auth_transaction.cc',
         'ua/password_handler.h',
         'ua/ssl_cert_error_handler.h',
+        'ua/ssl_cert_error_transaction.h',
+        'ua/ssl_cert_error_transaction.cc',
       ],
       'conditions': [
         ['OS == "ios"', {
