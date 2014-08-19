@@ -29,36 +29,66 @@ class DialogController;
 
 namespace ua {
 
+// An |UserAgent| can act as both a user agent client and user agent server.
+//
+// As client, it can create new requests, and then send it to the
+// |NetworkLayer|. If the response to that request may create a dialog, the
+// |DialogController| will do it and provide it upwards, in the provided
+// |Delegate| implementation. Also, if that response contains an authentication
+// challenge, it will authenticate using one of the available schemes provided
+// by the |AuthHandlerFactory|, collecting usernames and passwords through the
+// |PasswordHandler| implementation.
+//
+// As server, it will receive any incoming request from the network and pass
+// them upwards. Provisional and success responses will automatically create
+// dialogs, accordingly to the |DialogController| implementation.
+//
+// Multiple |Delegate| implementations may be provided to the |UserAgent|, each
+// handling, or not, their own set of requests, responses and connection
+// feedbacks.
 class UserAgent :
   public base::RefCountedThreadSafe<UserAgent>,
   public NetworkLayer::Delegate {
- private:
-  DISALLOW_COPY_AND_ASSIGN(UserAgent);
  public:
   class Delegate {
    public:
     virtual ~Delegate() {}
 
+    // A new channel has connected (or not). This function is always called,
+    // matter if the connection was succeeded or not; in the latter case, the
+    // provided |err| is not |net::OK|.
     virtual void OnChannelConnected(const EndPoint &destination, int err) = 0;
 
+    // A created channel was closed. It is called whenever a channel is created
+    // successfully, therefore |OnChannelConnected| has been called with
+    // |net::OK| status before the channel can be closed.
     virtual void OnChannelClosed(const EndPoint &destination) = 0;
 
+    // While connecting to a destination host using TLS, some certificate error
+    // has happened and can be dismissed by the user. It can also be used to
+    // request client security certificates.
     virtual void OnSSLCertificateError(const EndPoint &destination,
                                        const net::SSLInfo &ssl_info,
                                        bool fatal) = 0;
 
+    // A new request arrived. The dialog, when present, indicates that the
+    // incoming request pertains to it.
     virtual void OnIncomingRequest(
         const scoped_refptr<Request> &incoming_request,
         const scoped_refptr<Dialog> &dialog) = 0;
 
+    // A new response arrived. The dialog, when present, indicates that the
+    // incoming response pertains to it.
     virtual void OnIncomingResponse(
         const scoped_refptr<Response> &incoming_response,
         const scoped_refptr<Dialog> &dialog) = 0;
 
+    // The sent request didn't get a response in a reasonable time.
     virtual void OnTimedOut(
         const scoped_refptr<Request> &request,
         const scoped_refptr<Dialog> &dialog) = 0;
 
+    // While sending the request, a network error happened.
     virtual void OnTransportError(
         const scoped_refptr<Request> &request, int error,
         const scoped_refptr<Dialog> &dialog) = 0;
@@ -68,9 +98,10 @@ class UserAgent :
   UserAgent(AuthHandlerFactory *auth_handler_factory,
             PasswordHandler::Factory *password_handler_factory,
             SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory,
-            const net::BoundNetLog &net_log,
-            DialogController *dialog_controller = NULL);
+            DialogController *dialog_controller,
+            const net::BoundNetLog &net_log);
 
+  // The |NetworkLayer| must be set before using the other functions.
   void SetNetworkLayer(NetworkLayer *network_layer) {
     network_layer_ = network_layer;
   }
@@ -113,35 +144,6 @@ class UserAgent :
   typedef std::vector<GURL> UrlListType;
   typedef std::vector<Delegate*> HandlerListType;
 
-  NetworkLayer *network_layer_;
-  UrlListType route_set_;
-  HandlerListType handlers_;
-  AuthCache auth_cache_;
-  AuthHandlerFactory *auth_handler_factory_;
-  net::BoundNetLog net_log_;
-  PasswordHandler::Factory *password_handler_factory_;
-  SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory_;
-  base::WeakPtrFactory<UserAgent> weak_factory_;
-  
-  scoped_ptr<DialogStore> dialog_store_;
-  DialogController *dialog_controller_;
-
-  // TODO
-  struct IncomingRequestContext {
-    // Holds the incoming request instance.
-    scoped_refptr<Request> incoming_request_;
-    // Arrival time
-    base::Time arrival_time_;
-    // Used to send a final automatic response if there's no answer in
-    // a reasonable time.
-    base::OneShotTimer<NetworkLayer> timer_;
-
-    IncomingRequestContext(const scoped_refptr<Request>& incoming_request);
-    ~IncomingRequestContext();
-  };
-
-  std::map<std::string, IncomingRequestContext> incoming_requests_;
-
   struct OutgoingRequestContext {
     // Holds the outgoing request instance.
     scoped_refptr<Request> outgoing_request_;
@@ -160,7 +162,6 @@ class UserAgent :
 
   typedef std::map<std::string, OutgoingRequestContext*>
       OutgoingRequestMap;
-  OutgoingRequestMap outgoing_requests_;
 
   bool HandleChallengeAuthentication(
       const scoped_refptr<Response> &response,
@@ -192,6 +193,22 @@ class UserAgent :
       const scoped_refptr<Request> &request,
       int error,
       const scoped_refptr<Dialog> &dialog);
+
+  NetworkLayer *network_layer_;
+  UrlListType route_set_;
+  HandlerListType handlers_;
+  AuthCache auth_cache_;
+  AuthHandlerFactory *auth_handler_factory_;
+  net::BoundNetLog net_log_;
+  PasswordHandler::Factory *password_handler_factory_;
+  SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory_;
+  base::WeakPtrFactory<UserAgent> weak_factory_;
+  
+  scoped_ptr<DialogStore> dialog_store_;
+  DialogController *dialog_controller_;
+  OutgoingRequestMap outgoing_requests_;
+
+  DISALLOW_COPY_AND_ASSIGN(UserAgent);
 };
 
 } // End of ua namespace
