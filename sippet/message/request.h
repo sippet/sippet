@@ -16,10 +16,10 @@ namespace sippet {
 
 class Request :
   public Message {
-private:
+ private:
   DISALLOW_COPY_AND_ASSIGN(Request);
   virtual ~Request();
-public:
+ public:
   // Create a |Request|. New requests assume the |Outgoing| direction.
   Request(const Method &method,
           const GURL &request_uri,
@@ -60,9 +60,9 @@ public:
   int CreateCancel(scoped_refptr<Request> &cancel);
 
   // Get a the dialog identifier.
-  std::string GetDialogId();
+  virtual std::string GetDialogId() const OVERRIDE;
 
-private:
+ private:
   friend class Dialog;
   friend class Message;
   friend class ClientTransactionImpl;

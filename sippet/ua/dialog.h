@@ -5,11 +5,12 @@
 #ifndef SIPPET_UA_DIALOG_H_
 #define SIPPET_UA_DIALOG_H_
 
+#include <vector>
+
+#include "url/gurl.h"
+#include "base/memory/ref_counted.h"
 #include "sippet/message/method.h"
 #include "sippet/message/status_code.h"
-#include "base/memory/ref_counted.h"
-#include "url/gurl.h"
-#include <vector>
 
 namespace sippet {
 
@@ -131,8 +132,8 @@ class Dialog :
   scoped_refptr<Request> CreateAck(const scoped_refptr<Request> &invite);
 
  private:
-  friend class ua::UserAgent;
   friend class base::RefCountedThreadSafe<Dialog>;
+  friend class DialogStore;
 
   Dialog(State state,
          const std::string &call_id,
@@ -168,7 +169,7 @@ class Dialog :
   static scoped_refptr<Dialog> Create(
       const scoped_refptr<Response> &response);
 
-  // Set the dialog state (UserAgent only).
+  // Set the dialog state (ControllerStore only).
   void set_state(State state) {
     state_ = state;
   }

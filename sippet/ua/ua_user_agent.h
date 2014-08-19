@@ -24,6 +24,8 @@ class Via;
 class Message;
 class Request;
 class Response;
+class DialogStore;
+class DialogController;
 
 namespace ua {
 
@@ -66,7 +68,8 @@ class UserAgent :
   UserAgent(AuthHandlerFactory *auth_handler_factory,
             PasswordHandler::Factory *password_handler_factory,
             SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory,
-            const net::BoundNetLog &net_log);
+            const net::BoundNetLog &net_log,
+            DialogController *dialog_controller = NULL);
 
   void SetNetworkLayer(NetworkLayer *network_layer) {
     network_layer_ = network_layer;
@@ -109,18 +112,19 @@ class UserAgent :
 
   typedef std::vector<GURL> UrlListType;
   typedef std::vector<Delegate*> HandlerListType;
-  typedef std::map<std::string, scoped_refptr<Dialog> > DialogMapType;
 
   NetworkLayer *network_layer_;
   UrlListType route_set_;
   HandlerListType handlers_;
-  DialogMapType dialogs_;
   AuthCache auth_cache_;
   AuthHandlerFactory *auth_handler_factory_;
   net::BoundNetLog net_log_;
   PasswordHandler::Factory *password_handler_factory_;
   SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory_;
   base::WeakPtrFactory<UserAgent> weak_factory_;
+  
+  scoped_ptr<DialogStore> dialog_store_;
+  DialogController *dialog_controller_;
 
   // TODO
   struct IncomingRequestContext {
@@ -158,26 +162,11 @@ class UserAgent :
       OutgoingRequestMap;
   OutgoingRequestMap outgoing_requests_;
 
-  scoped_refptr<Dialog> HandleDialogStateOnResponse(
-      const scoped_refptr<Response> &response);
-  scoped_refptr<Dialog> HandleDialogStateOnError(
-      const scoped_refptr<Request> &request);
-
   bool HandleChallengeAuthentication(
       const scoped_refptr<Response> &response,
       const scoped_refptr<Dialog> &dialog);
   void OnAuthenticationComplete(const std::string &request_id, int rv);
   void OnResendRequestComplete(const std::string &request_id, int rv);
-
-  template <class Message>
-  std::pair<scoped_refptr<Dialog>, DialogMapType::iterator>
-      GetDialog(const scoped_refptr<Message> &message) {
-    std::string id(message->GetDialogId());
-    DialogMapType::iterator i = dialogs_.find(id);
-    return dialogs_.end() == i
-        ? std::make_pair(scoped_refptr<Dialog>(), i)
-        : std::make_pair(i->second, i);
-  }
 
   // sippet::NetworkLayer::Delegate methods:
   virtual void OnChannelConnected(
