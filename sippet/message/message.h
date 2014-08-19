@@ -48,7 +48,7 @@ class Response;
 
 class Message
   : public base::RefCountedThreadSafe<Message> {
-public:
+ public:
   enum Direction {
     Incoming,
     Outgoing,
@@ -65,7 +65,7 @@ public:
   typedef HeaderListType::const_reference const_reference;
   typedef HeaderListType::size_type size_type;
 
-private:
+ private:
   bool is_request_;
   HeaderListType headers_;
   std::string content_;
@@ -73,14 +73,14 @@ private:
 
   DISALLOW_COPY_AND_ASSIGN(Message);
 
-protected:
+ protected:
   friend class base::RefCountedThreadSafe<Message>;
 
   Message(bool is_request,
           Direction direction);
   virtual ~Message();
 
-public:
+ public:
   // Parse a SIP message. Parsed messages have |Incoming| direction.
   static scoped_refptr<Message> Parse(const std::string &raw_message);
 
@@ -207,7 +207,7 @@ public:
       equals<HeaderType>());
   }
   template<class HeaderType>
-  const_iterator find_next(iterator where) const {
+  const_iterator find_next(const_iterator where) const {
     if (where == end())
       return where;
     return std::find_if(++where, headers_.end(),
@@ -222,7 +222,7 @@ public:
   }
   template<class HeaderType>
   const HeaderType *get() const {
-    iterator it = find_first<HeaderType>();
+    const_iterator it = find_first<HeaderType>();
     return it != end() ? dyn_cast<HeaderType>(it) : 0;
   }
 
@@ -275,6 +275,9 @@ public:
     Header *clone = i->Clone().release();
     return scoped_ptr<HeaderType>(dyn_cast<HeaderType>(clone));
   }
+
+  // Get a the dialog identifier.
+  virtual std::string GetDialogId() const = 0;
 
  private:
   friend class AuthControllerTest;

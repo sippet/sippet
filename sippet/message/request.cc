@@ -59,7 +59,7 @@ void Request::print(raw_ostream &os) const {
   Message::print(os);
 }
 
-std::string Request::GetDialogId() {
+std::string Request::GetDialogId() const {
   std::string from_tag;
   std::string to_tag;
   std::string call_id(get<CallId>()->value());
