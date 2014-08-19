@@ -5,6 +5,7 @@
 #ifndef SIPPET_UA_USER_AGENT_H_
 #define SIPPET_UA_USER_AGENT_H_
 
+#include "base/memory/scoped_vector.h"
 #include "sippet/transport/network_layer.h"
 #include "sippet/ua/dialog.h"
 #include "sippet/ua/auth_transaction.h"
@@ -26,6 +27,7 @@ class Request;
 class Response;
 class DialogStore;
 class DialogController;
+class SSLCertErrorTransaction;
 
 namespace ua {
 
@@ -168,6 +170,8 @@ class UserAgent :
       const scoped_refptr<Dialog> &dialog);
   void OnAuthenticationComplete(const std::string &request_id, int rv);
   void OnResendRequestComplete(const std::string &request_id, int rv);
+  void OnSSLCertErrorTransactionComplete(
+      SSLCertErrorTransaction* ssl_cert_error_transaction, int rv);
 
   // sippet::NetworkLayer::Delegate methods:
   virtual void OnChannelConnected(
@@ -193,6 +197,10 @@ class UserAgent :
       const scoped_refptr<Request> &request,
       int error,
       const scoped_refptr<Dialog> &dialog);
+  void RunUserSSLCertificateErrorCallback(
+      const EndPoint &destination,
+      const net::SSLInfo &ssl_info,
+      bool fatal);
 
   NetworkLayer *network_layer_;
   UrlListType route_set_;
@@ -203,6 +211,7 @@ class UserAgent :
   PasswordHandler::Factory *password_handler_factory_;
   SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory_;
   base::WeakPtrFactory<UserAgent> weak_factory_;
+  ScopedVector<SSLCertErrorTransaction> ssl_cert_error_transactions_;
   
   scoped_ptr<DialogStore> dialog_store_;
   DialogController *dialog_controller_;
