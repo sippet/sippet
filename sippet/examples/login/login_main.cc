@@ -28,6 +28,7 @@
 #include "sippet/transport/network_layer.h"
 #include "sippet/ua/ua_user_agent.h"
 #include "sippet/ua/auth_handler_factory.h"
+#include "sippet/ua/dialog_controller.h"
 #include "sippet/examples/login/url_request_context_getter.h"
 
 using namespace sippet;
@@ -354,6 +355,7 @@ int main(int argc, char **argv) {
   scoped_refptr<ua::UserAgent> user_agent(
       new ua::UserAgent(auth_handler_factory.get(),
           &static_password_handler_factory, &ssl_cert_error_handler_factory,
+          DialogController::GetDefaultDialogController(),
           net_log));
   scoped_refptr<NetworkLayer> network_layer;
   network_layer = new NetworkLayer(user_agent.get());

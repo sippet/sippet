@@ -22,14 +22,6 @@
 namespace sippet {
 namespace ua {
 
-UserAgent::IncomingRequestContext::IncomingRequestContext(
-      const scoped_refptr<Request>& incoming_request)
-  : incoming_request_(incoming_request) {
-}
-
-UserAgent::IncomingRequestContext::~IncomingRequestContext() {
-}
-
 UserAgent::OutgoingRequestContext::OutgoingRequestContext(
       const scoped_refptr<Request>& outgoing_request)
   : outgoing_request_(outgoing_request) {
@@ -41,8 +33,8 @@ UserAgent::OutgoingRequestContext::~OutgoingRequestContext() {
 UserAgent::UserAgent(AuthHandlerFactory *auth_handler_factory,
     PasswordHandler::Factory *password_handler_factory,
     SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory,
-    const net::BoundNetLog &net_log,
-    DialogController *dialog_controller)
+    DialogController *dialog_controller,
+    const net::BoundNetLog &net_log)
     : auth_handler_factory_(auth_handler_factory),
       net_log_(net_log),
       password_handler_factory_(password_handler_factory),
@@ -53,8 +45,7 @@ UserAgent::UserAgent(AuthHandlerFactory *auth_handler_factory,
   DCHECK(auth_handler_factory);
   DCHECK(password_handler_factory);
   DCHECK(ssl_cert_error_handler_factory);
-  if (!dialog_controller_)
-    dialog_controller_ = DialogController::GetDefaultDialogController();
+  DCHECK(dialog_controller_);
 }
 
 UserAgent::~UserAgent() {
