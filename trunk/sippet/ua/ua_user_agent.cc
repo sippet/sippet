@@ -16,6 +16,8 @@
 #include "sippet/base/tags.h"
 #include "sippet/base/sequences.h"
 #include "sippet/base/stl_extras.h"
+#include "sippet/ua/dialog_store.h"
+#include "sippet/ua/dialog_controller.h"
 
 namespace sippet {
 namespace ua {
@@ -39,15 +41,20 @@ UserAgent::OutgoingRequestContext::~OutgoingRequestContext() {
 UserAgent::UserAgent(AuthHandlerFactory *auth_handler_factory,
     PasswordHandler::Factory *password_handler_factory,
     SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory,
-    const net::BoundNetLog &net_log)
+    const net::BoundNetLog &net_log,
+    DialogController *dialog_controller)
     : auth_handler_factory_(auth_handler_factory),
       net_log_(net_log),
       password_handler_factory_(password_handler_factory),
       ssl_cert_error_handler_factory_(ssl_cert_error_handler_factory),
-      weak_factory_(this) {
+      weak_factory_(this),
+      dialog_store_(new DialogStore),
+      dialog_controller_(dialog_controller) {
   DCHECK(auth_handler_factory);
   DCHECK(password_handler_factory);
   DCHECK(ssl_cert_error_handler_factory);
+  if (!dialog_controller_)
+    dialog_controller_ = DialogController::GetDefaultDialogController();
 }
 
 UserAgent::~UserAgent() {
@@ -124,75 +131,12 @@ int UserAgent::Send(
     const net::CompletionCallback& callback) {
   if (isa<Response>(message)) {
     scoped_refptr<Response> response = dyn_cast<Response>(message);
-    HandleDialogStateOnResponse(response);
+    dialog_controller_->HandleResponse(dialog_store_.get(), response);
   } else {
     scoped_refptr<Request> request = dyn_cast<Request>(message);
-    outgoing_requests_.insert(std::make_pair(request->id(),
-        new OutgoingRequestContext(request)));
+    dialog_controller_->HandleRequest(dialog_store_.get(), request);
   }
   return network_layer_->Send(message, callback);
-}
-
-scoped_refptr<Dialog> UserAgent::HandleDialogStateOnResponse(
-    const scoped_refptr<Response> &response) {
-  scoped_refptr<Dialog> dialog;
-  scoped_refptr<Request> request(response->refer_to());
-  int response_code = response->response_code();
-  // Create dialog on response_code > 100 for INVITE requests
-  if (Method::INVITE == request->method()
-      && response_code > 100
-      && response->get<To>()->HasTag()) {
-    DialogMapType::iterator i;
-    tie(dialog, i) = GetDialog(response);
-    if (!dialog) {
-      switch (response_code/100) {
-        case 1:
-        case 2:
-          dialog = Dialog::Create(response);
-          dialogs_.insert(std::make_pair(dialog->id(), dialog));
-          break;
-      }
-    }
-    else {
-      switch (response_code/100) {
-        case 1:
-          break;
-        case 2:
-          dialog->set_state(Dialog::STATE_CONFIRMED);
-          break;
-        default:
-          dialog->set_state(Dialog::STATE_TERMINATED);
-          dialogs_.erase(i);
-          break;
-      }
-    }
-  }
-  // Terminate UAC dialog on response_code 2xx for BYE requests
-  else if (Method::BYE == request->method()
-           && response_code/100 == 2) {
-    DialogMapType::iterator i;
-    tie(dialog, i) = GetDialog(response);
-    if (dialog) {
-      dialog->set_state(Dialog::STATE_TERMINATED);
-      dialogs_.erase(i);
-    }
-  }
-  return dialog;
-}
-
-scoped_refptr<Dialog> UserAgent::HandleDialogStateOnError(
-    const scoped_refptr<Request> &request) {
-  scoped_refptr<Dialog> dialog;
-  if (Message::Outgoing == request->direction()) {
-    // UAC timeout or transport error
-    DialogMapType::iterator i;
-    tie(dialog, i) = GetDialog(request);
-    if (dialog) {
-      dialog->set_state(Dialog::STATE_TERMINATED);
-      dialogs_.erase(i);
-    }
-  }
-  return dialog;
 }
 
 bool UserAgent::HandleChallengeAuthentication(
@@ -203,17 +147,24 @@ bool UserAgent::HandleChallengeAuthentication(
       && SIP_PROXY_AUTHENTICATION_REQUIRED != response_code)
     return false;
   scoped_refptr<Request> request(response->refer_to());
+  OutgoingRequestContext *outgoing_request_context;
   OutgoingRequestMap::iterator i = outgoing_requests_.find(request->id());
-  if (outgoing_requests_.end() == i)
-    return false;
-  if (!i->second->auth_transaction_.get()) {
-    i->second->auth_transaction_.reset(new AuthTransaction(&auth_cache_,
-        auth_handler_factory_, password_handler_factory_, net_log_));
+  if (outgoing_requests_.end() == i) {
+    outgoing_request_context = new OutgoingRequestContext(request);
+    outgoing_request_context->auth_transaction_.reset(
+        new AuthTransaction(&auth_cache_, auth_handler_factory_,
+            password_handler_factory_, net_log_));
+    outgoing_requests_.insert(std::make_pair(request->id(),
+        outgoing_request_context));
+  } else {
+    outgoing_request_context = i->second;
   }
-  i->second->last_dialog_ = dialog;
-  i->second->last_response_ = response;
-  int rv = i->second->auth_transaction_->HandleChallengeAuthentication(
-      response, base::Bind(&UserAgent::OnAuthenticationComplete,
+  outgoing_request_context->last_dialog_ = dialog;
+  outgoing_request_context->last_response_ = response;
+  AuthTransaction *auth_transaction =
+      outgoing_request_context->auth_transaction_.get();
+  int rv = auth_transaction->HandleChallengeAuthentication(response,
+      base::Bind(&UserAgent::OnAuthenticationComplete,
           weak_factory_.GetWeakPtr(), request->id()));
   if (net::ERR_IO_PENDING == rv) {
     return true;
@@ -230,21 +181,23 @@ void UserAgent::OnAuthenticationComplete(
   OutgoingRequestMap::iterator i = outgoing_requests_.find(request_id);
   if (outgoing_requests_.end() == i)
     return;
+  OutgoingRequestContext *outgoing_request_context = i->second;
   if (net::OK == rv) {
     // Remove topmost Via header
-    Message::iterator j = i->second->outgoing_request_->find_first<Via>();
-    if (i->second->outgoing_request_->end() != j) {
-      i->second->outgoing_request_->erase(j);
+    Message::iterator j =
+        outgoing_request_context->outgoing_request_->find_first<Via>();
+    if (outgoing_request_context->outgoing_request_->end() != j) {
+      outgoing_request_context->outgoing_request_->erase(j);
     }
-    rv = network_layer_->Send(i->second->outgoing_request_,
+    rv = network_layer_->Send(outgoing_request_context->outgoing_request_,
         base::Bind(&UserAgent::OnResendRequestComplete,
             weak_factory_.GetWeakPtr(), request_id));
     if (net::ERR_IO_PENDING != rv) {
       OnResendRequestComplete(request_id, rv);
     }
   } else {
-    RunUserIncomingResponseCallback(i->second->last_response_,
-        i->second->last_dialog_);
+    RunUserIncomingResponseCallback(outgoing_request_context->last_response_,
+        outgoing_request_context->last_dialog_);
   }
 }
 
@@ -254,9 +207,10 @@ void UserAgent::OnResendRequestComplete(
   OutgoingRequestMap::iterator i = outgoing_requests_.find(request_id);
   if (outgoing_requests_.end() == i)
     return;
+  OutgoingRequestContext *outgoing_request_context = i->second;
   if (net::OK != rv) {
-    RunUserTransportErrorCallback(i->second->outgoing_request_, rv,
-        i->second->last_dialog_);
+    RunUserTransportErrorCallback(outgoing_request_context->outgoing_request_,
+        rv, outgoing_request_context->last_dialog_);
   }
 }
 
@@ -284,20 +238,25 @@ void UserAgent::OnSSLCertificateError(const EndPoint &destination,
 
 void UserAgent::OnIncomingRequest(
     const scoped_refptr<Request> &request) {
-  scoped_refptr<Dialog> dialog = GetDialog(request).first;
+  scoped_refptr<Dialog> dialog =
+      dialog_controller_->HandleRequest(dialog_store_.get(), request);
   RunUserIncomingRequestCallback(request, dialog);
 }
 
 void UserAgent::OnIncomingResponse(
     const scoped_refptr<Response> &response) {
-  scoped_refptr<Dialog> dialog = HandleDialogStateOnResponse(response);
+  scoped_refptr<Dialog> dialog =
+      dialog_controller_->HandleResponse(dialog_store_.get(), response);
   if (HandleChallengeAuthentication(response, dialog))
     return;
+  if (response->response_code() >= 200)
+    outgoing_requests_.erase(response->refer_to()->id());
   RunUserIncomingResponseCallback(response, dialog);
 }
 
 void UserAgent::OnTimedOut(const scoped_refptr<Request> &request) {
-  scoped_refptr<Dialog> dialog = HandleDialogStateOnError(request);
+  scoped_refptr<Dialog> dialog =
+      dialog_controller_->HandleRequestError(dialog_store_.get(), request);
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
     (*i)->OnTimedOut(request, dialog);
@@ -306,7 +265,8 @@ void UserAgent::OnTimedOut(const scoped_refptr<Request> &request) {
 
 void UserAgent::OnTransportError(
     const scoped_refptr<Request> &request, int err) {
-  scoped_refptr<Dialog> dialog = HandleDialogStateOnError(request);
+  scoped_refptr<Dialog> dialog =
+      dialog_controller_->HandleRequestError(dialog_store_.get(), request);
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
     (*i)->OnTransportError(request, err, dialog);

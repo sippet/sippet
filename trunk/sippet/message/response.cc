@@ -27,7 +27,7 @@ void Response::print(raw_ostream &os) const {
   Message::print(os);
 }
 
-std::string Response::GetDialogId() {
+std::string Response::GetDialogId() const {
   std::string call_id(get<CallId>()->value());
   std::string from_tag(get<From>()->tag());
   std::string to_tag(get<To>()->tag());

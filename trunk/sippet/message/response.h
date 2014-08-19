@@ -40,7 +40,7 @@ public:
   virtual void print(raw_ostream &os) const OVERRIDE;
 
   // Get a the dialog identifier.
-  std::string GetDialogId();
+  virtual std::string GetDialogId() const OVERRIDE;
 
 private:
   virtual ~Response();
