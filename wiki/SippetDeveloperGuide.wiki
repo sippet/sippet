@@ -2,13 +2,58 @@
 
 = Introduction =
 
-Sippet enables you to design applications that manages real-time media sessions using SIP. The source code contains sample applications, all using [https://code.google.com/p/gyp/ GYP]. The code may have some external dependencies (for instance, the C++ Standard Libraries and other development libraries and headers, depending on your platform). By the way they are kept at a minimum, and they are indicated in the code and in the build instructions.
+Sippet enables you to design applications that manages real-time media sessions
+using SIP. The source code contains sample applications, all using
+[https://code.google.com/p/gyp/ GYP]. The code may have some external
+dependencies (for instance, the C++ Standard Libraries and other development
+libraries and headers, depending on your platform). By the way they are kept at
+a minimum, and they are indicated in the code and in the build instructions.
 
-The code includes network and proxy negotiation classes, SIP message parsing classes, and all the code required to initiate connections and exchange data between two computers. By the way, it doesn't offer handling of SDP messages, as it's normally performed by outlying multimedia libraries (like WebRTC PeerConnection). The network layer code enables applications to robustly traverse SIP over NAT and firewall devices using proxies and SOCKS. You can use the code as provided, or extend it to fit your specific needs, according to the Berkeley-style [https://developers.google.com/talk/libjingle/license license].
+The code includes network and proxy negotiation classes, SIP message parsing
+classes, and all the code required to initiate connections and exchange data
+between two computers. The network layer code supports exchange SIP messages
+either using UDP, TCP, TLS and WebSockets. It also enables applications to
+robustly traverse SIP over NAT and firewall devices using proxies and SOCKS.
+
+You can use the code as provided, or extend it to fit your specific needs,
+according to the Berkeley-style
+[https://developers.google.com/talk/libjingle/license license]. You will note
+that the library doesn't offer handling of SDP messages, as it's normally
+performed by outlying multimedia libraries (like WebRTC PeerConnection).
 
 
 = Prerequisites =
 
-In order to use sippet, you should be familiar with the SIP protocol (starting by [https://www.ietf.org/rfc/rfc3261.txt RFC 3261]), general networking concepts, and C++. Additionally, it helps to be familiar with the [http://datatracker.ietf.org/wg/simple/charter/ SIMPLE extensions].
+In order to use sippet, you should be familiar with the SIP protocol (starting
+by [https://www.ietf.org/rfc/rfc3261.txt RFC 3261]), general networking
+concepts, and C++. Additionally, it helps to be familiar with the
+[http://datatracker.ietf.org/wg/simple/charter/ SIMPLE extensions].
 
-The requirements to build and use sippet are given in [CreatingSippetApplication Creating a Sippet Application].
+The requirements to build and use sippet are given in
+[CreatingSippetApplication Creating a Sippet Application].
+
+
+= Code Organization =
+
+When you check out Sippet, you will notice a number of top-level directories.
+These projects are as follows:
+
+  * *base*: Common code shared between all sub-projects. This contains things like string manipulation, generic utilities, etc. Add things here only if it must be shared between more than one other top-level project. This is pulled directly from Chromium's repository.
+  * *build*: Build-related configuration shared by all projects. This is pulled directly from Chromium's repository.
+  * *chrome*: Dependencies from the Chromium browser. This is pulled directly from Chromium's repository.
+  * *crypto*: Cryptographic utilities and functions. This is pulled directly from Chromium's repository.
+  * *net*: The networking library developed for Chromium. This is pulled directly from Chromium's repository.
+  * *testing*: Contains Google's open-sourced GTest and GMock sources used for unit testing. This is pulled directly from Chromium's repository.
+  * *third_party*: A bunch of external third-party libraries. This is pulled directly from Chromium's repository.
+  * *url*: Google's open source URL parsing and canonicalization library. This is pulled directly from Chromium's repository.
+  * *v8*: The V8 Javascript library. This is pulled directly from Google Code's Subversion repository.
+  * *sippet*: The main sippet sources are stored here.
+    * *base*: Common code shared among the Sippet sources.
+    * *build*: Contains the header file automatically generated containing the Sippet version data.
+    * *message*: SIP message, request, response, parser, builders and other message parts.
+    * *transport*: The Sippet Network Layer class is located here, as well as the Chromium network adapters.
+    * *ua*: Contains the SIP User Agent class, which is responsible for dialogs management and SIP requests authentication.
+    * *uri*: Sippet URI extends the Google's URL parser and canonicalization library for handling SIP URI's.
+    * *examples*: Some Sippet examples are located here.
+    * *test*: Base sources used for testing Sippet. For instance, a standalone server using PJSIP (used for compatibility tests) is located here.
+
