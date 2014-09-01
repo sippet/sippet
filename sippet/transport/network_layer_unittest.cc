@@ -4,6 +4,8 @@
 
 #include "sippet/transport/chrome/transport_test_util.h"
 
+#include "sippet/base/tags.h"
+
 namespace sippet {
 
 namespace {
@@ -105,7 +107,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   Initialize();
 
   std::string branch = network_layer_->CreateBranch();
-  EXPECT_TRUE(StartsWithASCII(branch, NetworkLayer::kMagicCookie, true));
+  EXPECT_TRUE(StartsWithASCII(branch, kMagicCookie, true));
 
   scoped_refptr<Channel> channel;
   channel_factory_->CreateChannel(EndPoint("192.0.2.34", 321, Protocol::TCP),

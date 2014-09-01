@@ -11,6 +11,9 @@ using namespace sippet;
 class InstanceOfMessage : public Message {
  public:
   InstanceOfMessage() : Message(true, Outgoing) {}
+  virtual std::string GetDialogId() const OVERRIDE {
+    return ""; // It won't be used here
+  }
  private:
   friend class base::RefCountedThreadSafe<InstanceOfMessage>;
   virtual ~InstanceOfMessage() {}
