@@ -12,8 +12,10 @@ a minimum, and they are indicated in the code and in the build instructions.
 The code includes network and proxy negotiation classes, SIP message parsing
 classes, and all the code required to initiate connections and exchange data
 between two computers. The network layer code supports exchange SIP messages
-either using UDP, TCP, TLS and WebSockets. It also enables applications to
-robustly traverse SIP over NAT and firewall devices using proxies and SOCKS.
+either using UDP, TCP, TLS and
+[http://en.wikipedia.org/wiki/WebSocket WebSockets]. It also enables
+applications to robustly traverse SIP over NAT and firewall devices using
+proxies and SOCKS.
 
 You can use the code as provided, or extend it to fit your specific needs,
 according to the Berkeley-style
