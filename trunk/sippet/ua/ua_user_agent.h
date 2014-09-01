@@ -5,29 +5,21 @@
 #ifndef SIPPET_UA_USER_AGENT_H_
 #define SIPPET_UA_USER_AGENT_H_
 
-#include "base/memory/scoped_vector.h"
 #include "sippet/transport/network_layer.h"
 #include "sippet/ua/dialog.h"
 #include "sippet/ua/auth_transaction.h"
 #include "sippet/ua/auth_cache.h"
-#include "sippet/ua/ssl_cert_error_handler.h"
 
 #include <map>
 #include <vector>
 
 namespace sippet {
 
-class To;
-class From;
-class CallId;
-class Cseq;
-class Via;
 class Message;
 class Request;
 class Response;
 class DialogStore;
 class DialogController;
-class SSLCertErrorTransaction;
 
 namespace ua {
 
@@ -66,13 +58,6 @@ class UserAgent :
     // |net::OK| status before the channel can be closed.
     virtual void OnChannelClosed(const EndPoint &destination) = 0;
 
-    // While connecting to a destination host using TLS, some certificate error
-    // has happened and can be dismissed by the user. It can also be used to
-    // request client security certificates.
-    virtual void OnSSLCertificateError(const EndPoint &destination,
-                                       const net::SSLInfo &ssl_info,
-                                       bool fatal) = 0;
-
     // A new request arrived. The dialog, when present, indicates that the
     // incoming request pertains to it.
     virtual void OnIncomingRequest(
@@ -99,7 +84,6 @@ class UserAgent :
   // Construct a |UserAgent|.
   UserAgent(AuthHandlerFactory *auth_handler_factory,
             PasswordHandler::Factory *password_handler_factory,
-            SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory,
             DialogController *dialog_controller,
             const net::BoundNetLog &net_log);
 
@@ -170,15 +154,11 @@ class UserAgent :
       const scoped_refptr<Dialog> &dialog);
   void OnAuthenticationComplete(const std::string &request_id, int rv);
   void OnResendRequestComplete(const std::string &request_id, int rv);
-  void OnSSLCertErrorTransactionComplete(
-      SSLCertErrorTransaction* ssl_cert_error_transaction, int rv);
 
   // sippet::NetworkLayer::Delegate methods:
   virtual void OnChannelConnected(
       const EndPoint &destination, int err) OVERRIDE;
   virtual void OnChannelClosed(const EndPoint &destination) OVERRIDE;
-  virtual void OnSSLCertificateError(const EndPoint &destination,
-      const net::SSLInfo &ssl_info, bool fatal) OVERRIDE;
   virtual void OnIncomingRequest(
       const scoped_refptr<Request> &request) OVERRIDE;
   virtual void OnIncomingResponse(
@@ -197,10 +177,6 @@ class UserAgent :
       const scoped_refptr<Request> &request,
       int error,
       const scoped_refptr<Dialog> &dialog);
-  void RunUserSSLCertificateErrorCallback(
-      const EndPoint &destination,
-      const net::SSLInfo &ssl_info,
-      bool fatal);
 
   NetworkLayer *network_layer_;
   UrlListType route_set_;
@@ -209,9 +185,7 @@ class UserAgent :
   AuthHandlerFactory *auth_handler_factory_;
   net::BoundNetLog net_log_;
   PasswordHandler::Factory *password_handler_factory_;
-  SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory_;
   base::WeakPtrFactory<UserAgent> weak_factory_;
-  ScopedVector<SSLCertErrorTransaction> ssl_cert_error_transactions_;
   
   scoped_ptr<DialogStore> dialog_store_;
   DialogController *dialog_controller_;

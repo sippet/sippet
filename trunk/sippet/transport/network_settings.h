@@ -9,6 +9,7 @@
 #include "base/memory/ref_counted.h"
 #include "sippet/transport/branch_factory.h"
 #include "sippet/transport/transaction_factory.h"
+#include "sippet/transport/ssl_cert_error_handler.h"
 
 #include <string>
 
@@ -25,13 +26,15 @@ class NetworkSettings {
     std::string software_name_;
     BranchFactory *branch_factory_;
     TransactionFactory *transaction_factory_;
+    SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory_;
     // Default values
     Data() :
       reuse_lifetime_(60),
       enable_compact_headers_(true),
       software_name_(GetDefaultSoftwareName()),
       branch_factory_(BranchFactory::GetDefaultBranchFactory()),
-      transaction_factory_(TransactionFactory::GetDefaultTransactionFactory()) {}
+      transaction_factory_(TransactionFactory::GetDefaultTransactionFactory()),
+      ssl_cert_error_handler_factory_(NULL) {}
   };
 
   Data data_;
@@ -70,7 +73,7 @@ class NetworkSettings {
   }
 
   // The internal branch factory to use
-  BranchFactory *branch_factory() {
+  BranchFactory *branch_factory() const {
     return data_.branch_factory_;
   }
   void set_branch_factory(BranchFactory *branch_factory) {
@@ -79,12 +82,22 @@ class NetworkSettings {
   }
 
   // The internal transaction factory to use
-  TransactionFactory *transaction_factory() {
+  TransactionFactory *transaction_factory() const {
     return data_.transaction_factory_;
   }
   void set_transaction_factory(TransactionFactory *transaction_factory) {
     DCHECK(transaction_factory);
     data_.transaction_factory_ = transaction_factory;
+  }
+
+  // The SSL certificate error handler factory to use
+  SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory() const {
+    return data_.ssl_cert_error_handler_factory_;
+  }
+  void set_ssl_cert_error_handler_factory(
+      SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory) {
+    DCHECK(ssl_cert_error_handler_factory);
+    data_.ssl_cert_error_handler_factory_ = ssl_cert_error_handler_factory;
   }
 };
 

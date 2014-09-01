@@ -59,78 +59,6 @@ class UserAgentHandler
     base::MessageLoop::current()->Quit();
   }
 
-  virtual void OnSSLCertificateError(const EndPoint &destination,
-                                     const net::SSLInfo &ssl_info,
-                                     bool fatal) OVERRIDE {
-    std::cout << "SSL certificate error for channel "
-              << destination.ToString()
-              << "\n";
-
-    std::cout << "-- gravity: "
-              << (fatal ? "fatal" : "non-fatal")
-              << "\n";
-
-    std::cout << "-- issued by "
-              << (ssl_info.is_issued_by_known_root ? "known" : "unknown")
-              << " root\n";
-
-    if (ssl_info.cert) {
-      std::cout << "-- issuer: "
-                << ssl_info.cert->issuer().GetDisplayName()
-                << "\n";
-
-      std::cout << "-- subject: "
-                << ssl_info.cert->subject().GetDisplayName()
-                << "\n";
-
-      size_t size;
-      net::X509Certificate::PublicKeyType public_key_type;
-      ssl_info.cert->GetPublicKeyInfo(ssl_info.cert->os_cert_handle(),
-          &size, &public_key_type);
-      const char *key_type;
-      if (public_key_type == net::X509Certificate::kPublicKeyTypeDH) {
-        key_type = "DH";
-      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeDSA) {
-        key_type = "DSA";
-      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeECDH) {
-        key_type = "ECDH";
-      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeECDSA) {
-        key_type = "ECDSA";
-      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeRSA) {
-        key_type = "RSA";
-      } else {
-        key_type = "Unknown";
-      }
-      std::cout << "-- public key: "
-                << key_type
-                << " (" << size << " bits)"
-                << "\n";
-
-      std::vector<std::string> dns_names;
-      ssl_info.cert->GetDNSNames(&dns_names);
-      std::cout << "-- DNS names: ";
-      for (std::vector<std::string>::iterator i = dns_names.begin(),
-           ie = dns_names.end(); i != ie; i++) {
-        if (i != dns_names.begin())
-          std::cout << ", ";
-        std::cout << *i;
-      }
-      std::cout << "\n";
-
-      if (!ssl_info.cert->valid_start().is_null()
-          && !ssl_info.cert->valid_expiry().is_null()) {
-        base::string16 start =
-            base::TimeFormatShortDateAndTime(ssl_info.cert->valid_start());
-        base::string16 end =
-            base::TimeFormatShortDateAndTime(ssl_info.cert->valid_expiry());
-        std::cout << "-- Valid from " << start << " to " << end << "\n";
-      }
-    }
-
-    std::cout << "Accepting the certificate\n";
-    network_layer_->ReconnectIgnoringLastError(destination);
-  }
-
   virtual void OnIncomingRequest(
       const scoped_refptr<Request> &incoming_request,
       const scoped_refptr<Dialog> &dialog) OVERRIDE {
@@ -246,9 +174,75 @@ class UserSSLCertErrorHandler : public SSLCertErrorHandler {
   virtual int GetUserApproval(
       const EndPoint &destination,
       const net::SSLInfo &ssl_info,
+      bool fatal,
       bool *is_accepted,
       const net::CompletionCallback& callback) OVERRIDE {
-    *is_accepted = true;
+    std::cout << "SSL certificate error for channel "
+              << destination.ToString()
+              << "\n";
+
+    std::cout << "-- gravity: "
+              << (fatal ? "fatal" : "non-fatal")
+              << "\n";
+
+    std::cout << "-- issued by "
+              << (ssl_info.is_issued_by_known_root ? "known" : "unknown")
+              << " root\n";
+
+    if (ssl_info.cert) {
+      std::cout << "-- issuer: "
+                << ssl_info.cert->issuer().GetDisplayName()
+                << "\n";
+
+      std::cout << "-- subject: "
+                << ssl_info.cert->subject().GetDisplayName()
+                << "\n";
+
+      size_t size;
+      net::X509Certificate::PublicKeyType public_key_type;
+      ssl_info.cert->GetPublicKeyInfo(ssl_info.cert->os_cert_handle(),
+          &size, &public_key_type);
+      const char *key_type;
+      if (public_key_type == net::X509Certificate::kPublicKeyTypeDH) {
+        key_type = "DH";
+      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeDSA) {
+        key_type = "DSA";
+      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeECDH) {
+        key_type = "ECDH";
+      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeECDSA) {
+        key_type = "ECDSA";
+      } else if (public_key_type == net::X509Certificate::kPublicKeyTypeRSA) {
+        key_type = "RSA";
+      } else {
+        key_type = "Unknown";
+      }
+      std::cout << "-- public key: "
+                << key_type
+                << " (" << size << " bits)"
+                << "\n";
+
+      std::vector<std::string> dns_names;
+      ssl_info.cert->GetDNSNames(&dns_names);
+      std::cout << "-- DNS names: ";
+      for (std::vector<std::string>::iterator i = dns_names.begin(),
+           ie = dns_names.end(); i != ie; i++) {
+        if (i != dns_names.begin())
+          std::cout << ", ";
+        std::cout << *i;
+      }
+      std::cout << "\n";
+
+      if (!ssl_info.cert->valid_start().is_null()
+          && !ssl_info.cert->valid_expiry().is_null()) {
+        base::string16 start =
+            base::TimeFormatShortDateAndTime(ssl_info.cert->valid_start());
+        base::string16 end =
+            base::TimeFormatShortDateAndTime(ssl_info.cert->valid_expiry());
+        std::cout << "-- Valid from " << start << " to " << end << "\n";
+      }
+    }
+
+    *is_accepted = (fatal) ? false : true;
     return net::OK;
   }
 
@@ -351,14 +345,19 @@ int main(int argc, char **argv) {
   net::BoundNetLog net_log;
   StaticPasswordHandler::Factory static_password_handler_factory(
       username, password);
-  UserSSLCertErrorHandler::Factory ssl_cert_error_handler_factory;
   scoped_refptr<ua::UserAgent> user_agent(
       new ua::UserAgent(auth_handler_factory.get(),
-          &static_password_handler_factory, &ssl_cert_error_handler_factory,
+          &static_password_handler_factory,
           DialogController::GetDefaultDialogController(),
           net_log));
+  
+  NetworkSettings network_settings;
+  UserSSLCertErrorHandler::Factory ssl_cert_error_handler_factory;
+  network_settings.set_ssl_cert_error_handler_factory(
+      &ssl_cert_error_handler_factory);
+
   scoped_refptr<NetworkLayer> network_layer;
-  network_layer = new NetworkLayer(user_agent.get());
+  network_layer = new NetworkLayer(user_agent.get(), network_settings);
 
   // Register the channel factory
   net::SSLConfig ssl_config;
