@@ -645,6 +645,15 @@ void MockChannel::Connect() {
   }
 }
 
+int MockChannel::ReconnectIgnoringLastError() {
+  return net::ERR_NOT_IMPLEMENTED;
+}
+
+int MockChannel::ReconnectWithCertificate(
+      net::X509Certificate* client_cert) {
+  return net::ERR_NOT_IMPLEMENTED;
+}
+
 int MockChannel::Send(const scoped_refptr<Message>& message,
                       const net::CompletionCallback& callback) {
   DCHECK(is_connected());
@@ -832,6 +841,7 @@ ClientTransaction *MockTransactionFactory::CreateClientTransaction(
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
+      TimeDeltaFactory *time_delta_factory,
       TransactionDelegate *delegate) {
   MockClientTransaction *client_transaction =
     new MockClientTransaction(data_provider_);
@@ -846,6 +856,7 @@ ServerTransaction *MockTransactionFactory::CreateServerTransaction(
     const Method &method,
     const std::string &transaction_id,
     const scoped_refptr<Channel> &channel,
+    TimeDeltaFactory *time_delta_factory,
     TransactionDelegate *delegate) {
   MockServerTransaction *server_transaction =
     new MockServerTransaction(data_provider_);

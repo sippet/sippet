@@ -340,6 +340,9 @@ class MockChannel : public Channel {
   virtual bool is_connected() const OVERRIDE;
   virtual bool is_stream() const OVERRIDE;
   virtual void Connect() OVERRIDE;
+  virtual int ReconnectIgnoringLastError() OVERRIDE;
+  virtual int ReconnectWithCertificate(
+      net::X509Certificate* client_cert) OVERRIDE;
   virtual int Send(const scoped_refptr<Message>& message,
                    const net::CompletionCallback& callback) OVERRIDE;
   virtual void Close() OVERRIDE;
@@ -475,11 +478,13 @@ class MockTransactionFactory : public TransactionFactory {
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
+      TimeDeltaFactory *time_delta_factory,
       TransactionDelegate *delegate) OVERRIDE;
   virtual ServerTransaction *CreateServerTransaction(
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
+      TimeDeltaFactory *time_delta_factory,
       TransactionDelegate *delegate) OVERRIDE;
  private:
   DataProvider *data_provider_;
