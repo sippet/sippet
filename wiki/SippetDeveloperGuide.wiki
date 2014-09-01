@@ -19,7 +19,9 @@ You can use the code as provided, or extend it to fit your specific needs,
 according to the Berkeley-style
 [https://developers.google.com/talk/libjingle/license license]. You will note
 that the library doesn't offer handling of SDP messages, as it's normally
-performed by outlying multimedia libraries (like WebRTC PeerConnection).
+performed by outlying multimedia libraries (like
+[http://www.webrtc.org/reference/native-apis#TOC-PeerConnection-APIs-peerconnection.h-
+WebRTC PeerConnection]).
 
 
 = Prerequisites =
