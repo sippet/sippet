@@ -7,6 +7,7 @@
 #include "base/stl_util.h"
 #include "base/strings/string_util.h"
 #include "net/base/net_errors.h"
+#include "net/cert/x509_certificate.h"
 #include "sippet/base/tags.h"
 #include "sippet/uri/uri.h"
 #include "sippet/message/headers/via.h"
@@ -15,6 +16,7 @@
 #include "sippet/transport/channel_factory.h"
 #include "sippet/transport/transaction_factory.h"
 #include "sippet/transport/time_delta_factory.h"
+#include "sippet/transport/ssl_cert_error_transaction.h"
 
 namespace sippet {
 
@@ -37,7 +39,9 @@ NetworkLayer::NetworkLayer(Delegate *delegate,
                            const NetworkSettings &network_settings)
   : delegate_(delegate),
     network_settings_(network_settings),
-    weak_factory_(this) {
+    weak_factory_(this),
+    ssl_cert_error_handler_factory_(
+        network_settings.ssl_cert_error_handler_factory()) {
   DCHECK(delegate);
 }
 
@@ -738,7 +742,49 @@ void NetworkLayer::OnSSLCertificateError(const scoped_refptr<Channel> &channel,
                                          const net::SSLInfo &ssl_info,
                                          bool fatal) {
   EndPoint destination(channel->destination());
-  delegate_->OnSSLCertificateError(destination, ssl_info, fatal);
+  if (ssl_cert_error_handler_factory_) {
+    SSLCertErrorTransaction *ssl_cert_error_transaction =
+        new SSLCertErrorTransaction(ssl_cert_error_handler_factory_);
+    ssl_cert_error_transactions_.push_back(ssl_cert_error_transaction);
+    int rv = ssl_cert_error_transaction->HandleSSLCertError(destination, ssl_info,
+        fatal, base::Bind(&NetworkLayer::OnSSLCertErrorTransactionComplete,
+            base::Unretained(this), ssl_cert_error_transaction));
+    if (net::OK == rv) {
+      OnSSLCertErrorTransactionComplete(ssl_cert_error_transaction, net::OK);
+    } else if (net::ERR_IO_PENDING == rv) {
+      return;
+    }
+  } else {
+    ignore_result(DismissLastConnectionAttempt(destination));
+  }
+}
+
+void NetworkLayer::OnSSLCertErrorTransactionComplete(
+    SSLCertErrorTransaction* ssl_cert_error_transaction, int rv) {
+  DCHECK(ssl_cert_error_transaction);
+  if (net::OK == rv) {
+    if (ssl_cert_error_transaction->client_cert()) {
+      rv = ReconnectWithCertificate(
+          ssl_cert_error_transaction->destination(),
+          ssl_cert_error_transaction->client_cert());
+      if (net::ERR_IO_PENDING == rv)
+        return;
+    } else if (ssl_cert_error_transaction->is_accepted()) {
+      rv = ReconnectIgnoringLastError(
+          ssl_cert_error_transaction->destination());
+      if (net::ERR_IO_PENDING == rv)
+        return;
+    }
+  }
+  ignore_result(DismissLastConnectionAttempt(
+      ssl_cert_error_transaction->destination()));
+  ScopedVector<SSLCertErrorTransaction>::iterator i =
+      std::find_if(ssl_cert_error_transactions_.begin(),
+        ssl_cert_error_transactions_.end(),
+        std::bind1st(std::equal_to<SSLCertErrorTransaction*>(),
+            ssl_cert_error_transaction));
+  DCHECK(i != ssl_cert_error_transactions_.end());
+  ssl_cert_error_transactions_.erase(i);
 }
 
 void NetworkLayer::OnIncomingResponse(const scoped_refptr<Response> &response) {

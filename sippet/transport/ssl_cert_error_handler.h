@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_UA_SSL_CERT_ERROR_HANDLER_H_
-#define SIPPET_UA_SSL_CERT_ERROR_HANDLER_H_
+#ifndef SIPPET_TRANSPORT_SSL_CERT_ERROR_HANDLER_H_
+#define SIPPET_TRANSPORT_SSL_CERT_ERROR_HANDLER_H_
 
 #include "base/memory/scoped_ptr.h"
 #include "base/memory/ref_counted.h"
@@ -42,6 +42,7 @@ class SSLCertErrorHandler {
   // |OK|, and the parameter |is_accepted| must have been set.
   virtual int GetUserApproval(const EndPoint &destination,
                               const net::SSLInfo &ssl_info,
+                              bool fatal,
                               bool *is_accepted,
                               const net::CompletionCallback& callback) = 0;
 
@@ -58,4 +59,4 @@ class SSLCertErrorHandler {
 
 } // namespace sippet
 
-#endif // SIPPET_UA_SSL_CERT_ERROR_HANDLER_H_
+#endif // SIPPET_TRANSPORT_SSL_CERT_ERROR_HANDLER_H_
