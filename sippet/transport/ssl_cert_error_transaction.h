@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_UA_SSL_CERT_ERROR_TRANSACTION_H_
-#define SIPPET_UA_SSL_CERT_ERROR_TRANSACTION_H_
+#ifndef SIPPET_TRANSPORT_SSL_CERT_ERROR_TRANSACTION_H_
+#define SIPPET_TRANSPORT_SSL_CERT_ERROR_TRANSACTION_H_
 
 #include "base/memory/scoped_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "net/base/completion_callback.h"
 #include "net/ssl/ssl_info.h"
 #include "sippet/transport/end_point.h"
-#include "sippet/ua/ssl_cert_error_handler.h"
+#include "sippet/transport/ssl_cert_error_handler.h"
 
 namespace net {
 class X509Certificate;
@@ -30,6 +30,7 @@ class SSLCertErrorTransaction {
   // Handle a non-fatal SSL error.
   int HandleSSLCertError(const EndPoint &destination,
                          const net::SSLInfo &ssl_info,
+                         bool fatal,
                          const net::CompletionCallback& callback);
 
   bool is_accepted() const { return is_accepted_; }
@@ -69,6 +70,7 @@ class SSLCertErrorTransaction {
   net::SSLInfo ssl_info_;
   SSLCertErrorHandler::Factory* ssl_cert_error_handler_factory_;
   scoped_ptr<SSLCertErrorHandler> ssl_cert_error_handler_;
+  bool fatal_;
   bool is_accepted_;
   scoped_refptr<net::X509Certificate> client_cert_;
   net::CompletionCallback io_callback_;
@@ -79,4 +81,4 @@ class SSLCertErrorTransaction {
 
 } // namespace sippet
 
-#endif // SIPPET_UA_SSL_CERT_ERROR_TRANSACTION_H_
+#endif // SIPPET_TRANSPORT_SSL_CERT_ERROR_TRANSACTION_H_

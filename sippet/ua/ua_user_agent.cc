@@ -11,7 +11,6 @@
 #include "base/strings/utf_string_conversions.h"
 #include "base/i18n/time_formatting.h"
 #include "net/base/net_errors.h"
-#include "net/cert/x509_certificate.h"
 #include "sippet/ua/dialog.h"
 #include "sippet/uri/uri.h"
 #include "sippet/base/tags.h"
@@ -19,7 +18,6 @@
 #include "sippet/base/stl_extras.h"
 #include "sippet/ua/dialog_store.h"
 #include "sippet/ua/dialog_controller.h"
-#include "sippet/ua/ssl_cert_error_transaction.h"
 
 namespace sippet {
 namespace ua {
@@ -34,13 +32,11 @@ UserAgent::OutgoingRequestContext::~OutgoingRequestContext() {
 
 UserAgent::UserAgent(AuthHandlerFactory *auth_handler_factory,
     PasswordHandler::Factory *password_handler_factory,
-    SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory,
     DialogController *dialog_controller,
     const net::BoundNetLog &net_log)
     : auth_handler_factory_(auth_handler_factory),
       net_log_(net_log),
       password_handler_factory_(password_handler_factory),
-      ssl_cert_error_handler_factory_(ssl_cert_error_handler_factory),
       weak_factory_(this),
       dialog_store_(new DialogStore),
       dialog_controller_(dialog_controller) {
@@ -206,38 +202,6 @@ void UserAgent::OnResendRequestComplete(
   }
 }
 
-void UserAgent::OnSSLCertErrorTransactionComplete(
-    SSLCertErrorTransaction* ssl_cert_error_transaction, int rv) {
-  DCHECK(ssl_cert_error_transaction);
-  if (net::OK == rv) {
-    if (ssl_cert_error_transaction->client_cert()) {
-      rv = network_layer_->ReconnectWithCertificate(
-          ssl_cert_error_transaction->destination(),
-          ssl_cert_error_transaction->client_cert());
-      if (net::ERR_IO_PENDING == rv)
-        return;
-    } else if (ssl_cert_error_transaction->is_accepted()) {
-      rv = network_layer_->ReconnectIgnoringLastError(
-          ssl_cert_error_transaction->destination());
-      if (net::ERR_IO_PENDING == rv)
-        return;
-    }
-  }
-  RunUserSSLCertificateErrorCallback(
-      ssl_cert_error_transaction->destination(),
-      ssl_cert_error_transaction->ssl_info(),
-      false);
-  ignore_result(network_layer_->DismissLastConnectionAttempt(
-      ssl_cert_error_transaction->destination()));
-  ScopedVector<SSLCertErrorTransaction>::iterator i =
-      std::find_if(ssl_cert_error_transactions_.begin(),
-        ssl_cert_error_transactions_.end(),
-        std::bind1st(std::equal_to<SSLCertErrorTransaction*>(),
-            ssl_cert_error_transaction));
-  DCHECK(i != ssl_cert_error_transactions_.end());
-  ssl_cert_error_transactions_.erase(i);
-}
-
 void UserAgent::OnChannelConnected(const EndPoint &destination, int err) {
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
@@ -250,24 +214,6 @@ void UserAgent::OnChannelClosed(const EndPoint &destination) {
        i != handlers_.end(); i++) {
     (*i)->OnChannelClosed(destination);
   }
-}
-
-void UserAgent::OnSSLCertificateError(const EndPoint &destination,
-    const net::SSLInfo &ssl_info, bool fatal) {
-  if (!fatal && ssl_cert_error_handler_factory_) {
-    SSLCertErrorTransaction *ssl_cert_error_transaction =
-        new SSLCertErrorTransaction(ssl_cert_error_handler_factory_);
-    ssl_cert_error_transactions_.push_back(ssl_cert_error_transaction);
-    int rv = ssl_cert_error_transaction->HandleSSLCertError(destination, ssl_info,
-        base::Bind(&UserAgent::OnSSLCertErrorTransactionComplete,
-            base::Unretained(this), ssl_cert_error_transaction));
-    if (net::OK == rv) {
-      OnSSLCertErrorTransactionComplete(ssl_cert_error_transaction, net::OK);
-    } else if (net::ERR_IO_PENDING == rv) {
-      return;
-    }
-  }
-  RunUserSSLCertificateErrorCallback(destination, ssl_info, fatal);
 }
 
 void UserAgent::OnIncomingRequest(
@@ -332,16 +278,6 @@ void UserAgent::RunUserTransportErrorCallback(
   for (std::vector<Delegate*>::iterator i = handlers_.begin();
        i != handlers_.end(); i++) {
     (*i)->OnTransportError(request, error, dialog);
-  }
-}
-
-void UserAgent::RunUserSSLCertificateErrorCallback(
-      const EndPoint &destination,
-      const net::SSLInfo &ssl_info,
-      bool fatal) {
-  for (std::vector<Delegate*>::iterator i = handlers_.begin();
-       i != handlers_.end(); i++) {
-    (*i)->OnSSLCertificateError(destination, ssl_info, fatal);
   }
 }
 

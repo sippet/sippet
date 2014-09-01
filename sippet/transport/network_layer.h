@@ -9,6 +9,7 @@
 
 #include "base/timer/timer.h"
 #include "base/memory/ref_counted.h"
+#include "base/memory/scoped_vector.h"
 #include "base/system_monitor/system_monitor.h"
 #include "base/gtest_prod_util.h"
 #include "net/base/completion_callback.h"
@@ -21,6 +22,7 @@
 #include "sippet/transport/transaction_delegate.h"
 #include "sippet/transport/aliases_map.h"
 #include "sippet/transport/network_settings.h"
+#include "sippet/transport/ssl_cert_error_handler.h"
 
 namespace net {
 class X509Certificate;
@@ -30,6 +32,7 @@ namespace sippet {
 
 class ChannelFactory;
 class TransactionFactory;
+class SSLCertErrorTransaction;
 
 // The |NetworkLayer| is the main message dispatcher of sippet. It receives
 // messages from network and sends them to a delegate object, and is the
@@ -110,11 +113,6 @@ class NetworkLayer :
     // port unreachable) is detected by the network layer.
     virtual void OnChannelClosed(const EndPoint &destination) = 0;
 
-    // Called when there's a SSL certificate error.
-    virtual void OnSSLCertificateError(const EndPoint &destination,
-                                       const net::SSLInfo &ssl_info,
-                                       bool fatal) = 0;
-
     // Called whenever a new request is received.
     virtual void OnIncomingRequest(
         const scoped_refptr<Request> &request) = 0;
@@ -176,21 +174,6 @@ class NetworkLayer :
   // and |NetworkLayer::Delegate::OnChannelConnected| is called when completed.
   // Otherwise, |net::OK| is just returned.
   int Connect(const EndPoint &destination);
-
-  // Restarts the some previous connection attempt, ignoring the last error.
-  // This method is used to continue past various SSL related errors.
-  //
-  // Not all errors can be ignored using this method.  See error code
-  // descriptions for details about errors that can be ignored.
-  int ReconnectIgnoringLastError(const EndPoint &destination);
-
-  // Restarts the internal channel with a client certificate.
-  int ReconnectWithCertificate(const EndPoint &destination,
-                               net::X509Certificate* client_cert);
-
-  // Dismiss previous connection attempt, forwarding the last error. This
-  // method is used to clean up past various SSL related errors.
-  int DismissLastConnectionAttempt(const EndPoint &destination);
 
   // Get the origin |EndPoint| of a given destination. This function returns
   // |net::OK| only if there is a channel available for that destination.
@@ -271,6 +254,8 @@ class NetworkLayer :
   ClientTransactionsMap client_transactions_;
   ServerTransactionsMap server_transactions_;
   base::WeakPtrFactory<NetworkLayer> weak_factory_;
+  SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory_;
+  ScopedVector<SSLCertErrorTransaction> ssl_cert_error_transactions_;
 
   int SendRequest(scoped_refptr<Request> &request,
       const net::CompletionCallback& callback);
@@ -355,6 +340,22 @@ class NetworkLayer :
   virtual void OnSSLCertificateError(const scoped_refptr<Channel> &channel,
                                      const net::SSLInfo &ssl_info,
                                      bool fatal) OVERRIDE;
+
+  // SSL Certificate handshake transaction complete
+  void OnSSLCertErrorTransactionComplete(
+      SSLCertErrorTransaction* ssl_cert_error_transaction, int rv);
+
+  // Restarts the some previous connection attempt, ignoring the last error.
+  // This method is used to continue past various SSL related errors.
+  int ReconnectIgnoringLastError(const EndPoint &destination);
+
+  // Restarts the internal channel with a client certificate.
+  int ReconnectWithCertificate(const EndPoint &destination,
+                               net::X509Certificate* client_cert);
+
+  // Dismiss previous connection attempt, forwarding the last error. This
+  // method is used to clean up past various SSL related errors.
+  int DismissLastConnectionAttempt(const EndPoint &destination);
 
   // sippet::TransactionDelegate methods:
   virtual void OnIncomingResponse(const scoped_refptr<Response> &) OVERRIDE;

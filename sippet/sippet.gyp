@@ -193,6 +193,9 @@
         'transport/time_delta_provider.h',
         'transport/time_delta_factory.h',
         'transport/time_delta_factory.cc',
+        'transport/ssl_cert_error_handler.h',
+        'transport/ssl_cert_error_transaction.h',
+        'transport/ssl_cert_error_transaction.cc',
         'transport/chrome/message_reader.h',
         'transport/chrome/message_reader.cc',
         'transport/chrome/chrome_stream_reader.h',
@@ -232,9 +235,6 @@
         'ua/auth_transaction.h',
         'ua/auth_transaction.cc',
         'ua/password_handler.h',
-        'ua/ssl_cert_error_handler.h',
-        'ua/ssl_cert_error_transaction.h',
-        'ua/ssl_cert_error_transaction.cc',
       ],
       'conditions': [
         ['OS == "ios"', {

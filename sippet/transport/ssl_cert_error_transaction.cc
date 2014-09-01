@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/ua/ssl_cert_error_transaction.h"
+#include "sippet/transport/ssl_cert_error_transaction.h"
 
 #include "net/base/net_errors.h"
 #include "net/ssl/ssl_info.h"
@@ -26,11 +26,13 @@ SSLCertErrorTransaction::~SSLCertErrorTransaction() {
 int SSLCertErrorTransaction::HandleSSLCertError(
     const EndPoint &destination,
     const net::SSLInfo &ssl_info,
+    bool fatal,
     const net::CompletionCallback& callback) {
   DCHECK(!callback.is_null());
   destination_ = destination;
   ssl_info_ = ssl_info;
   callback_ = callback;
+  fatal_ = fatal;
   next_state_ = STATE_HANDLE_SSL_CERT_ERROR;
   return DoLoop(net::OK);
 }
@@ -100,7 +102,7 @@ int SSLCertErrorTransaction::DoGetUserApproval() {
   DCHECK(ssl_cert_error_handler_.get());
   next_state_ = STATE_GET_USER_APPROVAL_COMPLETE;
   return ssl_cert_error_handler_->GetUserApproval(destination_,
-      ssl_info_, &is_accepted_, io_callback_);
+      ssl_info_, fatal_, &is_accepted_, io_callback_);
 }
 
 int SSLCertErrorTransaction::DoGetUserApprovalComplete(int result) {
