@@ -33,7 +33,7 @@ by [https://www.ietf.org/rfc/rfc3261.txt RFC 3261]), general networking
 concepts, and C++. Additionally, it helps to be familiar with the
 [http://datatracker.ietf.org/wg/simple/charter/ SIMPLE extensions].
 
-The requirements to build sippet are given in [HotToCompile How to compile].
+The requirements to build sippet are given in [HowToCompile How to compile].
 
 
 = Code Organization =
