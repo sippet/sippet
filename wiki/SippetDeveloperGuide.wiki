@@ -57,3 +57,8 @@ These projects are as follows:
     * *examples*: Some Sippet examples are located here.
     * *test*: Base sources used for testing Sippet. For instance, a standalone server using PJSIP (used for compatibility tests) is located here.
 
+*Notes* Sippet has some issues you should be aware of:
+
+  * Sippet code is a work in progress. It is not perfect, complete, or flawless. Some aspects of the code, such as password protection, are not securely implemented, and others, such as URI parsing, are not as robust as they should be. Be sure to code your application as robustly as possible.
+
+
