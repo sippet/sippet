@@ -7,7 +7,8 @@ using SIP. The source code contains sample applications, all using
 [https://code.google.com/p/gyp/ GYP]. The code may have some external
 dependencies (for instance, the C++ Standard Libraries and other development
 libraries and headers, depending on your platform). By the way they are kept at
-a minimum, and they are indicated in the code and in the build instructions.
+a minimum, and they are indicated in the code and in the
+[HowToCompile build instructions].
 
 The code includes network and proxy negotiation classes, SIP message parsing
 classes, and all the code required to initiate connections and exchange data
@@ -32,8 +33,7 @@ by [https://www.ietf.org/rfc/rfc3261.txt RFC 3261]), general networking
 concepts, and C++. Additionally, it helps to be familiar with the
 [http://datatracker.ietf.org/wg/simple/charter/ SIMPLE extensions].
 
-The requirements to build and use sippet are given in
-[CreatingSippetApplication Creating a Sippet Application].
+The requirements to build sippet are given in [HotToCompile How to compile].
 
 
 = Code Organization =
