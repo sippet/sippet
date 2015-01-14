@@ -209,7 +209,7 @@ class NetworkLayer :
   static EndPoint GetMessageEndPoint(const scoped_refptr<Message> &message);
 
  private:
-  friend base::RefCountedThreadSafe<NetworkLayer>;
+  friend class base::RefCountedThreadSafe<NetworkLayer>;
   virtual ~NetworkLayer();
 
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);

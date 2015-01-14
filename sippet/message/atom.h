@@ -134,7 +134,7 @@ bool operator!=(typename Atom<T>::Type t, const Atom<T> &a) {
 
 template<typename T>
 struct AtomLess : std::binary_function<Atom<T>, Atom<T>, bool> {
-  bool operator()(const Atom<T> &a, const Atom<T> &b) {
+  bool operator()(const Atom<T> &a, const Atom<T> &b) const {
     return strcmp(a.str(), b.str()) < 0;
   }
 };

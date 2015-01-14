@@ -171,7 +171,9 @@ class has_received {
 
  private:
   static std::string remove_sqb(const std::string& input) {
-    if (input.front() == '[' && input.back() == ']')
+    if (input.empty())
+      return input;
+    else if (*input.begin() == '[' && *input.rbegin() == ']')
       return input.substr(1, input.size()-2);
     else
       return input;
