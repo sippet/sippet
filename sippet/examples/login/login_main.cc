@@ -323,7 +323,7 @@ int main(int argc, char **argv) {
 	  { "wss", "sips:localhost;transport=ws" },
   };
 
-  for (int i = 0; i < arraysize(args); i++) {
+  for (int i = 0; i < ARRAYSIZE_UNSAFE(args); i++) {
 	  if (command_line->HasSwitch(args[i].cmd_switch_)) {
       registrar_uri = args[i].registrar_uri_;
       break;
