@@ -4,7 +4,7 @@ NOTE: this guide is closely related to the original [https://code.google.com/p/c
 
 = Prerequisites =
 
-A Linux 64-bit build machine capable of building Sippet for Linux (see HowToCompile). Other (Mac/Windows) platforms are not supported for Android.
+A *Linux 64-bit build machine* (Ubuntu 64-bit is recommended) capable of building Sippet for Linux (see HowToCompile). Other (Mac/Windows) platforms are not supported for Android.
 
 
 == Get the code ==
