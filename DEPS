@@ -184,6 +184,12 @@ deps_os = {
   "unix": {
     "third_party/gold":
       From("chromium_deps", "src/third_party/gold"),
+
+    "tools/xdisplaycheck":
+      Var("chromium_trunk") + "/src/tools/xdisplaycheck@" + Var("chromium_revision"),
+
+    "tools/generate_library_loader":
+      Var("chromium_trunk") + "/src/tools/generate_library_loader@" + Var("chromium_revision"),
   },
 
   "android": {
