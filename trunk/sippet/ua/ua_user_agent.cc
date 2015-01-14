@@ -99,7 +99,7 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   // Now uses the build time to generate a single instance ID
   base::string16 build_time =
     base::TimeFormatShortDateAndTime(base::GetBuildTime());
-  std::string instance = base::MD5String(base::WideToUTF8(build_time));
+  std::string instance = base::MD5String(base::UTF16ToUTF8(build_time));
   std::string instance_id = base::StringPrintf("\"<urn:uuid:%s-%s-%s-%s-%s>\"",
     instance.substr(0, 8).c_str(),
     instance.substr(8, 4).c_str(),

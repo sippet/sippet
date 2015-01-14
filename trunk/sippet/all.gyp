@@ -9,8 +9,14 @@
       'type': 'none',
       'dependencies': [
         'sippet.gyp:*',
-        'sippet_tests.gyp:*',
-        'sippet_examples.gyp:*',
+      ],
+      'conditions': [
+        ['OS != "android" and OS != "ios"', {
+          'dependencies': [
+            'sippet_tests.gyp:*',
+            'sippet_examples.gyp:*',
+          ],
+        }]
       ],
     },
   ],
