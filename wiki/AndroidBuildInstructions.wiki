@@ -1,6 +1,6 @@
 #summary Build instructions for Sippet for Android
 
-NOTE: this guide is closely related to the original [Android Build Instructions https://code.google.com/p/chromium/wiki/AndroidBuildInstructions], from Google Chromium.
+NOTE: this guide is closely related to the original [https://code.google.com/p/chromium/wiki/AndroidBuildInstructions Android Build Instructions], from Google Chromium.
 
 = Prerequisites =
 
