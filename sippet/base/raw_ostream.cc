@@ -360,11 +360,11 @@ raw_ostream &raw_ostream::operator<<(const format_object_base &Fmt) {
     V.resize(NextBufferSize);
 
     // Try formatting into the SmallVector.
-    size_t BytesUsed = Fmt.print(V.data(), NextBufferSize);
+    size_t BytesUsed = Fmt.print(&V.front(), NextBufferSize);
 
     // If BytesUsed fit into the vector, we win.
     if (BytesUsed <= NextBufferSize)
-      return write(V.data(), BytesUsed);
+      return write(&V.front(), BytesUsed);
 
     // Otherwise, try again with a new size.
     assert(BytesUsed > NextBufferSize && "Didn't grow buffer!?");

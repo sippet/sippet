@@ -357,6 +357,11 @@
             'PJMEDIA_AUDIO_DEV_HAS_COREAUDIO=1'
           ]
         }],
+        ['OS=="android"', {
+          'defines': [
+            'PJ_ANDROID=1'
+          ]
+        }],
       ],
     },  # target pjmedia-audiodev
   ],

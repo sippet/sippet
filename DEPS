@@ -162,8 +162,6 @@ deps_os = {
 
     "ipc":
       Var("chromium_trunk") + "/src/ipc@" + Var("chromium_revision"),
-
-
   },
 
   "ios": {
@@ -189,16 +187,29 @@ deps_os = {
   },
 
   "android": {
-    # Precompiled tools needed for Android test execution. Needed since we can't
-    # compile them from source in WebRTC since they depend on Chromium's base.
     "tools/android":
-      (Var("googlecode_url") % "webrtc") + "/deps/tools/android@4258",
+      Var("chromium_trunk") + "/src/tools/android@" + Var("chromium_revision"),
+
+    "third_party/libevent":
+      Var("chromium_trunk") + "/src/third_party/libevent@" + Var("chromium_revision"),
+
+    "third_party/ashmem":
+      Var("chromium_trunk") + "/src/third_party/ashmem@" + Var("chromium_revision"),
+
+    "third_party/jsr-305":
+      Var("chromium_trunk") + "/src/third_party/jsr-305@" + Var("chromium_revision"),
+
+    "third_party/jsr-305/src":
+      From("chromium_deps", "src/third_party/jsr-305/src"),
 
     "third_party/android_tools":
       From("chromium_deps", "src/third_party/android_tools"),
 
     "third_party/android_testrunner":
       Var("chromium_trunk") + "/src/third_party/android_testrunner@" + Var("chromium_revision"),
+
+    "ipc":
+      Var("chromium_trunk") + "/src/ipc@" + Var("chromium_revision"),
   },
 }
 
