@@ -28,6 +28,12 @@ cd c:\chromium_sippet
 gclient config http://sippet.googlecode.com/svn/trunk
 </code>
 
+If you intend to use Visual Studio 2013, do the following before the next commands:
+
+<code language="xml">
+set GYP_MSVS_VERSION=2013
+</code>
+
 To download the initial code, update your checkout as described in next section.
 
 == Linux ==
