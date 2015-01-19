@@ -109,6 +109,12 @@ trunk/build/install-build-deps.sh
 
 = Create the build using GYP =
 
+On Linux and Mac OSX, do the following before proceeding:
+
+<code language="xml">
+export GYP_DEFINES="werror="
+</code>
+
 The build is created using gclient 'runhooks' command:
 
 <code language="xml">
@@ -116,19 +122,10 @@ cd chromium_sippet/trunk
 gclient runhooks
 </code>
 
-This will generate the build using the default GYP generator for your
-platform. It will be GNU Makefiles if you are using Linux, Xcode for Mac OSX, and Visual Studio (auto detected) if Windows.
+This will generate the build using Ninja.
 
-Now that you have the build set up, just start compiling. Typically, on Linux you would do:
-
-<code language="xml">
-make
-</code>
-
-If you have selected to use Xcode, you can open the workspace using it, or you can just execute the command-line build:
+Now that you have the build set up, just start compiling. Typically, on Unixes you would do:
 
 <code language="xml">
-xcodebuild
+ninja -C out/Release
 </code>
-
-If you have used the Visual Studio generator, just open VS and point it to the solution recently created by GYP.
