@@ -47,12 +47,17 @@
       ['OS=="win"', {
         'msvs_disabled_warnings': [ 4005, 4267 ],
       }],
+      ['os_posix == 1', {
+        'defines': [
+          'PJ_HAS_NETINET_TCP_H=1',
+        ],
+      }],
     ],
     'defines': [
       'PJMEDIA_HAS_SRTP=0',
       'PJMEDIA_RESAMPLE_IMP=PJMEDIA_RESAMPLE_NONE',
       'PJ_HAS_SSL_SOCK=1',
-    ]
+    ],
   },
   'targets': [
     {
@@ -340,6 +345,10 @@
           'defines': [
             'PJMEDIA_AUDIO_DEV_HAS_WMME=1'
           ]
+        }, { # OS!="win"
+          'defines': [
+            'PJMEDIA_AUDIO_DEV_HAS_WMME=0',
+          ],
         }],
         ['OS=="linux"', {
           'sources': [

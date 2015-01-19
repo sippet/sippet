@@ -677,6 +677,8 @@
     'openssl_x86_64_defines': [
       'OPENSSL_BN_ASM_GF2m',
       'OPENSSL_BN_ASM_MONT',
+      'SIXTY_FOUR_BIT',
+      'SIXTY_FOUR_BIT_LONG',
       'AES_ASM',
       'GHASH_ASM',
       'SHA1_ASM',

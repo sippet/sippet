@@ -84,7 +84,15 @@
                     ['include', 'openssl/crypto/rc4/rc4_enc\\.c' ],
                     ['include', 'openssl/crypto/rc4/rc4_skey\\.c' ],
                   ],
-                }]
+                }],
+                ['os_posix==1', {
+                  # GCC keeps complaining about 'crypto/bn/asm/x86_64-gcc.c'
+                  # on x64, so we're sticking to the C source.
+                  'sources/': [
+                    ['exclude', 'openssl/crypto/bn/asm/x86_64-gcc.c' ],
+                    ['include', 'openssl/crypto/bn/bn_asm.c' ],
+                  ],
+                }],
               ],
               'defines': [ '<@(openssl_x86_64_defines)' ],
               'defines!': [ 'OPENSSL_NO_ASM' ],
