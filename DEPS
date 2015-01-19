@@ -43,8 +43,56 @@ deps = {
   "dbus":
     Var("chromium_trunk") + "/src/dbus@" + Var("chromium_revision"),
 
-  "net":
-    Var("chromium_trunk") + "/src/net@" + Var("chromium_revision"),
+  # "net":
+  #   Var("chromium_trunk") + "/src/net@" + Var("chromium_revision"),
+  "net/android":
+    Var("chromium_trunk") + "/src/net/android@" + Var("chromium_revision"),
+  "net/base":
+    Var("chromium_trunk") + "/src/net/base@" + Var("chromium_revision"),
+  "net/cert":
+    Var("chromium_trunk") + "/src/net/cert@" + Var("chromium_revision"),
+  "net/cookies":
+    Var("chromium_trunk") + "/src/net/cookies@" + Var("chromium_revision"),
+  "net/curvecp":
+    Var("chromium_trunk") + "/src/net/curvecp@" + Var("chromium_revision"),
+  "net/data":
+    Var("chromium_trunk") + "/src/net/data@" + Var("chromium_revision"),
+  "net/disk_cache":
+    Var("chromium_trunk") + "/src/net/disk_cache@" + Var("chromium_revision"),
+  "net/dns":
+    Var("chromium_trunk") + "/src/net/dns@" + Var("chromium_revision"),
+  "net/ftp":
+    Var("chromium_trunk") + "/src/net/ftp@" + Var("chromium_revision"),
+  "net/http":
+    Var("chromium_trunk") + "/src/net/http@" + Var("chromium_revision"),
+  "net/ocsp":
+    Var("chromium_trunk") + "/src/net/ocsp@" + Var("chromium_revision"),
+  "net/proxy":
+    Var("chromium_trunk") + "/src/net/proxy@" + Var("chromium_revision"),
+  "net/quic":
+    Var("chromium_trunk") + "/src/net/quic@" + Var("chromium_revision"),
+  "net/server":
+    Var("chromium_trunk") + "/src/net/server@" + Var("chromium_revision"),
+  "net/socket":
+    Var("chromium_trunk") + "/src/net/socket@" + Var("chromium_revision"),
+  "net/socket_stream":
+    Var("chromium_trunk") + "/src/net/socket_stream@" + Var("chromium_revision"),
+  "net/spdy":
+    Var("chromium_trunk") + "/src/net/spdy@" + Var("chromium_revision"),
+  "net/ssl":
+    Var("chromium_trunk") + "/src/net/ssl@" + Var("chromium_revision"),
+  "net/test":
+    Var("chromium_trunk") + "/src/net/test@" + Var("chromium_revision"),
+  "net/third_party":
+    Var("chromium_trunk") + "/src/net/third_party@" + Var("chromium_revision"),
+  "net/tools":
+    Var("chromium_trunk") + "/src/net/tools@" + Var("chromium_revision"),
+  "net/udp":
+    Var("chromium_trunk") + "/src/net/udp@" + Var("chromium_revision"),
+  "net/url_request":
+    Var("chromium_trunk") + "/src/net/url_request@" + Var("chromium_revision"),
+  "net/websockets":
+    Var("chromium_trunk") + "/src/net/websockets@" + Var("chromium_revision"),
 
   "sdch":
     Var("chromium_trunk") + "/src/sdch@" + Var("chromium_revision"),
