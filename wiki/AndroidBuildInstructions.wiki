@@ -21,19 +21,19 @@ You'll likely need to do:
 GYP is the meta-makefile system used in chromium to generate build files for the various platforms (ninja in the case of Android). Next to the .gclient file, create a file called chromium.gyp_env with the following contents:
 
 {{{
-~/sippet$ echo "{ 'GYP_DEFINES': 'OS=android', }" > chromium.gyp_env
+~/sippet$ echo "{ 'GYP_DEFINES': 'werror= OS=android', }" > chromium.gyp_env
 }}}
 
 If you wish to build for x86 targets:
 
 {{{
-~/sippet$ echo "{ 'GYP_DEFINES': 'OS=android target_arch=ia32', }" > chromium.gyp_env
+~/sippet$ echo "{ 'GYP_DEFINES': 'werror= OS=android target_arch=ia32', }" > chromium.gyp_env
 }}}
 
 If you wish to build for MIPS targets:
 
 {{{
-~/sippet$ echo "{ 'GYP_DEFINES': 'OS=android target_arch=mipsel', }" > chromium.gyp_env
+~/sippet$ echo "{ 'GYP_DEFINES': 'werror= OS=android target_arch=mipsel', }" > chromium.gyp_env
 }}}
 
 NOTE: If you are using the GYP_DEFINES environment variable, it will override any settings in this file. Either clear it or set it to the values above before running gclient runhooks.
