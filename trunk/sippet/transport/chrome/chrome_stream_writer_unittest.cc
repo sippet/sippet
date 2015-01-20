@@ -29,8 +29,8 @@ class StreamChannelTest : public testing::Test {
     wrapped_socket_ =
         new net::DeterministicMockTCPClientSocket(net_log_.net_log(), data_.get());
     data_->set_socket(wrapped_socket_);
-    socket_.reset(new ChromeStreamWriter(wrapped_socket_));
-    socket_->Connect(callback_.callback());
+    writer_.reset(new ChromeStreamWriter(wrapped_socket_));
+    wrapped_socket_->Connect(callback_.callback());
   }
 
   static scoped_refptr<Request> CreateRegisterRequest() {
@@ -68,12 +68,12 @@ class StreamChannelTest : public testing::Test {
     scoped_refptr<net::IOBuffer> buf(new net::IOBuffer(data.size()));
     memcpy(buf->data(), data.data(), data.size());
 
-    return socket_->Write(buf, data.size(), callback);
+    return writer_->Write(buf, data.size(), callback);
   }
 
   net::DeterministicMockTCPClientSocket* wrapped_socket_;
   scoped_ptr<net::DeterministicSocketData> data_;
-  scoped_ptr<net::StreamSocket> socket_;
+  scoped_ptr<ChromeStreamWriter> writer_;
   net::BoundNetLog net_log_;
   net::TestCompletionCallback callback_;
 };
