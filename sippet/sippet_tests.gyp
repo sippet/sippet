@@ -72,6 +72,14 @@
         'test/standalone_test_server/standalone_test_server.h',
         'test/standalone_test_server/standalone_test_server.cc',
       ],
+      'conditions' : [
+        ['os_posix == 1', {
+          # Get rid of annoying warnings about PJSIP strings usage.
+          'cflags' : [
+            '-Wno-write-strings'
+          ]
+        }],
+      ],
     },  # target sippet_test_support
     {
       'target_name': 'sippet_standalone_test_server_unittest',

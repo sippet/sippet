@@ -252,6 +252,12 @@ deps_os = {
 
     "tools/generate_library_loader":
       Var("chromium_trunk") + "/src/tools/generate_library_loader@" + Var("chromium_revision"),
+
+    "third_party/libevent":
+      Var("chromium_trunk") + "/src/third_party/libevent@" + Var("chromium_revision"),
+
+    "ipc":
+      Var("chromium_trunk") + "/src/ipc@" + Var("chromium_revision"),
   },
 
   "android": {
