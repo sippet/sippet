@@ -139,8 +139,22 @@ deps = {
   "third_party/zlib":
     Var("chromium_trunk") + "/src/third_party/zlib@" + Var("chromium_revision"),
 
-  "third_party/libxml":
-    Var("chromium_trunk") + "/src/third_party/libxml@" + Var("chromium_revision"),
+  #"third_party/libxml":
+  #  Var("chromium_trunk") + "/src/third_party/libxml@" + Var("chromium_revision"),
+  "third_party/libxml/build":
+    Var("chromium_trunk") + "/src/third_party/libxml/build@" + Var("chromium_revision"),
+  "third_party/libxml/chromium":
+    Var("chromium_trunk") + "/src/third_party/libxml/chromium@" + Var("chromium_revision"),
+  "third_party/libxml/linux":
+    Var("chromium_trunk") + "/src/third_party/libxml/linux@" + Var("chromium_revision"),
+  "third_party/libxml/mac":
+    Var("chromium_trunk") + "/src/third_party/libxml/mac@" + Var("chromium_revision"),
+  "third_party/libxml/patches":
+    Var("chromium_trunk") + "/src/third_party/libxml/patches@" + Var("chromium_revision"),
+  "third_party/libxml/src":
+    Var("chromium_trunk") + "/src/third_party/libxml/src@" + Var("chromium_revision"),
+  "third_party/libxml/win32":
+    Var("chromium_trunk") + "/src/third_party/libxml/win32@" + Var("chromium_revision"),
 
   "third_party/pjsip/source":
     Var("pjsip_trunk") + "@" + Var("pjsip_revision"),

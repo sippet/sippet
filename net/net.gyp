@@ -4,7 +4,7 @@
 
 {
   'variables': {
-    'chromium_code': 0,
+    'chromium_code': 1,
 
     'linux_link_kerberos%': 0,
     'use_tracing_cache_backend%': 0,
@@ -1458,6 +1458,11 @@
             ],
             # TODO(jschuh): crbug.com/167187 fix size_t to int truncations.
             'msvs_disabled_warnings': [4267, ],
+            # Disable Winsock deprecated warnings about inet_pton / InetPton
+            # while compiling socket/tcp_listen_socket.cc.
+            'defines': [
+              '_WINSOCK_DEPRECATED_NO_WARNINGS',
+            ],
           }, { # else: OS != "win"
             'sources!': [
               'base/winsock_init.cc',
