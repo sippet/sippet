@@ -262,50 +262,51 @@ TEST_F(AuthControllerTest, InvalidAuthCredentials) {
   RunResponseTest(&case3);
 }
 
+// Modified mock HttpAuthHandler for this test.
+class MockHandler : public AuthHandlerMock {
+ public:
+  MockHandler(int expected_rv, Auth::Scheme scheme)
+      : expected_scheme_(scheme) {
+    using namespace testing;
+    ON_CALL(*this, GenerateAuthImpl(_, _, _))
+      .WillByDefault(Return(expected_rv));
+    ON_CALL(*this, HandleAnotherChallenge(_))
+      .WillByDefault(WithArgs<0>(Invoke(this, &MockHandler::HandleAnotherChallengeImpl)));
+  }
+
+ protected:
+  virtual bool Init(const Challenge& challenge) OVERRIDE {
+    AuthHandlerMock::Init(challenge);
+    set_allows_default_credentials(true);
+    set_allows_explicit_credentials(false);
+    // Pretend to be SCHEME_DIGEST so we can test failover logic.
+    if (challenge.scheme() == "Digest") {
+      auth_scheme_ = net::HttpAuth::AUTH_SCHEME_DIGEST;
+      --score_;  // Reduce score, so we rank below Mock.
+      set_allows_explicit_credentials(true);
+    }
+    EXPECT_EQ(expected_scheme_, auth_scheme_);
+    return true;
+  }
+
+  Auth::AuthorizationResult HandleAnotherChallengeImpl(
+      const Challenge& challenge) {
+    // If we receive an empty challenge for a connection based scheme, or a second
+    // challenge for a non connection based scheme, assume it's a rejection.
+    if (challenge.param_empty())
+      return net::HttpAuth::AUTHORIZATION_RESULT_REJECT;
+    if (!LowerCaseEqualsASCII(challenge.scheme(), "mock"))
+      return net::HttpAuth::AUTHORIZATION_RESULT_INVALID;
+    return net::HttpAuth::AUTHORIZATION_RESULT_ACCEPT;
+  }
+
+ private:
+  Auth::Scheme expected_scheme_;
+};
+
 // If an AuthHandler indicates that it doesn't allow explicit
 // credentials, don't prompt for credentials.
 TEST_F(AuthControllerTest, NoExplicitCredentialsAllowed) {
-  // Modified mock HttpAuthHandler for this test.
-  class MockHandler : public AuthHandlerMock {
-   public:
-    MockHandler(int expected_rv, Auth::Scheme scheme)
-        : expected_scheme_(scheme) {
-      ON_CALL(*this, GenerateAuthImpl(_, _, _))
-        .WillByDefault(Return(expected_rv));
-      ON_CALL(*this, HandleAnotherChallenge(_))
-        .WillByDefault(Invoke(this, &MockHandler::HandleAnotherChallengeImpl));
-    }
-
-   protected:
-    virtual bool Init(const Challenge& challenge) OVERRIDE {
-      AuthHandlerMock::Init(challenge);
-      set_allows_default_credentials(true);
-      set_allows_explicit_credentials(false);
-      // Pretend to be SCHEME_DIGEST so we can test failover logic.
-      if (challenge.scheme() == "Digest") {
-        auth_scheme_ = net::HttpAuth::AUTH_SCHEME_DIGEST;
-        --score_;  // Reduce score, so we rank below Mock.
-        set_allows_explicit_credentials(true);
-      }
-      EXPECT_EQ(expected_scheme_, auth_scheme_);
-      return true;
-    }
-
-    Auth::AuthorizationResult HandleAnotherChallengeImpl(
-        const Challenge& challenge) {
-      // If we receive an empty challenge for a connection based scheme, or a second
-      // challenge for a non connection based scheme, assume it's a rejection.
-      if (challenge.param_empty())
-        return net::HttpAuth::AUTHORIZATION_RESULT_REJECT;
-      if (!LowerCaseEqualsASCII(challenge.scheme(), "mock"))
-        return net::HttpAuth::AUTHORIZATION_RESULT_INVALID;
-      return net::HttpAuth::AUTHORIZATION_RESULT_ACCEPT;
-    }
-
-   private:
-    Auth::Scheme expected_scheme_;
-  };
-
   net::BoundNetLog dummy_log;
   AuthCache dummy_auth_cache;
   scoped_refptr<Request> request(dyn_cast<Request>(
