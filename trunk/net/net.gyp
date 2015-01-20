@@ -1472,6 +1472,9 @@
               'proxy/proxy_resolver_winhttp.cc',
               'proxy/proxy_resolver_winhttp.h',
             ],
+            'cflags': [
+              '-Wno-deprecated-declarations',
+            ],
           },
         ],
         [ 'OS == "mac"', {
