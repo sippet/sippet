@@ -20,6 +20,7 @@ const char kRegisterRequest[] =
   "CSeq: 1826 REGISTER\r\n"
   "m: <sip:bob@192.0.2.4>\r\n"
   "Expires: 7200\r\n"
+  "User-Agent: Sippet/1.0 (Cray-1)\r\n"
   "l: 0\r\n"
   "\r\n";
 
@@ -32,6 +33,7 @@ const char kRegisterResponse[] =
   "CSeq: 1826 REGISTER\r\n"
   "m: <sip:bob@192.0.2.4>\r\n"
   "Expires: 7200\r\n"
+  "User-Agent: Sippet/1.0 (Cray-2)\r\n"
   "l: 0\r\n"
   "\r\n";
 
@@ -44,6 +46,7 @@ const char kOptionsRequest[] =
   "i: a84b4c76e66710@pc33.atlanta.com\r\n"
   "CSeq: 314159 OPTIONS\r\n"
   "m: <sip:alice@pc33.atlanta.com>\r\n"
+  "User-Agent: Sippet/1.0 (Mark-1)\r\n"
   "l: 0\r\n"
   "\r\n";
 
@@ -55,6 +58,7 @@ const char kOptionsResponse[] =
   "i: a84b4c76e66710@pc33.atlanta.com\r\n"
   "CSeq: 314159 OPTIONS\r\n"
   "m: <sip:alice@pc33.atlanta.com>\r\n"
+  "Server: Sippet/1.0 (Windows 3.01; Winchip2)\r\n"
   "l: 0\r\n"
   "\r\n";
 
