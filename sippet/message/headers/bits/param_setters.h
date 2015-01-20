@@ -6,8 +6,10 @@
 #define SIPPET_MESSAGE_HEADERS_BITS_PARAM_SETTERS_H_
 
 #include <string>
+#include <cmath>
 #include "base/basictypes.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/strings/stringprintf.h"
 #include "sippet/base/format.h"
 #include "sippet/base/raw_ostream.h"
 
@@ -87,12 +89,13 @@ public:
 
   void set_qvalue(double q) {
     assert(q > 0 && "Invalid qvalue");
+    double ipd;
+    double fpd = modf(q, &ipd);
+    unsigned ip = (unsigned)ipd, fp = (unsigned)(fpd * 1000);
+    while (fp != 0 && fp % 10 == 0)
+      fp /= 10;
     std::string buffer;
-    raw_string_ostream os(buffer);
-    os << format("%.3f", q);
-    os.flush();
-    while (buffer.size() > 3 && *buffer.rbegin() == '0')
-      buffer.resize(buffer.size()-1);
+    base::StringAppendF(&buffer, "%d.%d", ip, fp);
     static_cast<T*>(this)->param_set("q", buffer);
   }
 };
