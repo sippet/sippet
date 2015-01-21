@@ -128,23 +128,23 @@ int main(int argc, char **argv) {
   std::string registrar_uri;
   struct {
     const char *cmd_switch_;
-  	const char *registrar_uri_;
+    const char *registrar_uri_;
   } args[] = {
-	  { "udp", "sip:localhost" },
-	  { "tcp", "sip:localhost;transport=tcp" },
-	  { "tls", "sips:localhost" },
-	  { "ws", "sip:localhost;transport=ws" },
-	  { "wss", "sips:localhost;transport=ws" },
+    { "udp", "sip:localhost" },
+    { "tcp", "sip:localhost;transport=tcp" },
+    { "tls", "sips:localhost" },
+    { "ws", "sip:localhost;transport=ws" },
+    { "wss", "sips:localhost;transport=ws" },
   };
 
   for (int i = 0; i < ARRAYSIZE_UNSAFE(args); i++) {
-	  if (command_line->HasSwitch(args[i].cmd_switch_)) {
+    if (command_line->HasSwitch(args[i].cmd_switch_)) {
       registrar_uri = args[i].registrar_uri_;
       break;
     }
   }
   if (registrar_uri.empty())
-  	registrar_uri = args[0].registrar_uri_; // Defaults to UDP
+    registrar_uri = args[0].registrar_uri_; // Defaults to UDP
 
   program_main.set_username(username);
   program_main.set_password(password);
