@@ -139,6 +139,24 @@ deps = {
   "third_party/zlib":
     Var("chromium_trunk") + "/src/third_party/zlib@" + Var("chromium_revision"),
 
+  "third_party/libjingle/source/talk":
+    From("chromium_deps", "src/third_party/libjingle/source/talk"),
+
+  "third_party/libsrtp":
+    From("chromium_deps", "src/third_party/libsrtp"),
+
+  "third_party/jsoncpp/source/include":
+    From("chromium_deps", "src/third_party/jsoncpp/source/include"),
+
+  "third_party/jsoncpp/source/src/lib_json":
+    From("chromium_deps", "src/third_party/jsoncpp/source/src/lib_json"),
+
+  "third_party/expat":
+    Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
+
+  "third_party/usrsctp/usrsctplib":
+    From("chromium_deps", "src/third_party/usrsctp/usrsctplib"),
+
   #"third_party/libxml":
   #  Var("chromium_trunk") + "/src/third_party/libxml@" + Var("chromium_revision"),
   "third_party/libxml/build":
