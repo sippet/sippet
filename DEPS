@@ -165,6 +165,30 @@ deps = {
   "third_party/speex":
     From("chromium_deps", "src/third_party/speex"),
 
+  "third_party/webrtc":
+    From("chromium_deps", "src/third_party/webrtc"),
+
+  "third_party/libyuv":
+    From("chromium_deps", "src/third_party/libyuv"),
+
+  "third_party/libvpx":
+    From("chromium_deps", "src/third_party/libvpx"),
+
+  "third_party/opus":
+    Var("chromium_trunk") + "/src/third_party/opus@" + Var("chromium_revision"),
+
+  "third_party/opus/src":
+    From("chromium_deps", "src/third_party/opus/src"),
+
+  "third_party/libjpeg_turbo":
+    From("chromium_deps", "src/third_party/libjpeg_turbo"),
+
+  "third_party/yasm/source/patched-yasm":
+    From("chromium_deps", "src/third_party/yasm/source/patched-yasm"),
+
+  "third_party/yasm/binaries":
+    From("chromium_deps", "src/third_party/yasm/binaries"),
+
   "tools":
     File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
 
