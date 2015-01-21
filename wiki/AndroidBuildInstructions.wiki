@@ -38,9 +38,10 @@ If you wish to build for MIPS targets:
 
 NOTE: If you are using the GYP_DEFINES environment variable, it will override any settings in this file. Either clear it or set it to the values above before running gclient runhooks.
 
-Once chromium.gyp_env is ready, you need to run the following command to update projects from gyp files. You may need to run this again when you have added new files, updated gyp files, or sync'ed your repository.
+Once chromium.gyp_env is ready, you need to run the following commands to update projects from gyp files. You may need to run this again when you have added new files, updated gyp files, or sync'ed your repository.
 
 {{{
+~/sippet$ . trunk/build/android/envsetup.sh
 ~/sippet$ gclient runhooks
 }}}
 
