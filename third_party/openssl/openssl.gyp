@@ -49,6 +49,7 @@
           'msvs_disabled_warnings': [ 4018, 4101, 4307 ],
           'defines': [
             'OPENSSL_SYSNAME_WIN32',
+            '_WINSOCK_DEPRECATED_NO_WARNINGS',
           ],
         }, { # 'OS!="win"'
           'conditions': [
