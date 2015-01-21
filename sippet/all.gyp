@@ -15,6 +15,7 @@
           'dependencies': [
             'sippet_tests.gyp:*',
             'sippet_examples.gyp:*',
+            '../third_party/webrtc/webrtc.gyp:*',
           ],
         }],
       ],
