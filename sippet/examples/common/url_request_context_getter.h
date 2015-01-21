@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_EXAMPLES_LOGIN_URL_REQUEST_CONTEXT_GETTER_H_
-#define SIPPET_EXAMPLES_LOGIN_URL_REQUEST_CONTEXT_GETTER_H_
+#ifndef SIPPET_EXAMPLES_COMMON_URL_REQUEST_CONTEXT_GETTER_H_
+#define SIPPET_EXAMPLES_COMMON_URL_REQUEST_CONTEXT_GETTER_H_
 
 #include "base/basictypes.h"
 #include "base/compiler_specific.h"
@@ -40,4 +40,5 @@ class URLRequestContextGetter : public net::URLRequestContextGetter {
   DISALLOW_COPY_AND_ASSIGN(URLRequestContextGetter);
 };
 
-#endif  // SIPPET_EXAMPLES_LOGIN_URL_REQUEST_CONTEXT_GETTER_H_
+#endif  // SIPPET_EXAMPLES_COMMON_URL_REQUEST_CONTEXT_GETTER_H_
+
