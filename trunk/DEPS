@@ -204,9 +204,6 @@ deps = {
   "third_party/yasm/source/patched-yasm":
     From("chromium_deps", "src/third_party/yasm/source/patched-yasm"),
 
-  "third_party/yasm/binaries":
-    From("chromium_deps", "src/third_party/yasm/binaries"),
-
   "tools":
     File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
 
@@ -248,6 +245,9 @@ deps_os = {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
       From("chromium_deps", "src/third_party/nss"),
+
+    "third_party/yasm/binaries":
+      From("chromium_deps", "src/third_party/yasm/binaries"),
   },
 
   "mac": {
