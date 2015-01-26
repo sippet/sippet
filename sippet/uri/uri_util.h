@@ -69,3 +69,4 @@ void DecodeURIEscapeSequences(const char* input, int length,
 } // End of sippet namespace
 
 #endif // SIPPET_URI_URI_UTIL_H_
+
