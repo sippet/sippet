@@ -35,6 +35,11 @@
       'defines!': [
         'TERMIO',
       ],
+      'xcode_settings': {
+        'OTHER_CFLAGS': [
+          '-std=gnu99',
+        ],
+      },
       'conditions': [
         ['os_posix==1 and OS!="android"', {
           'defines': [
@@ -45,11 +50,20 @@
             'OPENSSLDIR="/etc/ssl"',
           ],
         }],
-        ['OS=="win"', {
-          'msvs_disabled_warnings': [ 4018, 4101, 4307 ],
-          'defines': [
-            'OPENSSL_SYSNAME_WIN32',
-            '_WINSOCK_DEPRECATED_NO_WARNINGS',
+        ['OS=="win" or OS=="mac"', {
+          'conditions': [
+            ['OS=="win"', {
+              'msvs_disabled_warnings': [ 4018, 4101, 4307 ],
+              'defines': [
+                'OPENSSL_SYSNAME_WIN32',
+                '_WINSOCK_DEPRECATED_NO_WARNINGS',
+              ],
+            }],
+            ['OS=="win"', {
+              'defines': [
+                'OPENSSL_SYSNAME_MACOSX',
+              ],
+            }],
           ],
         }, { # 'OS!="win"'
           'conditions': [

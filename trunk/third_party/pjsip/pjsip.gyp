@@ -58,6 +58,13 @@
       'PJMEDIA_RESAMPLE_IMP=PJMEDIA_RESAMPLE_NONE',
       'PJ_HAS_SSL_SOCK=1',
     ],
+    'xcode_settings': {
+      'OTHER_CFLAGS': [
+        '-Wno-tautological-compare',
+        '-Wno-return-type',
+        '-Wno-parentheses-equality',
+      ],
+    },
   },
   'targets': [
     {
@@ -76,6 +83,7 @@
         '<(pjsip_source)/pjlib/src/pj/log.c',
         '<(pjsip_source)/pjlib/src/pj/os_info.c',
         '<(pjsip_source)/pjlib/src/pj/os_timestamp_common.c',
+        '<(pjsip_source)/pjlib/src/pj/os_time_common.c',
         '<(pjsip_source)/pjlib/src/pj/pool.c',
         '<(pjsip_source)/pjlib/src/pj/pool_buf.c',
         '<(pjsip_source)/pjlib/src/pj/pool_caching.c',
@@ -117,7 +125,7 @@
             '<(pjsip_source)/pjlib/src/pj/addr_resolv_sock.c',
           ],
         }],
-        ['os_posix == 1 or OS=="mac"', {
+        ['OS=="linux"', {
           'sources': [
             '<(pjsip_source)/pjlib/src/pj/file_access_unistd.c',
             '<(pjsip_source)/pjlib/src/pj/file_io_ansi.c',
@@ -128,10 +136,26 @@
             '<(pjsip_source)/pjlib/src/pj/addr_resolv_sock.c',
             '<(pjsip_source)/pjlib/src/pj/ip_helper_generic.c',
             '<(pjsip_source)/pjlib/src/pj/log_writer_stdout.c',
-            '<(pjsip_source)/pjlib/src/pj/os_time_common.c',
-            '<(pjsip_source)/pjlib/src/pj/os_timestamp_common.c',
             '<(pjsip_source)/pjlib/src/pj/pool_policy_malloc.c',
             '<(pjsip_source)/pjlib/src/pj/sock_bsd.c',
+            '<(pjsip_source)/pjlib/src/pj/sock_select.c',
+            '<(pjsip_source)/pjlib/src/pj/ioqueue_select.c',
+            '<(pjsip_source)/pjlib/src/pj/guid_simple.c',
+          ],
+        }],
+        ['OS=="mac"', {
+          'sources': [
+            '<(pjsip_source)/pjlib/src/pj/file_access_unistd.c',
+            '<(pjsip_source)/pjlib/src/pj/file_io_ansi.c',
+            '<(pjsip_source)/pjlib/src/pj/os_core_darwin.m',
+            '<(pjsip_source)/pjlib/src/pj/os_error_unix.c',
+            '<(pjsip_source)/pjlib/src/pj/os_time_unix.c',
+            'overrides/src/pj/os_timestamp_darwin.c',
+            '<(pjsip_source)/pjlib/src/pj/addr_resolv_sock.c',
+            '<(pjsip_source)/pjlib/src/pj/ip_helper_generic.c',
+            '<(pjsip_source)/pjlib/src/pj/log_writer_stdout.c',
+            '<(pjsip_source)/pjlib/src/pj/os_time_unix.c',
+            '<(pjsip_source)/pjlib/src/pj/pool_policy_malloc.c',
             '<(pjsip_source)/pjlib/src/pj/sock_select.c',
             '<(pjsip_source)/pjlib/src/pj/ioqueue_select.c',
             '<(pjsip_source)/pjlib/src/pj/guid_simple.c',
@@ -360,10 +384,11 @@
         }],
         ['OS=="mac"', {
           'sources': [
-            '<(pjsip_source)/pjmedia/src/pjmedia-audiodev/coreaudio_dev.c',
+            '<(pjsip_source)/pjmedia/src/pjmedia-audiodev/coreaudio_dev.m',
           ],
           'defines': [
-            'PJMEDIA_AUDIO_DEV_HAS_COREAUDIO=1'
+            'PJMEDIA_AUDIO_DEV_HAS_COREAUDIO=1',
+            'PJMEDIA_AUDIO_DEV_HAS_PORTAUDIO=0',
           ]
         }],
         ['OS=="android"', {
