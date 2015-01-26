@@ -6,6 +6,14 @@
   'includes': [
     '../build/win_precompile.gypi',
   ],
+  'target_defaults': {
+    'xcode_settings': {
+      'OTHER_CFLAGS': [
+        '-Wno-deprecated-writable-strings',
+        '-Wno-unused-result',
+      ],
+    },
+  },
   'targets': [
     {
       'target_name': 'sippet_unittest',

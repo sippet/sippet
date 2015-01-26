@@ -84,6 +84,8 @@ int MessageReader::DoLoop(int result) {
         DCHECK_EQ(net::OK, rv);
         rv = DoReadBodyComplete();
         break;
+      default:
+        break;
     }
   } while (rv != net::ERR_IO_PENDING && next_state_ != STATE_NONE);
 
