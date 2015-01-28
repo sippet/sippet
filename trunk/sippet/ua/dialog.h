@@ -83,6 +83,11 @@ class Dialog :
     return local_sequence_;
   }
 
+  // Set the local sequence.
+  void set_local_sequence(unsigned sequence) {
+    local_sequence_ = sequence;
+  }
+
   // Used to order requests from its peer to the User Agent.
   unsigned remote_sequence() const {
     return remote_sequence_;

@@ -62,5 +62,17 @@
         'examples/login/login_main.cc',
       ],
     },  # target sippet_examples_login
+    {
+      'target_name': 'sippet_examples_call',
+      'type': 'executable',
+      'dependencies': [
+        'sippet_examples_program_main',
+        '../third_party/webrtc/webrtc.gyp:*',
+        '../third_party/libjingle/libjingle.gyp:*',
+      ],
+      'sources': [
+        'examples/call/call_main.cc',
+      ],
+    },  # target sippet_examples_call
   ],
 }

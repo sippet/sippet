@@ -29,8 +29,10 @@ class AuthTransaction {
                   const net::BoundNetLog &bound_net_log);
   virtual ~AuthTransaction();
 
-  int HandleChallengeAuthentication(const scoped_refptr<Response> &response,
-                                    const net::CompletionCallback& callback);
+  int HandleChallengeAuthentication(
+      const scoped_refptr<Request> &outgoing_request,
+      const scoped_refptr<Response> &incoming_response,
+      const net::CompletionCallback& callback);
 
  private:
   enum State {
@@ -60,8 +62,8 @@ class AuthTransaction {
   net::CompletionCallback callback_;
   net::BoundNetLog bound_net_log_;
 
-  scoped_refptr<Request> request_;
-  scoped_refptr<Response> response_;
+  scoped_refptr<Request> outgoing_request_;
+  scoped_refptr<Response> incoming_response_;
   scoped_refptr<AuthController> auth_controller_;
   PasswordHandler::Factory *password_handler_factory_;
   scoped_ptr<PasswordHandler> password_handler_;

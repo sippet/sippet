@@ -125,26 +125,35 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  std::string registrar_uri;
+  string16 server(L"localhost");
+  if (command_line->HasSwitch("server")) {
+    base::CodepageToUTF16(command_line->GetSwitchValueASCII("server"),
+      NULL, base::OnStringConversionError::FAIL, &server);
+  }
+
+  string16 registrar_uri;
   struct {
     const char *cmd_switch_;
-    const char *registrar_uri_;
+    const char16 *registrar_uri_;
   } args[] = {
-    { "udp", "sip:localhost" },
-    { "tcp", "sip:localhost;transport=tcp" },
-    { "tls", "sips:localhost" },
-    { "ws", "sip:localhost;transport=ws" },
-    { "wss", "sips:localhost;transport=ws" },
+    { "udp", L"sip:%ls" },
+    { "tcp", L"sip:%ls;transport=tcp" },
+    { "tls", L"sips:%ls" },
+    { "ws", L"sip:%ls;transport=ws" },
+    { "wss", L"sips:%ls;transport=ws" },
   };
 
   for (int i = 0; i < ARRAYSIZE_UNSAFE(args); i++) {
     if (command_line->HasSwitch(args[i].cmd_switch_)) {
-      registrar_uri = args[i].registrar_uri_;
+      registrar_uri = base::StringPrintf(args[i].registrar_uri_,
+          server.c_str());
       break;
     }
   }
-  if (registrar_uri.empty())
-    registrar_uri = args[0].registrar_uri_; // Defaults to UDP
+  if (registrar_uri.empty()) {
+    registrar_uri = base::StringPrintf(args[0].registrar_uri_,
+      server.c_str()); // Defaults to UDP
+  }
 
   program_main.set_username(username);
   program_main.set_password(password);
@@ -156,12 +165,14 @@ int main(int argc, char **argv) {
       new UserAgentHandler(program_main.network_layer()));
   program_main.AppendHandler(handler.get());
 
+  string16 from(L"sip:" + username + L"@" + server);
+  string16 to(L"sip:" + username + L"@" + server);
   scoped_refptr<sippet::Request> request =
       program_main.user_agent()->CreateRequest(
           sippet::Method::REGISTER,
           GURL(registrar_uri),
-          GURL("sip:test@localhost"),
-          GURL("sip:test@localhost"));
+          GURL(from),
+          GURL(to));
   program_main.user_agent()->Send(request, base::Bind(&RequestSent));
 
   program_main.Run();
