@@ -132,7 +132,9 @@ class UserAgent :
 
   struct OutgoingRequestContext {
     // Holds the outgoing request instance.
-    scoped_refptr<Request> outgoing_request_;
+    scoped_refptr<Request> original_request_;
+    // Holds the outgoing request instances.
+    std::vector<scoped_refptr<Request> > outgoing_requests_;
     // First sent time
     base::Time parted_time_;
     // Used to manage authentication
@@ -142,7 +144,7 @@ class UserAgent :
     // Used to hold the last received response
     scoped_refptr<Response> last_response_;
 
-    OutgoingRequestContext(const scoped_refptr<Request>& outgoing_request);
+    OutgoingRequestContext(const scoped_refptr<Request>& original_request);
     ~OutgoingRequestContext();
   };
 
@@ -150,7 +152,7 @@ class UserAgent :
       OutgoingRequestMap;
 
   bool HandleChallengeAuthentication(
-      const scoped_refptr<Response> &response,
+      const scoped_refptr<Response> &incoming_response,
       const scoped_refptr<Dialog> &dialog);
   void OnAuthenticationComplete(const std::string &request_id, int rv);
   void OnResendRequestComplete(const std::string &request_id, int rv);

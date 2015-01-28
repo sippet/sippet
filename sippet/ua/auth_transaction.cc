@@ -26,13 +26,13 @@ AuthTransaction::~AuthTransaction() {
 }
 
 int AuthTransaction::HandleChallengeAuthentication(
-    const scoped_refptr<Response> &response,
+    const scoped_refptr<Request> &outgoing_request,
+    const scoped_refptr<Response> &incoming_response,
     const net::CompletionCallback& callback) {
   DCHECK(!callback.is_null());
-  DCHECK(!request_.get() || request_ == response->refer_to());
   callback_ = callback;
-  response_ = response;
-  request_ = response->refer_to();
+  incoming_response_ = incoming_response;
+  outgoing_request_ = outgoing_request;
   next_state_ = STATE_HANDLE_AUTH_CHALLENGE;
   return DoLoop(net::OK);
 }
@@ -84,7 +84,8 @@ int AuthTransaction::DoLoop(int last_io_result) {
 
 int AuthTransaction::DoHandleAuthChallenge() {
   next_state_ = STATE_HANDLE_AUTH_CHALLENGE_COMPLETE;
-  return auth_controller_->HandleAuthChallenge(response_, bound_net_log_);
+  return auth_controller_->HandleAuthChallenge(incoming_response_,
+      bound_net_log_);
 }
 
 int AuthTransaction::DoHandleAuthChallengeComplete() {
@@ -127,7 +128,7 @@ int AuthTransaction::DoGetCredentialsComplete(int result) {
 
 int AuthTransaction::DoAddAuthorizationHeaders() {
   next_state_ = STATE_ADD_AUTHORIZATION_HEADERS_COMPLETE;
-  return auth_controller_->AddAuthorizationHeaders(request_,
+  return auth_controller_->AddAuthorizationHeaders(outgoing_request_,
       base::Bind(&AuthTransaction::OnIOComplete,
           base::Unretained(this)), bound_net_log_);
 }
