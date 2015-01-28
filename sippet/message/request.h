@@ -62,6 +62,11 @@ class Request :
   // Get a the dialog identifier.
   virtual std::string GetDialogId() const OVERRIDE;
 
+  // Create another request containing all headers of the current request,
+  // incrementing the sequence number (CSeq) if available. Useful for creating
+  // new requests for authentication purposes.
+  scoped_refptr<Request> CloneRequest() const;
+
  private:
   friend class Dialog;
   friend class Message;

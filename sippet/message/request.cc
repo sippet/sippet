@@ -77,6 +77,22 @@ std::string Request::GetDialogId() const {
   return oss.str();
 }
 
+scoped_refptr<Request> Request::CloneRequest() const {
+  scoped_refptr<Request> result(
+    new Request(method(), request_uri(), version()));
+  for (Message::const_iterator i = begin(), ie = end(); i != ie; ++i) {
+    result->push_back(i->Clone().PassAs<Header>());
+  }
+  if (has_content())
+    result->set_content(content());
+  Message::iterator j = result->find_first<Cseq>();
+  if (result->end() != j) {
+    Cseq *cseq = dyn_cast<Cseq>(j);
+    cseq->set_sequence(cseq->sequence() + 1);
+  }
+  return result;
+}
+
 scoped_refptr<Response> Request::CreateResponse(
     int response_code,
     const std::string &reason_phrase) {
@@ -115,7 +131,7 @@ int Request::CreateAck(const std::string &remote_tag,
   ack->push_back(max_forwards.PassAs<Header>());
   CloneTo<From>(ack);
   scoped_ptr<To> to(Clone<To>().Pass());
-  if (to) to->set_tag(remote_tag);
+  if (to && remote_tag.length() > 0) to->set_tag(remote_tag);
   ack->push_back(to.PassAs<Header>());
   CloneTo<CallId>(ack);
   scoped_ptr<Cseq> cseq(Clone<Cseq>().Pass());

@@ -60,11 +60,6 @@ void ClientTransactionImpl::HandleIncomingResponse(
   State state = next_state_;
   int response_code = response->response_code();
 
-  if (state != STATE_COMPLETED) {
-    response->set_refer_to(initial_request_);
-    delegate_->OnIncomingResponse(response);
-  }
-
   switch (state) {
     case STATE_TRYING:
       switch (response_code/100) {
@@ -109,12 +104,24 @@ void ClientTransactionImpl::HandleIncomingResponse(
 
   if (mode_ == MODE_INVITE
       && response_code/100 >= 3) {
-    SendAck(response->get<To>()->tag());
+    std::string remote_tag;
+    sippet::Message::iterator i = response->find_first<To>();
+    if (response->end() != i) {
+      To *to = dyn_cast<To>(i);
+      if (to->HasTag())
+        remote_tag = to->tag();
+    }
+    SendAck(remote_tag);
   }
 
   if (STATE_CALLING == state
       && STATE_PROCEED_CALLING == next_state_) {
     StopTimers();
+  }
+
+  if (state != STATE_COMPLETED) {
+    response->set_refer_to(initial_request_);
+    delegate_->OnIncomingResponse(response);
   }
 
   if (STATE_COMPLETED == next_state_) {
@@ -150,12 +157,13 @@ void ClientTransactionImpl::OnRetransmit() {
 void ClientTransactionImpl::OnTimedOut() {
   if (MODE_INVITE == mode_) {
     DCHECK(STATE_CALLING == next_state_);
-  } else {
-    DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
   }
 
+  State state = next_state_;
   next_state_ = STATE_TERMINATED;
-  delegate_->OnTimedOut(initial_request_);
+  if (STATE_COMPLETED != state) {
+    delegate_->OnTimedOut(initial_request_);
+  }
   Terminate();
 }
 

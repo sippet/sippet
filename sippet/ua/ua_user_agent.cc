@@ -23,8 +23,9 @@ namespace sippet {
 namespace ua {
 
 UserAgent::OutgoingRequestContext::OutgoingRequestContext(
-      const scoped_refptr<Request>& outgoing_request)
-  : outgoing_request_(outgoing_request) {
+      const scoped_refptr<Request>& original_request)
+    : original_request_(original_request) {
+  DCHECK(original_request);
 }
 
 UserAgent::OutgoingRequestContext::~OutgoingRequestContext() {
@@ -77,7 +78,7 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   // Cseq always contain the request method and a new (random) local sequence
   if (local_sequence == 0) {
     local_sequence = Create16BitRandomInteger();
-    if (local_sequence == 0)
+    if (local_sequence == 0) // Avoiding zero for a question of aesthetics
       local_sequence = 1;
   }
 
@@ -128,36 +129,49 @@ int UserAgent::Send(
 }
 
 bool UserAgent::HandleChallengeAuthentication(
-    const scoped_refptr<Response> &response,
+    const scoped_refptr<Response> &incoming_response,
     const scoped_refptr<Dialog> &dialog) {
-  int response_code = response->response_code();
+  int response_code = incoming_response->response_code();
   if (SIP_UNAUTHORIZED != response_code
       && SIP_PROXY_AUTHENTICATION_REQUIRED != response_code)
     return false;
-  scoped_refptr<Request> request(response->refer_to());
+  scoped_refptr<Request> original_request(incoming_response->refer_to());
   OutgoingRequestContext *outgoing_request_context;
-  OutgoingRequestMap::iterator i = outgoing_requests_.find(request->id());
+  OutgoingRequestMap::iterator i = outgoing_requests_.find(
+      original_request->id());
   if (outgoing_requests_.end() == i) {
-    outgoing_request_context = new OutgoingRequestContext(request);
+    outgoing_request_context = new OutgoingRequestContext(original_request);
     outgoing_request_context->auth_transaction_.reset(
         new AuthTransaction(&auth_cache_, auth_handler_factory_,
             password_handler_factory_, net_log_));
-    outgoing_requests_.insert(std::make_pair(request->id(),
+    outgoing_requests_.insert(std::make_pair(original_request->id(),
         outgoing_request_context));
   } else {
     outgoing_request_context = i->second;
+    original_request = outgoing_request_context->original_request_;
   }
   outgoing_request_context->last_dialog_ = dialog;
-  outgoing_request_context->last_response_ = response;
+  outgoing_request_context->last_response_ = incoming_response;
+  scoped_refptr<Request> outgoing_request(original_request->CloneRequest());
+  if (dialog) {
+    // Update the dialog sequence for each authenticated request
+    Message::iterator i = outgoing_request->find_first<Cseq>();
+    if (outgoing_request->end() != i) {
+      dialog->set_local_sequence(dyn_cast<Cseq>(i)->sequence());
+    }
+  }
+  outgoing_request_context->outgoing_requests_.push_back(outgoing_request);
+  outgoing_requests_.insert(std::make_pair(outgoing_request->id(),
+      outgoing_request_context));
   AuthTransaction *auth_transaction =
       outgoing_request_context->auth_transaction_.get();
-  int rv = auth_transaction->HandleChallengeAuthentication(response,
-      base::Bind(&UserAgent::OnAuthenticationComplete,
-          weak_factory_.GetWeakPtr(), request->id()));
+  int rv = auth_transaction->HandleChallengeAuthentication(outgoing_request,
+      incoming_response, base::Bind(&UserAgent::OnAuthenticationComplete,
+          weak_factory_.GetWeakPtr(), original_request->id()));
   if (net::ERR_IO_PENDING == rv) {
     return true;
   } else if (net::OK == rv) {
-    OnAuthenticationComplete(request->id(), rv);
+    OnAuthenticationComplete(original_request->id(), rv);
     return true;
   }
   return false;
@@ -172,12 +186,14 @@ void UserAgent::OnAuthenticationComplete(
   OutgoingRequestContext *outgoing_request_context = i->second;
   if (net::OK == rv) {
     // Remove topmost Via header
+    scoped_refptr<Request> current_outgoing_request =
+        outgoing_request_context->outgoing_requests_.back();
     Message::iterator j =
-        outgoing_request_context->outgoing_request_->find_first<Via>();
-    if (outgoing_request_context->outgoing_request_->end() != j) {
-      outgoing_request_context->outgoing_request_->erase(j);
+        current_outgoing_request->find_first<Via>();
+    if (current_outgoing_request->end() != j) {
+      current_outgoing_request->erase(j);
     }
-    rv = network_layer_->Send(outgoing_request_context->outgoing_request_,
+    rv = network_layer_->Send(current_outgoing_request,
         base::Bind(&UserAgent::OnResendRequestComplete,
             weak_factory_.GetWeakPtr(), request_id));
     if (net::ERR_IO_PENDING != rv) {
@@ -197,7 +213,7 @@ void UserAgent::OnResendRequestComplete(
     return;
   OutgoingRequestContext *outgoing_request_context = i->second;
   if (net::OK != rv) {
-    RunUserTransportErrorCallback(outgoing_request_context->outgoing_request_,
+    RunUserTransportErrorCallback(outgoing_request_context->original_request_,
         rv, outgoing_request_context->last_dialog_);
   }
 }
@@ -229,8 +245,25 @@ void UserAgent::OnIncomingResponse(
       dialog_controller_->HandleResponse(dialog_store_.get(), response);
   if (HandleChallengeAuthentication(response, dialog))
     return;
-  if (response->response_code() >= 200)
-    outgoing_requests_.erase(response->refer_to()->id());
+  if (response->response_code() >= 200) {
+    OutgoingRequestMap::iterator i =
+        outgoing_requests_.find(response->refer_to()->id());
+    if (outgoing_requests_.end() != i) {
+      OutgoingRequestContext *outgoing_request_context = i->second;
+      // Remove the original request first
+      outgoing_requests_.erase(
+          outgoing_request_context->original_request_->id());
+      // Remove children authenticating requests
+      std::vector<scoped_refptr<Request> >& outgoing_requests =
+          outgoing_request_context->outgoing_requests_;
+      for (std::vector<scoped_refptr<Request> >::iterator j =
+          outgoing_requests.begin(); j != outgoing_requests.end(); ++j) {
+        outgoing_requests_.erase((*j)->id());
+      }
+      // Finally delete context
+      delete outgoing_request_context;
+    }
+  }
   RunUserIncomingResponseCallback(response, dialog);
 }
 
