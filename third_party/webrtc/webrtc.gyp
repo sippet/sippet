@@ -6,13 +6,6 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 {
-  'conditions': [
-    ['include_tests==1', {
-      'includes': [
-        'webrtc_tests.gypi',
-      ],
-    }],
-  ],
   'includes': [
     'build/common.gypi',
     'video/webrtc_video.gypi',
