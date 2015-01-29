@@ -95,6 +95,9 @@ scoped_refptr<Request> Dialog::CreateAck(
   unsigned local_sequence = invite->get<Cseq>()->sequence();
   scoped_refptr<Request> ack(
       CreateRequestInternal(Method::ACK, local_sequence));
+  Via *via = invite->get<Via>();
+  if (via) // Copy topmost Via from INVITE
+    ack->insert(ack->begin(), via->Clone().PassAs<Header>());
   invite->CloneTo<WwwAuthenticate>(ack);
   invite->CloneTo<ProxyAuthenticate>(ack);
   return ack;

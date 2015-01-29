@@ -40,11 +40,14 @@ scoped_refptr<Dialog> DefaultDialogController::HandleRequest(
 
 scoped_refptr<Dialog> DefaultDialogController::HandleResponse(
     DialogStore *store, const scoped_refptr<Response> &response) {
+  Message::iterator i = response->find_first<Cseq>();
+  if (response->end() == i)
+    return NULL;
+  Method method(dyn_cast<Cseq>(i)->method());
   scoped_refptr<Dialog> dialog;
-  scoped_refptr<Request> request(response->refer_to());
   int response_code = response->response_code();
   // Create dialog on response_code > 100 for INVITE requests with to-tag
-  if (Method::INVITE == request->method()
+  if (Method::INVITE == method
       && response_code > 100
       && response->get<To>()->HasTag()) {
     dialog = store->GetDialog(response);
@@ -55,8 +58,7 @@ scoped_refptr<Dialog> DefaultDialogController::HandleResponse(
           dialog = store->GenerateDialog(response);
           break;
       }
-    }
-    else {
+    } else if (Dialog::STATE_CONFIRMED != dialog->state()) {
       switch (response_code/100) {
         case 1:
           break;
