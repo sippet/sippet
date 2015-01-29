@@ -183,9 +183,6 @@ deps = {
   "third_party/speex":
     From("chromium_deps", "src/third_party/speex"),
 
-  "third_party/webrtc":
-    From("chromium_deps", "src/third_party/webrtc"),
-
   "third_party/libyuv":
     From("chromium_deps", "src/third_party/libyuv"),
 
