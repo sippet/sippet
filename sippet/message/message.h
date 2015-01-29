@@ -252,8 +252,9 @@ class Message
   std::vector<HeaderType*> filter() {
     std::vector<HeaderType*> result;
     for (iterator i = find_first<HeaderType>(), ie = end();
-         i != ie; i = find_next<HeaderType>(i))
-      result.push_back(&reinterpret_cast<HeaderType&>(i));
+        i != ie; i = find_next<HeaderType>(i)) {
+      result.push_back(dyn_cast<HeaderType>(i));
+    }
     return result;
   }
 

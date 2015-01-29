@@ -4,8 +4,10 @@
 
 #include <iostream>
 
-#include "net/base/net_errors.h"
+#include "base/timer/timer.h"
 #include "base/i18n/icu_string_conversions.h"
+#include "base/strings/string_util.h"
+#include "net/base/net_errors.h"
 #include "sippet/examples/program_main/program_main.h"
 
 #include "talk/base/ssladapter.h"
@@ -15,6 +17,10 @@
 #if defined(OS_MACOSX)
 #include "base/mac/scoped_nsautorelease_pool.h"
 #endif  // defined(OS_MACOSX)
+
+#if defined(OS_WIN)
+#include "base/win/scoped_com_initializer.h"
+#endif  // defined(OS_WIN)
 
 static void PrintUsage() {
   std::cout << "sippet_examples_login"
@@ -77,17 +83,21 @@ class UserAgentHandler
     ASSERT(peer_connection_.get() == NULL);
 
     peer_connection_factory_ = webrtc::CreatePeerConnectionFactory();
-
     if (!peer_connection_factory_.get()) {
       std::cout << "Error: Failed to initialize PeerConnectionFactory\n";
       DeletePeerConnection();
       return false;
     }
 
+    webrtc::PeerConnectionFactoryInterface::Options options;
+    options.disable_encryption = true;
+    options.disable_sctp_data_channels = true;
+    peer_connection_factory_->SetOptions(options);
+
     webrtc::PeerConnectionInterface::IceServers servers;
-    //webrtc::PeerConnectionInterface::IceServer server;
-    //server.uri = GetPeerConnectionString();
-    //servers.push_back(server);
+    webrtc::PeerConnectionInterface::IceServer server;
+    server.uri = "stun:stun.l.google.com:19302";
+    servers.push_back(server);
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(servers,
       NULL,
       NULL,
@@ -99,8 +109,8 @@ class UserAgentHandler
     }
 
     talk_base::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-      peer_connection_factory_->CreateAudioTrack(
-      "audio", peer_connection_factory_->CreateAudioSource(NULL)));
+        peer_connection_factory_->CreateAudioTrack(
+            "audio", peer_connection_factory_->CreateAudioSource(NULL)));
 
     talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream("stream");
@@ -165,15 +175,33 @@ class UserAgentHandler
               << "\n";
     if (dialog) {
       std::cout << "-- Using dialog " << dialog->id() << "\n";
-      if (sippet::Method::INVITE == incoming_response->refer_to()->method()
-          && incoming_response->response_code()/100 == 2) {
-        dialog_ = dialog; // save dialog for later
-        scoped_refptr<sippet::Request> ack = dialog_->CreateAck(last_invite_);
-        user_agent_->Send(ack, base::Bind(&RequestSent,
-          sippet::Method::ACK));
+      sippet::Message::iterator i = incoming_response->find_first<sippet::Cseq>();
+      if (incoming_response->end() != i
+          && sippet::Method::INVITE == sippet::dyn_cast<sippet::Cseq>(i)->method()
+          && incoming_response->response_code() / 100 == 2) {
+        if ((dialog_ = dialog)) { // save dialog for later
+          webrtc::SessionDescriptionInterface *desc =
+              webrtc::CreateSessionDescription(
+                  webrtc::SessionDescriptionInterface::kAnswer,
+                  incoming_response->content());
+          if (!desc) {
+            std::cout << "-- Error in response SDP\n";
+          } else if (peer_connection_) {
+            peer_connection_->SetRemoteDescription(
+              DummySetSessionDescriptionObserver::Create(), desc);
+          }
+          if (last_invite_ != incoming_response->refer_to())
+            last_invite_ = incoming_response->refer_to();
+          scoped_refptr<sippet::Request> ack = dialog_->CreateAck(last_invite_);
+          user_agent_->Send(ack, base::Bind(&RequestSent,
+            sippet::Method::ACK));
+        }
       }
     }
-    switch (incoming_response->response_code() / 100) {
+    if (STATE_REGISTER_COMPLETE == next_state_
+        || STATE_INVITE_COMPLETE == next_state_
+        || STATE_BYE_COMPLETE == next_state_) {
+      switch (incoming_response->response_code() / 100) {
       case 1:
         break;
       case 2:
@@ -182,6 +210,7 @@ class UserAgentHandler
       default:
         OnIOComplete(net::ERR_ABORTED);
         break;
+      }
     }
   }
 
@@ -218,7 +247,9 @@ class UserAgentHandler
   }
 
   virtual void OnStateChange(
-      webrtc::PeerConnectionObserver::StateType state_changed) {}
+      webrtc::PeerConnectionObserver::StateType state_changed) {
+    std::cout << "-- PeerConnection::OnStateChange : " << state_changed << "\n";
+  }
 
   virtual void OnAddStream(webrtc::MediaStreamInterface* stream) {
     std::cout << "-- PeerConnection::OnAddStream " << stream->label();
@@ -248,9 +279,15 @@ class UserAgentHandler
   // CreateSessionDescriptionObserver implementation.
   //
   virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) {
+    desc->ToString(&offer_);
+    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=group:BUNDLE audio\n", "");
+    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=msid-semantic: WMS stream\n", "");
+    ReplaceFirstSubstringAfterOffset(&offer_, 0, "RTP/AVPF", "RTP/AVP");
+    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=ice-options:google-ice\n", "");
+    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=mid:audio\n", "");
+    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=rtcp-mux\n", "");
     peer_connection_->SetLocalDescription(
       DummySetSessionDescriptionObserver::Create(), desc);
-    desc->ToString(&offer_);
     message_loop_->PostTask(
       FROM_HERE,
       base::Bind(&UserAgentHandler::OnIOComplete,
@@ -276,6 +313,7 @@ class UserAgentHandler
   std::string offer_;
   scoped_refptr<sippet::Dialog> dialog_;
   scoped_refptr<sippet::Request> last_invite_;
+  base::OneShotTimer<UserAgentHandler> call_timeout_;
 
   talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
   talk_base::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
@@ -290,6 +328,12 @@ class UserAgentHandler
     STATE_CREATE_OFFER_COMPLETE,
     STATE_INVITE,
     STATE_INVITE_COMPLETE,
+    STATE_CALL_TIMER,
+    STATE_CALL_TIMER_COMPLETE,
+    STATE_BYE,
+    STATE_BYE_COMPLETE,
+    STATE_UNREGISTER,
+    STATE_UNREGISTER_COMPLETE,
     STATE_NONE
   };
   
@@ -340,6 +384,28 @@ class UserAgentHandler
         break;
       case STATE_INVITE_COMPLETE:
         rv = DoInviteComplete(rv);
+        break;
+      case STATE_CALL_TIMER:
+        DCHECK_EQ(net::OK, rv);
+        rv = DoCallTimer();
+        break;
+      case STATE_CALL_TIMER_COMPLETE:
+        DCHECK_EQ(net::OK, rv);
+        rv = DoCallTimerComplete();
+        break;
+      case STATE_BYE:
+        DCHECK_EQ(net::OK, rv);
+        rv = DoBye();
+        break;
+      case STATE_BYE_COMPLETE:
+        rv = DoByeComplete(rv);
+        break;
+      case STATE_UNREGISTER:
+        DCHECK_EQ(net::OK, rv);
+        rv = DoUnregister();
+        break;
+      case STATE_UNREGISTER_COMPLETE:
+        rv = DoUnregisterComplete(rv);
         break;
       default:
         NOTREACHED() << "bad state";
@@ -420,6 +486,68 @@ class UserAgentHandler
     if (net::OK != result)
       return result;
 
+    next_state_ = STATE_CALL_TIMER;
+    return net::OK;
+  }
+
+  int DoCallTimer() {
+    next_state_ = STATE_CALL_TIMER_COMPLETE;
+    call_timeout_.Start(FROM_HERE,
+        base::TimeDelta::FromSeconds(5),
+        base::Bind(&UserAgentHandler::OnIOComplete,
+            base::Unretained(this), net::OK));
+    return net::ERR_IO_PENDING;
+  }
+
+  int DoCallTimerComplete() {
+    next_state_ = STATE_BYE;
+    return net::OK;
+  }
+
+  int DoBye() {
+    ASSERT(dialog_ != NULL);
+    next_state_ = STATE_BYE_COMPLETE;
+
+    scoped_refptr<sippet::Request> bye(
+      dialog_->CreateRequest(sippet::Method::BYE));
+
+    int status = user_agent_->Send(bye, base::Bind(&RequestSent,
+        sippet::Method::REGISTER));
+    if (net::OK != status && net::ERR_IO_PENDING != status)
+      return status;
+    return net::ERR_IO_PENDING;
+  }
+
+  int DoByeComplete(int result) {
+    next_state_ = STATE_UNREGISTER;
+    return net::OK;
+  }
+
+  int DoUnregister() {
+    next_state_ = STATE_UNREGISTER_COMPLETE;
+
+    string16 from(L"sip:" + username_ + L"@" + server_);
+    string16 to(L"sip:" + username_ + L"@" + server_);
+    scoped_refptr<sippet::Request> request =
+      user_agent_->CreateRequest(
+      sippet::Method::REGISTER,
+      GURL(registrar_uri_),
+      GURL(from),
+      GURL(to));
+
+    // Modifies the Contact header to include an expires=0 at the end
+    // of existing parameters
+    sippet::Contact* contact = request->get<sippet::Contact>();
+    contact->front().set_expires(0);
+
+    int status = user_agent_->Send(request, base::Bind(&RequestSent,
+      sippet::Method::REGISTER));
+    if (net::OK != status && net::ERR_IO_PENDING != status)
+      return status;
+    return net::ERR_IO_PENDING; // Wait for SIP response
+  }
+
+  int DoUnregisterComplete(int result) {
     next_state_ = STATE_NONE;
     return net::OK;
   }
@@ -429,6 +557,11 @@ int main(int argc, char **argv) {
 #if defined(OS_MACOSX)
   // Needed so we don't leak objects when threads are created.
   base::mac::ScopedNSAutoreleasePool pool;
+#endif
+
+#if defined(OS_WIN)
+  base::win::ScopedCOMInitializer com_initializer(
+      base::win::ScopedCOMInitializer::kMTA);
 #endif
 
   talk_base::InitializeSSL();

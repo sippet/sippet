@@ -245,7 +245,8 @@ void UserAgent::OnIncomingResponse(
       dialog_controller_->HandleResponse(dialog_store_.get(), response);
   if (HandleChallengeAuthentication(response, dialog))
     return;
-  if (response->response_code() >= 200) {
+  if (200 <= response->response_code()
+      && NULL != response->refer_to()) {
     OutgoingRequestMap::iterator i =
         outgoing_requests_.find(response->refer_to()->id());
     if (outgoing_requests_.end() != i) {
