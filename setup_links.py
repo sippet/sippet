@@ -32,7 +32,6 @@ import textwrap
 
 
 DIRECTORIES = [
-  'build',
   'buildtools',
   'google_apis',  # Needed by build/common.gypi.
   'base',
@@ -44,7 +43,6 @@ DIRECTORIES = [
   'ipc',
   'url',
   'testing',
-  'tools',
   'third_party/binutils',
   'third_party/boringssl',
   'third_party/colorama',
@@ -66,7 +64,7 @@ DIRECTORIES = [
   'third_party/nss',
   'third_party/ocmock',
   'third_party/openmax_dl',
-  'third_party/opus':
+  'third_party/opus',
   'third_party/protobuf',
   'third_party/speex',
   'third_party/sqlite',

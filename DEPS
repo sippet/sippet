@@ -6,7 +6,7 @@
 vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'fad7fb9e0b0f1a29b71e45f27c007ecbf4870498', # 40.0.2214.93
+  'chromium_revision': '9070a8059b513108b09d30f96576b5ce11d0857a',
 
   # PJSIP is used for testing purposes
   'pjsip_trunk': 'http://svn.pjsip.org/repos/pjproject/trunk',
