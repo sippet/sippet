@@ -1,0 +1,16 @@
+Name: openssl
+URL: http://openssl.org/source/
+Version: 1.0.1e
+License: BSDish
+License File: openssl/NOTICE
+License Android Compatible: yes
+Security Critical: yes
+
+Description:
+This is OpenSSL, the standard SSL/TLS library, which is used *only* in
+the following cases:
+
+ - Make the GYP build happy on Android, Linux and Mac OSX.
+
+ - To provide TLS support to EmbeddedTestServer.
+
