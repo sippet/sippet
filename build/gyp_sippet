@@ -56,12 +56,12 @@ if __name__ == '__main__':
       gyp_file_specified = True
       break
 
-  # If we didn't get a file, assume 'all.gyp' in the root of the checkout.
+  # If we didn't get a file, assume 'sippet/all.gyp' as default
   if not gyp_file_specified:
     # Because of a bug in gyp, simply adding the abspath to all.gyp doesn't
     # work, but chdir'ing and adding the relative path does. Spooky :/
     os.chdir(checkout_root)
-    args.append('all.gyp')
+    args.append('sippet/all.gyp')
 
   # There shouldn't be a circular dependency relationship between .gyp files,
   args.append('--no-circular-check')
