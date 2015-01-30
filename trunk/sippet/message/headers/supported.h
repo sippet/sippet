@@ -19,7 +19,7 @@ class Supported :
  private:
   DISALLOW_ASSIGN(Supported);
   Supported(const Supported &other);
-  virtual Supported *DoClone() const OVERRIDE;
+  virtual Supported *DoClone() const override;
 
  public:
   Supported();
@@ -30,7 +30,7 @@ class Supported :
     return scoped_ptr<Supported>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

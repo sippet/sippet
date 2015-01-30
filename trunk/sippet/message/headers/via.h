@@ -68,7 +68,7 @@ class Via :
  private:
   DISALLOW_ASSIGN(Via);
   Via(const Via &other);
-  virtual Via *DoClone() const OVERRIDE;
+  virtual Via *DoClone() const override;
 
  public:
   Via();
@@ -79,7 +79,7 @@ class Via :
     return scoped_ptr<Via>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

@@ -64,16 +64,16 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   scoped_refptr<Request> request(
     new Request(method, request_uri));
   scoped_ptr<To> to(new To(to_uri));
-  request->push_back(to.PassAs<Header>());
+  request->push_back(to.Pass());
   
   // Add the From header and a local tag (48-bit random string)
   scoped_ptr<From> from(new From(from_uri));
   from->set_tag(CreateTag());
-  request->push_back(from.PassAs<Header>());
+  request->push_back(from.Pass());
   
   // The Call-ID is formed by a 120-bit random string
   scoped_ptr<CallId> call_id(new CallId(CreateCallId()));
-  request->push_back(call_id.PassAs<Header>());
+  request->push_back(call_id.Pass());
   
   // Cseq always contain the request method and a new (random) local sequence
   if (local_sequence == 0) {
@@ -83,16 +83,16 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   }
 
   scoped_ptr<Cseq> cseq(new Cseq(local_sequence, method));
-  request->push_back(cseq.PassAs<Header>());
+  request->push_back(cseq.Pass());
 
   // Max-Forwards header field is always 70.
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  request->push_back(max_forwards.PassAs<Header>());
+  request->push_back(max_forwards.Pass());
 
   scoped_ptr<Supported> supported(new Supported);
   supported->push_back("path");
   supported->push_back("outbound");
-  request->push_back(supported.PassAs<Header>());
+  request->push_back(supported.Pass());
 
   std::string contact_address("sip:");
   contact_address += "domain.invalid";
@@ -111,7 +111,7 @@ scoped_refptr<Request> UserAgent::CreateRequest(
   if (Method::REGISTER == method) {
     contact->front().param_set("reg-id", "1");
   }
-  request->push_back(contact.PassAs<Header>());
+  request->push_back(contact.Pass());
   return request;
 }
 

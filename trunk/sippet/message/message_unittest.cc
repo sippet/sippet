@@ -11,7 +11,7 @@ using namespace sippet;
 class InstanceOfMessage : public Message {
  public:
   InstanceOfMessage() : Message(true, Outgoing) {}
-  virtual std::string GetDialogId() const OVERRIDE {
+  virtual std::string GetDialogId() const override {
     return ""; // It won't be used here
   }
  private:
@@ -23,7 +23,7 @@ class InstanceOfHeader : public Header {
 private:
   InstanceOfHeader(const InstanceOfHeader &other) : Header(other) {}
   InstanceOfHeader &operator=(const InstanceOfHeader &other);
-  virtual InstanceOfHeader *DoClone() const OVERRIDE {
+  virtual InstanceOfHeader *DoClone() const override {
     return new InstanceOfHeader(*this);
   }
 public:
@@ -31,7 +31,7 @@ public:
   virtual scoped_ptr<InstanceOfHeader> Clone() {
     return scoped_ptr<InstanceOfHeader>(DoClone());
   }
-  virtual void print(raw_ostream &os) const OVERRIDE { }
+  virtual void print(raw_ostream &os) const override { }
 };
 
 class MessageTest : public testing::Test {

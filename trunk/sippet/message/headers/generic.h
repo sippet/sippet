@@ -14,7 +14,7 @@ class Generic :
  private:
   DISALLOW_ASSIGN(Generic);
   Generic(const Generic &other);
-  virtual Generic *DoClone() const OVERRIDE;
+  virtual Generic *DoClone() const override;
 
  public:
   Generic();
@@ -39,7 +39,7 @@ class Generic :
     header_value_ = header_value;
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 
  private:
   friend class Header;

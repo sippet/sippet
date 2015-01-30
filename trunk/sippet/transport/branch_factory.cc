@@ -19,7 +19,7 @@ class DefaultBranchFactory : public BranchFactory {
  public:
   DefaultBranchFactory() {}
   virtual ~DefaultBranchFactory() {}
-  virtual std::string CreateBranch() OVERRIDE {
+  virtual std::string CreateBranch() override {
     return sippet::CreateBranch();
   }
 };

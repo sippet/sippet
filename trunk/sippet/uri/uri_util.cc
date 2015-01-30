@@ -30,10 +30,10 @@ bool DoCanonicalize(const CHAR* in_spec, int in_spec_len,
                     uri::Parsed* output_parsed) {
   // Remove any whitespace from the middle of the relative URL, possibly
   // copying to the new buffer.
-  url_canon::RawCanonOutputT<CHAR> whitespace_buffer;
+  url::RawCanonOutputT<CHAR> whitespace_buffer;
   int spec_len;
-  const CHAR* spec = url_canon::RemoveURLWhitespace(in_spec, in_spec_len,
-                                                    &whitespace_buffer, &spec_len);
+  const CHAR* spec = url::RemoveURLWhitespace(in_spec, in_spec_len,
+                                              &whitespace_buffer, &spec_len);
 
   uri::Parsed parsed_input;
   uri::Component scheme;
@@ -64,7 +64,7 @@ void DoDecodeURIEscapeSequences(const CHAR* input, int length,
   for (int i = 0; i < length; i++) {
     if (input[i] == '%') {
       unsigned char ch;
-      if (url_canon::DecodeEscaped(input, &i, length, &ch)) {
+      if (url::DecodeEscaped(input, &i, length, &ch)) {
         output->push_back(ch);
       } else {
         // Invalid escape sequence, copy the percent literal.

@@ -30,7 +30,7 @@ std::string CreateRandomString(int bits) {
   delete [] tag;
 
   // Slash is an invalid character for SIP tokens, so substitute it by dot.
-  ReplaceChars(random_string, "/", ".", &random_string);
+  base::ReplaceChars(random_string, "/", ".", &random_string);
 
   return random_string;
 }

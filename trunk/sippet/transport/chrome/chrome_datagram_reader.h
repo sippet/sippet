@@ -23,11 +23,11 @@ class ChromeDatagramReader
   virtual ~ChromeDatagramReader();
 
  private:
-  virtual int DoIORead(const net::CompletionCallback& callback) OVERRIDE;
-  virtual char *data() OVERRIDE;
-  virtual size_t max_size() OVERRIDE;
-  virtual int BytesRemaining() const OVERRIDE;
-  virtual void DidConsume(int bytes) OVERRIDE;
+  virtual int DoIORead(const net::CompletionCallback& callback) override;
+  virtual char *data() override;
+  virtual size_t max_size() override;
+  virtual int BytesRemaining() const override;
+  virtual void DidConsume(int bytes) override;
 
   void OnReceiveDataComplete(int result);
   void ReceivedData(size_t bytes);

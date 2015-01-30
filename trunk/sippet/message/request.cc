@@ -81,7 +81,7 @@ scoped_refptr<Request> Request::CloneRequest() const {
   scoped_refptr<Request> result(
     new Request(method(), request_uri(), version()));
   for (Message::const_iterator i = begin(), ie = end(); i != ie; ++i) {
-    result->push_back(i->Clone().PassAs<Header>());
+    result->push_back(i->Clone().Pass());
   }
   if (has_content())
     result->set_content(content());
@@ -126,18 +126,18 @@ int Request::CreateAck(const std::string &remote_tag,
     return net::ERR_UNEXPECTED;
   }
   ack = new Request(Method::ACK, request_uri());
-  CloneTo<Via>(ack);
+  CloneTo<Via>(ack.get());
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  ack->push_back(max_forwards.PassAs<Header>());
-  CloneTo<From>(ack);
+  ack->push_back(max_forwards.Pass());
+  CloneTo<From>(ack.get());
   scoped_ptr<To> to(Clone<To>().Pass());
   if (to && remote_tag.length() > 0) to->set_tag(remote_tag);
-  ack->push_back(to.PassAs<Header>());
-  CloneTo<CallId>(ack);
+  ack->push_back(to.Pass());
+  CloneTo<CallId>(ack.get());
   scoped_ptr<Cseq> cseq(Clone<Cseq>().Pass());
   if (cseq) cseq->set_method(Method::ACK);
-  ack->push_back(cseq.PassAs<Header>());
-  CloneTo<Route>(ack);
+  ack->push_back(cseq.Pass());
+  CloneTo<Route>(ack.get());
   return net::OK;
 }
 
@@ -158,16 +158,16 @@ int Request::CreateCancel(scoped_refptr<Request> &cancel) {
     return net::ERR_UNEXPECTED;
   }
   cancel = new Request(Method::CANCEL, request_uri());
-  CloneTo<Via>(cancel);
+  CloneTo<Via>(cancel.get());
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  cancel->push_back(max_forwards.PassAs<Header>());
-  CloneTo<From>(cancel);
-  CloneTo<To>(cancel);
-  CloneTo<CallId>(cancel);
+  cancel->push_back(max_forwards.Pass());
+  CloneTo<From>(cancel.get());
+  CloneTo<To>(cancel.get());
+  CloneTo<CallId>(cancel.get());
   scoped_ptr<Cseq> cseq(Clone<Cseq>());
   if (cseq) cseq->set_method(Method::CANCEL);
-  cancel->push_back(cseq.PassAs<Header>());
-  CloneTo<Route>(cancel);
+  cancel->push_back(cseq.Pass());
+  CloneTo<Route>(cancel.get());
   return net::OK;
 }
 
@@ -180,20 +180,20 @@ scoped_refptr<Response> Request::CreateResponseInternal(
   }
   scoped_refptr<Response> response(
       new Response(response_code, reason_phrase, Message::Outgoing));
-  CloneTo<Via>(response);
-  CloneTo<From>(response);
-  CloneTo<To>(response);
-  CloneTo<CallId>(response);
-  CloneTo<Cseq>(response);
+  CloneTo<Via>(response.get());
+  CloneTo<From>(response.get());
+  CloneTo<To>(response.get());
+  CloneTo<CallId>(response.get());
+  CloneTo<Cseq>(response.get());
   if (response_code == 100) {
     scoped_ptr<Timestamp> timestamp(Clone<Timestamp>());
     if (timestamp) {
       double delay = (base::Time::Now() - time_stamp_).InSecondsF();
       timestamp->set_delay(delay);
-      response->push_back(timestamp.PassAs<Header>());
+      response->push_back(timestamp.Pass());
     }
   }
-  CloneTo<RecordRoute>(response);
+  CloneTo<RecordRoute>(response.get());
   response->set_refer_to(this);
   return response;
 }

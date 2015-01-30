@@ -15,7 +15,7 @@ LanguageRange::LanguageRange(const LanguageRange &other)
 }
 
 LanguageRange::LanguageRange(const std::string &value)
-  : single_value(StringToLowerASCII(value)) {
+  : single_value(base::StringToLowerASCII(value)) {
 }
 
 LanguageRange::~LanguageRange() {

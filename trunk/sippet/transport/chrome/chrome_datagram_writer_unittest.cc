@@ -40,24 +40,24 @@ class DatagramChannelTest : public testing::Test {
     via->push_back(
       ViaParam(Protocol::UDP, net::HostPortPair("bobspc.biloxi.com",5060)));
     via->back().set_branch("z9hG4bKnashds7");
-    request->push_back(via.PassAs<Header>());
+    request->push_back(via.Pass());
     scoped_ptr<MaxForwards> maxfw(new MaxForwards(70));
-    request->push_back(maxfw.PassAs<Header>());
+    request->push_back(maxfw.Pass());
     scoped_ptr<To> to(new To(GURL("sip:bob@biloxi.com"), "Bob"));
-    request->push_back(to.PassAs<Header>());
+    request->push_back(to.Pass());
     scoped_ptr<From> from(new From(GURL("sip:bob@biloxi.com"), "Bob"));
     from->set_tag("456248");
-    request->push_back(from.PassAs<Header>());
+    request->push_back(from.Pass());
     scoped_ptr<CallId> callid(new CallId("843817637684230@998sdasdh09"));
-    request->push_back(callid.PassAs<Header>());
+    request->push_back(callid.Pass());
     scoped_ptr<Cseq> cseq(new Cseq(1826, Method::REGISTER));
-    request->push_back(cseq.PassAs<Header>());
+    request->push_back(cseq.Pass());
     scoped_ptr<Contact> contact(new Contact(GURL("sip:bob@192.0.2.4")));
-    request->push_back(contact.PassAs<Header>());
+    request->push_back(contact.Pass());
     scoped_ptr<Expires> expires(new Expires(7200));
-    request->push_back(expires.PassAs<Header>());
+    request->push_back(expires.Pass());
     scoped_ptr<ContentLength> content_length(new ContentLength(0));
-    request->push_back(content_length.PassAs<Header>());
+    request->push_back(content_length.Pass());
     return request;
   }
 
@@ -68,7 +68,7 @@ class DatagramChannelTest : public testing::Test {
     scoped_refptr<net::IOBuffer> buf(new net::IOBuffer(data.size()));
     memcpy(buf->data(), data.data(), data.size());
 
-    return writer_->Write(buf, data.size(), callback);
+    return writer_->Write(buf.get(), data.size(), callback);
   }
 
   net::DeterministicMockTCPClientSocket* wrapped_socket_;

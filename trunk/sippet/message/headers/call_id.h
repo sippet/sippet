@@ -18,7 +18,7 @@ class CallId :
  private:
   DISALLOW_ASSIGN(CallId);
   CallId(const CallId &other);
-  virtual CallId *DoClone() const OVERRIDE;
+  virtual CallId *DoClone() const override;
 
  public:
   CallId();
@@ -29,7 +29,7 @@ class CallId :
     return scoped_ptr<CallId>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

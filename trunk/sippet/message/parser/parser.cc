@@ -433,7 +433,7 @@ bool ParseContact(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     if (!laquot.EndOfInput()) {
       // contact-param = *(token LWS) LAQUOT addr-spec RAQUOT
       display_name.assign(tok.current(), laquot.current());
-      TrimString(display_name, HTTP_LWS, &display_name);
+      base::TrimString(display_name, HTTP_LWS, &display_name);
       std::string::const_iterator address_start = laquot.Skip();
       laquot.SkipTo('>');
       if (laquot.EndOfInput()) {
@@ -559,7 +559,7 @@ bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     return false;
   }
   std::string sentby_string(sentby_start, tok.SkipTo(';'));
-  TrimString(sentby_string, HTTP_LWS, &sentby_string);
+  base::TrimString(sentby_string, HTTP_LWS, &sentby_string);
   if (sentby_string.empty()) {
     DVLOG(1) << "missing sent-by";
     return false;
@@ -663,7 +663,7 @@ scoped_ptr<Header> ParseSingleToken(
   Tokenizer tok(values_begin, values_end);
   if (!ParseToken(tok, retval, &SingleBuilder<HeaderType>))
     return scoped_ptr<Header>();
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -674,7 +674,7 @@ scoped_ptr<Header> ParseSingleTokenParams(
   Tokenizer tok(values_begin, values_end);
   if (!ParseToken(tok, retval, &SingleBuilder<HeaderType>))
     return scoped_ptr<Header>();
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -688,7 +688,7 @@ scoped_ptr<Header> ParseMultipleTokens(
     if (!ParseToken(tok, retval, &MultipleBuilder<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -703,7 +703,7 @@ scoped_ptr<Header> ParseMultipleTokenParams(
         || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -715,7 +715,7 @@ scoped_ptr<Header> ParseSingleTypeSubtypeParams(
   if (!ParseTypeSubtype(tok, retval, &SingleBuilder<HeaderType>)
       || !ParseParameters(tok, retval, &SingleParamSetter<HeaderType>))
     return scoped_ptr<Header>();
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -730,7 +730,7 @@ scoped_ptr<Header> ParseMultipleTypeSubtypeParams(
         || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -745,7 +745,7 @@ scoped_ptr<Header> ParseMultipleUriParams(
         || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -762,7 +762,7 @@ scoped_ptr<Header> ParseSingleInteger(
   }
   unsigned integer = static_cast<unsigned>(output);
   scoped_ptr<HeaderType> header(new HeaderType(integer));
-  return header.template PassAs<Header>();
+  return header.Pass();
 }
 
 template<class HeaderType>
@@ -773,7 +773,7 @@ scoped_ptr<Header> ParseOnlyAuthParams(
   Tokenizer tok(values_begin, values_end);
   if (!ParseAuthParams(tok, header))
       return scoped_ptr<Header>();
-  return header.template PassAs<Header>();
+  return header.Pass();
 }
 
 template<class HeaderType>
@@ -785,7 +785,7 @@ scoped_ptr<Header> ParseSchemeAndAuthParams(
   if (!ParseAuthScheme(tok, header)
       || !ParseAuthParams(tok, header))
       return scoped_ptr<Header>();
-  return header.template PassAs<Header>();
+  return header.Pass();
 }
 
 template<class HeaderType>
@@ -797,7 +797,7 @@ scoped_ptr<Header> ParseSingleContactParams(
   if (!ParseContact(tok, retval, &SingleBuilder<HeaderType>)
       || !ParseParameters(tok, retval, &SingleParamSetter<HeaderType>))
     return scoped_ptr<Header>();
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -812,7 +812,7 @@ scoped_ptr<Header> ParseMultipleContactParams(
         || !ParseParameters(tok, retval, &MultipleParamSetter<HeaderType>))
       return scoped_ptr<Header>();
   }
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -829,7 +829,7 @@ scoped_ptr<Header> ParseStarOrMultipleContactParams(
         return scoped_ptr<Header>();
     }
   }
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -837,9 +837,9 @@ scoped_ptr<Header> ParseTrimmedUtf8(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
   std::string value(values_begin, values_end);
-  TrimString(value, HTTP_LWS, &value);
+  base::TrimString(value, HTTP_LWS, &value);
   return scoped_ptr<HeaderType>(new HeaderType(value))
-         .template PassAs<Header>();
+         .Pass();
 }
 
 template<class HeaderType>
@@ -869,7 +869,7 @@ scoped_ptr<Header> ParseCseq(
     Method method(method_name);
     retval.reset(new HeaderType(sequence, method));
   } while (false);
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -886,7 +886,7 @@ scoped_ptr<Header> ParseDate(
     }
     retval.reset(new HeaderType(parsed_time));
   } while(false);
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -917,7 +917,7 @@ scoped_ptr<Header> ParseTimestamp(
     }
     retval.reset(new HeaderType(timestamp, delay));
   } while(false);
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -951,7 +951,7 @@ scoped_ptr<Header> ParseMimeVersion(
     retval.reset(new HeaderType(static_cast<unsigned>(major),
                                 static_cast<unsigned>(minor)));
   } while(false);
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -980,7 +980,7 @@ scoped_ptr<Header> ParseRetryAfter(
       ParseParameters(tok, retval, &SingleParamSetter<HeaderType>);
     }
   } while(false);
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -995,7 +995,7 @@ scoped_ptr<Header> ParseMultipleWarnings(
       return scoped_ptr<Header>();
     }
   }
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 template<class HeaderType>
@@ -1011,7 +1011,7 @@ scoped_ptr<Header> ParseMultipleVias(
       return scoped_ptr<Header>();
     }
   }
-  return retval.template PassAs<Header>();
+  return retval.Pass();
 }
 
 typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,

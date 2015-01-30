@@ -15,7 +15,7 @@ Encoding::Encoding(const Encoding &other)
 }
 
 Encoding::Encoding(const single_value::value_type &value)
-  : single_value(StringToLowerASCII(value)) {
+  : single_value(base::StringToLowerASCII(value)) {
 }
 
 Encoding &Encoding::operator=(const Encoding &other) {

@@ -17,21 +17,21 @@ ProgramMain::ProgramMain(int argc, char **argv) {
     exit(1);
   }
 
-  CommandLine::Init(argc, argv);
+  base::CommandLine::Init(argc, argv);
 }
 
 ProgramMain::~ProgramMain() {
 }
 
-CommandLine* ProgramMain::command_line() {
-  return CommandLine::ForCurrentProcess();
+base::CommandLine* ProgramMain::command_line() {
+  return base::CommandLine::ForCurrentProcess();
 }
 
-void ProgramMain::set_username(const string16& username) {
+void ProgramMain::set_username(const base::string16& username) {
   username_ = username;
 }
 
-void ProgramMain::set_password(const string16& password) {
+void ProgramMain::set_password(const base::string16& password) {
   password_ = password;
 }
 
@@ -54,7 +54,7 @@ bool ProgramMain::Init() {
   scoped_ptr<sippet::AuthHandlerRegistryFactory> auth_handler_factory(
       sippet::AuthHandlerFactory::CreateDefault(host_resolver_.get()));
   auth_handler_factory_ =
-      auth_handler_factory.PassAs<sippet::AuthHandlerFactory>();
+      auth_handler_factory.Pass();
 
   static_password_handler_factory_.reset(new StaticPasswordHandler::Factory(
       username_, password_));

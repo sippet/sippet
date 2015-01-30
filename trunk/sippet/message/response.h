@@ -37,10 +37,10 @@ public:
     version_ = version;
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 
   // Get a the dialog identifier.
-  virtual std::string GetDialogId() const OVERRIDE;
+  virtual std::string GetDialogId() const override;
 
 private:
   virtual ~Response();

@@ -18,7 +18,7 @@ class UserAgent :
  private:
   DISALLOW_ASSIGN(UserAgent);
   UserAgent(const UserAgent &other);
-  virtual UserAgent *DoClone() const OVERRIDE;
+  virtual UserAgent *DoClone() const override;
 
  public:
   UserAgent();
@@ -29,7 +29,7 @@ class UserAgent :
     return scoped_ptr<UserAgent>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

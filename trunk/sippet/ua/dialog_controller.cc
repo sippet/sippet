@@ -19,13 +19,13 @@ class DefaultDialogController : public DialogController {
   virtual ~DefaultDialogController() {}
 
   virtual scoped_refptr<Dialog> HandleRequest(
-      DialogStore *store, const scoped_refptr<Request> &request) OVERRIDE;
+      DialogStore *store, const scoped_refptr<Request> &request) override;
 
   virtual scoped_refptr<Dialog> HandleResponse(
-      DialogStore *store, const scoped_refptr<Response> &response) OVERRIDE;
+      DialogStore *store, const scoped_refptr<Response> &response) override;
 
   virtual scoped_refptr<Dialog> HandleRequestError(
-      DialogStore *store, const scoped_refptr<Request> &request) OVERRIDE;
+      DialogStore *store, const scoped_refptr<Request> &request) override;
 };
 
 scoped_refptr<Dialog> DefaultDialogController::HandleRequest(
@@ -50,7 +50,7 @@ scoped_refptr<Dialog> DefaultDialogController::HandleResponse(
   if (Method::INVITE == method
       && response_code > 100
       && response->get<To>()->HasTag()) {
-    dialog = store->GetDialog(response);
+    dialog = store->GetDialog(response.get());
     if (!dialog) {
       switch (response_code/100) {
         case 1:

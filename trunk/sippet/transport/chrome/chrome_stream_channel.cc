@@ -16,6 +16,7 @@
 #include "net/socket/client_socket_handle.h"
 #include "net/socket/client_socket_factory.h"
 #include "net/socket/client_socket_pool_manager.h"
+#include "net/socket/ssl_client_socket.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "net/ssl/ssl_cert_request_info.h"
@@ -69,8 +70,6 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
   session_params.cert_verifier = request_context->cert_verifier();
   session_params.transport_security_state =
       request_context->transport_security_state();
-  session_params.server_bound_cert_service =
-      request_context->server_bound_cert_service();
   session_params.proxy_service = request_context->proxy_service();
   session_params.ssl_config_service = request_context->ssl_config_service();
   session_params.http_auth_handler_factory =
@@ -86,8 +85,6 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
     session_params.host_mapping_rules = reference_params->host_mapping_rules;
     session_params.ignore_certificate_errors =
         reference_params->ignore_certificate_errors;
-    session_params.http_pipelining_enabled =
-        reference_params->http_pipelining_enabled;
     session_params.testing_fixed_http_port =
         reference_params->testing_fixed_http_port;
     session_params.testing_fixed_https_port =
@@ -140,10 +137,11 @@ void ChromeStreamChannel::Connect() {
  
   // First we try and resolve the proxy.
   int status = network_session_->proxy_service()->ResolveProxy(
-      proxy_url_,
+      proxy_url_, 0,
       &proxy_info_,
       proxy_resolve_callback_,
       &pac_request_,
+      NULL,
       bound_net_log_);
   if (status != net::ERR_IO_PENDING) {
     // We defer execution of ProcessProxyResolveDone instead of calling it
@@ -175,7 +173,7 @@ int ChromeStreamChannel::ReconnectWithCertificate(
   ssl_config_.send_client_cert = true;
   ssl_config_.client_cert = client_cert;
   network_session_->ssl_client_auth_cache()->Add(
-      destination_.hostport().ToString(), client_cert);
+      destination_.hostport(), client_cert);
   base::MessageLoop* message_loop = base::MessageLoop::current();
   CHECK(message_loop);
   message_loop->PostTask(
@@ -281,7 +279,7 @@ void ChromeStreamChannel::DoTcpConnect() {
   } else {
     int status = net::InitSocketHandleForRawConnect(
         dest_host_port_pair_, network_session_.get(), proxy_info_, ssl_config_,
-        ssl_config_, net::kPrivacyModeDisabled, bound_net_log_, transport_.get(),
+        ssl_config_, net::PRIVACY_MODE_DISABLED, bound_net_log_, transport_.get(),
         connect_callback_);
     if (status != net::ERR_IO_PENDING) {
       // Since this method is always called asynchronously. It is OK to call
@@ -365,12 +363,12 @@ int ChromeStreamChannel::ReconsiderProxyAfterError(int error) {
 
   if (proxy_info_.is_https() && ssl_config_.send_client_cert) {
     network_session_->ssl_client_auth_cache()->Remove(
-        proxy_info_.proxy_server().host_port_pair().ToString());
+        proxy_info_.proxy_server().host_port_pair());
   }
 
   int rv = network_session_->proxy_service()->ReconsiderProxyAfterError(
-      proxy_url_, &proxy_info_, proxy_resolve_callback_, &pac_request_,
-      bound_net_log_);
+      proxy_url_, 0, net::OK, &proxy_info_, proxy_resolve_callback_, &pac_request_,
+      NULL, bound_net_log_);
   if (rv == net::OK || rv == net::ERR_IO_PENDING) {
     CloseTransportSocket();
   } else {
@@ -398,7 +396,7 @@ int ChromeStreamChannel::ReconsiderProxyAfterError(int error) {
 }
 
 void ChromeStreamChannel::ReportSuccessfulProxyConnection() {
-  network_session_->proxy_service()->ReportSuccess(proxy_info_);
+  network_session_->proxy_service()->ReportSuccess(proxy_info_, NULL);
 }
 
 void ChromeStreamChannel::CloseTransportSocket() {
@@ -455,17 +453,14 @@ void ChromeStreamChannel::StartTls() {
     net::SSLClientSocketContext context;
     context.cert_verifier =
         request_context_getter_->GetURLRequestContext()->cert_verifier();
-    context.server_bound_cert_service =
-        request_context_getter_->GetURLRequestContext()->server_bound_cert_service();
     context.transport_security_state =
         request_context_getter_->GetURLRequestContext()->transport_security_state();
 
     DCHECK(context.transport_security_state);
 
     transport_->SetSocket(
-        client_socket_factory_->CreateSSLClientSocket(
-            socket_handle.Pass(), dest_host_port_pair_, ssl_config_, context)
-                  .PassAs<net::StreamSocket>());
+        client_socket_factory_->CreateSSLClientSocket(socket_handle.Pass(),
+            dest_host_port_pair_, ssl_config_, context).Pass());
   
     int status = transport_->socket()->Connect(
         base::Bind(&ChromeStreamChannel::ProcessSSLConnectDone,
@@ -555,9 +550,8 @@ int ChromeStreamChannel::HandleCertificateError(int result) {
 
   net::TransportSecurityState::DomainState domain_state;
   const bool fatal = context->transport_security_state() &&
-      context->transport_security_state()->GetDomainState(destination_.host(),
-          net::SSLConfigService::IsSNIAvailable(context->ssl_config_service()),
-          &domain_state) &&
+      context->transport_security_state()->GetStaticDomainState(
+          destination_.host(), &domain_state) &&
       domain_state.ShouldSSLErrorsBeFatal();
 
   delegate_->OnSSLCertificateError(this, ssl_info, fatal);

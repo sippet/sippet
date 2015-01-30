@@ -15,7 +15,7 @@ class RecordRoute :
  private:
   DISALLOW_ASSIGN(RecordRoute);
   RecordRoute(const RecordRoute &other);
-  virtual RecordRoute *DoClone() const OVERRIDE;
+  virtual RecordRoute *DoClone() const override;
 
  public:
   RecordRoute();
@@ -26,7 +26,7 @@ class RecordRoute :
     return scoped_ptr<RecordRoute>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

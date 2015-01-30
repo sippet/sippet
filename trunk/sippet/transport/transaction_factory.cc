@@ -22,7 +22,7 @@ class DefaultTransactionFactory : public TransactionFactory {
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
       TimeDeltaFactory *time_delta_factory,
-      TransactionDelegate *delegate) OVERRIDE {
+      TransactionDelegate *delegate) override {
     return new ClientTransactionImpl(transaction_id, channel,
         delegate, time_delta_factory);
   }
@@ -32,7 +32,7 @@ class DefaultTransactionFactory : public TransactionFactory {
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
       TimeDeltaFactory *time_delta_factory,
-      TransactionDelegate *delegate) OVERRIDE {
+      TransactionDelegate *delegate) override {
     return new ServerTransactionImpl(transaction_id, channel,
         delegate, time_delta_factory);
   }

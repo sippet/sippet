@@ -20,7 +20,7 @@ class Timestamp :
  private:
   DISALLOW_ASSIGN(Timestamp);
   Timestamp(const Timestamp &other);
-  virtual Timestamp *DoClone() const OVERRIDE;
+  virtual Timestamp *DoClone() const override;
 
  public:
   Timestamp();
@@ -37,7 +37,7 @@ class Timestamp :
   void set_delay(double delay) { delay_ = delay; }
   double delay() { return delay_; }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 
 private:
   double timestamp_;

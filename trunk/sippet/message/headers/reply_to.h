@@ -15,7 +15,7 @@ class ReplyTo :
  private:
   DISALLOW_ASSIGN(ReplyTo);
   ReplyTo(const ReplyTo &other);
-  virtual ReplyTo *DoClone() const OVERRIDE;
+  virtual ReplyTo *DoClone() const override;
 
  public:
   ReplyTo();
@@ -26,7 +26,7 @@ class ReplyTo :
     return scoped_ptr<ReplyTo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

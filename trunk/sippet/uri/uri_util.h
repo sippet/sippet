@@ -22,20 +22,20 @@ inline
 bool LowerCaseEqualsASCII(const char* a_begin,
                           const char* a_end,
                           const char* b) {
-  return url_util::LowerCaseEqualsASCII(a_begin, a_end, b);
+  return url::LowerCaseEqualsASCII(a_begin, a_end, b);
 }
 inline
 bool LowerCaseEqualsASCII(const char* a_begin,
                           const char* a_end,
                           const char* b_begin,
                           const char* b_end) {
-  return url_util::LowerCaseEqualsASCII(a_begin, a_end, b_begin, b_end);
+  return url::LowerCaseEqualsASCII(a_begin, a_end, b_begin, b_end);
 }
 inline
 bool LowerCaseEqualsASCII(const base::char16* a_begin,
                           const base::char16* a_end,
                           const char* b) {
-  return url_util::LowerCaseEqualsASCII(a_begin, a_end, b);
+  return url::LowerCaseEqualsASCII(a_begin, a_end, b);
 }
 
 // URI library wrappers -------------------------------------------------------

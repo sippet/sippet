@@ -16,7 +16,7 @@ class From :
 private:
   DISALLOW_ASSIGN(From);
   From(const From &other);
-  virtual From *DoClone() const OVERRIDE;
+  virtual From *DoClone() const override;
 
 public:
   From();
@@ -27,7 +27,7 @@ public:
     return scoped_ptr<From>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

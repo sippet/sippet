@@ -14,7 +14,7 @@ class WsChannelFactory : public ChannelFactory {
   virtual int CreateChannel(
     const EndPoint &destination,
     Channel::Delegate *delegate,
-    scoped_refptr<Channel> *channel) OVERRIDE;
+    scoped_refptr<Channel> *channel) override;
 };
 
 } /// End of sippet namespace

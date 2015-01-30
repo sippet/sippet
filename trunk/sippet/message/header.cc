@@ -73,7 +73,7 @@ AtomTraits<Header::Type>::coerce(const char *str) {
 
   if (strlen(str) == 1) {
     char h = tolower(str[0]);
-    for (int i = 0; i < ARRAYSIZE_UNSAFE(compact_forms); ++i) {
+    for (int i = 0; i < arraysize(compact_forms); ++i) {
       if (h == compact_forms[i]) {
         type = static_cast<Header::Type>(i);
         break;
@@ -83,7 +83,7 @@ AtomTraits<Header::Type>::coerce(const char *str) {
   else {
     // Perform a simple binary search
     const char **first = names;
-    const char **last = names + ARRAYSIZE_UNSAFE(names);
+    const char **last = names + arraysize(names);
     const char **found = std::lower_bound(first, last, str, HeaderNameLess);
     if (found != last
         && base::strcasecmp(*found, str) == 0) {

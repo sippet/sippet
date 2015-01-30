@@ -22,7 +22,7 @@ class ContentDisposition :
  private:
   DISALLOW_ASSIGN(ContentDisposition);
   ContentDisposition(const ContentDisposition &other);
-  virtual ContentDisposition *DoClone() const OVERRIDE;
+  virtual ContentDisposition *DoClone() const override;
 
  public:
   enum Type {
@@ -43,7 +43,7 @@ class ContentDisposition :
     single_value::set_value(rep[static_cast<int>(t)]);
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

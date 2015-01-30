@@ -40,14 +40,14 @@ int ChromeStreamWriter::Write(
   scoped_refptr<net::DrainableIOBuffer> io_buffer(
       new net::DrainableIOBuffer(buf, buf_len));
   if (pending_messages_.empty()) {
-    int res = Drain(io_buffer);
+    int res = Drain(io_buffer.get());
     if (res == net::OK || res != net::ERR_IO_PENDING) {
       error_ = res;
       return res;
     }
   }
 
-  pending_messages_.push_back(new PendingBlock(io_buffer, callback));
+  pending_messages_.push_back(new PendingBlock(io_buffer.get(), callback));
   return net::ERR_IO_PENDING;
 }
 
@@ -81,7 +81,7 @@ void ChromeStreamWriter::DidConsume(int result) {
       continue;
     }
     else {
-      result = Drain(pending->io_buffer_);
+      result = Drain(pending->io_buffer_.get());
       if (result < 0) {
         if (result != net::ERR_IO_PENDING)
           CloseWithError(result);

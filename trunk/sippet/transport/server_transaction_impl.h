@@ -24,14 +24,14 @@ class ServerTransactionImpl : public ServerTransaction {
         TimeDeltaFactory *time_delta_factory);
 
   // ServerTransaction methods:
-  virtual const std::string& id() const OVERRIDE;
-  virtual scoped_refptr<Channel> channel() const OVERRIDE;
-  virtual void Start(const scoped_refptr<Request> &incoming_request) OVERRIDE;
-  virtual void Send(const scoped_refptr<Response> &response) OVERRIDE;
+  virtual const std::string& id() const override;
+  virtual scoped_refptr<Channel> channel() const override;
+  virtual void Start(const scoped_refptr<Request> &incoming_request) override;
+  virtual void Send(const scoped_refptr<Response> &response) override;
   virtual void HandleIncomingRequest(
-                    const scoped_refptr<Request> &request) OVERRIDE;
+                    const scoped_refptr<Request> &request) override;
 
-  virtual void Close() OVERRIDE;
+  virtual void Close() override;
  private:
   friend class base::RefCountedThreadSafe<ServerTransactionImpl>;
   virtual ~ServerTransactionImpl();

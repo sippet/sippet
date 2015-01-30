@@ -70,8 +70,8 @@ bool RespondToChallenge(const std::string& challenge,
     new Request(method, GURL(request_uri)));
   if (body.length() > 0)
     request->set_content(body);
-  net::AuthCredentials credentials(ASCIIToUTF16("bob"),
-    ASCIIToUTF16("zanzibar"));
+  net::AuthCredentials credentials(base::ASCIIToUTF16("bob"),
+    base::ASCIIToUTF16("zanzibar"));
   int rv_generate = handler->GenerateAuth(
       &credentials, request.get(), callback.callback());
   if (rv_generate != net::OK) {

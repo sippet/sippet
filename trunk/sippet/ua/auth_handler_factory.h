@@ -159,7 +159,7 @@ class AuthHandlerRegistryFactory
                                 CreateReason reason,
                                 int digest_nonce_count,
                                 const net::BoundNetLog& net_log,
-                                scoped_ptr<AuthHandler>* handler) OVERRIDE;
+                                scoped_ptr<AuthHandler>* handler) override;
 
  private:
   typedef std::map<std::string, AuthHandlerFactory*> FactoryMap;

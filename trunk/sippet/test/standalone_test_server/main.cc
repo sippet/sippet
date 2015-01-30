@@ -24,8 +24,8 @@ int main(int argc, char *argv[]) {
   base::MessageLoopForIO message_loop;
 
   // Process command line
-  CommandLine::Init(argc, argv);
-  CommandLine* command_line = CommandLine::ForCurrentProcess();
+  base::CommandLine::Init(argc, argv);
+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 
   logging::LoggingSettings settings;
   settings.logging_dest = logging::LOG_TO_ALL;

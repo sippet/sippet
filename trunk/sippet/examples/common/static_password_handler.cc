@@ -6,8 +6,8 @@
 
 #include "net/base/net_errors.h"
 
-StaticPasswordHandler::Factory::Factory(const string16 &username,
-    const string16 &password)
+StaticPasswordHandler::Factory::Factory(const base::string16 &username,
+    const base::string16 &password)
   : username_(username), password_(password) {
 }
 
@@ -20,8 +20,8 @@ scoped_ptr<sippet::PasswordHandler>
   return password_handler.Pass();
 }
 
-StaticPasswordHandler::StaticPasswordHandler(const string16 &username,
-    const string16 &password)
+StaticPasswordHandler::StaticPasswordHandler(const base::string16 &username,
+    const base::string16 &password)
   : username_(username), password_(password) {
 }
 
@@ -29,8 +29,8 @@ StaticPasswordHandler::~StaticPasswordHandler() {}
 
 int StaticPasswordHandler::GetCredentials(
     const net::AuthChallengeInfo* auth_info,
-    string16 *username,
-    string16 *password,
+    base::string16 *username,
+    base::string16 *password,
     const net::CompletionCallback& callback) {
   *username = username_;
   *password = password_;

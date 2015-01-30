@@ -20,9 +20,9 @@ class ProgramMain {
  public:
   ProgramMain(int argc, char **argv);
   virtual ~ProgramMain();
-  CommandLine* command_line();
-  void set_username(const string16& username);
-  void set_password(const string16& password);
+  base::CommandLine* command_line();
+  void set_username(const base::string16& username);
+  void set_password(const base::string16& password);
   bool Init();
   void AppendHandler(sippet::ua::UserAgent::Delegate *delegate);
   sippet::ua::UserAgent *user_agent();
@@ -30,8 +30,8 @@ class ProgramMain {
   void Run();
 
  private:
-  string16 username_;
-  string16 password_;
+  base::string16 username_;
+  base::string16 password_;
   base::AtExitManager at_exit_manager_;
   base::MessageLoopForIO message_loop_;
   scoped_refptr<net::URLRequestContextGetter> request_context_getter_;

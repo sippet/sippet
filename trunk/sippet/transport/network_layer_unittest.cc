@@ -115,7 +115,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
 
   scoped_refptr<Channel> channel;
   channel_factory_->CreateChannel(EndPoint("192.0.2.34", 321, Protocol::TCP),
-                                  network_layer_,
+                                  network_layer_.get(),
                                   &channel);
 
   scoped_refptr<Request> client_request =
@@ -137,7 +137,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   scoped_ptr<Via> via(new Via);
   net::HostPortPair hostport("192.168.0.1", 7001);
   via->push_back(ViaParam(Protocol::TCP, hostport));
-  single_via_request->push_front(via.PassAs<Header>());
+  single_via_request->push_front(via.Pass());
   network_layer_->StampServerTopmostVia(single_via_request, channel);
   EXPECT_TRUE(StartsWithASCII(single_via_request->ToString(),
     "INVITE sip:foobar@foo.com SIP/2.0\r\n"
@@ -157,7 +157,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   scoped_refptr<Response> single_via_response = new Response(200, "OK", Message::Outgoing);
   via.reset(new Via);
   via->push_back(ViaParam(Protocol::TCP, net::HostPortPair("192.168.0.1", 7001)));
-  single_via_response->push_front(via.PassAs<Header>());
+  single_via_response->push_front(via.Pass());
   EndPoint single_via_response_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_response);
   EXPECT_EQ(EndPoint("192.168.0.1",7001,Protocol::TCP),
@@ -167,7 +167,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   via.reset(new Via);
   via->push_back(ViaParam(Protocol::TCP, net::HostPortPair("192.168.0.1", 7001)));
   via->front().set_received("189.187.200.23");
-  single_via_response->push_front(via.PassAs<Header>());
+  single_via_response->push_front(via.Pass());
   single_via_response_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_response);
   EXPECT_EQ(EndPoint("189.187.200.23",7001,Protocol::TCP),
@@ -178,7 +178,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   via->push_back(ViaParam(Protocol::TCP, net::HostPortPair("192.168.0.1", 7001)));
   via->front().set_received("189.187.200.23");
   via->front().set_rport(5002);
-  single_via_response->push_front(via.PassAs<Header>());
+  single_via_response->push_front(via.Pass());
   single_via_response_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_response);
   EXPECT_EQ(EndPoint("189.187.200.23",5002,Protocol::TCP),
@@ -218,10 +218,10 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
     ExpectCloseChannel("192.0.4.42:5060/TCP"),
   };
 
-  Initialize(expected_reads, ARRAYSIZE_UNSAFE(expected_reads),
-             expected_writes, ARRAYSIZE_UNSAFE(expected_writes),
-             expected_events, ARRAYSIZE_UNSAFE(expected_events),
-             branches, ARRAYSIZE_UNSAFE(branches));
+  Initialize(expected_reads, arraysize(expected_reads),
+             expected_writes, arraysize(expected_writes),
+             expected_events, arraysize(expected_events),
+             branches, arraysize(branches));
 
   scoped_refptr<Message> request(Message::Parse(kRegisterRequest));
   request->set_direction(Message::Outgoing);

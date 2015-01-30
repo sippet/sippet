@@ -15,7 +15,7 @@ class ProxyAuthorization :
  private:
   DISALLOW_ASSIGN(ProxyAuthorization);
   ProxyAuthorization(const ProxyAuthorization &other);
-  virtual ProxyAuthorization *DoClone() const OVERRIDE;
+  virtual ProxyAuthorization *DoClone() const override;
 
  public:
   ProxyAuthorization();
@@ -27,7 +27,7 @@ class ProxyAuthorization :
     return scoped_ptr<ProxyAuthorization>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

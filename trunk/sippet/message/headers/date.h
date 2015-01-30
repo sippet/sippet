@@ -19,7 +19,7 @@ class Date :
  private:
   DISALLOW_ASSIGN(Date);
   Date(const Date &other);
-  virtual Date *DoClone() const OVERRIDE;
+  virtual Date *DoClone() const override;
 
  public:
   Date();
@@ -30,7 +30,7 @@ class Date :
     return scoped_ptr<Date>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

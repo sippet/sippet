@@ -333,13 +333,13 @@ class NetworkLayer :
                               const scoped_refptr<Response> &response);
 
   // sippet::Channel::Delegate methods:
-  virtual void OnChannelConnected(const scoped_refptr<Channel>&, int) OVERRIDE;
+  virtual void OnChannelConnected(const scoped_refptr<Channel>&, int) override;
   virtual void OnIncomingMessage(const scoped_refptr<Channel> &,
-                                 const scoped_refptr<Message> &) OVERRIDE;
-  virtual void OnChannelClosed(const scoped_refptr<Channel> &, int) OVERRIDE;
+                                 const scoped_refptr<Message> &) override;
+  virtual void OnChannelClosed(const scoped_refptr<Channel> &, int) override;
   virtual void OnSSLCertificateError(const scoped_refptr<Channel> &channel,
                                      const net::SSLInfo &ssl_info,
-                                     bool fatal) OVERRIDE;
+                                     bool fatal) override;
 
   // SSL Certificate handshake transaction complete
   void OnSSLCertErrorTransactionComplete(
@@ -358,11 +358,11 @@ class NetworkLayer :
   int DismissLastConnectionAttempt(const EndPoint &destination);
 
   // sippet::TransactionDelegate methods:
-  virtual void OnIncomingResponse(const scoped_refptr<Response> &) OVERRIDE;
-  virtual void OnTimedOut(const scoped_refptr<Request> &request) OVERRIDE;
+  virtual void OnIncomingResponse(const scoped_refptr<Response> &) override;
+  virtual void OnTimedOut(const scoped_refptr<Request> &request) override;
   virtual void OnTransportError(
-      const scoped_refptr<Request> &request, int error) OVERRIDE;
-  virtual void OnTransactionTerminated(const std::string &) OVERRIDE;
+      const scoped_refptr<Request> &request, int error) override;
+  virtual void OnTransactionTerminated(const std::string &) override;
 
   // Timer callbacks
   void OnIdleChannelTimedOut(const EndPoint &endpoint);

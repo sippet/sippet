@@ -68,8 +68,8 @@ class AuthTransaction {
   PasswordHandler::Factory *password_handler_factory_;
   scoped_ptr<PasswordHandler> password_handler_;
 
-  string16 username_;
-  string16 password_;
+  base::string16 username_;
+  base::string16 password_;
 
   DISALLOW_COPY_AND_ASSIGN(AuthTransaction);
 };

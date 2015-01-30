@@ -17,7 +17,7 @@ class Cseq :
  private:
   DISALLOW_ASSIGN(Cseq);
   Cseq(const Cseq &other);
-  virtual Cseq *DoClone() const OVERRIDE;
+  virtual Cseq *DoClone() const override;
 
  public:
   Cseq();
@@ -34,7 +34,7 @@ class Cseq :
   Method method() const { return method_; }
   void set_method(const Method &method) { method_ = method; }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 
  private:
   unsigned sequence_;

@@ -41,7 +41,7 @@ class ErrorInfo :
  private:
   DISALLOW_ASSIGN(ErrorInfo);
   ErrorInfo(const ErrorInfo &other);
-  virtual ErrorInfo *DoClone() const OVERRIDE;
+  virtual ErrorInfo *DoClone() const override;
 
  public:
   ErrorInfo();
@@ -51,7 +51,7 @@ class ErrorInfo :
     return scoped_ptr<ErrorInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

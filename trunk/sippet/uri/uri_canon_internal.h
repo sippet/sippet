@@ -36,16 +36,16 @@ inline bool IsCharOfType(unsigned char c, SharedCharTypes type) {
   return !!(kSharedCharTypeTable[c] & type);
 }
 inline bool IsQueryChar(unsigned char c) {
-  return url_canon::IsQueryChar(c);
+  return url::IsQueryChar(c);
 }
 inline bool IsIPv4Char(unsigned char c) {
-  return url_canon::IsIPv4Char(c);
+  return url::IsIPv4Char(c);
 }
 inline bool IsHexChar(unsigned char c) {
-  return url_canon::IsHexChar(c);
+  return url::IsHexChar(c);
 }
 inline bool IsComponentChar(unsigned char c) {
-  return url_canon::IsComponentChar(c);
+  return url::IsComponentChar(c);
 }
 inline bool IsUserInfoChar(unsigned char c) {
   return IsCharOfType(c, CHAR_USERINFO);
@@ -80,7 +80,7 @@ void AppendStringOfType(const base::char16* source, int length,
 inline
 bool ReadUTFChar(const char* str, int* begin, int length,
                  unsigned* code_point_out) {
-  return url_canon::ReadUTFChar(str, begin, length, code_point_out);
+  return url::ReadUTFChar(str, begin, length, code_point_out);
 }
 
 // UTF-16 functions -----------------------------------------------------------
@@ -96,7 +96,7 @@ bool ReadUTFChar(const char* str, int* begin, int length,
 inline
 bool ReadUTFChar(const base::char16* str, int* begin, int length,
                  unsigned* code_point) {
-  return url_canon::ReadUTFChar(str, begin, length, code_point);
+  return url::ReadUTFChar(str, begin, length, code_point);
 }
 
 } // End of uri namespace

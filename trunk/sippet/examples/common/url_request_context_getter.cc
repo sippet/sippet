@@ -16,10 +16,10 @@ namespace {
 class ProxyConfigServiceDirect : public net::ProxyConfigService {
  public:
   // Overridden from ProxyConfigService:
-  virtual void AddObserver(Observer* observer) OVERRIDE {}
-  virtual void RemoveObserver(Observer* observer) OVERRIDE {}
+  virtual void AddObserver(Observer* observer) override {}
+  virtual void RemoveObserver(Observer* observer) override {}
   virtual ConfigAvailability GetLatestProxyConfig(
-      net::ProxyConfig* config) OVERRIDE {
+      net::ProxyConfig* config) override {
     *config = net::ProxyConfig::CreateDirect();
     return CONFIG_VALID;
   }

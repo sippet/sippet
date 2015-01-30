@@ -18,7 +18,7 @@ class StandaloneTestServerTest: public testing::Test {
   StandaloneTestServerTest() {
   }
 
-  virtual void TearDown() OVERRIDE {
+  virtual void TearDown() override {
     if (server_)
       ASSERT_TRUE(server_->ShutdownAndWaitUntilComplete());
   }

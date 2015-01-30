@@ -10,7 +10,6 @@
 #include "net/base/net_errors.h"
 #include "sippet/examples/program_main/program_main.h"
 
-#include "talk/base/ssladapter.h"
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/media/devices/devicemanager.h"
 
@@ -32,7 +31,7 @@ class DummySetSessionDescriptionObserver
 public:
   static DummySetSessionDescriptionObserver* Create() {
     return
-      new talk_base::RefCountedObject<DummySetSessionDescriptionObserver>();
+      new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
   }
   virtual void OnSuccess() {
     std::cout << "SetSessionDescriptionObserver::OnSuccess\n";
@@ -49,11 +48,11 @@ protected:
 struct Settings {
   sippet::NetworkLayer *network_layer;
   sippet::ua::UserAgent *user_agent;
-  string16 username;
-  string16 password;
-  string16 registrar_uri;
-  string16 server;
-  string16 phone_number;
+  base::string16 username;
+  base::string16 password;
+  base::string16 registrar_uri;
+  base::string16 server;
+  base::string16 phone_number;
 };
 
 class UserAgentHandler
@@ -95,30 +94,25 @@ class UserAgentHandler
     server.uri = "stun:stun.l.google.com:19302";
     servers.push_back(server);
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(servers,
-      NULL,
-      NULL,
-      this);
+      NULL, NULL, NULL, this);
     if (!peer_connection_.get()) {
       std::cout << "Error: CreatePeerConnection failed\n";
       DeletePeerConnection();
       return false;
     }
 
-    talk_base::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+    rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         peer_connection_factory_->CreateAudioTrack(
             "audio", peer_connection_factory_->CreateAudioSource(NULL)));
 
-    talk_base::scoped_refptr<webrtc::MediaStreamInterface> stream =
+    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream("stream");
 
     stream->AddTrack(audio_track);
-    if (!peer_connection_->AddStream(stream, NULL)) {
+    if (!peer_connection_->AddStream(stream)) {
       LOG(ERROR) << "Adding stream to PeerConnection failed";
     }
-    typedef std::pair<std::string,
-      talk_base::scoped_refptr<webrtc::MediaStreamInterface> >
-      MediaStreamPair;
-    active_streams_.insert(MediaStreamPair(stream->label(), stream));
+    active_streams_.insert(std::make_pair(stream->label(), stream));
 
     return peer_connection_.get() != NULL;
   }
@@ -139,12 +133,12 @@ class UserAgentHandler
   // UserAgent::Delegate implementation
   //
   virtual void OnChannelConnected(const sippet::EndPoint &destination,
-                                  int err) OVERRIDE {
+                                  int err) override {
     std::cout << "Channel " << destination.ToString()
               << " connected, status = " << err << "\n";
   }
 
-  virtual void OnChannelClosed(const sippet::EndPoint &destination) OVERRIDE {
+  virtual void OnChannelClosed(const sippet::EndPoint &destination) override {
     std::cout << "Channel " << destination.ToString()
               << " closed.\n";
 
@@ -153,7 +147,7 @@ class UserAgentHandler
 
   virtual void OnIncomingRequest(
       const scoped_refptr<sippet::Request> &incoming_request,
-      const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
+      const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "-- Incoming request "
               << incoming_request->method().str()
               << "\n";
@@ -163,7 +157,7 @@ class UserAgentHandler
 
   virtual void OnIncomingResponse(
       const scoped_refptr<sippet::Response> &incoming_response,
-      const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
+      const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "-- Incoming response "
               << incoming_response->response_code()
               << " "
@@ -215,7 +209,7 @@ class UserAgentHandler
 
   virtual void OnTimedOut(
       const scoped_refptr<sippet::Request> &request,
-      const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
+      const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Timed out sending request "
               << request->method().str()
               << "\n";
@@ -227,7 +221,7 @@ class UserAgentHandler
 
   virtual void OnTransportError(
       const scoped_refptr<sippet::Request> &request, int error,
-      const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
+      const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Transport error sending request "
               << request->method().str()
               << "\n";
@@ -256,6 +250,10 @@ class UserAgentHandler
 
   virtual void OnRemoveStream(webrtc::MediaStreamInterface* stream) {
     std::cout << "-- PeerConnection::OnRemoveStream " << stream->label();
+  }
+
+  virtual void OnDataChannel(webrtc::DataChannelInterface* data_channel) {
+    std::cout << "-- PeerConnection::OnDataChannel " << data_channel->label();
   }
 
   virtual void OnRenegotiationNeeded() {}
@@ -304,20 +302,20 @@ class UserAgentHandler
   sippet::NetworkLayer *network_layer_;
   sippet::ua::UserAgent *user_agent_;
   base::MessageLoop *message_loop_;
-  string16 username_;
-  string16 registrar_uri_;
-  string16 server_;
-  string16 phone_number_;
+  base::string16 username_;
+  base::string16 registrar_uri_;
+  base::string16 server_;
+  base::string16 phone_number_;
   
   std::string offer_;
   scoped_refptr<sippet::Dialog> dialog_;
   scoped_refptr<sippet::Request> last_invite_;
   base::OneShotTimer<UserAgentHandler> call_timeout_;
 
-  talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
-  talk_base::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
     peer_connection_factory_;
-  std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >
+  std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
     active_streams_;
 
   enum State {
@@ -417,16 +415,19 @@ class UserAgentHandler
 
   int DoRegister() {
     next_state_ = STATE_REGISTER_COMPLETE;
-    string16 from(L"sip:" + username_ + L"@" + server_);
-    string16 to(L"sip:" + username_ + L"@" + server_);
+
+    base::string16 from(L"sip:" + username_ + L"@" + server_);
+    base::string16 to(L"sip:" + username_ + L"@" + server_);
+
     scoped_refptr<sippet::Request> request =
       user_agent_->CreateRequest(
       sippet::Method::REGISTER,
       GURL(registrar_uri_),
       GURL(from),
       GURL(to));
+
     int status = user_agent_->Send(request, base::Bind(&RequestSent,
-        sippet::Method::REGISTER));
+        request->method()));
     if (net::OK != status && net::ERR_IO_PENDING != status)
       return status;
     return net::ERR_IO_PENDING; // Wait for SIP response
@@ -458,9 +459,9 @@ class UserAgentHandler
   int DoInvite() {
     next_state_ = STATE_INVITE_COMPLETE;
 
-    string16 request_uri(L"sip:" + phone_number_ + L"@" + server_);
-    string16 from(L"sip:" + username_ + L"@" + server_);
-    string16 to(L"sip:" + phone_number_ + L"@" + server_);
+    base::string16 request_uri(L"sip:" + phone_number_ + L"@" + server_);
+    base::string16 from(L"sip:" + username_ + L"@" + server_);
+    base::string16 to(L"sip:" + phone_number_ + L"@" + server_);
 
     last_invite_ =
       user_agent_->CreateRequest(
@@ -471,11 +472,11 @@ class UserAgentHandler
 
     scoped_ptr<sippet::ContentType> content_type(
       new sippet::ContentType("application", "sdp"));
-    last_invite_->push_back(content_type.PassAs<sippet::Header>());
+    last_invite_->push_back(content_type.Pass());
     last_invite_->set_content(offer_);
 
     int status = user_agent_->Send(last_invite_, base::Bind(&RequestSent,
-      sippet::Method::REGISTER));
+      last_invite_->method()));
     if (net::OK != status && net::ERR_IO_PENDING != status)
       return status;
     return net::ERR_IO_PENDING;
@@ -511,7 +512,7 @@ class UserAgentHandler
       dialog_->CreateRequest(sippet::Method::BYE));
 
     int status = user_agent_->Send(bye, base::Bind(&RequestSent,
-        sippet::Method::REGISTER));
+        bye->method()));
     if (net::OK != status && net::ERR_IO_PENDING != status)
       return status;
     return net::ERR_IO_PENDING;
@@ -525,8 +526,8 @@ class UserAgentHandler
   int DoUnregister() {
     next_state_ = STATE_UNREGISTER_COMPLETE;
 
-    string16 from(L"sip:" + username_ + L"@" + server_);
-    string16 to(L"sip:" + username_ + L"@" + server_);
+    base::string16 from(L"sip:" + username_ + L"@" + server_);
+    base::string16 to(L"sip:" + username_ + L"@" + server_);
     scoped_refptr<sippet::Request> request =
       user_agent_->CreateRequest(
       sippet::Method::REGISTER,
@@ -540,7 +541,7 @@ class UserAgentHandler
     contact->front().set_expires(0);
 
     int status = user_agent_->Send(request, base::Bind(&RequestSent,
-      sippet::Method::REGISTER));
+      request->method()));
     if (net::OK != status && net::ERR_IO_PENDING != status)
       return status;
     return net::ERR_IO_PENDING; // Wait for SIP response
@@ -558,10 +559,8 @@ int main(int argc, char **argv) {
   base::mac::ScopedNSAutoreleasePool pool;
 #endif
 
-  talk_base::InitializeSSL();
-
   ProgramMain program_main(argc, argv);
-  CommandLine* command_line = program_main.command_line();
+  base::CommandLine* command_line = program_main.command_line();
 
   if (command_line->GetSwitches().empty() ||
       command_line->HasSwitch("help")) {
@@ -604,7 +603,7 @@ int main(int argc, char **argv) {
 
   struct {
     const char *cmd_switch_;
-    const char16 *registrar_uri_;
+    const base::char16 *registrar_uri_;
   } args[] = {
     { "udp", L"sip:%ls" },
     { "tcp", L"sip:%ls;transport=tcp" },
@@ -613,7 +612,7 @@ int main(int argc, char **argv) {
     { "wss", L"sips:%ls;transport=ws" },
   };
 
-  for (int i = 0; i < ARRAYSIZE_UNSAFE(args); i++) {
+  for (int i = 0; i < arraysize(args); i++) {
     if (command_line->HasSwitch(args[i].cmd_switch_)) {
       settings.registrar_uri = base::StringPrintf(args[i].registrar_uri_,
           settings.server.c_str());
@@ -634,8 +633,8 @@ int main(int argc, char **argv) {
   settings.network_layer = program_main.network_layer();
   settings.user_agent = program_main.user_agent();
 
-  talk_base::scoped_refptr<UserAgentHandler> handler(
-      new talk_base::RefCountedObject<UserAgentHandler>(settings));
+  rtc::scoped_refptr<UserAgentHandler> handler(
+      new rtc::RefCountedObject<UserAgentHandler>(settings));
   program_main.AppendHandler(handler.get());
 
   if (handler->InitializePeerConnection())

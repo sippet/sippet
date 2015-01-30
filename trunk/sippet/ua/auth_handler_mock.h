@@ -36,7 +36,7 @@ class AuthHandlerMock : public AuthHandler {
         CreateReason create_reason,
         int digest_nonce_count,
         const net::BoundNetLog& net_log,
-        scoped_ptr<AuthHandler>* handler) OVERRIDE;
+        scoped_ptr<AuthHandler>* handler) override;
 
    private:
     typedef std::deque<std::pair<bool, AuthHandler*> > Handlers;
@@ -62,7 +62,7 @@ class AuthHandlerMock : public AuthHandler {
   virtual bool AllowsExplicitCredentials();
   virtual bool NeedsIdentity();
 
-  virtual bool Init(const Challenge& challenge) OVERRIDE;
+  virtual bool Init(const Challenge& challenge) override;
 
 private:
   typedef std::pair<bool,bool> optional;

@@ -19,7 +19,7 @@ class MimeVersion :
  private:
   DISALLOW_ASSIGN(MimeVersion);
   MimeVersion(const MimeVersion &other);
-  virtual MimeVersion *DoClone() const OVERRIDE;
+  virtual MimeVersion *DoClone() const override;
 
  public:
   MimeVersion();
@@ -36,7 +36,7 @@ class MimeVersion :
   void set_minor(unsigned minor) { minor_ = minor; }
   double minor() { return minor_; }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 
 private:
   unsigned major_;
