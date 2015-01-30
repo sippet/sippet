@@ -84,15 +84,15 @@ class UserAgentHandler
       return false;
     }
 
-    webrtc::PeerConnectionFactoryInterface::Options options;
-    options.disable_encryption = true;
-    options.disable_sctp_data_channels = true;
-    peer_connection_factory_->SetOptions(options);
+    //webrtc::PeerConnectionFactoryInterface::Options options;
+    //options.disable_encryption = true;
+    //options.disable_sctp_data_channels = true;
+    //peer_connection_factory_->SetOptions(options);
 
     webrtc::PeerConnectionInterface::IceServers servers;
-    webrtc::PeerConnectionInterface::IceServer server;
-    server.uri = "stun:stun.l.google.com:19302";
-    servers.push_back(server);
+    //webrtc::PeerConnectionInterface::IceServer server;
+    //server.uri = "stun:stun.l.google.com:19302";
+    //servers.push_back(server);
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(servers,
       NULL, NULL, NULL, this);
     if (!peer_connection_.get()) {
@@ -279,7 +279,7 @@ class UserAgentHandler
     desc->ToString(&offer_);
     //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=group:BUNDLE audio\n", "");
     //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=msid-semantic: WMS stream\n", "");
-    ReplaceFirstSubstringAfterOffset(&offer_, 0, "RTP/AVPF", "RTP/AVP");
+    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "RTP/AVPF", "RTP/AVP");
     //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=ice-options:google-ice\n", "");
     //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=mid:audio\n", "");
     //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=rtcp-mux\n", "");
