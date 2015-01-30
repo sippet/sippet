@@ -48,7 +48,7 @@ hooks = [
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     'name': 'gyp',
     'pattern': '.',
-    'action': ['python', 'src/build/gyp_sippet',
+    'action': ['python', 'src/sippet/build/gyp_sippet',
                Var('extra_gyp_flag')],
   },
 ]
