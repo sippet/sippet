@@ -37,7 +37,7 @@ class Request :
   Version version() const;
   void set_version(const Version &version);
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 
   // Responses can be generated from incoming requests by using this method.
   // Headers |From|, |CallId|, |CSeq|, |Via| and |To| are copied from the
@@ -60,7 +60,7 @@ class Request :
   int CreateCancel(scoped_refptr<Request> &cancel);
 
   // Get a the dialog identifier.
-  virtual std::string GetDialogId() const OVERRIDE;
+  virtual std::string GetDialogId() const override;
 
   // Create another request containing all headers of the current request,
   // incrementing the sequence number (CSeq) if available. Useful for creating

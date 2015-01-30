@@ -33,26 +33,26 @@ class ChromeStreamChannel : public Channel {
       const scoped_refptr<net::URLRequestContextGetter>& request_context_getter,
       const net::SSLConfig& ssl_config);
 
-  virtual int origin(EndPoint *origin) const OVERRIDE;
-  virtual const EndPoint& destination() const OVERRIDE;
+  virtual int origin(EndPoint *origin) const override;
+  virtual const EndPoint& destination() const override;
 
-  virtual bool is_secure() const OVERRIDE;
-  virtual bool is_connected() const OVERRIDE;
-  virtual bool is_stream() const OVERRIDE;
+  virtual bool is_secure() const override;
+  virtual bool is_connected() const override;
+  virtual bool is_stream() const override;
 
-  virtual void Connect() OVERRIDE;
-  virtual int ReconnectIgnoringLastError() OVERRIDE;
+  virtual void Connect() override;
+  virtual int ReconnectIgnoringLastError() override;
   virtual int ReconnectWithCertificate(
-      net::X509Certificate* client_cert) OVERRIDE;
+      net::X509Certificate* client_cert) override;
 
   virtual int Send(const scoped_refptr<Message> &message,
-                   const net::CompletionCallback& callback) OVERRIDE;
+                   const net::CompletionCallback& callback) override;
 
-  virtual void Close() OVERRIDE;
+  virtual void Close() override;
 
-  virtual void CloseWithError(int err) OVERRIDE;
+  virtual void CloseWithError(int err) override;
 
-  virtual void DetachDelegate() OVERRIDE;
+  virtual void DetachDelegate() override;
 
  private:
   friend class base::RefCountedThreadSafe<Channel>;

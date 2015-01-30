@@ -25,13 +25,13 @@ class ClientTransactionImpl : public ClientTransaction {
         TimeDeltaFactory *time_delta_factory);
 
   // ClientTransaction methods:
-  virtual const std::string& id() const OVERRIDE;
-  virtual scoped_refptr<Channel> channel() const OVERRIDE;
+  virtual const std::string& id() const override;
+  virtual scoped_refptr<Channel> channel() const override;
   virtual void Start(
-      const scoped_refptr<Request> &outgoing_request) OVERRIDE;
+      const scoped_refptr<Request> &outgoing_request) override;
   virtual void HandleIncomingResponse(
-      const scoped_refptr<Response> &response) OVERRIDE;
-  virtual void Close() OVERRIDE;
+      const scoped_refptr<Response> &response) override;
+  virtual void Close() override;
  private:
   friend class base::RefCountedThreadSafe<ClientTransactionImpl>;
   virtual ~ClientTransactionImpl();

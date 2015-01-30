@@ -24,12 +24,12 @@ class UserAgentHandler
   }
 
   virtual void OnChannelConnected(const sippet::EndPoint &destination,
-                                  int err) OVERRIDE {
+                                  int err) override {
     std::cout << "Channel " << destination.ToString()
               << " connected, status = " << err << "\n";
   }
 
-  virtual void OnChannelClosed(const sippet::EndPoint &destination) OVERRIDE {
+  virtual void OnChannelClosed(const sippet::EndPoint &destination) override {
     std::cout << "Channel " << destination.ToString()
               << " closed.\n";
 
@@ -38,7 +38,7 @@ class UserAgentHandler
 
   virtual void OnIncomingRequest(
       const scoped_refptr<sippet::Request> &incoming_request,
-      const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
+      const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Incoming request "
               << incoming_request->method().str()
               << "\n";
@@ -48,7 +48,7 @@ class UserAgentHandler
 
   virtual void OnIncomingResponse(
       const scoped_refptr<sippet::Response> &incoming_response,
-      const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
+      const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Incoming response "
               << incoming_response->response_code()
               << " "
@@ -62,7 +62,7 @@ class UserAgentHandler
 
   virtual void OnTimedOut(
       const scoped_refptr<sippet::Request> &request,
-      const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
+      const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Timed out sending request "
               << request->method().str()
               << "\n";
@@ -74,7 +74,7 @@ class UserAgentHandler
 
   virtual void OnTransportError(
       const scoped_refptr<sippet::Request> &request, int error,
-      const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
+      const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Transport error sending request "
               << request->method().str()
               << "\n";
@@ -99,7 +99,7 @@ void RequestSent(int error) {
 
 int main(int argc, char **argv) {
   ProgramMain program_main(argc, argv);
-  CommandLine* command_line = program_main.command_line();
+  base::CommandLine* command_line = program_main.command_line();
 
   if (command_line->GetSwitches().empty() ||
       command_line->HasSwitch("help")) {
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  string16 username;
+  base::string16 username;
   if (command_line->HasSwitch("username")) {
     base::CodepageToUTF16(command_line->GetSwitchValueASCII("username"),
         NULL, base::OnStringConversionError::FAIL, &username);
@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  string16 password;
+  base::string16 password;
   if (command_line->HasSwitch("password")) {
     base::CodepageToUTF16(command_line->GetSwitchValueASCII("password"),
         NULL, base::OnStringConversionError::FAIL, &password);
@@ -125,16 +125,16 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  string16 server(L"localhost");
+  base::string16 server(L"localhost");
   if (command_line->HasSwitch("server")) {
     base::CodepageToUTF16(command_line->GetSwitchValueASCII("server"),
       NULL, base::OnStringConversionError::FAIL, &server);
   }
 
-  string16 registrar_uri;
+  base::string16 registrar_uri;
   struct {
     const char *cmd_switch_;
-    const char16 *registrar_uri_;
+    const base::char16 *registrar_uri_;
   } args[] = {
     { "udp", L"sip:%ls" },
     { "tcp", L"sip:%ls;transport=tcp" },
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
     { "wss", L"sips:%ls;transport=ws" },
   };
 
-  for (int i = 0; i < ARRAYSIZE_UNSAFE(args); i++) {
+  for (int i = 0; i < arraysize(args); i++) {
     if (command_line->HasSwitch(args[i].cmd_switch_)) {
       registrar_uri = base::StringPrintf(args[i].registrar_uri_,
           server.c_str());
@@ -165,8 +165,8 @@ int main(int argc, char **argv) {
       new UserAgentHandler(program_main.network_layer()));
   program_main.AppendHandler(handler.get());
 
-  string16 from(L"sip:" + username + L"@" + server);
-  string16 to(L"sip:" + username + L"@" + server);
+  base::string16 from(L"sip:" + username + L"@" + server);
+  base::string16 to(L"sip:" + username + L"@" + server);
   scoped_refptr<sippet::Request> request =
       program_main.user_agent()->CreateRequest(
           sippet::Method::REGISTER,

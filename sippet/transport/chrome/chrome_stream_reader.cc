@@ -19,7 +19,7 @@ ChromeStreamReader::ChromeStreamReader(net::Socket* socket_to_wrap)
       read_complete_(base::Bind(&ChromeStreamReader::ReceiveDataComplete,
           base::Unretained(this))) {
   DCHECK(socket_to_wrap);
-  drainable_read_buf_ = new net::DrainableIOBuffer(read_buf_, read_buf_->size());
+  drainable_read_buf_ = new net::DrainableIOBuffer(read_buf_.get(), read_buf_->size());
   read_end_ = drainable_read_buf_->data();
 }
 

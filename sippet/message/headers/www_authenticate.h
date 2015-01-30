@@ -37,7 +37,7 @@ class WwwAuthenticate :
  private:
   DISALLOW_ASSIGN(WwwAuthenticate);
   WwwAuthenticate(const WwwAuthenticate &other);
-  virtual WwwAuthenticate *DoClone() const OVERRIDE;
+  virtual WwwAuthenticate *DoClone() const override;
 
  public:
   WwwAuthenticate();
@@ -49,7 +49,7 @@ class WwwAuthenticate :
     return scoped_ptr<WwwAuthenticate>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

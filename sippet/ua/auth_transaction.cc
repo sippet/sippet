@@ -106,7 +106,7 @@ int AuthTransaction::DoGetCredentials() {
   scoped_ptr<PasswordHandler> password_handler =
       password_handler_factory_->CreatePasswordHandler();
   return password_handler->GetCredentials(
-      auth_controller_->auth_info(),
+      auth_controller_->auth_info().get(),
       &username_,
       &password_,
       base::Bind(&AuthTransaction::OnIOComplete,

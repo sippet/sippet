@@ -74,7 +74,7 @@ class Contact :
  private:
   DISALLOW_ASSIGN(Contact);
   Contact(const Contact &other);
-  virtual Contact *DoClone() const OVERRIDE;
+  virtual Contact *DoClone() const override;
 
  public:
   enum _All { All };
@@ -97,7 +97,7 @@ class Contact :
     star_ = value;
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 
 private:
   bool star_;

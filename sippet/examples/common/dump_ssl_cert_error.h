@@ -15,7 +15,7 @@ class DumpSSLCertError : public sippet::SSLCertErrorHandler {
     virtual ~Factory();
 
     virtual scoped_ptr<sippet::SSLCertErrorHandler>
-         CreateSSLCertificateErrorHandler() OVERRIDE;
+         CreateSSLCertificateErrorHandler() override;
 
    private:
     bool ignore_non_fatal_;
@@ -29,13 +29,13 @@ class DumpSSLCertError : public sippet::SSLCertErrorHandler {
       const net::SSLInfo &ssl_info,
       bool fatal,
       bool *is_accepted,
-      const net::CompletionCallback& callback) OVERRIDE;
+      const net::CompletionCallback& callback) override;
 
   virtual int GetClientCert(
       const sippet::EndPoint &destination,
       const net::SSLInfo &ssl_info,
       scoped_refptr<net::X509Certificate> *client_cert,
-      const net::CompletionCallback& callback) OVERRIDE;
+      const net::CompletionCallback& callback) override;
 
  private:
   bool ignore_non_fatal_;

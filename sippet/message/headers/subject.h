@@ -18,7 +18,7 @@ class Subject :
  private:
   DISALLOW_ASSIGN(Subject);
   Subject(const Subject &other);
-  virtual Subject *DoClone() const OVERRIDE;
+  virtual Subject *DoClone() const override;
 
  public:
   Subject();
@@ -29,7 +29,7 @@ class Subject :
     return scoped_ptr<Subject>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

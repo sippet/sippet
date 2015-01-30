@@ -159,15 +159,15 @@ class UserAgent :
 
   // sippet::NetworkLayer::Delegate methods:
   virtual void OnChannelConnected(
-      const EndPoint &destination, int err) OVERRIDE;
-  virtual void OnChannelClosed(const EndPoint &destination) OVERRIDE;
+      const EndPoint &destination, int err) override;
+  virtual void OnChannelClosed(const EndPoint &destination) override;
   virtual void OnIncomingRequest(
-      const scoped_refptr<Request> &request) OVERRIDE;
+      const scoped_refptr<Request> &request) override;
   virtual void OnIncomingResponse(
-      const scoped_refptr<Response> &response) OVERRIDE;
-  virtual void OnTimedOut(const scoped_refptr<Request> &request) OVERRIDE;
+      const scoped_refptr<Response> &response) override;
+  virtual void OnTimedOut(const scoped_refptr<Request> &request) override;
   virtual void OnTransportError(
-      const scoped_refptr<Request> &request, int err) OVERRIDE;
+      const scoped_refptr<Request> &request, int err) override;
 
   void RunUserIncomingRequestCallback(
       const scoped_refptr<Request> &request,

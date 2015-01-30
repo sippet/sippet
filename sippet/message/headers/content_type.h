@@ -45,7 +45,7 @@ class ContentType :
  private:
   DISALLOW_ASSIGN(ContentType);
   ContentType(const ContentType &other);
-  virtual ContentType *DoClone() const OVERRIDE;
+  virtual ContentType *DoClone() const override;
  public:
   ContentType();
   ContentType(const std::string &type, const std::string &subtype);
@@ -56,7 +56,7 @@ class ContentType :
     return scoped_ptr<ContentType>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

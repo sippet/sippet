@@ -263,7 +263,7 @@ class Message
   void CloneTo(Message *message) {
     for (Message::iterator i = find_first<HeaderType>(),
          ie = end(); i != ie; i = find_next<HeaderType>(i)) {
-      message->push_back(i->Clone().PassAs<Header>());
+      message->push_back(i->Clone().Pass());
     }
   }
 

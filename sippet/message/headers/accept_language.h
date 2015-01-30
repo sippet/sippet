@@ -44,7 +44,7 @@ class AcceptLanguage :
  private:
   DISALLOW_ASSIGN(AcceptLanguage);
   AcceptLanguage(const AcceptLanguage &other);
-  virtual AcceptLanguage *DoClone() const OVERRIDE;
+  virtual AcceptLanguage *DoClone() const override;
 
  public:
   AcceptLanguage();
@@ -58,7 +58,7 @@ class AcceptLanguage :
     return !empty() && front().AllowsAll();
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

@@ -74,7 +74,7 @@ AuthHandlerRegistryFactory::~AuthHandlerRegistryFactory() {
 void AuthHandlerRegistryFactory::RegisterSchemeFactory(
     const std::string& scheme,
     AuthHandlerFactory* factory) {
-  std::string lower_scheme = StringToLowerASCII(scheme);
+  std::string lower_scheme = base::StringToLowerASCII(scheme);
   FactoryMap::iterator it = factory_map_.find(lower_scheme);
   if (it != factory_map_.end()) {
     delete it->second;
@@ -87,7 +87,7 @@ void AuthHandlerRegistryFactory::RegisterSchemeFactory(
 
 AuthHandlerFactory* AuthHandlerRegistryFactory::GetSchemeFactory(
     const std::string& scheme) const {
-  std::string lower_scheme = StringToLowerASCII(scheme);
+  std::string lower_scheme = base::StringToLowerASCII(scheme);
   FactoryMap::const_iterator it = factory_map_.find(lower_scheme);
   if (it == factory_map_.end()) {
     return NULL; // |scheme| is not registered.
@@ -123,7 +123,7 @@ int AuthHandlerRegistryFactory::CreateAuthHandler(
     handler->reset();
     return net::ERR_INVALID_RESPONSE;
   }
-  std::string lower_scheme = StringToLowerASCII(scheme);
+  std::string lower_scheme = base::StringToLowerASCII(scheme);
   FactoryMap::iterator it = factory_map_.find(lower_scheme);
   if (it == factory_map_.end()) {
     handler->reset();

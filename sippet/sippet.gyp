@@ -270,7 +270,7 @@
                      '<@(_outputs)',
                    ],
           'variables': {
-            'script': '<(DEPTH)/chrome/tools/build/version.py',
+            'script': 'build/sippet_version.py',
             'lastchange': '<(DEPTH)/build/util/LASTCHANGE',
             'template': 'build/sippet_version.h.in',
           },

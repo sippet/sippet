@@ -19,7 +19,7 @@ class ContentEncoding :
  private:
   DISALLOW_ASSIGN(ContentEncoding);
   ContentEncoding(const ContentEncoding &other);
-  virtual ContentEncoding *DoClone() const OVERRIDE;
+  virtual ContentEncoding *DoClone() const override;
 
  public:
   ContentEncoding();
@@ -30,7 +30,7 @@ class ContentEncoding :
     return scoped_ptr<ContentEncoding>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

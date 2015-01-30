@@ -97,9 +97,9 @@ scoped_refptr<Request> Dialog::CreateAck(
       CreateRequestInternal(Method::ACK, local_sequence));
   Via *via = invite->get<Via>();
   if (via) // Copy topmost Via from INVITE
-    ack->insert(ack->begin(), via->Clone().PassAs<Header>());
-  invite->CloneTo<WwwAuthenticate>(ack);
-  invite->CloneTo<ProxyAuthenticate>(ack);
+    ack->insert(ack->begin(), via->Clone().Pass());
+  invite->CloneTo<WwwAuthenticate>(ack.get());
+  invite->CloneTo<ProxyAuthenticate>(ack.get());
   return ack;
 }
 
@@ -186,20 +186,20 @@ scoped_refptr<Request> Dialog::CreateRequestInternal(
   }
   scoped_refptr<Request> request = new Request(method, request_uri);
   scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  request->push_back(max_forwards.PassAs<Header>());
+  request->push_back(max_forwards.Pass());
   scoped_ptr<From> from(new From(local_uri()));
   from->set_tag(local_tag());
-  request->push_back(from.PassAs<Header>());
+  request->push_back(from.Pass());
   scoped_ptr<To> to(new To(remote_uri()));
   if (!remote_tag().empty())
     to->set_tag(remote_tag());
-  request->push_back(to.PassAs<Header>());
+  request->push_back(to.Pass());
   scoped_ptr<CallId> callid(new CallId(call_id()));
-  request->push_back(callid.PassAs<Header>());
+  request->push_back(callid.Pass());
   scoped_ptr<Cseq> cseq(new Cseq(local_sequence, method));
-  request->push_back(cseq.PassAs<Header>());
+  request->push_back(cseq.Pass());
   if (route)
-    request->push_back(route.PassAs<Header>());
+    request->push_back(route.Pass());
   return request;
 }
 

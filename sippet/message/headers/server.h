@@ -18,7 +18,7 @@ class Server :
  private:
   DISALLOW_ASSIGN(Server);
   Server(const Server &other);
-  virtual Server *DoClone() const OVERRIDE;
+  virtual Server *DoClone() const override;
 
  public:
   Server();
@@ -29,7 +29,7 @@ class Server :
     return scoped_ptr<Server>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

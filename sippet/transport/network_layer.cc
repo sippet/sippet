@@ -150,7 +150,7 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
   if (!request->get<UserAgent>()) {
     scoped_ptr<UserAgent> user_agent(
         new UserAgent(network_settings_.software_name()));
-    request->push_back(user_agent.PassAs<Header>());
+    request->push_back(user_agent.Pass());
   }
 
   ChannelContext *channel_context = GetChannelContext(destination);
@@ -201,7 +201,7 @@ int NetworkLayer::SendResponse(const scoped_refptr<Response> &response,
   if (!response->get<Server>()) {
     scoped_ptr<Server> server(
         new Server(network_settings_.software_name()));
-    response->push_back(server.PassAs<Header>());
+    response->push_back(server.Pass());
   }
 
   scoped_refptr<ServerTransaction> server_transaction =
@@ -264,7 +264,7 @@ ClientTransaction *NetworkLayer::CreateClientTransaction(
   channel_context->transactions_.insert(client_transaction->id());
   RequestChannelInternal(channel_context);
   client_transaction->Start(request);
-  return client_transaction;
+  return client_transaction.get();
 }
 
 ServerTransaction *NetworkLayer::CreateServerTransaction(
@@ -281,7 +281,7 @@ ServerTransaction *NetworkLayer::CreateServerTransaction(
   channel_context->transactions_.insert(server_transaction->id());
   RequestChannelInternal(channel_context);
   server_transaction->Start(request);
-  return server_transaction;
+  return server_transaction.get();
 }
 
 void NetworkLayer::DestroyClientTransaction(
@@ -325,7 +325,7 @@ int NetworkLayer::CreateChannelContext(
   if (result != net::OK)
     return result;
 
-  *created_channel_context = new ChannelContext(channel, request, callback);
+  *created_channel_context = new ChannelContext(channel.get(), request, callback);
   channels_[destination] = *created_channel_context;
   return net::OK;
 }
@@ -361,7 +361,7 @@ void NetworkLayer::StampClientTopmostVia(
   net::HostPortPair hostport(origin.host(), origin.port());
   via->push_back(ViaParam(origin.protocol(), hostport));
   via->back().set_branch(CreateBranch());
-  request->push_front(via.PassAs<Header>());
+  request->push_front(via.Pass());
 }
 
 void NetworkLayer::StampServerTopmostVia(
@@ -375,7 +375,7 @@ void NetworkLayer::StampServerTopmostVia(
     scoped_ptr<Via> via(new Via);
     net::HostPortPair hostport(destination.host(), destination.port());
     via->push_back(ViaParam(destination.protocol(), hostport));
-    request->push_front(via.PassAs<Header>());
+    request->push_front(via.Pass());
   }
   else {
     Via *via = dyn_cast<Via>(topmost_via);
@@ -766,7 +766,7 @@ void NetworkLayer::OnSSLCertErrorTransactionComplete(
     if (ssl_cert_error_transaction->client_cert()) {
       rv = ReconnectWithCertificate(
           ssl_cert_error_transaction->destination(),
-          ssl_cert_error_transaction->client_cert());
+          ssl_cert_error_transaction->client_cert().get());
       if (net::ERR_IO_PENDING == rv)
         return;
     } else if (ssl_cert_error_transaction->is_accepted()) {

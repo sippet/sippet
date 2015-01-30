@@ -23,7 +23,6 @@ TEST(SipURI, Parser) {
     const char *parameters;
     const char *headers;
   } tests[] = {
-#if 0
     {"sip:sip.domain.com", true,
      "sip.domain.com", -1, 5060, false, "", false, "", "", "" },
     {"sip:user@sip.domain.com", true,
@@ -67,14 +66,13 @@ TEST(SipURI, Parser) {
     {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", false },
     {"tel:+358 (555) 1234567;pOstd=pP2;isUb=1411", false },
     {"*", false},
-#endif
     // Escaped characters
     {"sip:user;par=u%40example.net@example.com", true,
      "example.com", -1, 5060, true, "user;par=u@example.net", false,
      "", "", ""},
   };
 
-  for (int i = 0; i < ARRAYSIZE_UNSAFE(tests); ++i) {
+  for (int i = 0; i < arraysize(tests); ++i) {
     SipURI uri(tests[i].input);
     EXPECT_EQ(tests[i].valid, uri.is_valid());
     if (tests[i].valid) {
@@ -142,7 +140,7 @@ TEST(TelURI, Parser) {
     {"*", false},
   };
 
-  for (int i = 0; i < ARRAYSIZE_UNSAFE(tests); ++i) {
+  for (int i = 0; i < arraysize(tests); ++i) {
     TelURI uri(tests[i].input);
     EXPECT_EQ(tests[i].valid, uri.is_valid());
     if (tests[i].valid) {
@@ -170,7 +168,7 @@ TEST(TelURI, ToSipURI) {
     { "sip:foo.com:5555;param=abc?header=", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
   };
 
-  for (int i = 0; i < ARRAYSIZE_UNSAFE(tests); ++i) {
+  for (int i = 0; i < arraysize(tests); ++i) {
     SipURI origin(tests[i].origin);
     TelURI uri(tests[i].input);
     EXPECT_EQ(tests[i].output, uri.ToSipURI(origin).spec());

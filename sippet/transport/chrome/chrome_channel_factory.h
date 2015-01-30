@@ -26,7 +26,7 @@ class ChromeChannelFactory : public ChannelFactory {
   virtual int CreateChannel(
     const EndPoint &destination,
     Channel::Delegate *delegate,
-    scoped_refptr<Channel> *channel) OVERRIDE;
+    scoped_refptr<Channel> *channel) override;
 
  private:
   net::ClientSocketFactory* const client_socket_factory_;

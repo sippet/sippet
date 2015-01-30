@@ -38,41 +38,41 @@ bool ParseHostPortPair(const net::HostPortPair &destination,
 class ExpectNothing : public MockEvent::Expect {
  public:
   virtual void OnChannelConnected(
-                    const EndPoint &destination, int error) OVERRIDE {
+                    const EndPoint &destination, int error) override {
     EXPECT_TRUE(false) << "Not expected a channel connect at this time";
   }
   virtual void OnChannelClosed(
-                    const EndPoint& destination) OVERRIDE {
+                    const EndPoint& destination) override {
     EXPECT_TRUE(false) << "Not expected a channel close at this time";
   }
-  virtual void OnIncomingRequest(const scoped_refptr<Request> &) OVERRIDE {
+  virtual void OnIncomingRequest(const scoped_refptr<Request> &) override {
     EXPECT_TRUE(false) << "Not expected to get an incoming request this time";
   }
-  virtual void OnIncomingResponse(const scoped_refptr<Response> &) OVERRIDE {
+  virtual void OnIncomingResponse(const scoped_refptr<Response> &) override {
     EXPECT_TRUE(false) << "Not expected to get an incoming response this time";
   }
-  virtual void OnTimedOut(const scoped_refptr<Request> &request) OVERRIDE {
+  virtual void OnTimedOut(const scoped_refptr<Request> &request) override {
     EXPECT_TRUE(false) << "Not expected a timeout at this time";
   }
   virtual void OnTransportError(
-      const scoped_refptr<Request> &request, int error) OVERRIDE {
+      const scoped_refptr<Request> &request, int error) override {
     EXPECT_TRUE(false) << "Not expected a transport error at this time";
   }
-  virtual void Start(const scoped_refptr<Request>&) OVERRIDE {
+  virtual void Start(const scoped_refptr<Request>&) override {
     EXPECT_TRUE(false) << "Not expected transaction start at this time";
   }
-  virtual void Send(const scoped_refptr<Response>&) OVERRIDE {
+  virtual void Send(const scoped_refptr<Response>&) override {
     EXPECT_TRUE(false) << "Not expected to send a response at this time";
   }
   virtual void HandleIncomingResponse(
-                    const scoped_refptr<Response>&) OVERRIDE {
+                    const scoped_refptr<Response>&) override {
     EXPECT_TRUE(false) << "Not expected to handle incoming response";
   }
   virtual void HandleIncomingRequest(
-                    const scoped_refptr<Request>&) OVERRIDE {
+                    const scoped_refptr<Request>&) override {
     EXPECT_TRUE(false) << "Not expected to handle incoming request";
   }
-  virtual void Close() OVERRIDE {
+  virtual void Close() override {
     EXPECT_TRUE(false) << "Not expected to close transaction at this time";
   }
 };
@@ -85,7 +85,7 @@ class ChannelConnectedImpl : public ExpectNothing {
     : has_error_(true), destination_(destination), error_(error) {}
   virtual ~ChannelConnectedImpl() {}
   virtual void OnChannelConnected(
-      const EndPoint& destination, int error) OVERRIDE {
+      const EndPoint& destination, int error) override {
     EXPECT_EQ(destination_, destination);
     if (has_error_)
       EXPECT_EQ(error_, error);
@@ -101,7 +101,7 @@ class ChannelClosedImpl : public ExpectNothing {
   ChannelClosedImpl(const EndPoint &destination)
     : destination_(destination) {}
   virtual ~ChannelClosedImpl() {}
-  virtual void OnChannelClosed(const EndPoint& destination) OVERRIDE {
+  virtual void OnChannelClosed(const EndPoint& destination) override {
     EXPECT_EQ(destination_, destination);
   }
  private:
@@ -114,12 +114,12 @@ class IncomingMessageImpl : public ExpectNothing {
     : regular_expressions_(regular_expressions) {}
   virtual ~IncomingMessageImpl() {}
   virtual void OnIncomingRequest(
-      const scoped_refptr<Request>& request) OVERRIDE {
+      const scoped_refptr<Request>& request) override {
     DCHECK(request);
     MatchMessage(request, regular_expressions_);
   }
   virtual void OnIncomingResponse(
-      const scoped_refptr<Response>& response) OVERRIDE {
+      const scoped_refptr<Response>& response) override {
     DCHECK(response);
     MatchMessage(response, regular_expressions_);
   }
@@ -132,7 +132,7 @@ class ExpectStartImpl : public ExpectNothing {
   ExpectStartImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
   virtual ~ExpectStartImpl() {}
-  virtual void Start(const scoped_refptr<Request>& request) OVERRIDE {
+  virtual void Start(const scoped_refptr<Request>& request) override {
     DCHECK(request);
     MatchMessage(request, regular_expressions_);
   }
@@ -145,7 +145,7 @@ class ExpectSendImpl : public ExpectNothing {
   ExpectSendImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
   virtual ~ExpectSendImpl() {}
-  virtual void Send(const scoped_refptr<Response>& response) OVERRIDE {
+  virtual void Send(const scoped_refptr<Response>& response) override {
     DCHECK(response);
     MatchMessage(response, regular_expressions_);
   }
@@ -159,7 +159,7 @@ class ExpectIncomingResponseImpl : public ExpectNothing {
     : regular_expressions_(regular_expressions) {}
   virtual ~ExpectIncomingResponseImpl() {}
   virtual void HandleIncomingResponse(
-                    const scoped_refptr<Response>& response) OVERRIDE {
+                    const scoped_refptr<Response>& response) override {
     DCHECK(response);
     MatchMessage(response, regular_expressions_);
   }
@@ -173,7 +173,7 @@ class ExpectIncomingRequestImpl : public ExpectNothing {
     : regular_expressions_(regular_expressions) {}
   virtual ~ExpectIncomingRequestImpl() {}
   virtual void HandleIncomingRequest(
-                    const scoped_refptr<Request>& request) OVERRIDE {
+                    const scoped_refptr<Request>& request) override {
     DCHECK(request);
     MatchMessage(request, regular_expressions_);
   }
@@ -185,7 +185,7 @@ class ExpectCloseImpl : public ExpectNothing {
  public:
   ExpectCloseImpl() {}
   virtual ~ExpectCloseImpl() {}
-  virtual void Close() OVERRIDE {
+  virtual void Close() override {
     DVLOG(1) << "Transaction closed successfully";
   }
 };
@@ -660,7 +660,7 @@ int MockChannel::Send(const scoped_refptr<Message>& message,
   std::string buffer(message->ToString());
   scoped_refptr<net::IOBuffer> io_buffer(new net::IOBuffer(buffer.size()));
   memcpy(io_buffer->data(), buffer.data(), buffer.size());
-  int result = channel_adapter_->Write(io_buffer, buffer.size(), callback);
+  int result = channel_adapter_->Write(io_buffer.get(), buffer.size(), callback);
   return (result > 0) ? net::OK : result;
 }
 
@@ -679,7 +679,7 @@ void MockChannel::DetachDelegate() {
 void MockChannel::Read() {
   int result;
   for (;;) {
-    result = channel_adapter_->Read(io_buffer_, io_buffer_->size(),
+    result = channel_adapter_->Read(io_buffer_.get(), io_buffer_->size(),
       base::Bind(&MockChannel::OnRead, weak_factory_.GetWeakPtr()));
     if (result < net::OK)
       break;
@@ -828,13 +828,13 @@ MockTransactionFactory::~MockTransactionFactory() {
 MockClientTransaction*
       MockTransactionFactory::client_transaction(size_t index) const {
   DCHECK(index < client_transactions_.size());
-  return client_transactions_[index];
+  return client_transactions_[index].get();
 }
 
 MockServerTransaction*
       MockTransactionFactory::server_transaction(size_t index) const {
   DCHECK(index < server_transactions_.size());
-  return server_transactions_[index];
+  return server_transactions_[index].get();
 }
 
 ClientTransaction *MockTransactionFactory::CreateClientTransaction(

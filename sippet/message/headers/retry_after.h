@@ -19,7 +19,7 @@ class RetryAfter :
  private:
   DISALLOW_ASSIGN(RetryAfter);
   RetryAfter(const RetryAfter &other);
-  virtual RetryAfter *DoClone() const OVERRIDE;
+  virtual RetryAfter *DoClone() const override;
 
  public:
   RetryAfter();
@@ -30,7 +30,7 @@ class RetryAfter :
     return scoped_ptr<RetryAfter>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

@@ -33,8 +33,8 @@ class PasswordHandler {
   // has to display a UI dialog to the user, this function shall forward the
   // request to the UI thread and return |ERR_IO_PENDING|.
   virtual int GetCredentials(const net::AuthChallengeInfo* auth_info,
-                             string16 *username,
-                             string16 *password,
+                             base::string16 *username,
+                             base::string16 *password,
                              const net::CompletionCallback& callback) = 0;
 };
 

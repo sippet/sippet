@@ -13,10 +13,10 @@ namespace uri {
 // Normally, all canonicalization output is in narrow characters. We support
 // the templates so it can also be used internally if a wide buffer is
 // required.
-using url_canon::CanonOutput;
-using url_canon::CanonOutputW;
-using url_canon::RawCanonOutput;
-using url_canon::RawCanonOutputW;
+using url::CanonOutput;
+using url::CanonOutputW;
+using url::RawCanonOutput;
+using url::RawCanonOutputW;
 
 // Character set converter ----------------------------------------------------
 //
@@ -25,7 +25,7 @@ using url_canon::RawCanonOutputW;
 // conversion libraries.
 //
 // Embedders will want to see the unit test for the ICU version.
-using url_canon::CharsetConverter;
+using url::CharsetConverter;
 
 // Whitespace -----------------------------------------------------------------
 
@@ -48,13 +48,13 @@ inline
 const char* RemoveURIWhitespace(const char* input, int input_len,
                                 CanonOutput* buffer,
                                 int* output_len) {
-  return url_canon::RemoveURLWhitespace(input, input_len, buffer, output_len);
+  return url::RemoveURLWhitespace(input, input_len, buffer, output_len);
 }
 inline
 const base::char16* RemoveURLWhitespace(const base::char16* input, int input_len,
                                         CanonOutputW* buffer,
                                         int* output_len) {
-  return url_canon::RemoveURLWhitespace(input, input_len, buffer, output_len);
+  return url::RemoveURLWhitespace(input, input_len, buffer, output_len);
 }
 
 // IDN ------------------------------------------------------------------------
@@ -70,7 +70,7 @@ const base::char16* RemoveURLWhitespace(const base::char16* input, int input_len
 // On error, returns false. The output in this case is undefined.
 inline
 bool IDNToASCII(const base::char16* src, int src_len, CanonOutputW* output) {
-  return url_canon::IDNToASCII(src, src_len, output);
+  return url::IDNToASCII(src, src_len, output);
 }
 
 // Piece-by-piece canonicalizers ----------------------------------------------
@@ -102,14 +102,14 @@ bool CanonicalizeScheme(const char* spec,
                         const uri::Component& scheme,
                         CanonOutput* output,
                         uri::Component* out_scheme) {
-  return url_canon::CanonicalizeScheme(spec, scheme, output, out_scheme);
+  return url::CanonicalizeScheme(spec, scheme, output, out_scheme);
 }
 inline
 bool CanonicalizeScheme(const base::char16* spec,
                         const uri::Component& scheme,
                         CanonOutput* output,
                         uri::Component* out_scheme) {
-  return url_canon::CanonicalizeScheme(spec, scheme, output, out_scheme);
+  return url::CanonicalizeScheme(spec, scheme, output, out_scheme);
 }
 
 // User info: username/password. If present, this will add the delimiters so
@@ -142,7 +142,7 @@ bool CanonicalizeUserInfo(const base::char16* username_source,
 
 // This structure holds detailed state exported from the IP/Host canonicalizers.
 // Additional fields may be added as callers require them.
-using url_canon::CanonHostInfo;
+using url::CanonHostInfo;
 
 // Host.
 //
@@ -153,14 +153,14 @@ bool CanonicalizeHost(const char* spec,
                       const uri::Component& host,
                       CanonOutput* output,
                       uri::Component* out_host) {
-  return url_canon::CanonicalizeHost(spec, host, output, out_host);
+  return url::CanonicalizeHost(spec, host, output, out_host);
 }
 inline
 bool CanonicalizeHost(const base::char16* spec,
                       const uri::Component& host,
                       CanonOutput* output,
                       uri::Component* out_host) {
-  return url_canon::CanonicalizeHost(spec, host, output, out_host);
+  return url::CanonicalizeHost(spec, host, output, out_host);
 }
 
 // Extended version of CanonicalizeHost, which returns additional information.
@@ -172,14 +172,14 @@ void CanonicalizeHostVerbose(const char* spec,
                              const uri::Component& host,
                              CanonOutput* output,
                              CanonHostInfo* host_info) {
-  return url_canon::CanonicalizeHostVerbose(spec, host, output, host_info);
+  return url::CanonicalizeHostVerbose(spec, host, output, host_info);
 }
 inline
 void CanonicalizeHostVerbose(const base::char16* spec,
                              const uri::Component& host,
                              CanonOutput* output,
                              CanonHostInfo* host_info) {
-  return url_canon::CanonicalizeHostVerbose(spec, host, output, host_info);
+  return url::CanonicalizeHostVerbose(spec, host, output, host_info);
 }
 
 // IP addresses.
@@ -197,14 +197,14 @@ void CanonicalizeIPAddress(const char* spec,
                            const uri::Component& host,
                            CanonOutput* output,
                            CanonHostInfo* host_info) {
-  return url_canon::CanonicalizeIPAddress(spec, host, output, host_info);
+  return url::CanonicalizeIPAddress(spec, host, output, host_info);
 }
 inline
 void CanonicalizeIPAddress(const base::char16* spec,
                            const uri::Component& host,
                            CanonOutput* output,
                            CanonHostInfo* host_info) {
-  return url_canon::CanonicalizeIPAddress(spec, host, output, host_info);
+  return url::CanonicalizeIPAddress(spec, host, output, host_info);
 }
 
 // Port: this function will add the colon for the port if a port is present.
@@ -218,8 +218,8 @@ bool CanonicalizePort(const char* spec,
                       int default_port_for_scheme,
                       CanonOutput* output,
                       uri::Component* out_port) {
-  return url_canon::CanonicalizePort(spec, port, default_port_for_scheme,
-                                     output, out_port);
+  return url::CanonicalizePort(spec, port, default_port_for_scheme,
+                               output, out_port);
 }
 inline
 bool CanonicalizePort(const base::char16* spec,
@@ -227,8 +227,8 @@ bool CanonicalizePort(const base::char16* spec,
                       int default_port_for_scheme,
                       CanonOutput* output,
                       uri::Component* out_port) {
-  return url_canon::CanonicalizePort(spec, port, default_port_for_scheme,
-                                     output, out_port);
+  return url::CanonicalizePort(spec, port, default_port_for_scheme,
+                               output, out_port);
 }
 
 // Returns the default port for the given canonical scheme, or PORT_UNSPECIFIED

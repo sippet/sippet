@@ -43,7 +43,7 @@ class CallInfo :
  private:
   DISALLOW_ASSIGN(CallInfo);
   CallInfo(const CallInfo &other);
-  virtual CallInfo *DoClone() const OVERRIDE;
+  virtual CallInfo *DoClone() const override;
 
  public:
   CallInfo();
@@ -53,7 +53,7 @@ class CallInfo :
     return scoped_ptr<CallInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

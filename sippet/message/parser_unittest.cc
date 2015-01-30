@@ -195,7 +195,7 @@ TEST(SimpleMessages, TortureMessage2) {
     std::string(message_string, arraysize(message_string)-1));
   ASSERT_TRUE(isa<Request>(message));
 
-  Request *request = dyn_cast<Request>(message);
+  Request *request = dyn_cast<Request>(message).get();
   EXPECT_TRUE(LowerCaseEqualsASCII(request->method().str(),
     "!interesting-method0123456789_*+`.%indeed'~"));
   EXPECT_EQ(GURL("sip:1_unusual.URI~(to-be!sure)"
@@ -265,7 +265,7 @@ TEST(SimpleMessages, EscapedUris) {
   scoped_refptr<Message> message = Message::Parse(message_string);
   ASSERT_TRUE(isa<Request>(message));
 
-  Request *request = dyn_cast<Request>(message);
+  Request *request = dyn_cast<Request>(message).get();
   ExpectSipURIHaving(request->request_uri(),
       "sip:sips%3Auser%40example.com@example.net",
       "sips:user@example.com",
@@ -312,7 +312,7 @@ TEST(Headers, Contact) {
     { "Contact: < sip:bob@192.0.2.4 >", "sip:bob@192.0.2.4", "" },
   };
 
-  for (size_t i = 0; i < ARRAYSIZE_UNSAFE(cases); ++i) {
+  for (size_t i = 0; i < arraysize(cases); ++i) {
     scoped_ptr<Header> header(Header::Parse(cases[i].input));
     ASSERT_TRUE(isa<Contact>(header));
     Contact *contact = dyn_cast<Contact>(header);
@@ -344,7 +344,7 @@ TEST(Headers, Via) {
       Protocol::TLS, "::1", 5061, "[::1]:5060", "z9hG4bKnashds7" },
   };
 
-  for (size_t i = 0; i < ARRAYSIZE_UNSAFE(cases); ++i) {
+  for (size_t i = 0; i < arraysize(cases); ++i) {
     scoped_ptr<Header> header(Header::Parse(cases[i].input));
     ASSERT_TRUE(isa<Via>(header));
     Via *via = dyn_cast<Via>(header);

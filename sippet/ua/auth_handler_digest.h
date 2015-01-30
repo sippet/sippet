@@ -44,7 +44,7 @@ class AuthHandlerDigest : public AuthHandler {
   class DynamicNonceGenerator : public NonceGenerator {
    public:
     DynamicNonceGenerator();
-    virtual std::string GenerateNonce() const OVERRIDE;
+    virtual std::string GenerateNonce() const override;
    private:
     DISALLOW_COPY_AND_ASSIGN(DynamicNonceGenerator);
   };
@@ -55,7 +55,7 @@ class AuthHandlerDigest : public AuthHandler {
    public:
     explicit FixedNonceGenerator(const std::string& nonce);
 
-    virtual std::string GenerateNonce() const OVERRIDE;
+    virtual std::string GenerateNonce() const override;
 
    private:
     const std::string nonce_;
@@ -77,22 +77,22 @@ class AuthHandlerDigest : public AuthHandler {
         CreateReason create_reason,
         int digest_nonce_count,
         const net::BoundNetLog& net_log,
-        scoped_ptr<AuthHandler>* handler) OVERRIDE;
+        scoped_ptr<AuthHandler>* handler) override;
 
    private:
     scoped_ptr<const NonceGenerator> nonce_generator_;
   };
 
   virtual Auth::AuthorizationResult HandleAnotherChallenge(
-      const Challenge& challenge) OVERRIDE;
+      const Challenge& challenge) override;
 
  protected:
-  virtual bool Init(const Challenge& challenge) OVERRIDE;
+  virtual bool Init(const Challenge& challenge) override;
 
   virtual int GenerateAuthImpl(
       const net::AuthCredentials* credentials,
       const scoped_refptr<Request> &request,
-      const net::CompletionCallback& callback) OVERRIDE;
+      const net::CompletionCallback& callback) override;
 
  private:
   // Possible values for the "algorithm" property.

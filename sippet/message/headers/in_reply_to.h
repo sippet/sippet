@@ -19,7 +19,7 @@ class InReplyTo :
  private:
   DISALLOW_ASSIGN(InReplyTo);
   InReplyTo(const InReplyTo &other);
-  virtual InReplyTo *DoClone() const OVERRIDE;
+  virtual InReplyTo *DoClone() const override;
 
  public:
   InReplyTo();
@@ -29,7 +29,7 @@ class InReplyTo :
     return scoped_ptr<InReplyTo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const OVERRIDE;
+  virtual void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

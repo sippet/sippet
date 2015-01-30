@@ -30,7 +30,7 @@ inline
 std::string UnescapedComponentString(const std::string &spec,
                                      const uri::Component& comp) {
   std::string unescaped;
-  url_canon::StdStringCanonOutput output(&unescaped);
+  url::StdStringCanonOutput output(&unescaped);
   uri::DecodeURIEscapeSequences(spec.data() + comp.begin, comp.len, &output);
   output.Complete();
   return unescaped;

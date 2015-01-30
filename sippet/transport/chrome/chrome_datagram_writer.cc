@@ -72,7 +72,7 @@ void ChromeDatagramWriter::DidConsume() {
     if (pending_messages_.empty())
       break; // done
     PendingFrame *pending = pending_messages_.front();
-    int result = Drain(pending->buf_, pending->buf_len_);
+    int result = Drain(pending->buf_.get(), pending->buf_len_);
     if (result < 0) {
       if (result != net::ERR_IO_PENDING)
         CloseWithError(result);

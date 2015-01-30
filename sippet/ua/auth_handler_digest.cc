@@ -305,9 +305,9 @@ std::string AuthHandlerDigest::AssembleResponseDigest(
   std::string nc = base::StringPrintf("%08x", nonce_count);
 
   // ha1 = MD5(A1)
-  std::string ha1 = base::MD5String(UTF16ToUTF8(credentials.username()) + ":" +
-                                    original_realm_ + ":" +
-                                    UTF16ToUTF8(credentials.password()));
+  std::string ha1 = base::MD5String(base::UTF16ToUTF8(credentials.username())
+      + ":" + original_realm_ + ":" +
+      base::UTF16ToUTF8(credentials.password()));
   if (algorithm_ == AuthHandlerDigest::ALGORITHM_MD5_SESS)
     ha1 = base::MD5String(ha1 + ":" + nonce_ + ":" + cnonce);
 
@@ -346,7 +346,7 @@ void AuthHandlerDigest::AssembleCredentials(
     cred = authorization;
   }
   cred->set_scheme(Credentials::Digest);
-  cred->set_username(UTF16ToUTF8(credentials.username()));
+  cred->set_username(base::UTF16ToUTF8(credentials.username()));
   cred->set_realm(original_realm_);
   cred->set_nonce(nonce_);
   cred->set_uri(request_uri);

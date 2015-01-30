@@ -275,7 +275,7 @@ class MockHandler : public AuthHandlerMock {
   }
 
  protected:
-  virtual bool Init(const Challenge& challenge) OVERRIDE {
+  virtual bool Init(const Challenge& challenge) override {
     AuthHandlerMock::Init(challenge);
     set_allows_default_credentials(true);
     set_allows_explicit_credentials(false);
@@ -364,7 +364,7 @@ TEST_F(AuthControllerTest, NoExplicitCredentialsAllowed) {
   ASSERT_EQ(net::OK,
             controller().HandleAuthChallenge(response, dummy_log));
   ASSERT_TRUE(controller().HaveAuthHandler());
-  controller().ResetAuth(net::AuthCredentials(ASCIIToUTF16("Hello"),
+  controller().ResetAuth(net::AuthCredentials(base::ASCIIToUTF16("Hello"),
                          base::string16()));
   EXPECT_TRUE(controller().HaveAuth());
   EXPECT_TRUE(controller().IsAuthSchemeDisabled(
