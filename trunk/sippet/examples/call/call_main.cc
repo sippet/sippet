@@ -18,10 +18,6 @@
 #include "base/mac/scoped_nsautorelease_pool.h"
 #endif  // defined(OS_MACOSX)
 
-#if defined(OS_WIN)
-#include "base/win/scoped_com_initializer.h"
-#endif  // defined(OS_WIN)
-
 static void PrintUsage() {
   std::cout << "sippet_examples_login"
             << " --username=user"
@@ -158,7 +154,7 @@ class UserAgentHandler
   virtual void OnIncomingRequest(
       const scoped_refptr<sippet::Request> &incoming_request,
       const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
-    std::cout << "Incoming request "
+    std::cout << "-- Incoming request "
               << incoming_request->method().str()
               << "\n";
     if (dialog)
@@ -168,11 +164,14 @@ class UserAgentHandler
   virtual void OnIncomingResponse(
       const scoped_refptr<sippet::Response> &incoming_response,
       const scoped_refptr<sippet::Dialog> &dialog) OVERRIDE {
-    std::cout << "Incoming response "
+    std::cout << "-- Incoming response "
               << incoming_response->response_code()
               << " "
-              << incoming_response->reason_phrase()
-              << "\n";
+              << incoming_response->reason_phrase();
+    if (incoming_response->refer_to())
+      std::cout << " for " << incoming_response->refer_to()->method().str();
+    std::cout << "\n";
+
     if (dialog) {
       std::cout << "-- Using dialog " << dialog->id() << "\n";
       sippet::Message::iterator i = incoming_response->find_first<sippet::Cseq>();
@@ -557,11 +556,6 @@ int main(int argc, char **argv) {
 #if defined(OS_MACOSX)
   // Needed so we don't leak objects when threads are created.
   base::mac::ScopedNSAutoreleasePool pool;
-#endif
-
-#if defined(OS_WIN)
-  base::win::ScopedCOMInitializer com_initializer(
-      base::win::ScopedCOMInitializer::kMTA);
 #endif
 
   talk_base::InitializeSSL();
