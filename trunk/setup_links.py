@@ -32,11 +32,15 @@ import textwrap
 
 
 DIRECTORIES = [
+  'build',
   'buildtools',
   'google_apis',  # Needed by build/common.gypi.
   'base',
   'crypto',
+  'chrome',
   'dbus',
+  'gin',
+  'sql',
   'net',
   'sdch',
   'v8',
@@ -54,6 +58,7 @@ DIRECTORIES = [
   'third_party/jsoncpp',
   'third_party/libjingle',
   'third_party/libjpeg',
+  'third_party/libjpeg_turbo',
   'third_party/libsrtp',
   'third_party/libudev',
   'third_party/libvpx',
@@ -71,11 +76,14 @@ DIRECTORIES = [
   'third_party/syzygy',
   'third_party/tcmalloc',
   'third_party/usrsctp',
+  'third_party/webrtc',
   'third_party/yasm',
   'third_party/zlib',
   'tools/clang',
   'tools/generate_library_loader',
   'tools/gn',
+  'tools/grit',
+  'tools/gritsettings',
   'tools/gyp',
   'tools/memory',
   'tools/protoc_wrapper',

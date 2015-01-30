@@ -20,7 +20,7 @@
     ],
     'dependencies': [
       '<(DEPTH)/third_party/speex/speex.gyp:libspeex',
-      '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
+      '<(DEPTH)/third_party/boringssl/boringssl.gyp:boringssl',
     ],
     'link_settings': {
       'msvs_settings': {
@@ -41,7 +41,7 @@
     },
     'export_dependent_settings': [
       '<(DEPTH)/third_party/speex/speex.gyp:libspeex',
-      '<(DEPTH)/third_party/openssl/openssl.gyp:openssl',
+      '<(DEPTH)/third_party/boringssl/boringssl.gyp:boringssl',
     ],
     'conditions': [
       ['OS=="win"', {
