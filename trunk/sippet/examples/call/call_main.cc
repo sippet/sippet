@@ -12,8 +12,13 @@
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/media/devices/devicemanager.h"
+#include "webrtc/base/ssladapter.h"
 
-#if defined(OS_MACOSX)
+#include "jingle/glue/thread_wrapper.h"
+
+#include "re2/re2.h"
+
+#if defined(OSX)
 #include "base/mac/scoped_nsautorelease_pool.h"
 #endif  // defined(OS_MACOSX)
 
@@ -77,6 +82,10 @@ class UserAgentHandler
     ASSERT(peer_connection_factory_.get() == NULL);
     ASSERT(peer_connection_.get() == NULL);
 
+    // To allow sending to the signaling/worker threads.
+    jingle_glue::JingleThreadWrapper::EnsureForCurrentMessageLoop();
+    jingle_glue::JingleThreadWrapper::current()->set_send_allowed(true);
+
     peer_connection_factory_ = webrtc::CreatePeerConnectionFactory();
     if (!peer_connection_factory_.get()) {
       std::cout << "Error: Failed to initialize PeerConnectionFactory\n";
@@ -84,10 +93,9 @@ class UserAgentHandler
       return false;
     }
 
-    //webrtc::PeerConnectionFactoryInterface::Options options;
-    //options.disable_encryption = true;
-    //options.disable_sctp_data_channels = true;
-    //peer_connection_factory_->SetOptions(options);
+    webrtc::PeerConnectionFactoryInterface::Options options;
+    options.disable_encryption = true;
+    peer_connection_factory_->SetOptions(options);
 
     webrtc::PeerConnectionInterface::IceServers servers;
     //webrtc::PeerConnectionInterface::IceServer server;
@@ -277,12 +285,23 @@ class UserAgentHandler
   //
   virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) {
     desc->ToString(&offer_);
-    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=group:BUNDLE audio\n", "");
-    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=msid-semantic: WMS stream\n", "");
-    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "RTP/AVPF", "RTP/AVP");
-    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=ice-options:google-ice\n", "");
-    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=mid:audio\n", "");
-    //ReplaceFirstSubstringAfterOffset(&offer_, 0, "a=rtcp-mux\n", "");
+
+    static std::pair<const char*, const char*> replacements[] {
+      std::make_pair("a=group:[^\r\n]*\r?\n", ""),
+      std::make_pair("a=msid-[^\r\n]*\r?\n", ""),
+      std::make_pair("RTP/AVPF", "RTP/AVP"),
+      std::make_pair("a=ice-[^\r\n]*\r?\n", ""),
+      std::make_pair("a=mid:[^\r\n]*\r?\n", ""),
+      std::make_pair("a=rtcp-mux[^\r\n]*\r?\n", ""),
+      std::make_pair("a=extmap:[^\r\n]*\r?\n", ""),
+      std::make_pair("a=ssrc:[^\r\n]*\r?\n", ""),
+    };
+
+    for (int i = 0; i < arraysize(replacements); ++i) {
+      std::pair<const char*, const char*> &elem = replacements[i];
+      RE2::GlobalReplace(&offer_, elem.first, elem.second);
+    }
+
     peer_connection_->SetLocalDescription(
       DummySetSessionDescriptionObserver::Create(), desc);
     message_loop_->PostTask(
@@ -554,10 +573,11 @@ class UserAgentHandler
 };
 
 int main(int argc, char **argv) {
-#if defined(OS_MACOSX)
+#if defined(OSX)
   // Needed so we don't leak objects when threads are created.
   base::mac::ScopedNSAutoreleasePool pool;
 #endif
+  rtc::InitializeSSL();
 
   ProgramMain program_main(argc, argv);
   base::CommandLine* command_line = program_main.command_line();

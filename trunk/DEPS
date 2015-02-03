@@ -49,6 +49,7 @@ hooks = [
     'name': 'gyp',
     'pattern': '.',
     'action': ['python', 'src/sippet/build/gyp_sippet',
+               '-Dinclude_internal_audio_device=1',
                Var('extra_gyp_flag')],
   },
 ]

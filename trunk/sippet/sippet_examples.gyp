@@ -67,8 +67,11 @@
       'type': 'executable',
       'dependencies': [
         'sippet_examples_program_main',
-        '../third_party/webrtc/webrtc.gyp:*',
-        '../third_party/libjingle/libjingle.gyp:*',
+        '<(DEPTH)/jingle/jingle.gyp:*',
+        '<(DEPTH)/third_party/webrtc/webrtc.gyp:*',
+        '<(DEPTH)/third_party/libjingle/libjingle.gyp:*',
+        '<(DEPTH)/third_party/webrtc/base/base.gyp:rtc_base',
+        '<(DEPTH)/third_party/re2/re2.gyp:*',
       ],
       'sources': [
         'examples/call/call_main.cc',
