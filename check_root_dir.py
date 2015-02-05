@@ -16,7 +16,7 @@ SOLUTION_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  os.pardir)
 MESSAGE = """\
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-                      A C T I O N     R E Q I R E D
+                     A C T I O N     R E Q U I R E D
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 It looks like you have a legacy checkout where the solution's top-level
