@@ -352,7 +352,6 @@ class WebRtcSession : public cricket::BaseSession,
   bool dtls_enabled_;
   // Flag enabled when ICE should work in retrocompatibility mode
   bool compatibility_mode_;
-  bool is_in_compatibility_mode_;
   // Specifies which kind of data channel is allowed. This is controlled
   // by the chrome command-line flag and constraints:
   // 1. If chrome command-line switch 'enable-sctp-data-channels' is enabled,

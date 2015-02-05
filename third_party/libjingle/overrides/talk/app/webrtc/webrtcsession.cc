@@ -489,8 +489,7 @@ WebRtcSession::WebRtcSession(cricket::ChannelManager* channel_manager,
       data_channel_type_(cricket::DCT_NONE),
       ice_restart_latch_(new IceRestartAnswerLatch),
       metrics_observer_(NULL),
-      compatibility_mode_(true),
-      is_in_compatibility_mode_(false) {
+      compatibility_mode_(true) {
 }
 
 WebRtcSession::~WebRtcSession() {

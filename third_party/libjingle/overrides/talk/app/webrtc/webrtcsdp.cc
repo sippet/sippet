@@ -269,7 +269,7 @@ static bool ParseSessionDescription(const std::string& message, size_t* pos,
                                     TransportDescription* session_td,
                                     RtpHeaderExtensions* session_extmaps,
                                     cricket::SessionDescription* desc,
-                                    rtc::SocketAddress *global_address,
+                                    rtc::SocketAddress *session_address,
                                     SdpParseError* error);
 static bool ParseGroupAttribute(const std::string& line,
                                 cricket::SessionDescription* desc,
@@ -284,7 +284,7 @@ static bool ParseMediaDescription(
     bool supports_msid,
     size_t* pos, cricket::SessionDescription* desc,
     std::vector<JsepIceCandidate*>* candidates,
-    rtc::SocketAddress *global_address,
+    rtc::SocketAddress *session_address,
     SdpParseError* error);
 static bool ParseContent(const std::string& message,
                          const MediaType media_type,
@@ -897,12 +897,12 @@ bool SdpDeserialize(const std::string& message,
   std::vector<JsepIceCandidate*> candidates;
   size_t current_pos = 0;
   bool supports_msid = false;
-  rtc::SocketAddress global_address;
+  rtc::SocketAddress session_address;
 
   // Session Description
   if (!ParseSessionDescription(message, &current_pos, &session_id,
                                &session_version, &supports_msid, &session_td,
-                               &session_extmaps, desc, &global_address, error)) {
+                               &session_extmaps, desc, &session_address, error)) {
     delete desc;
     return false;
   }
@@ -910,7 +910,7 @@ bool SdpDeserialize(const std::string& message,
   // Media Description
   if (!ParseMediaDescription(message, session_td, session_extmaps,
                              supports_msid, &current_pos, desc, &candidates,
-                             &global_address, error)) {
+                             &session_address, error)) {
     delete desc;
     for (std::vector<JsepIceCandidate*>::const_iterator
          it = candidates.begin(); it != candidates.end(); ++it) {
@@ -1808,7 +1808,7 @@ bool ParseSessionDescription(const std::string& message, size_t* pos,
                              TransportDescription* session_td,
                              RtpHeaderExtensions* session_extmaps,
                              cricket::SessionDescription* desc,
-                             rtc::SocketAddress *global_address,
+                             rtc::SocketAddress *session_address,
                              SdpParseError* error) {
   std::string line;
 
@@ -1864,7 +1864,7 @@ bool ParseSessionDescription(const std::string& message, size_t* pos,
   // c=* (connection information -- not required if included in
   //      all media)
   if (GetLineWithType(message, pos, &line, kLineTypeConnection)) {
-    if (!ParseConnectionAttribute(line, global_address, error)) {
+    if (!ParseConnectionAttribute(line, session_address, error)) {
       return false;
     }
   }
@@ -2192,7 +2192,7 @@ bool ParseMediaDescription(const std::string& message,
                            size_t* pos,
                            cricket::SessionDescription* desc,
                            std::vector<JsepIceCandidate*>* candidates,
-                           rtc::SocketAddress *global_address,
+                           rtc::SocketAddress *session_address,
                            SdpParseError* error) {
   ASSERT(desc != NULL);
   std::string line;
@@ -2300,7 +2300,7 @@ bool ParseMediaDescription(const std::string& message,
     int port;
     rtc::FromString(fields[1], &port);
     if (transport.default_address.IsNil()) {
-      transport.default_address = *global_address;
+      transport.default_address = *session_address;
     }
     transport.default_address.SetPort(port);
 
