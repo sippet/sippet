@@ -105,6 +105,8 @@ scoped_refptr<Request> Dialog::CreateAck(
 
 scoped_refptr<Dialog> Dialog::Create(
     const scoped_refptr<Response> &response) {
+  if (response->refer_to() == nullptr)
+    return nullptr;
   scoped_refptr<Request> request(response->refer_to());
   State state = response->response_code() / 100 == 1
       ? STATE_EARLY : STATE_CONFIRMED;

@@ -22,7 +22,8 @@ scoped_refptr<Dialog> DialogStore::GenerateDialog(
   if (dialogs_.end() != i)
     return i->second;
   scoped_refptr<Dialog> dialog(Dialog::Create(response));
-  dialogs_.insert(std::make_pair(dialog->id(), dialog));
+  if (dialog)
+    dialogs_.insert(std::make_pair(dialog->id(), dialog));
   return dialog;
 }
 

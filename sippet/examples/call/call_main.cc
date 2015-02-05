@@ -7,11 +7,13 @@
 #include "base/timer/timer.h"
 #include "base/i18n/icu_string_conversions.h"
 #include "base/strings/string_util.h"
+#include "base/bind.h"
 #include "net/base/net_errors.h"
 #include "sippet/examples/program_main/program_main.h"
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
 #include "talk/media/devices/devicemanager.h"
+#include "talk/app/webrtc/mediaconstraintsinterface.h"
 #include "webrtc/base/ssladapter.h"
 
 #include "jingle/glue/thread_wrapper.h"
@@ -31,25 +33,6 @@ static void PrintUsage() {
             << "    [--tcp|--udp|--tls|--ws|--wss]\n";
 }
 
-class DummySetSessionDescriptionObserver
-  : public webrtc::SetSessionDescriptionObserver {
-public:
-  static DummySetSessionDescriptionObserver* Create() {
-    return
-      new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
-  }
-  virtual void OnSuccess() {
-    std::cout << "SetSessionDescriptionObserver::OnSuccess\n";
-  }
-  virtual void OnFailure(const std::string& error) {
-    std::cout << "SetSessionDescriptionObserver::OnFailure\n";
-  }
-
-protected:
-  DummySetSessionDescriptionObserver() {}
-  ~DummySetSessionDescriptionObserver() {}
-};
-
 struct Settings {
   sippet::NetworkLayer *network_layer;
   sippet::ua::UserAgent *user_agent;
@@ -58,6 +41,69 @@ struct Settings {
   base::string16 registrar_uri;
   base::string16 server;
   base::string16 phone_number;
+};
+
+class MediaConstraints
+  : public webrtc::MediaConstraintsInterface {
+  using webrtc::MediaConstraintsInterface::Constraint;
+  using webrtc::MediaConstraintsInterface::Constraints;
+
+ public:
+  void AddMandatory(const std::string& key, bool value) {
+    using namespace webrtc;
+    mandatory_.push_back(Constraint(key,
+        value ?
+          MediaConstraintsInterface::kValueTrue :
+          MediaConstraintsInterface::kValueFalse));
+  }
+  void AddOptional(const std::string& key, bool value) {
+    using namespace webrtc;
+    optional_.push_back(Constraint(key,
+        value ?
+          MediaConstraintsInterface::kValueTrue :
+          MediaConstraintsInterface::kValueFalse));
+  }
+
+  virtual const Constraints& GetMandatory() const override {
+    return mandatory_;
+  }
+  virtual const Constraints& GetOptional() const override {
+    return optional_;
+  }
+
+ private:
+  Constraints mandatory_;
+  Constraints optional_;
+};
+
+class ProxySetSessionDescriptionObserver
+  : public webrtc::SetSessionDescriptionObserver {
+public:
+  static ProxySetSessionDescriptionObserver* Create(
+    const base::Callback<void()> &on_success = base::Callback<void()>(),
+    const base::Callback<void(const std::string&)> &on_failure =
+        base::Callback<void(const std::string&)>()) {
+    return
+        new rtc::RefCountedObject<ProxySetSessionDescriptionObserver>(
+          on_success, on_failure);
+  }
+  virtual void OnSuccess() {
+    on_success_.Run();
+  }
+  virtual void OnFailure(const std::string& error) {
+    on_failure_.Run(error);
+  }
+
+protected:
+  ProxySetSessionDescriptionObserver(
+    const base::Callback<void()> &on_success,
+    const base::Callback<void(const std::string&)> &on_failure)
+    : on_success_(on_success), on_failure_(on_failure) {
+  }
+  ~ProxySetSessionDescriptionObserver() {}
+
+  base::Callback<void()> on_success_;
+  base::Callback<void(const std::string&)> on_failure_;
 };
 
 class UserAgentHandler
@@ -73,7 +119,13 @@ class UserAgentHandler
       server_(settings.server),
       phone_number_(settings.phone_number),
       next_state_(STATE_NONE),
-      message_loop_(base::MessageLoop::current()) {
+      message_loop_(base::MessageLoop::current()),
+      on_sdp_success_(
+          base::Bind(&UserAgentHandler::OnSessionDescriptionSuccess,
+          base::Unretained(this))),
+      on_sdp_failure_(
+          base::Bind(&UserAgentHandler::OnSessionDescriptionFailure,
+          base::Unretained(this))) {
   }
 
   virtual ~UserAgentHandler() {}
@@ -95,14 +147,16 @@ class UserAgentHandler
 
     webrtc::PeerConnectionFactoryInterface::Options options;
     options.disable_encryption = true;
+    options.disable_sctp_data_channels = true;
     peer_connection_factory_->SetOptions(options);
 
     webrtc::PeerConnectionInterface::IceServers servers;
     //webrtc::PeerConnectionInterface::IceServer server;
     //server.uri = "stun:stun.l.google.com:19302";
     //servers.push_back(server);
+
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(servers,
-      NULL, NULL, NULL, this);
+      &constraints_, NULL, NULL, this);
     if (!peer_connection_.get()) {
       std::cout << "Error: CreatePeerConnection failed\n";
       DeletePeerConnection();
@@ -189,9 +243,11 @@ class UserAgentHandler
             std::cout << "-- Error in response SDP\n";
           } else if (peer_connection_) {
             peer_connection_->SetRemoteDescription(
-              DummySetSessionDescriptionObserver::Create(), desc);
+                ProxySetSessionDescriptionObserver::Create(on_sdp_success_,
+                    on_sdp_failure_), desc);
           }
-          if (last_invite_ != incoming_response->refer_to())
+          if (nullptr != incoming_response->refer_to()
+              && last_invite_ != incoming_response->refer_to())
             last_invite_ = incoming_response->refer_to();
           scoped_refptr<sippet::Request> ack = dialog_->CreateAck(last_invite_);
           user_agent_->Send(ack, base::Bind(&RequestSent,
@@ -280,21 +336,23 @@ class UserAgentHandler
     std::cout << "-- SDP:\n" << sdp;
   }
 
-  //
-  // CreateSessionDescriptionObserver implementation.
-  //
-  virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) {
+  virtual void OnIceComplete() {
+    std::cout << "-- PeerConnection::OnIceComplete\n";
+
+    const webrtc::SessionDescriptionInterface* desc =
+      peer_connection_->local_description();
     desc->ToString(&offer_);
 
     static std::pair<const char*, const char*> replacements[] {
       std::make_pair("a=group:[^\r\n]*\r?\n", ""),
-      std::make_pair("a=msid-[^\r\n]*\r?\n", ""),
-      std::make_pair("RTP/AVPF", "RTP/AVP"),
-      std::make_pair("a=ice-[^\r\n]*\r?\n", ""),
-      std::make_pair("a=mid:[^\r\n]*\r?\n", ""),
-      std::make_pair("a=rtcp-mux[^\r\n]*\r?\n", ""),
-      std::make_pair("a=extmap:[^\r\n]*\r?\n", ""),
-      std::make_pair("a=ssrc:[^\r\n]*\r?\n", ""),
+        std::make_pair("a=msid-[^\r\n]*\r?\n", ""),
+        std::make_pair("RTP/AVPF", "RTP/AVP"),
+        std::make_pair("a=ice-[^\r\n]*\r?\n", ""),
+        std::make_pair("a=mid:[^\r\n]*\r?\n", ""),
+        std::make_pair("a=rtcp-mux[^\r\n]*\r?\n", ""),
+        std::make_pair("a=extmap:[^\r\n]*\r?\n", ""),
+        std::make_pair("a=ssrc:[^\r\n]*\r?\n", ""),
+        std::make_pair("a=candidate:[^\r\n]*\r?\n", ""),
     };
 
     for (int i = 0; i < arraysize(replacements); ++i) {
@@ -302,19 +360,41 @@ class UserAgentHandler
       RE2::GlobalReplace(&offer_, elem.first, elem.second);
     }
 
-    peer_connection_->SetLocalDescription(
-      DummySetSessionDescriptionObserver::Create(), desc);
     message_loop_->PostTask(
       FROM_HERE,
       base::Bind(&UserAgentHandler::OnIOComplete,
-          base::Unretained(this), net::OK));
+      base::Unretained(this), net::OK));
+  }
+
+  //
+  // SetSessionDescriptionObserver callbacks.
+  //
+  virtual void OnSessionDescriptionSuccess() {
+    std::cout << "SetSessionDescriptionObserver::OnSuccess\n";
+  }
+  void OnSessionDescriptionFailure(const std::string& error) {
+    std::cout << "SetSessionDescriptionObserver::OnFailure\n";
+
+    if (next_state_ == STATE_CREATE_OFFER_COMPLETE) {
+      message_loop_->PostTask(
+        FROM_HERE,
+        base::Bind(&UserAgentHandler::OnIOComplete,
+        base::Unretained(this), net::ERR_ABORTED));
+    }
+  }
+
+  //
+  // CreateSessionDescriptionObserver implementation.
+  //
+  virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) {
+    std::cout << "CreateSessionDescriptionObserver::OnSuccess\n";
+    peer_connection_->SetLocalDescription(
+        ProxySetSessionDescriptionObserver::Create(on_sdp_success_,
+            on_sdp_failure_), desc);
   }
   
   virtual void OnFailure(const std::string& error) {
-    message_loop_->PostTask(
-      FROM_HERE,
-      base::Bind(&UserAgentHandler::OnIOComplete,
-          base::Unretained(this), net::ERR_ABORTED));
+    std::cout << "CreateSessionDescriptionObserver::OnFailure\n";
   }
 
  private:
@@ -336,6 +416,10 @@ class UserAgentHandler
     peer_connection_factory_;
   std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
     active_streams_;
+  
+  MediaConstraints constraints_;
+  base::Callback<void()> on_sdp_success_;
+  base::Callback<void(const std::string&)> on_sdp_failure_;
 
   enum State {
     STATE_REGISTER,
@@ -462,7 +546,7 @@ class UserAgentHandler
 
   int DoCreateOffer() {
     next_state_ = STATE_CREATE_OFFER_COMPLETE;
-    peer_connection_->CreateOffer(this, NULL);
+    peer_connection_->CreateOffer(this, &constraints_);
     return net::ERR_IO_PENDING;
   }
 
@@ -512,7 +596,7 @@ class UserAgentHandler
   int DoCallTimer() {
     next_state_ = STATE_CALL_TIMER_COMPLETE;
     call_timeout_.Start(FROM_HERE,
-        base::TimeDelta::FromSeconds(5),
+        base::TimeDelta::FromSeconds(3600),
         base::Bind(&UserAgentHandler::OnIOComplete,
             base::Unretained(this), net::OK));
     return net::ERR_IO_PENDING;
