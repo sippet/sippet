@@ -56,7 +56,7 @@ enum IceRole {
 enum IceMode {
   ICEMODE_FULL,  // As defined in http://tools.ietf.org/html/rfc5245#section-4.1
   ICEMODE_LITE,  // As defined in http://tools.ietf.org/html/rfc5245#section-4.2
-  ICEMODE_NONE
+  ICEMODE_NONE   // No ICE support, works in compatibility mode
 };
 
 // RFC 4145 - http://tools.ietf.org/html/rfc4145#section-4
