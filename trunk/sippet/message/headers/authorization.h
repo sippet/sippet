@@ -37,19 +37,19 @@ class Authorization :
  private:
   DISALLOW_ASSIGN(Authorization);
   Authorization(const Authorization &other);
-  virtual Authorization *DoClone() const override;
+  Authorization *DoClone() const override;
 
  public:
   Authorization();
   Authorization(Scheme s);
   Authorization(const std::string &scheme);
-  virtual ~Authorization();
+  ~Authorization() override;
 
   scoped_ptr<Authorization> Clone() const {
     return scoped_ptr<Authorization>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

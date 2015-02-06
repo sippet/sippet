@@ -14,12 +14,12 @@ class Generic :
  private:
   DISALLOW_ASSIGN(Generic);
   Generic(const Generic &other);
-  virtual Generic *DoClone() const override;
+  Generic *DoClone() const override;
 
  public:
   Generic();
   Generic(const std::string &header_name, const std::string &header_value);
-  virtual ~Generic();
+  ~Generic() override;
 
   scoped_ptr<Generic> Clone() const {
     return scoped_ptr<Generic>(DoClone());
@@ -39,7 +39,7 @@ class Generic :
     header_value_ = header_value;
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 
  private:
   friend class Header;

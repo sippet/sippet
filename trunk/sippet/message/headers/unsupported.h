@@ -19,18 +19,18 @@ class Unsupported :
  private:
   DISALLOW_ASSIGN(Unsupported);
   Unsupported(const Unsupported &other);
-  virtual Unsupported *DoClone() const override;
+  Unsupported *DoClone() const override;
 
  public:
   Unsupported();
   Unsupported(const std::string &value);
-  virtual ~Unsupported();
+  ~Unsupported() override;
 
   scoped_ptr<Unsupported> Clone() const {
     return scoped_ptr<Unsupported>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

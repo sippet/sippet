@@ -210,7 +210,7 @@ class NetworkLayer :
 
  private:
   friend class base::RefCountedThreadSafe<NetworkLayer>;
-  virtual ~NetworkLayer();
+  ~NetworkLayer() override;
 
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
 
@@ -253,7 +253,6 @@ class NetworkLayer :
   ChannelsMap channels_;
   ClientTransactionsMap client_transactions_;
   ServerTransactionsMap server_transactions_;
-  base::WeakPtrFactory<NetworkLayer> weak_factory_;
   SSLCertErrorHandler::Factory *ssl_cert_error_handler_factory_;
   ScopedVector<SSLCertErrorTransaction> ssl_cert_error_transactions_;
 
@@ -333,13 +332,13 @@ class NetworkLayer :
                               const scoped_refptr<Response> &response);
 
   // sippet::Channel::Delegate methods:
-  virtual void OnChannelConnected(const scoped_refptr<Channel>&, int) override;
-  virtual void OnIncomingMessage(const scoped_refptr<Channel> &,
-                                 const scoped_refptr<Message> &) override;
-  virtual void OnChannelClosed(const scoped_refptr<Channel> &, int) override;
-  virtual void OnSSLCertificateError(const scoped_refptr<Channel> &channel,
-                                     const net::SSLInfo &ssl_info,
-                                     bool fatal) override;
+  void OnChannelConnected(const scoped_refptr<Channel>&, int) override;
+  void OnIncomingMessage(const scoped_refptr<Channel> &,
+                         const scoped_refptr<Message> &) override;
+  void OnChannelClosed(const scoped_refptr<Channel> &, int) override;
+  void OnSSLCertificateError(const scoped_refptr<Channel> &channel,
+                             const net::SSLInfo &ssl_info,
+                             bool fatal) override;
 
   // SSL Certificate handshake transaction complete
   void OnSSLCertErrorTransactionComplete(
@@ -358,16 +357,18 @@ class NetworkLayer :
   int DismissLastConnectionAttempt(const EndPoint &destination);
 
   // sippet::TransactionDelegate methods:
-  virtual void OnIncomingResponse(const scoped_refptr<Response> &) override;
-  virtual void OnTimedOut(const scoped_refptr<Request> &request) override;
-  virtual void OnTransportError(
+  void OnIncomingResponse(const scoped_refptr<Response> &) override;
+  void OnTimedOut(const scoped_refptr<Request> &request) override;
+  void OnTransportError(
       const scoped_refptr<Request> &request, int error) override;
-  virtual void OnTransactionTerminated(const std::string &) override;
+  void OnTransactionTerminated(const std::string &) override;
 
   // Timer callbacks
   void OnIdleChannelTimedOut(const EndPoint &endpoint);
 
   void PostOnChannelClosed(const EndPoint &destination);
+
+  base::WeakPtrFactory<NetworkLayer> weak_factory_;
 };
 
 } // End of sippet namespace

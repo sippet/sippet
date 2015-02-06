@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "net/base/net_errors.h"
+#include "base/strings/utf_string_conversions.h"
 #include "base/i18n/icu_string_conversions.h"
 #include "sippet/examples/program_main/program_main.h"
 
@@ -23,20 +24,20 @@ class UserAgentHandler
       : network_layer_(network_layer) {
   }
 
-  virtual void OnChannelConnected(const sippet::EndPoint &destination,
-                                  int err) override {
+  void OnChannelConnected(const sippet::EndPoint &destination,
+                          int err) override {
     std::cout << "Channel " << destination.ToString()
               << " connected, status = " << err << "\n";
   }
 
-  virtual void OnChannelClosed(const sippet::EndPoint &destination) override {
+  void OnChannelClosed(const sippet::EndPoint &destination) override {
     std::cout << "Channel " << destination.ToString()
               << " closed.\n";
 
     base::MessageLoop::current()->Quit();
   }
 
-  virtual void OnIncomingRequest(
+  void OnIncomingRequest(
       const scoped_refptr<sippet::Request> &incoming_request,
       const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Incoming request "
@@ -46,7 +47,7 @@ class UserAgentHandler
       std::cout << "-- Using dialog " << dialog->id() << "\n";
   }
 
-  virtual void OnIncomingResponse(
+  void OnIncomingResponse(
       const scoped_refptr<sippet::Response> &incoming_response,
       const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Incoming response "
@@ -60,7 +61,7 @@ class UserAgentHandler
     base::MessageLoop::current()->Quit();
   }
 
-  virtual void OnTimedOut(
+  void OnTimedOut(
       const scoped_refptr<sippet::Request> &request,
       const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Timed out sending request "
@@ -72,7 +73,7 @@ class UserAgentHandler
     base::MessageLoop::current()->Quit();
   }
 
-  virtual void OnTransportError(
+  void OnTransportError(
       const scoped_refptr<sippet::Request> &request, int error,
       const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Transport error sending request "
@@ -107,56 +108,54 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  base::string16 username;
+  std::string username;
   if (command_line->HasSwitch("username")) {
-    base::CodepageToUTF16(command_line->GetSwitchValueASCII("username"),
-        NULL, base::OnStringConversionError::FAIL, &username);
+    username = command_line->GetSwitchValueASCII("username");
   } else {
     PrintUsage();
     return -1;
   }
 
-  base::string16 password;
+  std::string password;
   if (command_line->HasSwitch("password")) {
-    base::CodepageToUTF16(command_line->GetSwitchValueASCII("password"),
-        NULL, base::OnStringConversionError::FAIL, &password);
+    password = command_line->GetSwitchValueASCII("password");
   } else {
     PrintUsage();
     return -1;
   }
 
-  base::string16 server(L"localhost");
+  std::string server("localhost");
   if (command_line->HasSwitch("server")) {
-    base::CodepageToUTF16(command_line->GetSwitchValueASCII("server"),
-      NULL, base::OnStringConversionError::FAIL, &server);
+    server = command_line->GetSwitchValueASCII("server");
   }
 
-  base::string16 registrar_uri;
+  std::string registrar_uri;
   struct {
     const char *cmd_switch_;
-    const base::char16 *registrar_uri_;
+    const char *registrar_uri_;
   } args[] = {
-    { "udp", L"sip:%ls" },
-    { "tcp", L"sip:%ls;transport=tcp" },
-    { "tls", L"sips:%ls" },
-    { "ws", L"sip:%ls;transport=ws" },
-    { "wss", L"sips:%ls;transport=ws" },
+    { "udp", "sip:%s" },
+    { "tcp", "sip:%s;transport=tcp" },
+    { "tls", "sips:%s" },
+    { "ws", "sip:%s;transport=ws" },
+    { "wss", "sips:%s;transport=ws" },
   };
 
   for (int i = 0; i < arraysize(args); i++) {
     if (command_line->HasSwitch(args[i].cmd_switch_)) {
-      registrar_uri = base::StringPrintf(args[i].registrar_uri_,
-          server.c_str());
+      registrar_uri =
+          base::StringPrintf(args[i].registrar_uri_, server.c_str());
       break;
     }
   }
   if (registrar_uri.empty()) {
-    registrar_uri = base::StringPrintf(args[0].registrar_uri_,
-      server.c_str()); // Defaults to UDP
+    // Defaults to UDP
+    registrar_uri =
+        base::StringPrintf(args[0].registrar_uri_, server.c_str());
   }
 
-  program_main.set_username(username);
-  program_main.set_password(password);
+  program_main.set_username(base::ASCIIToUTF16(username));
+  program_main.set_password(base::ASCIIToUTF16(password));
   if (!program_main.Init()) {
     return -1;
   }
@@ -165,8 +164,8 @@ int main(int argc, char **argv) {
       new UserAgentHandler(program_main.network_layer()));
   program_main.AppendHandler(handler.get());
 
-  base::string16 from(L"sip:" + username + L"@" + server);
-  base::string16 to(L"sip:" + username + L"@" + server);
+  std::string from("sip:" + username + "@" + server);
+  std::string to("sip:" + username + "@" + server);
   scoped_refptr<sippet::Request> request =
       program_main.user_agent()->CreateRequest(
           sippet::Method::REGISTER,

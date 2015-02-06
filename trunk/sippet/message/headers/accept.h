@@ -36,17 +36,17 @@ class Accept :
  private:
   DISALLOW_ASSIGN(Accept);
   Accept(const Accept &other);
-  virtual Accept *DoClone() const override;
+  Accept *DoClone() const override;
 
  public:
   Accept();
-  virtual ~Accept();
+  ~Accept() override;
 
   scoped_ptr<Accept> Clone() const {
     return scoped_ptr<Accept>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

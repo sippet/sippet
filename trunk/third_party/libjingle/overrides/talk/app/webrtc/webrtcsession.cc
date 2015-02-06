@@ -863,8 +863,6 @@ bool WebRtcSession::SetRemoteDescription(SessionDescriptionInterface* desc,
       }
     }
     if (!has_candidates) {
-      is_in_compatibility_mode_ = true;
-
       // Emulate a single remote candidate for each media
       size_t mediacontent_index = 0;
       cricket::ContentInfos &infos = desc->description()->contents();

@@ -17,12 +17,12 @@ class Cseq :
  private:
   DISALLOW_ASSIGN(Cseq);
   Cseq(const Cseq &other);
-  virtual Cseq *DoClone() const override;
+  Cseq *DoClone() const override;
 
  public:
   Cseq();
   Cseq(unsigned sequence, const Method &method);
-  virtual ~Cseq();
+  ~Cseq() override;
 
   scoped_ptr<Cseq> Clone() const {
     return scoped_ptr<Cseq>(DoClone());
@@ -34,7 +34,7 @@ class Cseq :
   Method method() const { return method_; }
   void set_method(const Method &method) { method_ = method; }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 
  private:
   unsigned sequence_;

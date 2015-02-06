@@ -16,18 +16,18 @@ class To :
  private:
   DISALLOW_ASSIGN(To);
   To(const To &other);
-  virtual To *DoClone() const override;
+  To *DoClone() const override;
 
  public:
   To();
   To(const GURL &address, const std::string &displayName="");
-  virtual ~To();
+  ~To() override;
 
   scoped_ptr<To> Clone() const {
     return scoped_ptr<To>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

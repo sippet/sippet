@@ -15,9 +15,9 @@ namespace {
 class DefaultTransactionFactory : public TransactionFactory {
  public:
   DefaultTransactionFactory() {}
-  virtual ~DefaultTransactionFactory() {}
+  ~DefaultTransactionFactory() override {}
 
-  virtual ClientTransaction *CreateClientTransaction(
+  ClientTransaction *CreateClientTransaction(
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
@@ -27,7 +27,7 @@ class DefaultTransactionFactory : public TransactionFactory {
         delegate, time_delta_factory);
   }
 
-  virtual ServerTransaction *CreateServerTransaction(
+  ServerTransaction *CreateServerTransaction(
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,

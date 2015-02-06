@@ -19,18 +19,18 @@ class Require :
  private:
   DISALLOW_ASSIGN(Require);
   Require(const Require &other);
-  virtual Require *DoClone() const override;
+  Require *DoClone() const override;
 
  public:
   Require();
   Require(const std::string &value);
-  virtual ~Require();
+  ~Require() override;
 
   scoped_ptr<Require> Clone() const {
     return scoped_ptr<Require>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

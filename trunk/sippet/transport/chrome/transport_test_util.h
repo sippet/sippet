@@ -26,8 +26,8 @@ bool MatchMessage(const scoped_refptr<Message> &message,
 class MockBranchFactory : public BranchFactory {
  public:
   MockBranchFactory(const char *branches[], size_t branches_count);
-  virtual ~MockBranchFactory();
-  virtual std::string CreateBranch() override;
+  ~MockBranchFactory() override;
+  std::string CreateBranch() override;
  private:
   const char **branches_;
   size_t branches_count_;
@@ -40,7 +40,7 @@ class MockEvent {
  public:
   class Expect : public NetworkLayer::Delegate {
    public:
-    virtual ~Expect() {}
+    ~Expect() override {}
     virtual void Start(const scoped_refptr<Request>&) = 0;
     virtual void Send(const scoped_refptr<Response>&) = 0;
     virtual void HandleIncomingResponse(
@@ -156,37 +156,34 @@ class StaticDataProvider : public DataProvider {
   StaticDataProvider();
   StaticDataProvider(MockEvent *events,
                      size_t events_count);
-  virtual ~StaticDataProvider();
+  ~StaticDataProvider() override;
 
-  virtual MockEvent& PeekEvent() override;
-  virtual MockEvent& PeekEvent(size_t index) override;
+  MockEvent& PeekEvent() override;
+  MockEvent& PeekEvent(size_t index) override;
 
-  virtual size_t events_index() const override;
-  virtual size_t events_count() const override;
+  size_t events_index() const override;
+  size_t events_count() const override;
 
-  virtual bool at_events_end() const override;
+  bool at_events_end() const override;
 
-  virtual MockEvent &GetNextEvent() override;
+  MockEvent &GetNextEvent() override;
 
-  virtual void set_transaction_id(const std::string &transaction_id) override;
+  void set_transaction_id(const std::string &transaction_id) override;
 
-  virtual void OnChannelConnected(
-          const EndPoint& destination, int error) override;
-  virtual void OnChannelClosed(
-          const EndPoint& destination) override;
-  virtual void OnIncomingMessage(Message *message) override;
-  virtual void Start(
-          const scoped_refptr<Request>& starting_request) override;
-  virtual void Send(
+  void OnChannelConnected(const EndPoint& destination, int error) override;
+  void OnChannelClosed(const EndPoint& destination) override;
+  void OnIncomingMessage(Message *message) override;
+  void Start(const scoped_refptr<Request>& starting_request) override;
+  void Send(
           const std::string &transaction_id,
           const scoped_refptr<Response>& response) override;
-  virtual void HandleIncomingResponse(
+  void HandleIncomingResponse(
           const std::string &transaction_id,
           const scoped_refptr<Response>& response) override;
-  virtual void HandleIncomingRequest(
+  void HandleIncomingRequest(
           const std::string &transaction_id,
           const scoped_refptr<Request>& request) override;
-  virtual void Close(const std::string &transaction_id) override;
+  void Close(const std::string &transaction_id) override;
 
  private:
   MockEvent *events_;
@@ -217,20 +214,20 @@ class StaticNetworkLayerDelegate :
   public NetworkLayer::Delegate {
  public:
   StaticNetworkLayerDelegate(DataProvider *data_provider);
-  virtual ~StaticNetworkLayerDelegate();
+  ~StaticNetworkLayerDelegate() override;
 
  private:
   DataProvider *data_provider_;
 
-  virtual void OnChannelConnected(
+  void OnChannelConnected(
       const EndPoint &destination, int err) override;
-  virtual void OnChannelClosed(const EndPoint &destination) override;
-  virtual void OnIncomingRequest(
+  void OnChannelClosed(const EndPoint &destination) override;
+  void OnIncomingRequest(
       const scoped_refptr<Request> &request) override;
-  virtual void OnIncomingResponse(
+  void OnIncomingResponse(
       const scoped_refptr<Response> &response) override;
-  virtual void OnTimedOut(const scoped_refptr<Request> &request) override;
-  virtual void OnTransportError(
+  void OnTimedOut(const scoped_refptr<Request> &request) override;
+  void OnTransportError(
       const scoped_refptr<Request> &request, int error) override;
 };
 
@@ -260,16 +257,16 @@ class UDPChannelAdapter : public MockChannelAdapter {
  public:
   UDPChannelAdapter(net::ClientSocketFactory *socket_factory,
                     net::NetLog *net_log);
-  virtual ~UDPChannelAdapter();
+  ~UDPChannelAdapter() override;
 
   // sippet::MockChannelAdapter methods:
-  virtual bool is_secure() const override;
-  virtual int Connect(const net::HostPortPair &destination,
-                      const net::CompletionCallback& callback) override;
-  virtual int Read(net::IOBuffer* buf, int buf_len,
-                   const net::CompletionCallback& callback) override;
-  virtual int Write(net::IOBuffer* buf, int buf_len,
-                    const net::CompletionCallback& callback) override;
+  bool is_secure() const override;
+  int Connect(const net::HostPortPair &destination,
+              const net::CompletionCallback& callback) override;
+  int Read(net::IOBuffer* buf, int buf_len,
+           const net::CompletionCallback& callback) override;
+  int Write(net::IOBuffer* buf, int buf_len,
+            const net::CompletionCallback& callback) override;
  private:
   net::ClientSocketFactory *socket_factory_;
   scoped_ptr<net::DatagramClientSocket> socket_;
@@ -280,16 +277,16 @@ class TCPChannelAdapter : public MockChannelAdapter {
  public:
   TCPChannelAdapter(net::ClientSocketFactory *socket_factory,
                     net::NetLog *net_log);
-  virtual ~TCPChannelAdapter();
+  ~TCPChannelAdapter() override;
 
   // sippet::MockChannelAdapter methods:
-  virtual bool is_secure() const override;
-  virtual int Connect(const net::HostPortPair &destination,
-                      const net::CompletionCallback& callback) override;
-  virtual int Read(net::IOBuffer* buf, int buf_len,
-                   const net::CompletionCallback& callback) override;
-  virtual int Write(net::IOBuffer* buf, int buf_len,
-                    const net::CompletionCallback& callback) override;
+  bool is_secure() const override;
+  int Connect(const net::HostPortPair &destination,
+              const net::CompletionCallback& callback) override;
+  int Read(net::IOBuffer* buf, int buf_len,
+           const net::CompletionCallback& callback) override;
+  int Write(net::IOBuffer* buf, int buf_len,
+            const net::CompletionCallback& callback) override;
  private:
   net::ClientSocketFactory *socket_factory_;
   scoped_ptr<net::StreamSocket> socket_;
@@ -300,16 +297,16 @@ class TLSChannelAdapter : public MockChannelAdapter {
  public:
   TLSChannelAdapter(net::ClientSocketFactory *socket_factory,
                     net::NetLog *net_log);
-  virtual ~TLSChannelAdapter();
+  ~TLSChannelAdapter() override;
 
   // sippet::MockChannelAdapter methods:
-  virtual bool is_secure() const override;
-  virtual int Connect(const net::HostPortPair &destination,
-                      const net::CompletionCallback& callback) override;
-  virtual int Read(net::IOBuffer* buf, int buf_len,
-                   const net::CompletionCallback& callback) override;
-  virtual int Write(net::IOBuffer* buf, int buf_len,
-                    const net::CompletionCallback& callback) override;
+  bool is_secure() const override;
+  int Connect(const net::HostPortPair &destination,
+              const net::CompletionCallback& callback) override;
+  int Read(net::IOBuffer* buf, int buf_len,
+           const net::CompletionCallback& callback) override;
+  int Write(net::IOBuffer* buf, int buf_len,
+            const net::CompletionCallback& callback) override;
  private:
   net::ClientSocketFactory *socket_factory_;
   scoped_ptr<net::StreamSocket> tcp_socket_;
@@ -334,24 +331,23 @@ class MockChannel : public Channel {
   static const int kBufferSize;
 
   // sippet::Channel methods:
-  virtual int origin(EndPoint *origin) const override;
-  virtual const EndPoint& destination() const override;
-  virtual bool is_secure() const override;
-  virtual bool is_connected() const override;
-  virtual bool is_stream() const override;
-  virtual void Connect() override;
-  virtual int ReconnectIgnoringLastError() override;
-  virtual int ReconnectWithCertificate(
-      net::X509Certificate* client_cert) override;
-  virtual int Send(const scoped_refptr<Message>& message,
-                   const net::CompletionCallback& callback) override;
-  virtual void Close() override;
-  virtual void CloseWithError(int error) override;
-  virtual void DetachDelegate() override;
+  int origin(EndPoint *origin) const override;
+  const EndPoint& destination() const override;
+  bool is_secure() const override;
+  bool is_connected() const override;
+  bool is_stream() const override;
+  void Connect() override;
+  int ReconnectIgnoringLastError() override;
+  int ReconnectWithCertificate(net::X509Certificate* client_cert) override;
+  int Send(const scoped_refptr<Message>& message,
+           const net::CompletionCallback& callback) override;
+  void Close() override;
+  void CloseWithError(int error) override;
+  void DetachDelegate() override;
 
  private:
   friend class base::RefCountedThreadSafe<MockChannel>;
-  virtual ~MockChannel();
+  ~MockChannel() override;
 
   Channel::Delegate *delegate_;
   EndPoint destination_;
@@ -361,8 +357,8 @@ class MockChannel : public Channel {
   net::BoundNetLog net_log_;
   scoped_ptr<MockChannelAdapter> channel_adapter_;
   scoped_ptr<net::DeterministicSocketData> data_;
-  base::WeakPtrFactory<MockChannel> weak_factory_;
   scoped_refptr<net::IOBufferWithSize> io_buffer_;
+  base::WeakPtrFactory<MockChannel> weak_factory_;
 
   void Read();
   void HandleMessage(int read_bytes);
@@ -374,10 +370,10 @@ class MockChannel : public Channel {
 class MockChannelFactory : public ChannelFactory {
  public:
   MockChannelFactory(net::ClientSocketFactory *socket_factory);
-  virtual ~MockChannelFactory();
+  ~MockChannelFactory();
 
   // sippet::ChannelFactory methods:
-  virtual int CreateChannel(
+  int CreateChannel(
           const EndPoint &destination,
           Channel::Delegate *delegate,
           scoped_refptr<Channel> *channel) override;
@@ -406,16 +402,16 @@ class MockClientTransaction : public ClientTransaction {
   }
 
   // sippet::ClientTransaction methods:
-  virtual const std::string& id() const override;
-  virtual scoped_refptr<Channel> channel() const override;
-  virtual void Start(const scoped_refptr<Request> &outgoing_request) override;
-  virtual void HandleIncomingResponse(
-                    const scoped_refptr<Response> &response) override;
-  virtual void Close() override;
+  const std::string& id() const override;
+  scoped_refptr<Channel> channel() const override;
+  void Start(const scoped_refptr<Request> &outgoing_request) override;
+  void HandleIncomingResponse(
+      const scoped_refptr<Response> &response) override;
+  void Close() override;
 
  private:
   friend class base::RefCountedThreadSafe<MockClientTransaction>;
-  virtual ~MockClientTransaction();
+  ~MockClientTransaction() override;
 
   std::string transaction_id_;
   scoped_refptr<Channel> channel_;
@@ -446,17 +442,16 @@ class MockServerTransaction : public ServerTransaction {
   }
 
   // sippet::ServerTransaction methods:
-  virtual const std::string& id() const override;
-  virtual scoped_refptr<Channel> channel() const override;
-  virtual void Start(const scoped_refptr<Request> &incoming_request) override;
-  virtual void Send(const scoped_refptr<Response> &response) override;
-  virtual void HandleIncomingRequest(
-                    const scoped_refptr<Request> &request) override;
-  virtual void Close() override;
+  const std::string& id() const override;
+  scoped_refptr<Channel> channel() const override;
+  void Start(const scoped_refptr<Request> &incoming_request) override;
+  void Send(const scoped_refptr<Response> &response) override;
+  void HandleIncomingRequest(const scoped_refptr<Request> &request) override;
+  void Close() override;
 
  private:
   friend class base::RefCountedThreadSafe<MockServerTransaction>;
-  virtual ~MockServerTransaction();
+  ~MockServerTransaction() override;
 
   std::string transaction_id_;
   scoped_refptr<Channel> channel_;
@@ -468,19 +463,19 @@ class MockServerTransaction : public ServerTransaction {
 class MockTransactionFactory : public TransactionFactory {
  public:
   MockTransactionFactory(DataProvider *data_provider);
-  virtual ~MockTransactionFactory();
+  ~MockTransactionFactory() override;
 
   MockClientTransaction* client_transaction(size_t index) const;
   MockServerTransaction* server_transaction(size_t index) const;
 
   // sippet::TransactionFactory methods:
-  virtual ClientTransaction *CreateClientTransaction(
+  ClientTransaction *CreateClientTransaction(
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,
       TimeDeltaFactory *time_delta_factory,
       TransactionDelegate *delegate) override;
-  virtual ServerTransaction *CreateServerTransaction(
+  ServerTransaction *CreateServerTransaction(
       const Method &method,
       const std::string &transaction_id,
       const scoped_refptr<Channel> &channel,

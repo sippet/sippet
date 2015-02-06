@@ -65,6 +65,11 @@
         '-Wno-parentheses-equality',
       ],
     },
+    'cflags': [
+      '-Wno-tautological-compare',
+      '-Wno-return-type',
+      '-Wno-parentheses-equality',
+    ],
   },
   'targets': [
     {

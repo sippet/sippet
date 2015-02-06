@@ -13,6 +13,10 @@
         '-Wno-unused-result',
       ],
     },
+    'include_dirs': [
+      '<(DEPTH)',
+      '<(DEPTH)/third_party',
+    ],
   },
   'targets': [
     {
@@ -21,10 +25,6 @@
       'dependencies': [
         'sippet_test_support',
         'sippet.gyp:sippet',
-      ],
-      'include_dirs': [
-        '<(DEPTH)',
-        '<(DEPTH)/third_party',
       ],
       'sources': [
         '../net/test/run_all_unittests.cc',
@@ -72,10 +72,6 @@
         '<(DEPTH)/third_party/pjsip/pjsip.gyp:*',
         'sippet.gyp:sippet',
       ],
-      'include_dirs': [
-        '<(DEPTH)',
-        '<(DEPTH)/third_party',
-      ],
       'sources': [
         'test/standalone_test_server/standalone_test_server.h',
         'test/standalone_test_server/standalone_test_server.cc',
@@ -98,10 +94,6 @@
         '<(DEPTH)/testing/gmock.gyp:gmock',
         'sippet_standalone_test_server',
       ],
-      'include_dirs': [
-        '<(DEPTH)',
-        '<(DEPTH)/third_party',
-      ],
       'sources': [
         'test/standalone_test_server/standalone_test_server_unittest.cc',
       ],
@@ -111,10 +103,6 @@
       'type': 'executable',
       'dependencies': [
         'sippet_standalone_test_server',
-      ],
-      'include_dirs': [
-        '<(DEPTH)',
-        '<(DEPTH)/third_party',
       ],
       'sources': [
         'test/standalone_test_server/main.cc',

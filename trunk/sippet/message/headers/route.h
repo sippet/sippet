@@ -27,18 +27,18 @@ class Route :
  private:
   DISALLOW_ASSIGN(Route);
   Route(const Route &other);
-  virtual Route *DoClone() const override;
+  Route *DoClone() const override;
 
  public:
   Route();
   Route(const RouteParam &param);
-  virtual ~Route();
+  ~Route() override;
 
   scoped_ptr<Route> Clone() const {
     return scoped_ptr<Route>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

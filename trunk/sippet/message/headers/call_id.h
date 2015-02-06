@@ -18,18 +18,18 @@ class CallId :
  private:
   DISALLOW_ASSIGN(CallId);
   CallId(const CallId &other);
-  virtual CallId *DoClone() const override;
+  CallId *DoClone() const override;
 
  public:
   CallId();
   CallId(const single_value::value_type &callid);
-  virtual ~CallId();
+  ~CallId() override;
 
   scoped_ptr<CallId> Clone() const {
     return scoped_ptr<CallId>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

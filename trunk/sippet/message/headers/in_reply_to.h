@@ -19,17 +19,17 @@ class InReplyTo :
  private:
   DISALLOW_ASSIGN(InReplyTo);
   InReplyTo(const InReplyTo &other);
-  virtual InReplyTo *DoClone() const override;
+  InReplyTo *DoClone() const override;
 
  public:
   InReplyTo();
-  virtual ~InReplyTo();
+  ~InReplyTo() override;
 
   scoped_ptr<InReplyTo> Clone() const {
     return scoped_ptr<InReplyTo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

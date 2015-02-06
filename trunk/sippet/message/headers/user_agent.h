@@ -18,18 +18,18 @@ class UserAgent :
  private:
   DISALLOW_ASSIGN(UserAgent);
   UserAgent(const UserAgent &other);
-  virtual UserAgent *DoClone() const override;
+  UserAgent *DoClone() const override;
 
  public:
   UserAgent();
   UserAgent(const single_value::value_type &subject);
-  virtual ~UserAgent();
+  ~UserAgent() override;
 
   scoped_ptr<UserAgent> Clone() const {
     return scoped_ptr<UserAgent>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

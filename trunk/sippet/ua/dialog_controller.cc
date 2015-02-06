@@ -16,15 +16,15 @@ namespace {
 class DefaultDialogController : public DialogController {
  public:
   DefaultDialogController() {}
-  virtual ~DefaultDialogController() {}
+  ~DefaultDialogController() override {}
 
-  virtual scoped_refptr<Dialog> HandleRequest(
+  scoped_refptr<Dialog> HandleRequest(
       DialogStore *store, const scoped_refptr<Request> &request) override;
 
-  virtual scoped_refptr<Dialog> HandleResponse(
+  scoped_refptr<Dialog> HandleResponse(
       DialogStore *store, const scoped_refptr<Response> &response) override;
 
-  virtual scoped_refptr<Dialog> HandleRequestError(
+  scoped_refptr<Dialog> HandleRequestError(
       DialogStore *store, const scoped_refptr<Request> &request) override;
 };
 

@@ -44,7 +44,7 @@ class AuthHandlerDigest : public AuthHandler {
   class DynamicNonceGenerator : public NonceGenerator {
    public:
     DynamicNonceGenerator();
-    virtual std::string GenerateNonce() const override;
+    std::string GenerateNonce() const override;
    private:
     DISALLOW_COPY_AND_ASSIGN(DynamicNonceGenerator);
   };
@@ -55,7 +55,7 @@ class AuthHandlerDigest : public AuthHandler {
    public:
     explicit FixedNonceGenerator(const std::string& nonce);
 
-    virtual std::string GenerateNonce() const override;
+    std::string GenerateNonce() const override;
 
    private:
     const std::string nonce_;
@@ -65,12 +65,12 @@ class AuthHandlerDigest : public AuthHandler {
   class Factory : public AuthHandlerFactory {
    public:
     Factory();
-    virtual ~Factory();
+    ~Factory() override;
 
     // This factory owns the passed in |nonce_generator|.
     void set_nonce_generator(const NonceGenerator* nonce_generator);
 
-    virtual int CreateAuthHandler(
+    int CreateAuthHandler(
         const Challenge &challenge,
         Auth::Target target,
         const GURL& origin,
@@ -83,13 +83,13 @@ class AuthHandlerDigest : public AuthHandler {
     scoped_ptr<const NonceGenerator> nonce_generator_;
   };
 
-  virtual Auth::AuthorizationResult HandleAnotherChallenge(
+  Auth::AuthorizationResult HandleAnotherChallenge(
       const Challenge& challenge) override;
 
  protected:
-  virtual bool Init(const Challenge& challenge) override;
+  bool Init(const Challenge& challenge) override;
 
-  virtual int GenerateAuthImpl(
+  int GenerateAuthImpl(
       const net::AuthCredentials* credentials,
       const scoped_refptr<Request> &request,
       const net::CompletionCallback& callback) override;
@@ -122,7 +122,7 @@ class AuthHandlerDigest : public AuthHandler {
   // the handler. The lifetime of the |nonce_generator| must exceed that of this
   // handler.
   AuthHandlerDigest(int nonce_count, const NonceGenerator* nonce_generator);
-  virtual ~AuthHandlerDigest();
+  ~AuthHandlerDigest() override;
 
   // Parse the challenge, saving the results into this instance.
   // Returns true on success.

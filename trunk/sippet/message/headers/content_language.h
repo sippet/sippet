@@ -18,18 +18,18 @@ class ContentLanguage :
  private:
   DISALLOW_ASSIGN(ContentLanguage);
   ContentLanguage(const ContentLanguage &other);
-  virtual ContentLanguage *DoClone() const override;
+  ContentLanguage *DoClone() const override;
 
  public:
   ContentLanguage();
   ContentLanguage(const std::string &language);
-  virtual ~ContentLanguage();
+  ~ContentLanguage() override;
 
   scoped_ptr<ContentLanguage> Clone() const {
     return scoped_ptr<ContentLanguage>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

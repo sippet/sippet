@@ -15,8 +15,8 @@ namespace {
 class ClientNonInvite : public TimeDeltaProvider {
  public:
   ClientNonInvite() : count_(0) {}
-  virtual ~ClientNonInvite() {}
-  virtual base::TimeDelta GetNextRetryDelay() override {
+  ~ClientNonInvite() override {}
+  base::TimeDelta GetNextRetryDelay() override {
     // Implement the exponential backoff up to 4 seconds
     int64 seconds;
     switch (count_++) {
@@ -27,11 +27,11 @@ class ClientNonInvite : public TimeDeltaProvider {
     }
     return base::TimeDelta::FromMilliseconds(seconds);
   }
-  virtual base::TimeDelta GetTimeoutDelay() override {
+  base::TimeDelta GetTimeoutDelay() override {
     // This is 64*T1, where T1 = 500ms
     return base::TimeDelta::FromSeconds(32);
   }
-  virtual base::TimeDelta GetTerminateDelay() override {
+  base::TimeDelta GetTerminateDelay() override {
     // Timer K equal to 5s
     return base::TimeDelta::FromSeconds(5);
   }
@@ -42,18 +42,18 @@ class ClientNonInvite : public TimeDeltaProvider {
 class ClientInvite : public TimeDeltaProvider {
  public:
   ClientInvite() : multiply_(1) {}
-  virtual ~ClientInvite() {}
-  virtual base::TimeDelta GetNextRetryDelay() override {
+  ~ClientInvite() override {}
+  base::TimeDelta GetNextRetryDelay() override {
     // Implement the exponential backoff *2 at each retransmission
     int64 seconds = multiply_ * 500;
     multiply_ <<= 1;
     return base::TimeDelta::FromMilliseconds(seconds);
   }
-  virtual base::TimeDelta GetTimeoutDelay() override {
+  base::TimeDelta GetTimeoutDelay() override {
     // This is 64*T1, where T1 = 500ms
     return base::TimeDelta::FromSeconds(32);
   }
-  virtual base::TimeDelta GetTerminateDelay() override {
+  base::TimeDelta GetTerminateDelay() override {
     // Timer D is greater than 32s (35 is greater than 32s)
     return base::TimeDelta::FromSeconds(35);
   }
@@ -64,16 +64,16 @@ class ClientInvite : public TimeDeltaProvider {
 class ServerNonInvite : public TimeDeltaProvider {
  public:
   ServerNonInvite() {}
-  virtual ~ServerNonInvite() {}
-  virtual base::TimeDelta GetNextRetryDelay() override {
+  ~ServerNonInvite() override {}
+  base::TimeDelta GetNextRetryDelay() override {
     // There's no retry on server non-INVITE transactions
     return base::TimeDelta();
   }
-  virtual base::TimeDelta GetTimeoutDelay() override {
+  base::TimeDelta GetTimeoutDelay() override {
     // There's no timeout on server non-INVITE transactions
     return base::TimeDelta();
   }
-  virtual base::TimeDelta GetTerminateDelay() override {
+  base::TimeDelta GetTerminateDelay() override {
     // Timer J equal to 5s
     return base::TimeDelta::FromSeconds(32);
   }
@@ -82,8 +82,8 @@ class ServerNonInvite : public TimeDeltaProvider {
 class ServerInvite : public TimeDeltaProvider {
  public:
   ServerInvite() : count_(0) {}
-  virtual ~ServerInvite() {}
-  virtual base::TimeDelta GetNextRetryDelay() override {
+  ~ServerInvite() override {}
+  base::TimeDelta GetNextRetryDelay() override {
     // Timer G: implement the exponential backoff up to 4 seconds
     int64 seconds;
     switch (count_++) {
@@ -94,11 +94,11 @@ class ServerInvite : public TimeDeltaProvider {
     }
     return base::TimeDelta::FromMilliseconds(seconds);
   }
-  virtual base::TimeDelta GetTimeoutDelay() override {
+  base::TimeDelta GetTimeoutDelay() override {
     // Timer H is 64*T1, where T1 = 500ms
     return base::TimeDelta::FromSeconds(32);
   }
-  virtual base::TimeDelta GetTerminateDelay() override {
+  base::TimeDelta GetTerminateDelay() override {
     // Timer I equal to 5s
     return base::TimeDelta::FromSeconds(5);
   }
@@ -109,21 +109,21 @@ class ServerInvite : public TimeDeltaProvider {
 class DefaultTimeDeltaFactory : public TimeDeltaFactory {
  public:
   DefaultTimeDeltaFactory() {}
-  virtual ~DefaultTimeDeltaFactory() {}
+  ~DefaultTimeDeltaFactory() override {}
 
-  virtual TimeDeltaProvider* CreateClientNonInvite() override {
+  TimeDeltaProvider* CreateClientNonInvite() override {
     return new ClientNonInvite;
   }
 
-  virtual TimeDeltaProvider* CreateClientInvite() override {
+  TimeDeltaProvider* CreateClientInvite() override {
     return new ClientInvite;
   }
 
-  virtual TimeDeltaProvider* CreateServerNonInvite() override {
+  TimeDeltaProvider* CreateServerNonInvite() override {
     return new ServerNonInvite;
   }
 
-  virtual TimeDeltaProvider* CreateServerInvite() override {
+  TimeDeltaProvider* CreateServerInvite() override {
     return new ServerInvite;
   }
 };

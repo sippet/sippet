@@ -20,12 +20,12 @@ namespace sippet {
 
 class AuthControllerTest : public testing::Test {
  public:
-  virtual void SetUp() {
+  void SetUp() override {
     controller_ = new AuthController(&dummy_auth_cache_,
       &auth_handler_mock_factory_);
   }
  
-  virtual void TearDown() {
+  void TearDown() override {
   }
 
   AuthHandlerMock::Factory &factory() {
@@ -275,7 +275,7 @@ class MockHandler : public AuthHandlerMock {
   }
 
  protected:
-  virtual bool Init(const Challenge& challenge) override {
+  bool Init(const Challenge& challenge) override {
     AuthHandlerMock::Init(challenge);
     set_allows_default_credentials(true);
     set_allows_explicit_credentials(false);

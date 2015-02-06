@@ -19,18 +19,18 @@ class ContentEncoding :
  private:
   DISALLOW_ASSIGN(ContentEncoding);
   ContentEncoding(const ContentEncoding &other);
-  virtual ContentEncoding *DoClone() const override;
+  ContentEncoding *DoClone() const override;
 
  public:
   ContentEncoding();
   ContentEncoding(const std::string &encoding);
-  virtual ~ContentEncoding();
+  ~ContentEncoding() override;
 
   scoped_ptr<ContentEncoding> Clone() const {
     return scoped_ptr<ContentEncoding>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

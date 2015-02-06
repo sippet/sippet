@@ -33,30 +33,29 @@ class ChromeStreamChannel : public Channel {
       const scoped_refptr<net::URLRequestContextGetter>& request_context_getter,
       const net::SSLConfig& ssl_config);
 
-  virtual int origin(EndPoint *origin) const override;
-  virtual const EndPoint& destination() const override;
+  int origin(EndPoint *origin) const override;
+  const EndPoint& destination() const override;
 
-  virtual bool is_secure() const override;
-  virtual bool is_connected() const override;
-  virtual bool is_stream() const override;
+  bool is_secure() const override;
+  bool is_connected() const override;
+  bool is_stream() const override;
 
-  virtual void Connect() override;
-  virtual int ReconnectIgnoringLastError() override;
-  virtual int ReconnectWithCertificate(
-      net::X509Certificate* client_cert) override;
+  void Connect() override;
+  int ReconnectIgnoringLastError() override;
+  int ReconnectWithCertificate(net::X509Certificate* client_cert) override;
 
-  virtual int Send(const scoped_refptr<Message> &message,
-                   const net::CompletionCallback& callback) override;
+  int Send(const scoped_refptr<Message> &message,
+           const net::CompletionCallback& callback) override;
 
-  virtual void Close() override;
+  void Close() override;
 
-  virtual void CloseWithError(int err) override;
+  void CloseWithError(int err) override;
 
-  virtual void DetachDelegate() override;
+  void DetachDelegate() override;
 
  private:
   friend class base::RefCountedThreadSafe<Channel>;
-  virtual ~ChromeStreamChannel();
+  ~ChromeStreamChannel() override;
 
   // Proxy resolution and connection functions.
   void ProcessProxyResolveDone(int status);

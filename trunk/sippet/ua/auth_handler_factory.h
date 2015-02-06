@@ -105,7 +105,7 @@ class AuthHandlerRegistryFactory
     : public AuthHandlerFactory {
  public:
   AuthHandlerRegistryFactory();
-  virtual ~AuthHandlerRegistryFactory();
+  ~AuthHandlerRegistryFactory() override;
 
   // Registers a |factory| that will be used for a particular SIP
   // authentication scheme such as Digest, or Negotiate.
@@ -153,13 +153,13 @@ class AuthHandlerRegistryFactory
 
   // Creates an auth handler by dispatching out to the registered factories
   // based on the first token in |challenge|.
-  virtual int CreateAuthHandler(const Challenge &challenge,
-                                Auth::Target target,
-                                const GURL& origin,
-                                CreateReason reason,
-                                int digest_nonce_count,
-                                const net::BoundNetLog& net_log,
-                                scoped_ptr<AuthHandler>* handler) override;
+  int CreateAuthHandler(const Challenge &challenge,
+                        Auth::Target target,
+                        const GURL& origin,
+                        CreateReason reason,
+                        int digest_nonce_count,
+                        const net::BoundNetLog& net_log,
+                        scoped_ptr<AuthHandler>* handler) override;
 
  private:
   typedef std::map<std::string, AuthHandlerFactory*> FactoryMap;

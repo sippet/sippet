@@ -40,7 +40,6 @@ class ChromeDatagramWriter {
 
  private:
   net::Socket* wrapped_socket_;
-  base::WeakPtrFactory<ChromeDatagramWriter> weak_factory_;
   int error_;
 
   struct PendingFrame {
@@ -58,6 +57,8 @@ class ChromeDatagramWriter {
   void DidConsume();
   void Pop(int result);
   int Drain(net::IOBuffer* buf, int buf_len);
+
+  base::WeakPtrFactory<ChromeDatagramWriter> weak_factory_;
 };
 
 } // End of sippet namespace

@@ -37,42 +37,38 @@ bool ParseHostPortPair(const net::HostPortPair &destination,
 
 class ExpectNothing : public MockEvent::Expect {
  public:
-  virtual void OnChannelConnected(
-                    const EndPoint &destination, int error) override {
+  void OnChannelConnected(const EndPoint &destination, int error) override {
     EXPECT_TRUE(false) << "Not expected a channel connect at this time";
   }
-  virtual void OnChannelClosed(
-                    const EndPoint& destination) override {
+  void OnChannelClosed(const EndPoint& destination) override {
     EXPECT_TRUE(false) << "Not expected a channel close at this time";
   }
-  virtual void OnIncomingRequest(const scoped_refptr<Request> &) override {
+  void OnIncomingRequest(const scoped_refptr<Request> &) override {
     EXPECT_TRUE(false) << "Not expected to get an incoming request this time";
   }
-  virtual void OnIncomingResponse(const scoped_refptr<Response> &) override {
+  void OnIncomingResponse(const scoped_refptr<Response> &) override {
     EXPECT_TRUE(false) << "Not expected to get an incoming response this time";
   }
-  virtual void OnTimedOut(const scoped_refptr<Request> &request) override {
+  void OnTimedOut(const scoped_refptr<Request> &request) override {
     EXPECT_TRUE(false) << "Not expected a timeout at this time";
   }
-  virtual void OnTransportError(
+  void OnTransportError(
       const scoped_refptr<Request> &request, int error) override {
     EXPECT_TRUE(false) << "Not expected a transport error at this time";
   }
-  virtual void Start(const scoped_refptr<Request>&) override {
+  void Start(const scoped_refptr<Request>&) override {
     EXPECT_TRUE(false) << "Not expected transaction start at this time";
   }
-  virtual void Send(const scoped_refptr<Response>&) override {
+  void Send(const scoped_refptr<Response>&) override {
     EXPECT_TRUE(false) << "Not expected to send a response at this time";
   }
-  virtual void HandleIncomingResponse(
-                    const scoped_refptr<Response>&) override {
+  void HandleIncomingResponse(const scoped_refptr<Response>&) override {
     EXPECT_TRUE(false) << "Not expected to handle incoming response";
   }
-  virtual void HandleIncomingRequest(
-                    const scoped_refptr<Request>&) override {
+  void HandleIncomingRequest(const scoped_refptr<Request>&) override {
     EXPECT_TRUE(false) << "Not expected to handle incoming request";
   }
-  virtual void Close() override {
+  void Close() override {
     EXPECT_TRUE(false) << "Not expected to close transaction at this time";
   }
 };
@@ -83,9 +79,8 @@ class ChannelConnectedImpl : public ExpectNothing {
     : has_error_(false), destination_(destination) {}
   ChannelConnectedImpl(const EndPoint &destination, int error)
     : has_error_(true), destination_(destination), error_(error) {}
-  virtual ~ChannelConnectedImpl() {}
-  virtual void OnChannelConnected(
-      const EndPoint& destination, int error) override {
+  ~ChannelConnectedImpl() override {}
+  void OnChannelConnected(const EndPoint& destination, int error) override {
     EXPECT_EQ(destination_, destination);
     if (has_error_)
       EXPECT_EQ(error_, error);
@@ -100,8 +95,8 @@ class ChannelClosedImpl : public ExpectNothing {
  public:
   ChannelClosedImpl(const EndPoint &destination)
     : destination_(destination) {}
-  virtual ~ChannelClosedImpl() {}
-  virtual void OnChannelClosed(const EndPoint& destination) override {
+  ~ChannelClosedImpl() override {}
+  void OnChannelClosed(const EndPoint& destination) override {
     EXPECT_EQ(destination_, destination);
   }
  private:
@@ -112,13 +107,13 @@ class IncomingMessageImpl : public ExpectNothing {
  public:
   IncomingMessageImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
-  virtual ~IncomingMessageImpl() {}
-  virtual void OnIncomingRequest(
+  ~IncomingMessageImpl() override {}
+  void OnIncomingRequest(
       const scoped_refptr<Request>& request) override {
     DCHECK(request);
     MatchMessage(request, regular_expressions_);
   }
-  virtual void OnIncomingResponse(
+  void OnIncomingResponse(
       const scoped_refptr<Response>& response) override {
     DCHECK(response);
     MatchMessage(response, regular_expressions_);
@@ -131,8 +126,8 @@ class ExpectStartImpl : public ExpectNothing {
  public:
   ExpectStartImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
-  virtual ~ExpectStartImpl() {}
-  virtual void Start(const scoped_refptr<Request>& request) override {
+  ~ExpectStartImpl() override {}
+  void Start(const scoped_refptr<Request>& request) override {
     DCHECK(request);
     MatchMessage(request, regular_expressions_);
   }
@@ -144,8 +139,8 @@ class ExpectSendImpl : public ExpectNothing {
  public:
   ExpectSendImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
-  virtual ~ExpectSendImpl() {}
-  virtual void Send(const scoped_refptr<Response>& response) override {
+  ~ExpectSendImpl() override {}
+  void Send(const scoped_refptr<Response>& response) override {
     DCHECK(response);
     MatchMessage(response, regular_expressions_);
   }
@@ -157,9 +152,9 @@ class ExpectIncomingResponseImpl : public ExpectNothing {
  public:
   ExpectIncomingResponseImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
-  virtual ~ExpectIncomingResponseImpl() {}
-  virtual void HandleIncomingResponse(
-                    const scoped_refptr<Response>& response) override {
+  ~ExpectIncomingResponseImpl() override {}
+  void HandleIncomingResponse(
+          const scoped_refptr<Response>& response) override {
     DCHECK(response);
     MatchMessage(response, regular_expressions_);
   }
@@ -171,9 +166,9 @@ class ExpectIncomingRequestImpl : public ExpectNothing {
  public:
   ExpectIncomingRequestImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
-  virtual ~ExpectIncomingRequestImpl() {}
-  virtual void HandleIncomingRequest(
-                    const scoped_refptr<Request>& request) override {
+  ~ExpectIncomingRequestImpl() override {}
+  void HandleIncomingRequest(
+          const scoped_refptr<Request>& request) override {
     DCHECK(request);
     MatchMessage(request, regular_expressions_);
   }
@@ -184,8 +179,8 @@ class ExpectIncomingRequestImpl : public ExpectNothing {
 class ExpectCloseImpl : public ExpectNothing {
  public:
   ExpectCloseImpl() {}
-  virtual ~ExpectCloseImpl() {}
-  virtual void Close() override {
+  ~ExpectCloseImpl() override {}
+  void Close() override {
     DVLOG(1) << "Transaction closed successfully";
   }
 };

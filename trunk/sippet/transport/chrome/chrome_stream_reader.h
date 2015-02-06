@@ -21,14 +21,14 @@ class ChromeStreamReader
   : public MessageReader {
  public:
   ChromeStreamReader(net::Socket* socket_to_wrap);
-  virtual ~ChromeStreamReader();
+  ~ChromeStreamReader() override;
 
  private:
-  virtual int DoIORead(const net::CompletionCallback& callback) override;
-  virtual char *data() override;
-  virtual size_t max_size() override;
-  virtual int BytesRemaining() const override;
-  virtual void DidConsume(int bytes) override;
+  int DoIORead(const net::CompletionCallback& callback) override;
+  char *data() override;
+  size_t max_size() override;
+  int BytesRemaining() const override;
+  void DidConsume(int bytes) override;
 
   void ReceiveDataComplete(int result);
   void DoCallback(int result);
