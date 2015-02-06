@@ -83,7 +83,6 @@ DIRECTORIES = [
   'tools/generate_library_loader',
   'tools/gn',
   'tools/grit',
-  'tools/gritsettings',
   'tools/gyp',
   'tools/memory',
   'tools/protoc_wrapper',
