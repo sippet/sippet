@@ -18,7 +18,7 @@ class Request :
   public Message {
  private:
   DISALLOW_COPY_AND_ASSIGN(Request);
-  virtual ~Request();
+  ~Request() override;
  public:
   // Create a |Request|. New requests assume the |Outgoing| direction.
   Request(const Method &method,
@@ -37,7 +37,7 @@ class Request :
   Version version() const;
   void set_version(const Version &version);
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 
   // Responses can be generated from incoming requests by using this method.
   // Headers |From|, |CallId|, |CSeq|, |Via| and |To| are copied from the
@@ -60,7 +60,7 @@ class Request :
   int CreateCancel(scoped_refptr<Request> &cancel);
 
   // Get a the dialog identifier.
-  virtual std::string GetDialogId() const override;
+  std::string GetDialogId() const override;
 
   // Create another request containing all headers of the current request,
   // incrementing the sequence number (CSeq) if available. Useful for creating

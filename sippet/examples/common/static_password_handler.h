@@ -12,9 +12,9 @@ class StaticPasswordHandler : public sippet::PasswordHandler {
   class Factory : public sippet::PasswordHandler::Factory {
    public:
     Factory(const base::string16 &username, const base::string16 &password);
-    virtual ~Factory();
+    ~Factory() override;
 
-    virtual scoped_ptr<sippet::PasswordHandler>
+    scoped_ptr<sippet::PasswordHandler>
         CreatePasswordHandler() override;
 
    private:
@@ -25,9 +25,9 @@ class StaticPasswordHandler : public sippet::PasswordHandler {
   StaticPasswordHandler(const base::string16 &username,
                         const base::string16 &password);
 
-  virtual ~StaticPasswordHandler();
+  ~StaticPasswordHandler() override;
 
-  virtual int GetCredentials(
+  int GetCredentials(
       const net::AuthChallengeInfo* auth_info,
       base::string16 *username,
       base::string16 *password,

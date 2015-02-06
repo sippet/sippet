@@ -17,18 +17,18 @@ class ContentLength :
  private:
   DISALLOW_ASSIGN(ContentLength);
   ContentLength(const ContentLength &other);
-  virtual ContentLength *DoClone() const override;
+  ContentLength *DoClone() const override;
 
  public:
   ContentLength();
   ContentLength(const single_value::value_type &length);
-  virtual ~ContentLength();
+  ~ContentLength() override;
 
   scoped_ptr<ContentLength> Clone() const {
     return scoped_ptr<ContentLength>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

@@ -23,7 +23,7 @@ class ChromeChannelFactory : public ChannelFactory {
       const net::SSLConfig& ssl_config);
   ~ChromeChannelFactory();
 
-  virtual int CreateChannel(
+  int CreateChannel(
     const EndPoint &destination,
     Channel::Delegate *delegate,
     scoped_refptr<Channel> *channel) override;

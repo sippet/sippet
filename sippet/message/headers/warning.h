@@ -55,18 +55,18 @@ class Warning :
  private:
   DISALLOW_ASSIGN(Warning);
   Warning(const Warning &other);
-  virtual Warning *DoClone() const override;
+  Warning *DoClone() const override;
 
  public:
   Warning();
   Warning(const WarnParam &param);
-  virtual ~Warning();
+  ~Warning() override;
 
   scoped_ptr<Warning> Clone() const {
     return scoped_ptr<Warning>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

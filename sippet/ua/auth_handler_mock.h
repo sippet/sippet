@@ -23,13 +23,13 @@ class AuthHandlerMock : public AuthHandler {
   class Factory : public AuthHandlerFactory {
    public:
     Factory();
-    virtual ~Factory();
+    ~Factory() override;
 
     void AddMockHandler(AuthHandler* handler, Auth::Target target,
       bool call_init_from_challenge);
 
     // AuthHandlerFactory:
-    virtual int CreateAuthHandler(
+    int CreateAuthHandler(
         const Challenge &challenge,
         Auth::Target target,
         const GURL& origin,
@@ -44,7 +44,7 @@ class AuthHandlerMock : public AuthHandler {
   };
 
   AuthHandlerMock();
-  virtual ~AuthHandlerMock();
+  ~AuthHandlerMock() override;
 
   MOCK_METHOD1(HandleAnotherChallenge, Auth::AuthorizationResult(
       const Challenge& challenge));
@@ -62,7 +62,7 @@ class AuthHandlerMock : public AuthHandler {
   virtual bool AllowsExplicitCredentials();
   virtual bool NeedsIdentity();
 
-  virtual bool Init(const Challenge& challenge) override;
+  bool Init(const Challenge& challenge) override;
 
 private:
   typedef std::pair<bool,bool> optional;

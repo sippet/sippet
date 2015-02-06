@@ -74,7 +74,7 @@ class Contact :
  private:
   DISALLOW_ASSIGN(Contact);
   Contact(const Contact &other);
-  virtual Contact *DoClone() const override;
+  Contact *DoClone() const override;
 
  public:
   enum _All { All };
@@ -84,7 +84,7 @@ class Contact :
   explicit Contact(const ContactInfo &info);
   Contact(const GURL &address,
           const std::string &displayName="");
-  virtual ~Contact();
+  ~Contact() override;
 
   scoped_ptr<Contact> Clone() const {
     return scoped_ptr<Contact>(DoClone());
@@ -97,7 +97,7 @@ class Contact :
     star_ = value;
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 
 private:
   bool star_;

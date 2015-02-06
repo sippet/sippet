@@ -7,6 +7,7 @@
 #include "base/timer/timer.h"
 #include "base/i18n/icu_string_conversions.h"
 #include "base/strings/string_util.h"
+#include "base/strings/utf_string_conversions.h"
 #include "base/bind.h"
 #include "net/base/net_errors.h"
 #include "sippet/examples/program_main/program_main.h"
@@ -36,11 +37,11 @@ static void PrintUsage() {
 struct Settings {
   sippet::NetworkLayer *network_layer;
   sippet::ua::UserAgent *user_agent;
-  base::string16 username;
-  base::string16 password;
-  base::string16 registrar_uri;
-  base::string16 server;
-  base::string16 phone_number;
+  std::string username;
+  std::string password;
+  std::string registrar_uri;
+  std::string server;
+  std::string phone_number;
 };
 
 class MediaConstraints
@@ -64,10 +65,10 @@ class MediaConstraints
           MediaConstraintsInterface::kValueFalse));
   }
 
-  virtual const Constraints& GetMandatory() const override {
+  const Constraints& GetMandatory() const override {
     return mandatory_;
   }
-  virtual const Constraints& GetOptional() const override {
+  const Constraints& GetOptional() const override {
     return optional_;
   }
 
@@ -87,10 +88,10 @@ public:
         new rtc::RefCountedObject<ProxySetSessionDescriptionObserver>(
           on_success, on_failure);
   }
-  virtual void OnSuccess() {
+  void OnSuccess() override {
     on_success_.Run();
   }
-  virtual void OnFailure(const std::string& error) {
+  void OnFailure(const std::string& error) override {
     on_failure_.Run(error);
   }
 
@@ -100,7 +101,7 @@ protected:
     const base::Callback<void(const std::string&)> &on_failure)
     : on_success_(on_success), on_failure_(on_failure) {
   }
-  ~ProxySetSessionDescriptionObserver() {}
+  ~ProxySetSessionDescriptionObserver() override {}
 
   base::Callback<void()> on_success_;
   base::Callback<void(const std::string&)> on_failure_;
@@ -128,7 +129,7 @@ class UserAgentHandler
           base::Unretained(this))) {
   }
 
-  virtual ~UserAgentHandler() {}
+  ~UserAgentHandler() override {}
 
   bool InitializePeerConnection() {
     ASSERT(peer_connection_factory_.get() == NULL);
@@ -194,20 +195,20 @@ class UserAgentHandler
   //
   // UserAgent::Delegate implementation
   //
-  virtual void OnChannelConnected(const sippet::EndPoint &destination,
-                                  int err) override {
+  void OnChannelConnected(const sippet::EndPoint &destination,
+                          int err) override {
     std::cout << "Channel " << destination.ToString()
               << " connected, status = " << err << "\n";
   }
 
-  virtual void OnChannelClosed(const sippet::EndPoint &destination) override {
+  void OnChannelClosed(const sippet::EndPoint &destination) override {
     std::cout << "Channel " << destination.ToString()
               << " closed.\n";
 
     base::MessageLoop::current()->Quit();
   }
 
-  virtual void OnIncomingRequest(
+  void OnIncomingRequest(
       const scoped_refptr<sippet::Request> &incoming_request,
       const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "-- Incoming request "
@@ -217,7 +218,7 @@ class UserAgentHandler
       std::cout << "-- Using dialog " << dialog->id() << "\n";
   }
 
-  virtual void OnIncomingResponse(
+  void OnIncomingResponse(
       const scoped_refptr<sippet::Response> &incoming_response,
       const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "-- Incoming response "
@@ -271,7 +272,7 @@ class UserAgentHandler
     }
   }
 
-  virtual void OnTimedOut(
+  void OnTimedOut(
       const scoped_refptr<sippet::Request> &request,
       const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Timed out sending request "
@@ -283,7 +284,7 @@ class UserAgentHandler
     base::MessageLoop::current()->Quit();
   }
 
-  virtual void OnTransportError(
+  void OnTransportError(
       const scoped_refptr<sippet::Request> &request, int error,
       const scoped_refptr<sippet::Dialog> &dialog) override {
     std::cout << "Transport error sending request "
@@ -298,33 +299,26 @@ class UserAgentHandler
   //
   // PeerConnectionObserver implementation.
   //
-  virtual void OnError() {
-    std::cout << "-- PeerConnection::OnError\n";
-    message_loop_->Quit();
-  }
-
-  virtual void OnStateChange(
-      webrtc::PeerConnectionObserver::StateType state_changed) {
+  void OnStateChange(
+      webrtc::PeerConnectionObserver::StateType state_changed) override {
     std::cout << "-- PeerConnection::OnStateChange : " << state_changed << "\n";
   }
 
-  virtual void OnAddStream(webrtc::MediaStreamInterface* stream) {
+  void OnAddStream(webrtc::MediaStreamInterface* stream) override {
     std::cout << "-- PeerConnection::OnAddStream " << stream->label();
   }
 
-  virtual void OnRemoveStream(webrtc::MediaStreamInterface* stream) {
+  void OnRemoveStream(webrtc::MediaStreamInterface* stream) override {
     std::cout << "-- PeerConnection::OnRemoveStream " << stream->label();
   }
 
-  virtual void OnDataChannel(webrtc::DataChannelInterface* data_channel) {
+  void OnDataChannel(webrtc::DataChannelInterface* data_channel) override {
     std::cout << "-- PeerConnection::OnDataChannel " << data_channel->label();
   }
 
-  virtual void OnRenegotiationNeeded() {}
+  void OnRenegotiationNeeded() override {}
   
-  virtual void OnIceChange() {}
-  
-  virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
+  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
     std::cout << "-- PeerConnection::OnIceCandidate " << candidate->sdp_mline_index() << "\n";
 
     std::string sdp;
@@ -336,7 +330,7 @@ class UserAgentHandler
     std::cout << "-- SDP:\n" << sdp;
   }
 
-  virtual void OnIceComplete() {
+  void OnIceComplete() override {
     std::cout << "-- PeerConnection::OnIceComplete\n";
 
     const webrtc::SessionDescriptionInterface* desc =
@@ -369,7 +363,7 @@ class UserAgentHandler
   //
   // SetSessionDescriptionObserver callbacks.
   //
-  virtual void OnSessionDescriptionSuccess() {
+  void OnSessionDescriptionSuccess() {
     std::cout << "SetSessionDescriptionObserver::OnSuccess\n";
   }
   void OnSessionDescriptionFailure(const std::string& error) {
@@ -386,14 +380,14 @@ class UserAgentHandler
   //
   // CreateSessionDescriptionObserver implementation.
   //
-  virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) {
+  void OnSuccess(webrtc::SessionDescriptionInterface* desc) override {
     std::cout << "CreateSessionDescriptionObserver::OnSuccess\n";
     peer_connection_->SetLocalDescription(
         ProxySetSessionDescriptionObserver::Create(on_sdp_success_,
             on_sdp_failure_), desc);
   }
   
-  virtual void OnFailure(const std::string& error) {
+  void OnFailure(const std::string& error) override {
     std::cout << "CreateSessionDescriptionObserver::OnFailure\n";
   }
 
@@ -401,10 +395,10 @@ class UserAgentHandler
   sippet::NetworkLayer *network_layer_;
   sippet::ua::UserAgent *user_agent_;
   base::MessageLoop *message_loop_;
-  base::string16 username_;
-  base::string16 registrar_uri_;
-  base::string16 server_;
-  base::string16 phone_number_;
+  std::string username_;
+  std::string registrar_uri_;
+  std::string server_;
+  std::string phone_number_;
   
   std::string offer_;
   scoped_refptr<sippet::Dialog> dialog_;
@@ -519,8 +513,8 @@ class UserAgentHandler
   int DoRegister() {
     next_state_ = STATE_REGISTER_COMPLETE;
 
-    base::string16 from(L"sip:" + username_ + L"@" + server_);
-    base::string16 to(L"sip:" + username_ + L"@" + server_);
+    std::string from("sip:" + username_ + "@" + server_);
+    std::string to("sip:" + username_ + "@" + server_);
 
     scoped_refptr<sippet::Request> request =
       user_agent_->CreateRequest(
@@ -562,9 +556,9 @@ class UserAgentHandler
   int DoInvite() {
     next_state_ = STATE_INVITE_COMPLETE;
 
-    base::string16 request_uri(L"sip:" + phone_number_ + L"@" + server_);
-    base::string16 from(L"sip:" + username_ + L"@" + server_);
-    base::string16 to(L"sip:" + phone_number_ + L"@" + server_);
+    std::string request_uri("sip:" + phone_number_ + "@" + server_);
+    std::string from("sip:" + username_ + "@" + server_);
+    std::string to("sip:" + phone_number_ + "@" + server_);
 
     last_invite_ =
       user_agent_->CreateRequest(
@@ -629,8 +623,8 @@ class UserAgentHandler
   int DoUnregister() {
     next_state_ = STATE_UNREGISTER_COMPLETE;
 
-    base::string16 from(L"sip:" + username_ + L"@" + server_);
-    base::string16 to(L"sip:" + username_ + L"@" + server_);
+    std::string from("sip:" + username_ + "@" + server_);
+    std::string to("sip:" + username_ + "@" + server_);
     scoped_refptr<sippet::Request> request =
       user_agent_->CreateRequest(
       sippet::Method::REGISTER,
@@ -675,45 +669,41 @@ int main(int argc, char **argv) {
   Settings settings;
 
   if (command_line->HasSwitch("username")) {
-    base::CodepageToUTF16(command_line->GetSwitchValueASCII("username"),
-        NULL, base::OnStringConversionError::FAIL, &settings.username);
+    settings.username = command_line->GetSwitchValueASCII("username");
   } else {
     PrintUsage();
     return -1;
   }
 
   if (command_line->HasSwitch("password")) {
-    base::CodepageToUTF16(command_line->GetSwitchValueASCII("password"),
-        NULL, base::OnStringConversionError::FAIL, &settings.password);
+    settings.password = command_line->GetSwitchValueASCII("password");
   } else {
     PrintUsage();
     return -1;
   }
 
   if (command_line->HasSwitch("dial")) {
-    base::CodepageToUTF16(command_line->GetSwitchValueASCII("dial"),
-      NULL, base::OnStringConversionError::FAIL, &settings.phone_number);
+    settings.phone_number = command_line->GetSwitchValueASCII("dial");
   }
   else {
     PrintUsage();
     return -1;
   }
 
-  settings.server = L"localhost";
+  settings.server = "localhost";
   if (command_line->HasSwitch("server")) {
-    base::CodepageToUTF16(command_line->GetSwitchValueASCII("server"),
-      NULL, base::OnStringConversionError::FAIL, &settings.server);
+    settings.server = command_line->GetSwitchValueASCII("server");
   }
 
   struct {
     const char *cmd_switch_;
-    const base::char16 *registrar_uri_;
+    const char *registrar_uri_;
   } args[] = {
-    { "udp", L"sip:%ls" },
-    { "tcp", L"sip:%ls;transport=tcp" },
-    { "tls", L"sips:%ls" },
-    { "ws", L"sip:%ls;transport=ws" },
-    { "wss", L"sips:%ls;transport=ws" },
+    { "udp", "sip:%s" },
+    { "tcp", "sip:%s;transport=tcp" },
+    { "tls", "sips:%s" },
+    { "ws", "sip:%s;transport=ws" },
+    { "wss", "sips:%s;transport=ws" },
   };
 
   for (int i = 0; i < arraysize(args); i++) {
@@ -728,8 +718,8 @@ int main(int argc, char **argv) {
       settings.server.c_str()); // Defaults to UDP
   }
 
-  program_main.set_username(settings.username);
-  program_main.set_password(settings.password);
+  program_main.set_username(base::ASCIIToUTF16(settings.username));
+  program_main.set_password(base::ASCIIToUTF16(settings.password));
   if (!program_main.Init()) {
     return -1;
   }

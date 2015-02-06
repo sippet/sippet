@@ -45,11 +45,11 @@ class AcceptEncoding :
  private:
   DISALLOW_ASSIGN(AcceptEncoding);
   AcceptEncoding(const AcceptEncoding &other);
-  virtual AcceptEncoding *DoClone() const override;
+  AcceptEncoding *DoClone() const override;
 
  public:
   AcceptEncoding();
-  virtual ~AcceptEncoding();
+  ~AcceptEncoding() override;
 
   scoped_ptr<AcceptEncoding> Clone() const {
     return scoped_ptr<AcceptEncoding>(DoClone());
@@ -59,7 +59,7 @@ class AcceptEncoding :
     return !empty() && front().AllowsAll();
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

@@ -15,18 +15,18 @@ class ReplyTo :
  private:
   DISALLOW_ASSIGN(ReplyTo);
   ReplyTo(const ReplyTo &other);
-  virtual ReplyTo *DoClone() const override;
+  ReplyTo *DoClone() const override;
 
  public:
   ReplyTo();
   ReplyTo(const GURL &address, const std::string &displayName="");
-  virtual ~ReplyTo();
+  ~ReplyTo() override;
 
   scoped_ptr<ReplyTo> Clone() const {
     return scoped_ptr<ReplyTo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

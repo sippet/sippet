@@ -18,18 +18,18 @@ class Subject :
  private:
   DISALLOW_ASSIGN(Subject);
   Subject(const Subject &other);
-  virtual Subject *DoClone() const override;
+  Subject *DoClone() const override;
 
  public:
   Subject();
   Subject(const single_value::value_type &subject);
-  virtual ~Subject();
+  ~Subject() override;
 
   scoped_ptr<Subject> Clone() const {
     return scoped_ptr<Subject>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

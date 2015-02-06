@@ -42,17 +42,17 @@ class AlertInfo :
  private:
   DISALLOW_ASSIGN(AlertInfo);
   AlertInfo(const AlertInfo &other);
-  virtual AlertInfo *DoClone() const override;
+  AlertInfo *DoClone() const override;
 
  public:
   AlertInfo();
-  virtual ~AlertInfo();
+  ~AlertInfo() override;
 
   scoped_ptr<AlertInfo> Clone() const {
     return scoped_ptr<AlertInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

@@ -40,7 +40,6 @@ class ChromeStreamWriter {
 
  private:
   net::Socket* wrapped_socket_;
-  base::WeakPtrFactory<ChromeStreamWriter> weak_factory_;
   int error_;
 
   struct PendingBlock {
@@ -57,6 +56,8 @@ class ChromeStreamWriter {
   void DidConsume(int result);
   void Pop(int result);
   int Drain(net::DrainableIOBuffer* buf);
+
+  base::WeakPtrFactory<ChromeStreamWriter> weak_factory_;
 };
 
 } // End of sippet namespace

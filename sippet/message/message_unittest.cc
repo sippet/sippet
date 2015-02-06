@@ -11,19 +11,19 @@ using namespace sippet;
 class InstanceOfMessage : public Message {
  public:
   InstanceOfMessage() : Message(true, Outgoing) {}
-  virtual std::string GetDialogId() const override {
+  std::string GetDialogId() const override {
     return ""; // It won't be used here
   }
  private:
   friend class base::RefCountedThreadSafe<InstanceOfMessage>;
-  virtual ~InstanceOfMessage() {}
+  ~InstanceOfMessage() override {}
 };
 
 class InstanceOfHeader : public Header {
 private:
   InstanceOfHeader(const InstanceOfHeader &other) : Header(other) {}
   InstanceOfHeader &operator=(const InstanceOfHeader &other);
-  virtual InstanceOfHeader *DoClone() const override {
+  InstanceOfHeader *DoClone() const override {
     return new InstanceOfHeader(*this);
   }
 public:
@@ -31,13 +31,13 @@ public:
   virtual scoped_ptr<InstanceOfHeader> Clone() {
     return scoped_ptr<InstanceOfHeader>(DoClone());
   }
-  virtual void print(raw_ostream &os) const override { }
+  void print(raw_ostream &os) const override { }
 };
 
 class MessageTest : public testing::Test {
  public:
   MessageTest() : message_(new InstanceOfMessage()) { }
-  virtual ~MessageTest() {}
+  ~MessageTest() override {}
 
   scoped_refptr<Message> message_;
 };

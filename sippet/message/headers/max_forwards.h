@@ -17,18 +17,18 @@ class MaxForwards :
  private:
   DISALLOW_ASSIGN(MaxForwards);
   MaxForwards(const MaxForwards &other);
-  virtual MaxForwards *DoClone() const override;
+  MaxForwards *DoClone() const override;
 
  public:
   MaxForwards();
   MaxForwards(const single_value::value_type &n);
-  virtual ~MaxForwards();
+  ~MaxForwards() override;
 
   scoped_ptr<MaxForwards> Clone() const {
     return scoped_ptr<MaxForwards>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

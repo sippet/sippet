@@ -17,18 +17,18 @@ class Expires :
  private:
   DISALLOW_ASSIGN(Expires);
   Expires(const Expires &other);
-  virtual Expires *DoClone() const override;
+  Expires *DoClone() const override;
 
  public:
   Expires();
   Expires(const single_value::value_type &seconds);
-  virtual ~Expires();
+  ~Expires() override;
 
   scoped_ptr<Expires> Clone() const {
     return scoped_ptr<Expires>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

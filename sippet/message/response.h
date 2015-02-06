@@ -37,13 +37,13 @@ public:
     version_ = version;
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 
   // Get a the dialog identifier.
-  virtual std::string GetDialogId() const override;
+  std::string GetDialogId() const override;
 
 private:
-  virtual ~Response();
+  ~Response() override;
 
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
   FRIEND_TEST_ALL_PREFIXES(AuthControllerTest, NoExplicitCredentialsAllowed);

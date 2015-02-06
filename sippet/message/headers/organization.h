@@ -18,18 +18,18 @@ class Organization :
  private:
   DISALLOW_ASSIGN(Organization);
   Organization(const Organization &other);
-  virtual Organization *DoClone() const override;
+  Organization *DoClone() const override;
 
  public:
   Organization();
   Organization(const single_value::value_type &organization);
-  virtual ~Organization();
+  ~Organization() override;
 
   scoped_ptr<Organization> Clone() const {
     return scoped_ptr<Organization>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

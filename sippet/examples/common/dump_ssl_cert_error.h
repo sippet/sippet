@@ -12,9 +12,9 @@ class DumpSSLCertError : public sippet::SSLCertErrorHandler {
   class Factory : public sippet::SSLCertErrorHandler::Factory {
    public:
     Factory(bool ignore_non_fatal);
-    virtual ~Factory();
+    ~Factory() override;
 
-    virtual scoped_ptr<sippet::SSLCertErrorHandler>
+    scoped_ptr<sippet::SSLCertErrorHandler>
          CreateSSLCertificateErrorHandler() override;
 
    private:
@@ -22,16 +22,16 @@ class DumpSSLCertError : public sippet::SSLCertErrorHandler {
   };
 
   DumpSSLCertError(bool ignore_non_fatal);
-  virtual ~DumpSSLCertError();
+  ~DumpSSLCertError() override;
 
-  virtual int GetUserApproval(
+  int GetUserApproval(
       const sippet::EndPoint &destination,
       const net::SSLInfo &ssl_info,
       bool fatal,
       bool *is_accepted,
       const net::CompletionCallback& callback) override;
 
-  virtual int GetClientCert(
+  int GetClientCert(
       const sippet::EndPoint &destination,
       const net::SSLInfo &ssl_info,
       scoped_refptr<net::X509Certificate> *client_cert,

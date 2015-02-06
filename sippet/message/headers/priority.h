@@ -18,7 +18,7 @@ class Priority :
  private:
   DISALLOW_ASSIGN(Priority);
   Priority(const Priority &other);
-  virtual Priority *DoClone() const override;
+  Priority *DoClone() const override;
 
  public:
   enum Level {
@@ -28,7 +28,7 @@ class Priority :
   Priority();
   Priority(Level l);
   Priority(const single_value::value_type &priority);
-  virtual ~Priority();
+  ~Priority() override;
 
   scoped_ptr<Priority> Clone() const {
     return scoped_ptr<Priority>(DoClone());
@@ -39,7 +39,7 @@ class Priority :
     single_value::set_value(rep[static_cast<int>(l)]);
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

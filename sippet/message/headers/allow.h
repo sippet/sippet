@@ -20,17 +20,17 @@ class Allow :
 private:
   DISALLOW_ASSIGN(Allow);
   Allow(const Allow &other);
-  virtual Allow *DoClone() const override;
+  Allow *DoClone() const override;
 
 public:
   Allow();
-  virtual ~Allow();
+  ~Allow() override;
 
   scoped_ptr<Allow> Clone() const {
     return scoped_ptr<Allow>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

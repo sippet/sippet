@@ -41,17 +41,17 @@ class ErrorInfo :
  private:
   DISALLOW_ASSIGN(ErrorInfo);
   ErrorInfo(const ErrorInfo &other);
-  virtual ErrorInfo *DoClone() const override;
+  ErrorInfo *DoClone() const override;
 
  public:
   ErrorInfo();
-  virtual ~ErrorInfo();
+  ~ErrorInfo() override;
 
   scoped_ptr<ErrorInfo> Clone() const {
     return scoped_ptr<ErrorInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

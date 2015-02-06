@@ -125,7 +125,7 @@ class UserAgent :
 
  private:
   friend class base::RefCountedThreadSafe<UserAgent>;
-  virtual ~UserAgent();
+  ~UserAgent() override;
 
   typedef std::vector<GURL> UrlListType;
   typedef std::vector<Delegate*> HandlerListType;
@@ -158,15 +158,12 @@ class UserAgent :
   void OnResendRequestComplete(const std::string &request_id, int rv);
 
   // sippet::NetworkLayer::Delegate methods:
-  virtual void OnChannelConnected(
-      const EndPoint &destination, int err) override;
-  virtual void OnChannelClosed(const EndPoint &destination) override;
-  virtual void OnIncomingRequest(
-      const scoped_refptr<Request> &request) override;
-  virtual void OnIncomingResponse(
-      const scoped_refptr<Response> &response) override;
-  virtual void OnTimedOut(const scoped_refptr<Request> &request) override;
-  virtual void OnTransportError(
+  void OnChannelConnected(const EndPoint &destination, int err) override;
+  void OnChannelClosed(const EndPoint &destination) override;
+  void OnIncomingRequest(const scoped_refptr<Request> &request) override;
+  void OnIncomingResponse(const scoped_refptr<Response> &response) override;
+  void OnTimedOut(const scoped_refptr<Request> &request) override;
+  void OnTransportError(
       const scoped_refptr<Request> &request, int err) override;
 
   void RunUserIncomingRequestCallback(
@@ -187,12 +184,12 @@ class UserAgent :
   AuthHandlerFactory *auth_handler_factory_;
   net::BoundNetLog net_log_;
   PasswordHandler::Factory *password_handler_factory_;
-  base::WeakPtrFactory<UserAgent> weak_factory_;
   
   scoped_ptr<DialogStore> dialog_store_;
   DialogController *dialog_controller_;
   OutgoingRequestMap outgoing_requests_;
 
+  base::WeakPtrFactory<UserAgent> weak_factory_;
   DISALLOW_COPY_AND_ASSIGN(UserAgent);
 };
 

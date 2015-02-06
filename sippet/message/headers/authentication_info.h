@@ -22,17 +22,17 @@ class AuthenticationInfo :
  private:
   DISALLOW_ASSIGN(AuthenticationInfo);
   AuthenticationInfo(const AuthenticationInfo &other);
-  virtual AuthenticationInfo *DoClone() const override;
+  AuthenticationInfo *DoClone() const override;
 
  public:
   AuthenticationInfo();
-  virtual ~AuthenticationInfo();
+  ~AuthenticationInfo() override;
 
   scoped_ptr<AuthenticationInfo> Clone() const {
     return scoped_ptr<AuthenticationInfo>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

@@ -18,18 +18,18 @@ class Server :
  private:
   DISALLOW_ASSIGN(Server);
   Server(const Server &other);
-  virtual Server *DoClone() const override;
+  Server *DoClone() const override;
 
  public:
   Server();
   Server(const single_value::value_type &subject);
-  virtual ~Server();
+  ~Server() override;
 
   scoped_ptr<Server> Clone() const {
     return scoped_ptr<Server>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

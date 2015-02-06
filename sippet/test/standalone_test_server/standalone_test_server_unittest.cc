@@ -15,10 +15,9 @@ namespace sippet {
 
 class StandaloneTestServerTest: public testing::Test {
  public:
-  StandaloneTestServerTest() {
-  }
+  StandaloneTestServerTest() {}
 
-  virtual void TearDown() override {
+  void TearDown() override {
     if (server_)
       ASSERT_TRUE(server_->ShutdownAndWaitUntilComplete());
   }

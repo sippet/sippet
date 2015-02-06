@@ -82,28 +82,28 @@ private:
   };
 
   struct NullAtom : public AtomImp {
-    virtual Type type() override { return Traits::unknown_type; }
-    virtual const char *str() override { return ""; }
-    virtual NullAtom *clone() override { return this; }
-    virtual void release() override {}
+    Type type() override { return Traits::unknown_type; }
+    const char *str() override { return ""; }
+    NullAtom *clone() override { return this; }
+    void release() override {}
   };
   
   struct KnownAtom : public AtomImp {
     Type type_;
     KnownAtom(Type t) : type_(t) {}
-    virtual Type type() override { return type_; }
-    virtual const char *str() override { return Traits::string_of(type_); }
-    virtual KnownAtom *clone() override { return new KnownAtom(*this); }
-    virtual void release() override { delete this; }
+    Type type() override { return type_; }
+    const char *str() override { return Traits::string_of(type_); }
+    KnownAtom *clone() override { return new KnownAtom(*this); }
+    void release() override { delete this; }
   };
   
   struct UnknownAtom : public AtomImp {
     std::string atom_;
     UnknownAtom(const char *str) : atom_(str) {}
-    virtual Type type() override { return Traits::unknown_type; }
-    virtual const char *str() override { return atom_.c_str(); }
-    virtual UnknownAtom *clone() override { return new UnknownAtom(*this); }
-    virtual void release() override { delete this; }
+    Type type() override { return Traits::unknown_type; }
+    const char *str() override { return atom_.c_str(); }
+    UnknownAtom *clone() override { return new UnknownAtom(*this); }
+    void release() override { delete this; }
   };
 
   struct AtomRelease {

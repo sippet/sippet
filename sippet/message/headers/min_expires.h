@@ -17,18 +17,18 @@ class MinExpires :
  private:
   DISALLOW_ASSIGN(MinExpires);
   MinExpires(const MinExpires &other);
-  virtual MinExpires *DoClone() const override;
+  MinExpires *DoClone() const override;
 
  public:
   MinExpires();
   MinExpires(const single_value::value_type &seconds);
-  virtual ~MinExpires();
+  ~MinExpires() override;
 
   scoped_ptr<MinExpires> Clone() const {
     return scoped_ptr<MinExpires>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace

@@ -25,16 +25,15 @@ class ClientTransactionImpl : public ClientTransaction {
         TimeDeltaFactory *time_delta_factory);
 
   // ClientTransaction methods:
-  virtual const std::string& id() const override;
-  virtual scoped_refptr<Channel> channel() const override;
-  virtual void Start(
-      const scoped_refptr<Request> &outgoing_request) override;
-  virtual void HandleIncomingResponse(
+  const std::string& id() const override;
+  scoped_refptr<Channel> channel() const override;
+  void Start(const scoped_refptr<Request> &outgoing_request) override;
+  void HandleIncomingResponse(
       const scoped_refptr<Response> &response) override;
-  virtual void Close() override;
+  void Close() override;
  private:
   friend class base::RefCountedThreadSafe<ClientTransactionImpl>;
-  virtual ~ClientTransactionImpl();
+  ~ClientTransactionImpl() override;
 
   enum Mode {
     MODE_NORMAL,
@@ -62,7 +61,6 @@ class ClientTransactionImpl : public ClientTransaction {
   base::OneShotTimer<ClientTransactionImpl> retryTimer_;
   base::OneShotTimer<ClientTransactionImpl> timedOutTimer_;
   base::OneShotTimer<ClientTransactionImpl> terminateTimer_;
-  base::WeakPtrFactory<ClientTransactionImpl> weak_factory_;
 
   void OnRetransmit();
   void OnTimedOut();
@@ -78,6 +76,8 @@ class ClientTransactionImpl : public ClientTransaction {
 
   TimeDeltaFactory *time_delta_factory_;
   scoped_ptr<TimeDeltaProvider> time_delta_provider_;
+
+  base::WeakPtrFactory<ClientTransactionImpl> weak_factory_;
 };
 
 } /// End of sippet namespace

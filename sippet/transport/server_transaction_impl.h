@@ -24,17 +24,17 @@ class ServerTransactionImpl : public ServerTransaction {
         TimeDeltaFactory *time_delta_factory);
 
   // ServerTransaction methods:
-  virtual const std::string& id() const override;
-  virtual scoped_refptr<Channel> channel() const override;
-  virtual void Start(const scoped_refptr<Request> &incoming_request) override;
-  virtual void Send(const scoped_refptr<Response> &response) override;
-  virtual void HandleIncomingRequest(
-                    const scoped_refptr<Request> &request) override;
+  const std::string& id() const override;
+  scoped_refptr<Channel> channel() const override;
+  void Start(const scoped_refptr<Request> &incoming_request) override;
+  void Send(const scoped_refptr<Response> &response) override;
+  void HandleIncomingRequest(
+          const scoped_refptr<Request> &request) override;
 
-  virtual void Close() override;
+  void Close() override;
  private:
   friend class base::RefCountedThreadSafe<ServerTransactionImpl>;
-  virtual ~ServerTransactionImpl();
+  ~ServerTransactionImpl() override;
 
   enum Mode {
     MODE_NORMAL,
@@ -63,7 +63,6 @@ class ServerTransactionImpl : public ServerTransaction {
   base::OneShotTimer<ServerTransactionImpl> timedOutTimer_;
   base::OneShotTimer<ServerTransactionImpl> terminateTimer_;
   base::OneShotTimer<ServerTransactionImpl> provisionalTimer_;
-  base::WeakPtrFactory<ServerTransactionImpl> weak_factory_;
 
   void OnRetransmit();
   void OnTimedOut();
@@ -85,6 +84,7 @@ class ServerTransactionImpl : public ServerTransaction {
 
   TimeDeltaFactory *time_delta_factory_;
   scoped_ptr<TimeDeltaProvider> time_delta_provider_;
+  base::WeakPtrFactory<ServerTransactionImpl> weak_factory_;
 };
 
 } /// End of sippet namespace

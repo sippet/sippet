@@ -18,18 +18,18 @@ class ProxyRequire :
  private:
   DISALLOW_ASSIGN(ProxyRequire);
   ProxyRequire(const ProxyRequire &other);
-  virtual ProxyRequire *DoClone() const override;
+  ProxyRequire *DoClone() const override;
 
  public:
   ProxyRequire();
   ProxyRequire(const std::string &value);
-  virtual ~ProxyRequire();
+  ~ProxyRequire() override;
 
   scoped_ptr<ProxyRequire> Clone() const {
     return scoped_ptr<ProxyRequire>(DoClone());
   }
 
-  virtual void print(raw_ostream &os) const override;
+  void print(raw_ostream &os) const override;
 };
 
 } // End of sippet namespace
