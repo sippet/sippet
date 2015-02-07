@@ -68,7 +68,14 @@
     'cflags': [
       '-Wno-tautological-compare',
       '-Wno-return-type',
+      # pjsip does `if ((a == b))` in some places.
       '-Wno-parentheses-equality',
+      # pjsip does assert(!"foo"); in some places.
+      '-Wno-string-conversion',
+    ],
+    'cflags!': [
+      # pjsip does assert(!"foo"); in some places.
+      '-Wstring-conversion',
     ],
   },
   'targets': [
