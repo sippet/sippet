@@ -8,4 +8,7 @@
   "chromium/src/net/base/net_resources.grd": {
     "includes": [4000],
   },
+  "net/base/net_resources.grd": {
+    "includes": [4000],
+  },
 }
