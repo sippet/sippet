@@ -126,8 +126,6 @@ if 'android' in get_target_os_list():
     'third_party/ashmem',
     'third_party/jsr-305',
     'third_party/libevent',
-    'third_party/libxml',
-    'third_party/modp_b64',
     'third_party/requests',
     'tools/android',
     'tools/relocation_packer'
