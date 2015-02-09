@@ -58,25 +58,18 @@
       'PJMEDIA_RESAMPLE_IMP=PJMEDIA_RESAMPLE_NONE',
       'PJ_HAS_SSL_SOCK=1',
     ],
-    'xcode_settings': {
-      'OTHER_CFLAGS': [
+    'variables': {
+      'clang_warning_flags': [
         '-Wno-tautological-compare',
         '-Wno-return-type',
+        # pjsip does `if ((a == b))` in some places.
         '-Wno-parentheses-equality',
       ],
+      'clang_warning_flags_unset': [
+        # Disable the default flag from common.gypi
+        '-Wstring-conversion',
+      ],
     },
-    'cflags': [
-      '-Wno-tautological-compare',
-      '-Wno-return-type',
-      # pjsip does `if ((a == b))` in some places.
-      '-Wno-parentheses-equality',
-      # pjsip does assert(!"foo"); in some places.
-      '-Wno-string-conversion',
-    ],
-    'cflags!': [
-      # pjsip does assert(!"foo"); in some places.
-      '-Wstring-conversion',
-    ],
   },
   'targets': [
     {
@@ -156,9 +149,13 @@
           ],
         }],
         ['OS=="mac"', {
+          'defines': [
+            'PJ_HAS_SEMAPHORE_H=1',
+          ],
           'sources': [
             '<(pjsip_source)/pjlib/src/pj/file_access_unistd.c',
             '<(pjsip_source)/pjlib/src/pj/file_io_ansi.c',
+            '<(pjsip_source)/pjlib/src/pj/os_core_unix.c',
             '<(pjsip_source)/pjlib/src/pj/os_core_darwin.m',
             '<(pjsip_source)/pjlib/src/pj/os_error_unix.c',
             '<(pjsip_source)/pjlib/src/pj/os_time_unix.c',

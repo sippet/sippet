@@ -84,6 +84,12 @@
           ]
         }],
       ],
+      'variables': {
+        'clang_warning_flags': [
+          # pjsip forces the construction const pj_str_t s = {"blah", 4};
+          '-Wno-writable-strings',
+        ],
+      },
     },  # target sippet_test_support
     {
       'target_name': 'sippet_standalone_test_server_unittest',
