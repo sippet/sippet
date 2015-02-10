@@ -18,9 +18,6 @@
       'cflags_cc!': [
         '-Wnon-virtual-dtor',
       ],
-      'include_dirs': [
-        '../overrides',
-      ],
       'sources': [
         'base/asyncstuntcpsocket.cc',
         'base/asyncstuntcpsocket.h',

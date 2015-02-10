@@ -120,9 +120,9 @@ struct TransportDescription {
         ice_pwd(from.ice_pwd),
         ice_mode(from.ice_mode),
         connection_role(from.connection_role),
+        default_address(from.default_address),
         identity_fingerprint(CopyFingerprint(from.identity_fingerprint.get())),
-        candidates(from.candidates),
-        default_address(from.default_address) {}
+        candidates(from.candidates) {}
 
   TransportDescription& operator=(const TransportDescription& from) {
     // Self-assignment
@@ -135,11 +135,11 @@ struct TransportDescription {
     ice_pwd = from.ice_pwd;
     ice_mode = from.ice_mode;
     connection_role = from.connection_role;
+    default_address = from.default_address;
 
     identity_fingerprint.reset(CopyFingerprint(
         from.identity_fingerprint.get()));
     candidates = from.candidates;
-    default_address = from.default_address;
     return *this;
   }
 
