@@ -1,0 +1,9 @@
+Name: G.729
+URL: https://g729.googlecode.com
+Version: 9
+License: Proprietary
+License File: LICENSE
+
+Description:
+Experimental version of G.729 codec for ARM devices such as Android, iPhone,
+Symbian or Windows Mobile.
