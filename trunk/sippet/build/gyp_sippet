@@ -42,7 +42,7 @@ if __name__ == '__main__':
     print 'Skipping gyp_sippet due to GYP_CHROMIUM_NO_ACTION env var.'
     sys.exit(0)
 
-  if 'SKIP_WEBRTC_GYP_ENV' not in os.environ:
+  if 'SKIP_SIPPET_GYP_ENV' not in os.environ:
     # Update the environment based on sippet.gyp_env
     gyp_env_path = os.path.join(os.path.dirname(checkout_root),
                                 'sippet.gyp_env')
