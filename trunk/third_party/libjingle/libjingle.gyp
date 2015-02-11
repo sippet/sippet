@@ -589,7 +589,7 @@
             '<(libjingle_source)/talk/media/webrtc/webrtcvideoengine.h',
             '<(libjingle_source)/talk/media/webrtc/webrtcvideoengine2.cc',
             '<(libjingle_source)/talk/media/webrtc/webrtcvideoengine2.h',
-            '<(libjingle_source)/talk/media/webrtc/webrtcvoiceengine.cc',
+            'overrides/talk/media/webrtc/webrtcvoiceengine.cc',
             '<(libjingle_source)/talk/media/webrtc/webrtcvoiceengine.h',
           ],
           'dependencies': [

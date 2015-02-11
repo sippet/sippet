@@ -31,6 +31,9 @@
 #ifdef WEBRTC_CODEC_OPUS
 #include "webrtc/modules/audio_coding/codecs/opus/interface/opus_interface.h"
 #endif
+#ifdef WEBRTC_CODEC_G729
+#include "webrtc/modules/audio_coding/codecs/g729/include/g729_interface.h"
+#endif
 #ifdef WEBRTC_CODEC_PCM16
 #include "webrtc/modules/audio_coding/codecs/pcm16b/include/pcm16b.h"
 #endif
@@ -381,6 +384,9 @@ bool CodecSupported(NetEqDecoder codec_type) {
     case kDecoderOpus:
     case kDecoderOpus_2ch:
 #endif
+#ifdef WEBRTC_CODEC_G729
+    case kDecoderG729:
+#endif
     case kDecoderRED:
     case kDecoderAVT:
     case kDecoderCNGnb:
@@ -448,6 +454,11 @@ int CodecSampleRateHz(NetEqDecoder codec_type) {
     case kDecoderOpus:
     case kDecoderOpus_2ch: {
       return 48000;
+    }
+#endif
+#ifdef WEBRTC_CODEC_G729
+    case kDecoderG729: {
+      return 8000;
     }
 #endif
     case kDecoderCNGswb48kHz: {
@@ -520,6 +531,10 @@ AudioDecoder* CreateAudioDecoder(NetEqDecoder codec_type) {
       return new AudioDecoderOpus(1);
     case kDecoderOpus_2ch:
       return new AudioDecoderOpus(2);
+#endif
+#ifdef WEBRTC_CODEC_G729
+    case kDecoderG729:
+      return new AudioDecoderG729;
 #endif
     case kDecoderCNGnb:
     case kDecoderCNGwb:
