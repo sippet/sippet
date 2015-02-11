@@ -11,10 +11,6 @@ vars = {
   # PJSIP is used for testing purposes
   'pjsip_trunk': 'http://svn.pjsip.org/repos/pjproject/trunk',
   'pjsip_revision': '4796',  # Corresponds to version 2.2.1
-
-  # G.729 open source for testing purposes
-  'g729_trunk': 'http://siphon.googlecode.com/svn/trunk/',
-  'g729_revision': '793',  # Jan 14, 2015
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -23,10 +19,8 @@ deps = {
   'src/third_party/pjsip/source':
     Var('pjsip_trunk') + '@' + Var('pjsip_revision'),
 
-  'src/third_party/g729/source':
-    Var('g729_trunk') + '/g729a/Sources@' + Var('g729_revision'),
-  'src/third_party/g729/include':
-    Var('g729_trunk') + '/g729a/Headers@' + Var('g729_revision'),
+  'src/third_party/gflags/src':
+    Var('chromium_git') + '/external/gflags/src@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
 }
 
 hooks = [
