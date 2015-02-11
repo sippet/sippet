@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <string>
+#include <sstream>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/g729/include/g729_interface.h"
@@ -31,6 +32,52 @@ const int kG72920msFrameSamples = kG729RateKhz * 20;
 // Number of samples-per-channel in a 10 ms frame, sampled at 8 kHz.
 const int kG72910msFrameSamples = kG729RateKhz * 10;
 
+void PrintWord(const uint8_t *v, size_t size, std::ostream &out) {
+  size_t i;
+  for (i = 0; i < size; i++) {
+    if (i > 0)
+      out << " ";
+    out << std::setfill('0')
+      << std::setw(2)
+      << std::hex
+      << (int)v[i];
+  }
+}
+
+// A predicate-formatter for asserting that two arrays are the same
+::testing::AssertionResult AssertSameArrays(const char* m_expr,
+                                            const char* n_expr,
+                                            const char* size_expr,
+                                            const uint8_t *m,
+                                            const uint8_t *n,
+                                            size_t size) {
+  std::ostringstream out;
+  const uint8_t *a = reinterpret_cast<const uint8_t*>(m);
+  const uint8_t *b = reinterpret_cast<const uint8_t*>(n);
+  size_t i, errors = 0;
+  for (i = 0; i < size; i += 10) {
+    size_t len = 10;
+    if (i + len > size)
+      len = size - i;
+    out << "  ";
+    PrintWord(a + i, len, out);
+    if (memcmp(a + i, b + i, len) == 0) {
+      out << "   ";
+    }
+    else {
+      out << " ! ";
+      ++errors;
+    }
+    PrintWord(b + i, len, out);
+    out << "\n";
+  }
+  if (!errors)
+    return ::testing::AssertionSuccess();
+  return ::testing::AssertionFailure()
+    << m_expr << " and " << n_expr << " differ:\n"
+    << out.str();
+}
+
 class G729Test : public TestWithParam<const char*> {
  protected:
   G729Test();
@@ -52,6 +99,7 @@ class G729Test : public TestWithParam<const char*> {
   WebRtcG729DecInst* g729_decoder_;
 
   AudioLoop speech_data_;
+  scoped_ptr<uint8_t[]> expected_bitstream_;
   std::string input_name_;
   uint8_t bitstream_[kMaxBytes];
   int encoded_bytes_;
@@ -74,6 +122,16 @@ void G729Test::PrepareSpeechData(int block_length_ms,
   EXPECT_TRUE(speech_data_.Init(file_name,
                                 loop_length_ms * kG729RateKhz,
                                 block_length_ms * kG729RateKhz));
+
+  const std::string encoded_name =
+        webrtc::test::ResourcePath("g729a/" + input_name_, "g729a");
+  FILE* fp = fopen(encoded_name.c_str(), "rb");
+  EXPECT_TRUE(fp) << "Couldn't open encoded file " << encoded_name;
+  expected_bitstream_.reset(new uint8_t[loop_length_ms]);
+  size_t samples_read = fread(expected_bitstream_.get(), sizeof(uint8_t),
+        loop_length_ms, fp);
+  fclose(fp);
+  EXPECT_EQ(samples_read, loop_length_ms);
 }
 
 int G729Test::EncodeDecode(WebRtcG729EncInst* encoder,
@@ -86,6 +144,11 @@ int G729Test::EncodeDecode(WebRtcG729EncInst* encoder,
                                      input_audio,
                                      input_samples,
                                      bitstream_);
+
+  EXPECT_EQ((input_samples / kG72910msFrameSamples) * 10, encoded_bytes_);
+  EXPECT_PRED_FORMAT3(AssertSameArrays, expected_bitstream_.get(), bitstream_,
+    (input_samples / kG72910msFrameSamples) * 10);
+
   return WebRtcG729_Decode(decoder, bitstream_,
                            encoded_bytes_, output_audio,
                            audio_type);
@@ -196,8 +259,8 @@ TEST_P(G729Test, G729DecodePlc) {
                          output_data_decode, &audio_type));
 
   // Call decoder PLC.
-  int16_t* plc_buffer = new int16_t[kG72920msFrameSamples];
-  EXPECT_EQ(kG72920msFrameSamples,
+  int16_t* plc_buffer = new int16_t[kG72910msFrameSamples];
+  EXPECT_EQ(kG72910msFrameSamples,
             WebRtcG729_DecodePlc(g729_decoder_, plc_buffer, 1));
 
   // Free memory.

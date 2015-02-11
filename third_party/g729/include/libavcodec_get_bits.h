@@ -45,7 +45,7 @@
 #endif
 
 #if !defined(LIBMPEG2_BITSTREAM_READER) && !defined(A32_BITSTREAM_READER) && !defined(ALT_BITSTREAM_READER)
-#   if ARCH_ARM
+#   if defined(ARCH_ARM)
 #       define A32_BITSTREAM_READER
 #   else
 #       define ALT_BITSTREAM_READER
@@ -56,16 +56,16 @@
 
 extern const uint8_t ff_reverse[256];
 
-#if ARCH_X86
+#if defined(ARCH_X86)
 // avoid +32 for shift optimization (gcc should do that ...)
-static inline  int32_t NEG_SSR32( int32_t a, int8_t s){
+static  int32_t NEG_SSR32( int32_t a, int8_t s){
   __asm__ ("sarl %1, %0\n\t"
            : "+r" (a)
            : "ic" ((uint8_t)(-s))
            );
   return a;
 }
-static inline uint32_t NEG_USR32(uint32_t a, int8_t s){
+static uint32_t NEG_USR32(uint32_t a, int8_t s){
   __asm__ ("shrl %1, %0\n\t"
            : "+r" (a)
            : "ic" ((uint8_t)(-s))
@@ -209,11 +209,11 @@ NEG_SSR32(name##_cache, num)
 #   define GET_CACHE(name, gb)\
 ((uint32_t)name##_cache)
 
-static inline int get_bits_count(GetBitContext *s){
+static int get_bits_count(GetBitContext *s){
   return s->index;
 }
 
-static inline void skip_bits_long(GetBitContext *s, int n){
+static void skip_bits_long(GetBitContext *s, int n){
   s->index += n;
 }
 
@@ -263,11 +263,11 @@ NEG_SSR32(name##_cache, num)
 #   define GET_CACHE(name, gb)\
 ((uint32_t)name##_cache)
 
-static inline int get_bits_count(GetBitContext *s){
+static int get_bits_count(GetBitContext *s){
   return (s->buffer_ptr - s->buffer)*8 - 16 + s->bit_count;
 }
 
-static inline void skip_bits_long(GetBitContext *s, int n){
+static void skip_bits_long(GetBitContext *s, int n){
   OPEN_READER(re, s)
   re_bit_count += n;
   re_buffer_ptr += 2*(re_bit_count>>4);
@@ -302,7 +302,7 @@ name##_buffer_ptr++;\
 name##_bit_count-= 32;\
 }\
 
-#if ARCH_X86
+#if defined(ARCH_X86)
 #   define SKIP_CACHE(name, gb, num)\
 __asm__(\
 "shldl %2, %1, %0          \n\t"\
@@ -338,11 +338,11 @@ NEG_SSR32(name##_cache0, num)
 #   define GET_CACHE(name, gb)\
 (name##_cache0)
 
-static inline int get_bits_count(GetBitContext *s){
+static int get_bits_count(GetBitContext *s){
   return ((uint8_t*)s->buffer_ptr - s->buffer)*8 - 32 + s->bit_count;
 }
 
-static inline void skip_bits_long(GetBitContext *s, int n){
+static void skip_bits_long(GetBitContext *s, int n){
   OPEN_READER(re, s)
   re_bit_count += n;
   re_buffer_ptr += re_bit_count>>5;
@@ -361,7 +361,7 @@ static inline void skip_bits_long(GetBitContext *s, int n){
  * @param n length in bits
  * @author BERO
  */
-static inline int get_xbits(GetBitContext *s, int n){
+static int get_xbits(GetBitContext *s, int n){
   register int sign;
   register int32_t cache;
   OPEN_READER(re, s)
@@ -373,7 +373,7 @@ static inline int get_xbits(GetBitContext *s, int n){
   return (NEG_USR32(sign ^ cache, n) ^ sign) - sign;
 }
 
-static inline int get_sbits(GetBitContext *s, int n){
+static int get_sbits(GetBitContext *s, int n){
   register int tmp;
   OPEN_READER(re, s)
   UPDATE_CACHE(re, s)
@@ -387,7 +387,7 @@ static inline int get_sbits(GetBitContext *s, int n){
  * reads 1-17 bits.
  * Note, the alt bitstream reader can read up to 25 bits, but the libmpeg2 reader can't
  */
-static inline unsigned int get_bits(GetBitContext *s, int n){
+static unsigned int get_bits(GetBitContext *s, int n){
   register int tmp;
   OPEN_READER(re, s)
   UPDATE_CACHE(re, s)
@@ -401,7 +401,7 @@ static inline unsigned int get_bits(GetBitContext *s, int n){
  * shows 1-17 bits.
  * Note, the alt bitstream reader can read up to 25 bits, but the libmpeg2 reader can't
  */
-static inline unsigned int show_bits(GetBitContext *s, int n){
+static unsigned int show_bits(GetBitContext *s, int n){
   register int tmp;
   OPEN_READER(re, s)
   UPDATE_CACHE(re, s)
@@ -410,7 +410,7 @@ static inline unsigned int show_bits(GetBitContext *s, int n){
   return tmp;
 }
 
-static inline void skip_bits(GetBitContext *s, int n){
+static void skip_bits(GetBitContext *s, int n){
   //Note gcc seems to optimize this to s->index+=n for the ALT_READER :))
   OPEN_READER(re, s)
   UPDATE_CACHE(re, s)
@@ -418,7 +418,7 @@ static inline void skip_bits(GetBitContext *s, int n){
   CLOSE_READER(re, s)
 }
 
-static inline unsigned int get_bits1(GetBitContext *s){
+static unsigned int get_bits1(GetBitContext *s){
 #ifdef ALT_BITSTREAM_READER
   int index= s->index;
   uint8_t result= s->buffer[ index>>3 ];
@@ -438,11 +438,11 @@ static inline unsigned int get_bits1(GetBitContext *s){
 #endif
 }
 
-static inline unsigned int show_bits1(GetBitContext *s){
+static unsigned int show_bits1(GetBitContext *s){
   return show_bits(s, 1);
 }
 
-static inline void skip_bits1(GetBitContext *s){
+static void skip_bits1(GetBitContext *s){
   skip_bits(s, 1);
 }
 
@@ -450,7 +450,7 @@ static inline void skip_bits1(GetBitContext *s){
  * reads 0-32 bits.
  */
 #if 0
-static inline unsigned int get_bits_long(GetBitContext *s, int n){
+static unsigned int get_bits_long(GetBitContext *s, int n){
   if(n<=17) return get_bits(s, n);
   else{
 #ifdef ALT_BITSTREAM_READER_LE
@@ -466,14 +466,14 @@ static inline unsigned int get_bits_long(GetBitContext *s, int n){
 /**
  * reads 0-32 bits as a signed integer.
  */
-static inline int get_sbits_long(GetBitContext *s, int n) {
+static int get_sbits_long(GetBitContext *s, int n) {
   return sign_extend(get_bits_long(s, n), n);
 }
 
 /**
  * shows 0-32 bits.
  */
-static inline unsigned int show_bits_long(GetBitContext *s, int n){
+static unsigned int show_bits_long(GetBitContext *s, int n){
   if(n<=17) return show_bits(s, n);
   else{
     GetBitContext gb= *s;
@@ -481,7 +481,7 @@ static inline unsigned int show_bits_long(GetBitContext *s, int n){
   }
 }
 #endif
-static inline int check_marker(GetBitContext *s, const char *msg)
+static int check_marker(GetBitContext *s, const char *msg)
 {
   int bit= get_bits1(s);
   //if(!bit)
@@ -496,7 +496,7 @@ static inline int check_marker(GetBitContext *s, const char *msg)
  * because some optimized bitstream readers read 32 or 64 bit at once and could read over the end
  * @param bit_size the size of the buffer in bits
  */
-static inline void init_get_bits(GetBitContext *s,
+static void init_get_bits(GetBitContext *s,
                                  const uint8_t *buffer, int bit_size)
 {
   int buffer_size= (bit_size+7)>>3;
@@ -521,7 +521,7 @@ static inline void init_get_bits(GetBitContext *s,
 #endif
 }
 
-static inline void align_get_bits(GetBitContext *s)
+static void align_get_bits(GetBitContext *s)
 {
   int n= (-get_bits_count(s)) & 7;
   if(n) skip_bits(s, n);
@@ -645,7 +645,7 @@ static av_always_inline int get_vlc2(GetBitContext *s, VLC_TYPE (*table)[2],
 //#define TRACE
 
 #ifdef TRACE
-static inline void print_bin(int bits, int n){
+static void print_bin(int bits, int n){
   int i;
   
   for(i=n-1; i>=0; i--){
@@ -655,14 +655,14 @@ static inline void print_bin(int bits, int n){
     av_log(NULL, AV_LOG_DEBUG, " ");
 }
 
-static inline int get_bits_trace(GetBitContext *s, int n, char *file, const char *func, int line){
+static int get_bits_trace(GetBitContext *s, int n, char *file, const char *func, int line){
   int r= get_bits(s, n);
   
   print_bin(r, n);
   av_log(NULL, AV_LOG_DEBUG, "%5d %2d %3d bit @%5d in %s %s:%d\n", r, n, r, get_bits_count(s)-n, file, func, line);
   return r;
 }
-static inline int get_vlc_trace(GetBitContext *s, VLC_TYPE (*table)[2], int bits, int max_depth, char *file, const char *func, int line){
+static int get_vlc_trace(GetBitContext *s, VLC_TYPE (*table)[2], int bits, int max_depth, char *file, const char *func, int line){
   int show= show_bits(s, 24);
   int pos= get_bits_count(s);
   int r= get_vlc2(s, table, bits, max_depth);
@@ -674,7 +674,7 @@ static inline int get_vlc_trace(GetBitContext *s, VLC_TYPE (*table)[2], int bits
   av_log(NULL, AV_LOG_DEBUG, "%5d %2d %3d vlc @%5d in %s %s:%d\n", bits2, len, r, pos, file, func, line);
   return r;
 }
-static inline int get_xbits_trace(GetBitContext *s, int n, char *file, const char *func, int line){
+static int get_xbits_trace(GetBitContext *s, int n, char *file, const char *func, int line){
   int show= show_bits(s, n);
   int r= get_xbits(s, n);
   
@@ -695,7 +695,7 @@ static inline int get_xbits_trace(GetBitContext *s, int n, char *file, const cha
 #define tprintf(p, ...) {}
 #endif
 
-static inline int decode012(GetBitContext *gb){
+static int decode012(GetBitContext *gb){
   int n;
   n = get_bits1(gb);
   if (n == 0)
@@ -704,7 +704,7 @@ static inline int decode012(GetBitContext *gb){
     return get_bits1(gb) + 1;
 }
 
-static inline int decode210(GetBitContext *gb){
+static int decode210(GetBitContext *gb){
   if (get_bits1(gb))
     return 0;
   else

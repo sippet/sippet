@@ -76,5 +76,5 @@ void   g729a_dec_deinit   (void *decState)
   if (decState == NULL)
     return;
 
-  bzero(decState,sizeof(g729a_decode_frame_state));
+  memset(decState,0,sizeof(g729a_decode_frame_state));
 }

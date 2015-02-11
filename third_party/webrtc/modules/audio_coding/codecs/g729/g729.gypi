@@ -13,7 +13,6 @@
       'type': 'static_library',
       'sources': [
         'audio_encoder_g729.cc',
-        'include/audio_encoder_g729.h',
         'include/g729_interface.h',
         'g729_inst.h',
         'g729_interface.c',

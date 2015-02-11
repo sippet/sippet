@@ -31,7 +31,7 @@
         'include/g729a_decoder.h',
         'include/g729a_encoder.h',
         'include/g729a.h',
-        'include/include/basic_op.h',
+        'include/basic_op.h',
         'include/ld8a.h',
         'include/libavcodec_get_bits.h',
         'include/libavcodec_put_bits.h',
@@ -68,6 +68,20 @@
         'source/tab_ld8a.c',
         'source/taming.c',
         'source/util.c',
+      ],
+      'conditions': [
+        ['OS=="linux" or OS=="android" or OS=="ios"', {
+          # Available assembly optimizations are valid only
+          # for GCC and LLVM compilers
+          'conditions': [
+            ['target_arch=="ia32" or target_arch=="x64"', {
+              'defines': [ 'ARCH_X86' ]
+            }],
+            ['target_arch=="arm"', {
+              'defines': [ 'ARCH_ARM' ]
+            }],
+          ],
+        }], # OS=="linux" or OS=="android" or OS=="ios"
       ],
     },  # target g729
   ],
