@@ -74,9 +74,10 @@
           # Available assembly optimizations are valid only
           # for GCC and LLVM compilers
           'conditions': [
-            ['target_arch=="ia32" or target_arch=="x64"', {
-              'defines': [ 'ARCH_X86' ]
-            }],
+            # XXX: ARM_X86 optimizations are broken in the code
+            #['target_arch=="ia32" or target_arch=="x64"', {
+            #  'defines': [ 'ARCH_X86' ]
+            #}],
             ['target_arch=="arm"', {
               'defines': [ 'ARCH_ARM' ]
             }],
