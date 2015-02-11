@@ -20,6 +20,8 @@
 #ifndef __G729A_H__
 #define __G729A_H__
 
+#include "typedef.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

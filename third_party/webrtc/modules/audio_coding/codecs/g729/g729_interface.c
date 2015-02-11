@@ -19,60 +19,71 @@
 #include <stdlib.h>
 #include <string.h>
 #include "g729_interface.h"
+#include "g729_inst.h"
 #include "g729a_encoder.h"
 #include "g729a_decoder.h"
-#include "g729a.h"
-
-struct WebRtcG729EncInst {
-  g729a_encode_frame_state enc;
-};
-
-struct WebRtcG729DecInst {
-  UWord8 last_frm[L_PACKED_G729A];
-  g729a_decode_frame_state dec;
-};
 
 int16_t WebRtcG729_EncoderCreate(G729EncInst** inst) {
+  if (inst == NULL)
+    return -1;
   *inst = (G729EncInst*) calloc(sizeof(G729EncInst), 1);
   if (!*inst)
-      return -1;
+    return -1;
+  (*inst)->enc = calloc(g729a_enc_mem_size(), 1);
+  if (!(*inst)->enc) {
+    free(*inst);
+    return -1;
+  }
   return 0;
 }
 
-int16_t WebRtcG729_EncoderInit(G729EncInst* encInst, int16_t mode) {
-  if (!g729a_enc_init(&encInst->enc))
+int16_t WebRtcG729_EncoderInit(G729EncInst* encInst) {
+  if (!g729a_enc_init(encInst->enc))
     return -1;
   return 0;
 }
 
 int16_t WebRtcG729_EncoderFree(G729EncInst* encInst) {
-  g729a_enc_deinit(&encInst->enc);
+  if (encInst == NULL)
+    return -1;
+  g729a_enc_deinit(encInst->enc);
+  free(encInst->enc);
   free(encInst);
   return 0;
 }
 
 int16_t WebRtcG729_DecoderCreate(G729DecInst** inst) {
+  if (inst == NULL)
+    return -1;
   *inst = (G729DecInst *) calloc(sizeof(G729DecInst), 1);
   if (!*inst)
     return -1;
+  (*inst)->dec = calloc(g729a_dec_mem_size(), 1);
+  if (!(*inst)->dec) {
+    free(*inst);
+    return -1;
+  }
   return 0;
 }
 
 int16_t WebRtcG729_DecoderInit(G729DecInst* decInst) {
-  if (!g729a_dec_init(&decInst->dec))
+  if (!g729a_dec_init(decInst->dec))
     return -1;
   return 0;
 }
 
 int16_t WebRtcG729_DecoderFree(G729DecInst* decInst) {
-  g729a_dec_deinit(&decInst->dec);
+  if (decInst == NULL)
+    return -1;
+  g729a_dec_deinit(decInst->dec);
+  free(decInst->dec);
   free(decInst);
   return 0;
 }
 
-int16_t WebRtcG729_Encode(G729EncInst* encInst, int16_t* input,
-                          int16_t len, int16_t* output) {
-  g729a_enc_process(&encInst->enc, input, (UWord8*)output);
+int16_t WebRtcG729_Encode(G729EncInst* encInst, const int16_t* input,
+                          int16_t len, uint8_t* output) {
+  g729a_enc_process(encInst->enc, (Word16*)input, (UWord8*)output);
   return L_PACKED_G729A;
 }
 
@@ -87,7 +98,7 @@ int16_t WebRtcG729_Decode(G729DecInst* decInst, const uint8_t* encoded,
   }
 
   for (i = 0; len - i*L_PACKED_G729A > 0; ++i) {
-    g729a_dec_process(&decInst->dec, &frames[i*L_PACKED_G729A],
+    g729a_dec_process(decInst->dec, &frames[i*L_PACKED_G729A],
                       &decoded[i*L_FRAME], 0);
   }
 
@@ -106,7 +117,7 @@ int16_t WebRtcG729_DecodePlc(G729DecInst* decInst, int16_t* decoded,
   int16_t i;
 
   for (i = 0; i < noOfLostFrames; ++i) {
-    g729a_dec_process(&decInst->dec, decInst->last_frm,
+    g729a_dec_process(decInst->dec, decInst->last_frm,
                       &decoded[i*L_FRAME], 1);
   }
 

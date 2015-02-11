@@ -409,6 +409,14 @@
             }],
           ],
         },
+        {
+          'target_name': 'video_capture_module_internal_impl',
+          'type': 'none'
+        },
+        {
+          'target_name': 'video_render_module_internal_impl',
+          'type': 'none'
+        },
       ],
       'conditions': [
         ['OS=="android"', {

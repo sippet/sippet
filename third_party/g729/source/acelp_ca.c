@@ -519,10 +519,10 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
     for(i1=1; i1<L_SUBFR; i1+=STEP)
     {
-      *p0++ = mult(*p0, psign[i1]);
-      *p1++ = mult(*p1, psign[i1+1]);
-      *p2++ = mult(*p2, psign[i1+2]);
-      *p3++ = mult(*p3, psign[i1+3]);
+      *p0 = mult(*p0, psign[i1]);   p0++;
+      *p1 = mult(*p1, psign[i1+1]); p1++;
+      *p2 = mult(*p2, psign[i1+2]); p2++;
+      *p3 = mult(*p3, psign[i1+3]); p3++;
     }
   }
 
@@ -537,9 +537,9 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
     for(i2=2; i2<L_SUBFR; i2+=STEP)
     {
-      *p0++ = mult(*p0, psign[i2]);
-      *p1++ = mult(*p1, psign[i2+1]);
-      *p2++ = mult(*p2, psign[i2+2]);
+      *p0 = mult(*p0, psign[i2]);   p0++;
+      *p1 = mult(*p1, psign[i2+1]); p1++;
+      *p2 = mult(*p2, psign[i2+2]); p2++;
     }
   }
 
@@ -553,8 +553,8 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
     for(i3=3; i3<L_SUBFR; i3+=STEP)
     {
-      *p0++ = mult(*p0, psign[i3]);
-      *p1++ = mult(*p1, psign[i3+1]);
+      *p0 = mult(*p0, psign[i3]);   p0++;
+      *p1 = mult(*p1, psign[i3+1]); p1++;
     }
   }
 
