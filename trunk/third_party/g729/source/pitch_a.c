@@ -37,7 +37,7 @@ Portions of this file are derived from the following ITU standard:
 #include "tab_ld8a.h"
 
 
-static inline Word16 Compute_nrj_max(Word16 *scal_sig, Word16 L_frame, Word32 max)
+static Word16 Compute_nrj_max(Word16 *scal_sig, Word16 L_frame, Word32 max)
 {
   Word32 sum;
   Word16  max_h, max_l, ener_h, ener_l;

@@ -66,7 +66,7 @@ Word32 Div_32(Word32 L_num, Word16 denom_hi, Word16 denom_lo);
  |___________________________________________________________________________|
 */
 
-static inline void L_Extract(Word32 L_32, Word16 *hi, Word16 *lo)
+static void L_Extract(Word32 L_32, Word16 *hi, Word16 *lo)
 {
   *hi = (Word16) (L_32 >> 16);
   *lo = (Word16)((L_32 >> 1) - (*hi << 15));
@@ -91,7 +91,7 @@ static inline void L_Extract(Word32 L_32, Word16 *hi, Word16 *lo)
  |                                                                           |
  |___________________________________________________________________________|
 */
-static inline Word32 Mpy_32_16(Word16 shi, Word16 slo, Word16 n)
+static Word32 Mpy_32_16(Word16 shi, Word16 slo, Word16 n)
 {
 #if defined(ARCH_ARM)
   register Word32 a = L_Comp(shi, slo);
@@ -148,7 +148,7 @@ static inline Word32 Mpy_32_16(Word16 shi, Word16 slo, Word16 n)
  |                                                                           |
  |___________________________________________________________________________|
 */
-static inline Word32 Mpy_32(Word16 hi1, Word16 lo1, Word16 hi2, Word16 lo2)
+static Word32 Mpy_32(Word16 hi1, Word16 lo1, Word16 hi2, Word16 lo2)
 {
 #if defined(ARCH_ARM)
   register Word32 ra = hi1 << 16 | lo1;

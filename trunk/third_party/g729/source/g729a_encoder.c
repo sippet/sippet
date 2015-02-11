@@ -60,5 +60,5 @@ void   g729a_enc_deinit   (void *encState)
   if (encState == NULL)
     return;
 
-  bzero(encState,sizeof(g729a_encode_frame_state));
+  memset(encState,0,sizeof(g729a_encode_frame_state));
 }

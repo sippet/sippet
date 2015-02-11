@@ -83,8 +83,12 @@ int16_t WebRtcG729_DecoderFree(G729DecInst* decInst) {
 
 int16_t WebRtcG729_Encode(G729EncInst* encInst, const int16_t* input,
                           int16_t len, uint8_t* output) {
-  g729a_enc_process(encInst->enc, (Word16*)input, (UWord8*)output);
-  return L_PACKED_G729A;
+  int16_t i, frms = len / L_FRAME;
+  for (i = 0; i < frms; ++i) {
+    g729a_enc_process(encInst->enc, (Word16*)&input[i*L_FRAME],
+                      (UWord8*)&output[i*L_PACKED_G729A]);
+  }
+  return frms * L_PACKED_G729A;
 }
 
 int16_t WebRtcG729_Decode(G729DecInst* decInst, const uint8_t* encoded,

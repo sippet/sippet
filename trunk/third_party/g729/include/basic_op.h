@@ -289,10 +289,10 @@ Word16 div_s(Word16 var1, Word16 var2); /* Short division,       18 */
  |             range : 0x0000 0000 <= var_out <= 0x0000 001f.                |
  |___________________________________________________________________________|
 */
-static inline Word16 norm_l(register Word32 ra)
+static Word16 norm_l(register Word32 ra)
 {
   Word32 out = 0;
-#if defined ARCH_ARM
+#if defined(ARCH_ARM)
   if (ra)
   {
     ra ^= (ra << 1);
@@ -354,7 +354,7 @@ static inline Word16 norm_l(register Word32 ra)
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static inline Word32 L_sub(register Word32 ra, register Word32 rb)
+static Word32 L_sub(register Word32 ra, register Word32 rb)
 {
   Word32 out;
 #if defined(ARCH_ARM)
@@ -405,7 +405,7 @@ static inline Word32 L_sub(register Word32 ra, register Word32 rb)
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static inline Word32 L_add(register Word32 ra, register Word32 rb)
+static Word32 L_add(register Word32 ra, register Word32 rb)
 {
   Word32 out;
 #if defined(ARCH_ARM)
@@ -459,7 +459,7 @@ static inline Word32 L_add(register Word32 ra, register Word32 rb)
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static inline Word16 mult(/*register Word32 ra */Word16 var1,
+static Word16 mult(/*register Word32 ra */Word16 var1,
                           /*register Word32 rb */Word16 var2)
 {
   Word32 product;
@@ -524,7 +524,7 @@ static inline Word16 mult(/*register Word32 ra */Word16 var1,
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static inline Word32 L_mult(/*register Word32 ra /*/Word16 var1,
+static Word32 L_mult(/*register Word32 ra /*/Word16 var1,
                             /*register Word32 rb /*/Word16 var2)
 {
 #if defined(ARCH_ARM)
@@ -589,7 +589,7 @@ static inline Word32 L_mult(/*register Word32 ra /*/Word16 var1,
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static inline Word32 L_msu(register Word32 ra,
+static Word32 L_msu(register Word32 ra,
                            register Word32 rb /*Word16 var1*/,
                            register Word32 rc /*Word16 var2*/)
 {
@@ -643,7 +643,7 @@ static inline Word32 L_msu(register Word32 ra,
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static inline Word32 L_mac(register Word32 ra,
+static Word32 L_mac(register Word32 ra,
                            register Word32 rb /*Word16 var1*/,
                            register Word32 rc /*Word16 var2*/)
 {
@@ -702,21 +702,15 @@ static inline Word32 L_mac(register Word32 ra,
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static inline Word16 sature(Word32 L_var1)
+static Word16 sature(Word32 L_var1)
 {
   Word16 var_out;
-  if (L_var1 > 0X00007fffL)
-  {
+  if (L_var1 > 0x00007fffL)
     var_out = MAX_16;
-  }
   else if (L_var1 < (Word32)0xffff8000L)
-  {
     var_out = MIN_16;
-  }
   else
-  {
     var_out = extract_l(L_var1);
-  }
   return(var_out);
 }
 
@@ -754,7 +748,7 @@ static inline Word16 sature(Word32 L_var1)
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static inline Word16 add(Word16 var1, Word16 var2)
+static Word16 add(Word16 var1, Word16 var2)
 {
   Word32 out;
 #if defined(ARCH_ARM)
@@ -764,9 +758,8 @@ static inline Word16 add(Word16 var1, Word16 var2)
           : "=r"(out)
           : "r"(ra), "r"(rb));
 #else
-   Word32 sum;
-   sum = (Word32) var1 + var2;
-   out = sature(sum);
+   out = (Word32) var1 + var2;
+   out = sature(out);
 #endif
   return (Word16)out;
 }
@@ -804,7 +797,7 @@ static inline Word16 add(Word16 var1, Word16 var2)
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static inline Word16 sub(Word16 var1, Word16 var2)
+static Word16 sub(Word16 var1, Word16 var2)
 {
   Word32 out;
 #if defined(ARCH_ARM)
@@ -814,9 +807,8 @@ static inline Word16 sub(Word16 var1, Word16 var2)
           : "=r"(out)
           : "r"(ra), "r"(rb));
 #else
-   Word32 diff;
-   diff = (Word32) var1 - var2;
-   out = sature(diff);
+   out = (Word32) var1 - var2;
+   out = sature(out);
 #endif
   return (Word16)out;
 }
@@ -849,7 +841,7 @@ static inline Word16 sub(Word16 var1, Word16 var2)
  |             range : 0x0000 0000 <= var_out <= 0x7fff ffff.                |
  |___________________________________________________________________________|
 */
-static inline Word32 L_abs(Word32 L_var1)
+static Word32 L_abs(Word32 L_var1)
 {
   if (L_var1 == MIN_32)
     return MAX_32;
@@ -884,7 +876,7 @@ static inline Word32 L_abs(Word32 L_var1)
  |             range : 0x0000 0000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static inline Word16 abs_s(Word16 var1)
+static Word16 abs_s(Word16 var1)
 {
  if (var1 == MIN_16 )
    return MAX_16;
@@ -922,7 +914,7 @@ static inline Word16 abs_s(Word16 var1)
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static inline Word16 g_round(register Word32 ra)
+static Word16 g_round(register Word32 ra)
 {
    Word32 out;
 #if defined(ARCH_ARM)
@@ -932,10 +924,10 @@ static inline Word16 g_round(register Word32 ra)
             : "=r"(out)
             : "r"(ra), "r"(rb));
 #else
-  ra = L_add(ra, (Word32) 0x00008000L);
-  out = (Word16)(ra >> 16);
+  out = L_add(ra, 0x00008000L);
+  out = (Word16)(out >> 16);
 #endif
-   return out;
+   return (Word16)out;
 }
 
 /*___________________________________________________________________________
@@ -972,7 +964,7 @@ static inline Word16 g_round(register Word32 ra)
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static inline Word16 shl(Word16 var1,Word16 var2)
+static Word16 shl(Word16 var1,Word16 var2)
 {
   Word16 tmp;
   if (var2 < 0)
@@ -1020,7 +1012,7 @@ static inline Word16 shl(Word16 var1,Word16 var2)
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static inline Word16 shr(Word16 var1,Word16 var2)
+static Word16 shr(Word16 var1,Word16 var2)
 {
   if (var2 < 0)
     return shl(var1, -var2);
@@ -1061,7 +1053,7 @@ static inline Word16 shr(Word16 var1,Word16 var2)
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static inline Word32 L_shl(Word32 var1,Word32 var2)
+static Word32 L_shl(Word32 var1,Word32 var2)
 {
   Word32 tmp;
   if (var2 < 0)
@@ -1108,7 +1100,7 @@ static inline Word32 L_shl(Word32 var1,Word32 var2)
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static inline Word32 L_shr(Word32 var1,Word32 var2)
+static Word32 L_shr(Word32 var1,Word32 var2)
 {
   if (var2 < 0)
     return L_shl(var1, -var2);

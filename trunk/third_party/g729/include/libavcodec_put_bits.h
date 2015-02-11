@@ -30,9 +30,9 @@
 #include <stdlib.h>
 #include <assert.h>
 //#include "libavutil/bswap.h"
-static inline uint32_t bswap_32(uint32_t x)
+static uint32_t bswap_32(uint32_t x)
 {
-#if defined(ARCH_ARMV6)
+#if defined(ARCH_ARM)
   __asm__("rev %0, %0" : "+r"(x));
 #elif defined(ARCH_X86)
   uint32_t t;
@@ -87,7 +87,7 @@ typedef struct PutBitContext {
  * @param buffer the buffer where to put bits
  * @param buffer_size the size in bytes of buffer
  */
-static inline void init_put_bits(PutBitContext *s, uint8_t *buffer, int buffer_size)
+static void init_put_bits(PutBitContext *s, uint8_t *buffer, int buffer_size)
 {
   if(buffer_size < 0) {
     buffer_size = 0;
@@ -111,7 +111,7 @@ static inline void init_put_bits(PutBitContext *s, uint8_t *buffer, int buffer_s
 /**
  * Returns the total number of bits written to the bitstream.
  */
-static inline int put_bits_count(PutBitContext *s)
+static int put_bits_count(PutBitContext *s)
 {
 #ifdef ALT_BITSTREAM_WRITER
   return s->index;
@@ -123,7 +123,7 @@ static inline int put_bits_count(PutBitContext *s)
 /**
  * Pads the end of the output stream with zeros.
  */
-static inline void flush_put_bits(PutBitContext *s)
+static void flush_put_bits(PutBitContext *s)
 {
 #ifdef ALT_BITSTREAM_WRITER
   align_put_bits(s);
@@ -166,7 +166,7 @@ static inline void flush_put_bits(PutBitContext *s)
  */
 //void ff_copy_bits(PutBitContext *pb, const uint8_t *src, int length);
 
-static inline void put_bits(PutBitContext *s, int n, unsigned int value)
+static void put_bits(PutBitContext *s, int n, unsigned int value)
 #ifndef ALT_BITSTREAM_WRITER
 {
   unsigned int bit_buf;
@@ -220,7 +220,7 @@ static inline void put_bits(PutBitContext *s, int n, unsigned int value)
 #else  /* ALT_BITSTREAM_WRITER defined */
 {
 #    ifdef ALIGNED_BITSTREAM_WRITER
-#        if ARCH_X86
+#        if defined(ARCH_X86)
   __asm__ volatile(
                    "movl %0, %%ecx                 \n\t"
                    "xorl %%eax, %%eax              \n\t"
@@ -251,7 +251,7 @@ static inline void put_bits(PutBitContext *s, int n, unsigned int value)
   s->index= index;
 #        endif
 #    else //ALIGNED_BITSTREAM_WRITER
-#        if ARCH_X86
+#        if defined(ARCH_X86)
   __asm__ volatile(
                    "movl $7, %%ecx                 \n\t"
                    "andl %0, %%ecx                 \n\t"
@@ -282,7 +282,7 @@ static inline void put_bits(PutBitContext *s, int n, unsigned int value)
   }
 #endif
   
-  static inline void put_sbits(PutBitContext *pb, int bits, int32_t val)
+  static void put_sbits(PutBitContext *pb, int bits, int32_t val)
   {
     assert(bits >= 0 && bits <= 31);
     
@@ -293,7 +293,7 @@ static inline void put_bits(PutBitContext *s, int n, unsigned int value)
    * Returns the pointer to the byte where the bitstream writer will put
    * the next bit.
    */
-  static inline uint8_t* put_bits_ptr(PutBitContext *s)
+  static uint8_t* put_bits_ptr(PutBitContext *s)
   {
 #ifdef ALT_BITSTREAM_WRITER
     return s->buf + (s->index>>3);
@@ -306,7 +306,7 @@ static inline void put_bits(PutBitContext *s, int n, unsigned int value)
    * Skips the given number of bytes.
    * PutBitContext must be flushed & aligned to a byte boundary before calling this.
    */
-  static inline void skip_put_bytes(PutBitContext *s, int n){
+  static void skip_put_bytes(PutBitContext *s, int n){
     assert((put_bits_count(s)&7)==0);
 #ifdef ALT_BITSTREAM_WRITER
     FIXME may need some cleaning of the buffer
@@ -322,7 +322,7 @@ static inline void put_bits(PutBitContext *s, int n, unsigned int value)
    * Must only be used if the actual values in the bitstream do not matter.
    * If n is 0 the behavior is undefined.
    */
-  static inline void skip_put_bits(PutBitContext *s, int n){
+  static void skip_put_bits(PutBitContext *s, int n){
 #ifdef ALT_BITSTREAM_WRITER
     s->index += n;
 #else
@@ -337,7 +337,7 @@ static inline void put_bits(PutBitContext *s, int n, unsigned int value)
    *
    * @param size the new size in bytes of the buffer where to put bits
    */
-  static inline void set_put_bits_buffer_size(PutBitContext *s, int size){
+  static void set_put_bits_buffer_size(PutBitContext *s, int size){
     s->buf_end= s->buf + size;
   }
   

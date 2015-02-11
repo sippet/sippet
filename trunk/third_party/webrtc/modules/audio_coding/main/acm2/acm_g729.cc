@@ -59,8 +59,9 @@ void ACMG729::DestructEncoderSafe() { return; }
 
 #else  //===================== Actual Implementation =======================
 
-ACMG729::ACMG729(int16_t /* codec_id */)
+ACMG729::ACMG729(int16_t codec_id)
     : encoder_inst_ptr_(NULL) {
+  codec_id_ = codec_id;
 }
 
 ACMG729::~ACMG729() {
@@ -82,7 +83,7 @@ int16_t ACMG729::InternalEncode(uint8_t* bitstream,
     // audio, number of samples and bitsream
     tmp_len_byte = WebRtcG729_Encode(
         encoder_inst_ptr_, &in_audio_[in_audio_ix_read_], 80,
-        reinterpret_cast<int16_t*>(&(bitstream[*bitstream_len_byte])));
+        reinterpret_cast<uint8_t*>(&(bitstream[*bitstream_len_byte])));
 
     // increment the read index this tell the caller that how far
     // we have gone forward in reading the audio buffer
@@ -151,7 +152,7 @@ int16_t ACMG729::EnableDTX() {
     return 0;
   } else if (encoder_exist_) {
     // Re-init the G.729 encoder to turn on DTX
-    if (WebRtcG729_EncoderInit(encoder_inst_ptr_, 1) < 0) {
+    if (WebRtcG729_EncoderInit(encoder_inst_ptr_) < 0) {
       return -1;
     }
     dtx_enabled_ = true;
@@ -167,7 +168,7 @@ int16_t ACMG729::DisableDTX() {
     return 0;
   } else if (encoder_exist_) {
     // Re-init the G.729 decoder to turn off DTX
-    if (WebRtcG729_EncoderInit(encoder_inst_ptr_, 0) < 0) {
+    if (WebRtcG729_EncoderInit(encoder_inst_ptr_) < 0) {
       return -1;
     }
     dtx_enabled_ = false;
@@ -217,8 +218,7 @@ int32_t ACMG729::IsInternalDTXReplacedSafe(bool* internal_dtx_replaced) {
 
 int16_t ACMG729::InternalInitEncoder(WebRtcACMCodecParams* codec_params) {
   // Init G.729 encoder
-  return WebRtcG729_EncoderInit(encoder_inst_ptr_,
-                                ((codec_params->enable_dtx) ? 1 : 0));
+  return WebRtcG729_EncoderInit(encoder_inst_ptr_);
 }
 
 ACMGenericCodec* ACMG729::CreateInstance(void) {

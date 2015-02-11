@@ -68,7 +68,8 @@ void Lsp_Az(
   }
 }
 
-static inline Word32 mull(Word32 a, Word16 b)
+
+static Word32 mull(Word32 a, Word16 b)
 {
 #if defined(ARCH_ARM)
   register Word32 ra = a;
@@ -82,8 +83,8 @@ static inline Word32 mull(Word32 a, Word16 b)
   return hi;
 #else
   Word64 out;
-  out = (Word64)a * (Word64)b;
-  out = (out & 0xffffffff80000000ull) >> 31;
+  out = (Word64) a * b;
+  out >>= 16;
   return (Word32) out;
 #endif
 }
