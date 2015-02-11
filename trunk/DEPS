@@ -11,6 +11,10 @@ vars = {
   # PJSIP is used for testing purposes
   'pjsip_trunk': 'http://svn.pjsip.org/repos/pjproject/trunk',
   'pjsip_revision': '4796',  # Corresponds to version 2.2.1
+
+  # Siphon G.729 codec was forked here 
+  'siphon_trunk': 'http://siphon.googlecode.com/svn/trunk',
+  'siphon_revision': '793',
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -21,6 +25,9 @@ deps = {
 
   'src/third_party/gflags/src':
     Var('chromium_git') + '/external/gflags/src@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
+
+  'src/resources/g729a':
+    Var('siphon_trunk') + '/g729a/Data@' + Var('siphon_revision'),
 }
 
 hooks = [

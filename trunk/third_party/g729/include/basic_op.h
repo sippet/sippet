@@ -476,14 +476,15 @@ static inline Word16 mult(/*register Word32 ra */Word16 var1,
           : "r"(ra), "r"(rb), "r"(temp));
 
 #else
-  product = (Word32) var1 * var2;
-  if (product != (Word32) 0x40000000L)
+  product = ((Word32) var1 * var2) >> 15;
+
+  /* Saturate result (if necessary). */
+  /* var1 * var2 >0x00007fff is the only case */
+  /* that saturation occurs. */
+
+  if (product > 0x00007fffL)
   {
-    product <<= 1;          /* Multiply by 2 */
-  }
-  else
-  {
-    product = MAX_32;
+    product = (Word32) MAX_16;
   }
 #endif
   return ((Word16) product);

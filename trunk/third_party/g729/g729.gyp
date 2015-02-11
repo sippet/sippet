@@ -22,10 +22,6 @@
       },
       'variables': {
         'clang_warning_flags': [
-          # g729 has code like:
-          # *p0++ = mult(*p0, psign[i1]);
-          #    ^          ~~
-          '-Wno-unsequenced',
           # The code has constructs like:
           # if ((UWord32)(t0 - 0xfe000000L) < 0x01ffffffL -  0xfe000000L)
           '-Wno-tautological-constant-out-of-range-compare',
