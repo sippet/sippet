@@ -231,6 +231,16 @@ int16_t ACMG729::InternalCreateEncoder() {
   return WebRtcG729_EncoderCreate(&encoder_inst_ptr_);
 }
 
+void ACMG729::DestructEncoderSafe() {
+  // Free encoder memory
+  encoder_exist_ = false;
+  encoder_initialized_ = false;
+  if (encoder_inst_ptr_ != NULL) {
+    WebRtcG729_EncoderFree(encoder_inst_ptr_);
+    encoder_inst_ptr_ = NULL;
+  }
+}
+
 #endif
 
 }  // namespace acm2

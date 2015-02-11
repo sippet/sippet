@@ -25,23 +25,20 @@
           # g729 has code like:
           # *p0++ = mult(*p0, psign[i1]);
           #    ^          ~~
-          #'-Wno-unsequenced',
-          # It also has "if (a) if (b) s; else s2;" ambiguities
-          #'-Wno-dangling-else',
+          '-Wno-unsequenced',
+          # The code has constructs like:
+          # if ((UWord32)(t0 - 0xfe000000L) < 0x01ffffffL -  0xfe000000L)
+          '-Wno-tautological-constant-out-of-range-compare',
         ],
       },
-      'cflags': [
-        # g729 source uses 'round' builtin
-        #'-fno-builtin',
-      ],
       'sources': [
-        'overrides/include/basic_op.h',
         'include/g729a_decoder.h',
         'include/g729a_encoder.h',
         'include/g729a.h',
+        'include/include/basic_op.h',
         'include/ld8a.h',
         'include/libavcodec_get_bits.h',
-        'overrides/libavcodec_put_bits.h',
+        'include/libavcodec_put_bits.h',
         'include/oper_32b.h',
         'include/tab_ld8a.h',
         'include/typedef.h',

@@ -19,9 +19,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "g729_interface.h"
-#include "g729a.h"
 #include "g729a_encoder.h"
 #include "g729a_decoder.h"
+#include "g729a.h"
 
 struct WebRtcG729EncInst {
   g729a_encode_frame_state enc;
@@ -51,7 +51,7 @@ int16_t WebRtcG729_EncoderFree(G729EncInst* encInst) {
   return 0;
 }
 
-int16_t WebRtcG729_CreateDec(G729DecInst** inst) {
+int16_t WebRtcG729_DecoderCreate(G729DecInst** inst) {
   *inst = (G729DecInst *) calloc(sizeof(G729DecInst), 1);
   if (!*inst)
     return -1;

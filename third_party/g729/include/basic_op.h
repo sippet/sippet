@@ -701,7 +701,7 @@ static inline Word32 L_mac(register Word32 ra,
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-Word16 sature(Word32 L_var1)
+static inline Word16 sature(Word32 L_var1)
 {
   Word16 var_out;
   if (L_var1 > 0X00007fffL)
