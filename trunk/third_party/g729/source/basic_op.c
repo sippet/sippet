@@ -69,11 +69,11 @@ Portions of this file are derived from the following ITU standard:
  |                                                                           |
  |    var1                                                                   |
  |             16 bit short signed integer (Word16) whose value falls in the |
- |             range : 0x0000 0000 <= var1 <= var2 and var2 != 0.            |
+ |             range : 0x0000 <= var1 <= var2.                               |
  |                                                                           |
  |    var2                                                                   |
  |             16 bit short signed integer (Word16) whose value falls in the |
- |             range : var1 <= var2 <= 0x0000 7fff and var2 != 0.            |
+ |             range : var1 <= var2 <= 0x7fff.                               |
  |                                                                           |
  |   Outputs :                                                               |
  |                                                                           |
@@ -83,58 +83,48 @@ Portions of this file are derived from the following ITU standard:
  |                                                                           |
  |    var_out                                                                |
  |             16 bit short signed integer (Word16) whose value falls in the |
- |             range : 0x0000 0000 <= var_out <= 0x0000 7fff.                |
+ |             range : 0x0000 <= var_out <= 0x7fff.                          |
  |             It's a Q15 value (point between b15 and b14).                 |
  |___________________________________________________________________________|
 */
 
 Word16 div_s(Word16 var1, Word16 var2)
-  {
-   Word16 var_out = 0;
-   Word16 iteration;
-   Word32 L_num;
-   Word32 L_denom;
+{
+  Word16 var_out = 0, iteration;
+  Word32 L_num, L_denom;
+  Word32 L_denom_by_2, L_denom_by_4;
 
-   if ((var1 > var2) || (var1 < 0) || (var2 < 0))
-     {
-      printf("Division Error var1=%d  var2=%d\n",var1,var2);
-      exit(0);
-     }
-
-   if (var2 == 0)
-     {
-      printf("Division by 0, Fatal error \n");
-      exit(0);
-     }
-
-   if (var1 == 0)
-     {
-      var_out = 0;
-     }
-   else
-     {
-      if (var1 == var2)
-        {
-         var_out = MAX_16;
-        }
-      else
-        {
-         //var_out = (Word16)((((float)var1 / (float)var2) * 32767.0) + 0.5);
-         L_num = (Word32)var1;
-         L_denom = (Word32)var2;
-
-         for(iteration=0;iteration<15;iteration++)
-           {
-            var_out <<=1;
-            L_num <<= 1;
-
-            if (L_num >= L_denom)
-            {
-              L_num -= L_denom;
-              var_out++;
-            }
-           }
-        }
-     }
-   return(var_out);
+  if ((var1 > var2) || (var1 < 0)) {
+    return 0; /* used to exit(0); */
   }
+
+  if (var1) {
+    if (var1 == var2)
+      var_out = MAX_16;
+    else {
+      L_num = (Word32) var1;
+      L_denom = (Word32) var2;
+      L_denom_by_2 = (L_denom << 1);
+      L_denom_by_4 = (L_denom << 2);
+
+      for (iteration = 5; iteration > 0; iteration--) {
+        var_out <<= 3;
+        L_num <<= 3;
+        if (L_num >= L_denom_by_4) {
+          L_num -= L_denom_by_4;
+          var_out |= 4;
+        }
+        if (L_num >= L_denom_by_2) {
+          L_num -= L_denom_by_2;
+          var_out |=  2;
+        }
+        if (L_num >= (L_denom)) {
+          L_num -= (L_denom);
+          var_out |=  1;
+        }
+      }
+    }
+  }
+
+  return(var_out);
+}
