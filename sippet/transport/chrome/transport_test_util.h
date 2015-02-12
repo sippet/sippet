@@ -50,7 +50,7 @@ class MockEvent {
     virtual void Close() = 0;
   };
 
-  MockEvent(Expect *expect, std::string *transaction_id = NULL);
+  MockEvent(Expect *expect, std::string *transaction_id = nullptr);
   MockEvent(const MockEvent &other);
   ~MockEvent();
 
@@ -199,14 +199,14 @@ MockEvent ExpectIncomingMessage(const char *regular_expressions);
 
 // Transaction events:
 MockEvent ExpectStartTransaction(const char *regular_expressions,
-                                 std::string *transaction_id = NULL);
+                                 std::string *transaction_id = nullptr);
 MockEvent ExpectTransactionSend(const char *regular_expressions,
-                                std::string *transaction_id = NULL);
+                                std::string *transaction_id = nullptr);
 MockEvent ExpectIncomingResponse(const char *regular_expressions,
-                                 std::string *transaction_id = NULL);
+                                 std::string *transaction_id = nullptr);
 MockEvent ExpectIncomingRequest(const char *regular_expressions,
-                                std::string *transaction_id = NULL);
-MockEvent ExpectTransactionClose(std::string *transaction_id = NULL);
+                                std::string *transaction_id = nullptr);
+MockEvent ExpectTransactionClose(std::string *transaction_id = nullptr);
 
 // NetworkLayer::Delegate which checks callbacks based on static tables of
 // mock events.

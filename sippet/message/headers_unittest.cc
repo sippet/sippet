@@ -786,7 +786,7 @@ TEST_F(HeaderTest, TortureIpv6Bad) {
   HasExpectedRequestUri(
     "REGISTER sip:2001:db8::10 SIP/2.0\r\n"
     "\r\n",
-    NULL);
+    nullptr);
 }
 
 TEST_F(HeaderTest, TorturePortAmbiguous) {

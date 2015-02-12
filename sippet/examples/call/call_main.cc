@@ -132,8 +132,8 @@ class UserAgentHandler
   ~UserAgentHandler() override {}
 
   bool InitializePeerConnection() {
-    ASSERT(peer_connection_factory_.get() == NULL);
-    ASSERT(peer_connection_.get() == NULL);
+    ASSERT(peer_connection_factory_.get() == nullptr);
+    ASSERT(peer_connection_.get() == nullptr);
 
     // To allow sending to the signaling/worker threads.
     jingle_glue::JingleThreadWrapper::EnsureForCurrentMessageLoop();
@@ -157,7 +157,7 @@ class UserAgentHandler
     //servers.push_back(server);
 
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(servers,
-      &constraints_, NULL, NULL, this);
+      &constraints_, nullptr, nullptr, this);
     if (!peer_connection_.get()) {
       std::cout << "Error: CreatePeerConnection failed\n";
       DeletePeerConnection();
@@ -166,7 +166,7 @@ class UserAgentHandler
 
     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         peer_connection_factory_->CreateAudioTrack(
-            "audio", peer_connection_factory_->CreateAudioSource(NULL)));
+            "audio", peer_connection_factory_->CreateAudioSource(nullptr)));
 
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream("stream");
@@ -177,13 +177,13 @@ class UserAgentHandler
     }
     active_streams_.insert(std::make_pair(stream->label(), stream));
 
-    return peer_connection_.get() != NULL;
+    return peer_connection_.get() != nullptr;
   }
 
   void DeletePeerConnection() {
-    peer_connection_ = NULL;
+    peer_connection_ = nullptr;
     active_streams_.clear();
-    peer_connection_factory_ = NULL;
+    peer_connection_factory_ = nullptr;
   }
 
   void Start() {
@@ -602,7 +602,7 @@ class UserAgentHandler
   }
 
   int DoBye() {
-    ASSERT(dialog_ != NULL);
+    ASSERT(dialog_ != nullptr);
     next_state_ = STATE_BYE_COMPLETE;
 
     scoped_refptr<sippet::Request> bye(

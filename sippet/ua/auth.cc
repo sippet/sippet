@@ -67,7 +67,7 @@ Auth::Target Auth::GetChallengeTarget(
 }
 
 Challenge& Auth::GetChallengeFromHeader(Header* header) {
-  Challenge *challenge = NULL;
+  Challenge *challenge = nullptr;
   if (isa<WwwAuthenticate>(header)) {
     WwwAuthenticate *www_authenticate =
         dyn_cast<WwwAuthenticate>(header);
@@ -88,16 +88,17 @@ Challenge& Auth::GetChallengeFromHeader(Header* header) {
 
 GURL Auth::GetResponseOrigin(const scoped_refptr<Response>& response) {
   std::ostringstream spec;
-  DCHECK(response->refer_to());
-  GURL request_uri(response->refer_to()->request_uri());
-  if (request_uri.SchemeIs("sip") || request_uri.SchemeIs("sips")) {
-    SipURI uri(request_uri);
-    spec << uri.scheme() << ":"
-         << uri.host() << ":"
-         << uri.EffectiveIntPort();
-    std::pair<bool, std::string> result = uri.parameter("transport");
-    if (result.first)
-      spec << ";transport=" << result.second;
+  if (response->refer_to() != nullptr) {
+    GURL request_uri(response->refer_to()->request_uri());
+    if (request_uri.SchemeIs("sip") || request_uri.SchemeIs("sips")) {
+      SipURI uri(request_uri);
+      spec << uri.scheme() << ":"
+           << uri.host() << ":"
+           << uri.EffectiveIntPort();
+      std::pair<bool, std::string> result = uri.parameter("transport");
+      if (result.first)
+        spec << ";transport=" << result.second;
+    }
   }
   // else return empty GURL
   return GURL(spec.str());
@@ -110,7 +111,7 @@ void Auth::ChooseBestChallenge(
     const net::BoundNetLog& net_log,
     scoped_ptr<AuthHandler>* handler) {
   DCHECK(auth_handler_factory);
-  DCHECK(handler->get() == NULL);
+  DCHECK(handler->get() == nullptr);
 
   Auth::Target target = GetChallengeTarget(response);
   if (net::HttpAuth::AUTH_NONE == target)

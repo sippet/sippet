@@ -30,7 +30,7 @@ bool RespondToChallenge(const std::string& challenge,
                         const std::string& cnonce,
                         std::string* token) {
   // Input validation.
-  if (token == NULL) {
+  if (token == nullptr) {
     ADD_FAILURE() << "|token| must be non-NULL";
     return false;
   }
@@ -45,9 +45,9 @@ bool RespondToChallenge(const std::string& challenge,
 
   scoped_ptr<Header> header(
     Header::Parse(std::string("WWW-Authenticate: " + challenge)));
-  EXPECT_TRUE(header.get() != NULL);
+  EXPECT_TRUE(header.get() != nullptr);
   WwwAuthenticate *www_authenticate = dyn_cast<WwwAuthenticate>(header);
-  EXPECT_TRUE(www_authenticate != NULL);
+  EXPECT_TRUE(www_authenticate != nullptr);
 
   // Create a handler for a particular challenge.
   SipURI uri_origin(request_uri);
@@ -56,7 +56,7 @@ bool RespondToChallenge(const std::string& challenge,
     GURL(uri_origin.GetOrigin().spec()),
     AuthHandlerFactory::CREATE_CHALLENGE, 1,
     net::BoundNetLog(), &handler);
-  if (rv_create != net::OK || handler.get() == NULL) {
+  if (rv_create != net::OK || handler.get() == nullptr) {
     ADD_FAILURE() << "Unable to create auth handler.";
     return false;
   }
@@ -80,7 +80,7 @@ bool RespondToChallenge(const std::string& challenge,
   }
   EXPECT_EQ(1, request->size());
   Authorization *authorization = request->get<Authorization>();
-  EXPECT_TRUE(authorization != NULL);
+  EXPECT_TRUE(authorization != nullptr);
   *token = authorization->ToString();
   return true;
 }
@@ -271,7 +271,7 @@ TEST(AuthHandlerDigest, HandleAnotherChallenge) {
     AuthHandlerFactory::CREATE_CHALLENGE, 1,
     net::BoundNetLog(), &handler);
   EXPECT_EQ(net::OK, rv);
-  ASSERT_TRUE(handler.get() != NULL);
+  ASSERT_TRUE(handler.get() != nullptr);
 
   EXPECT_EQ(net::HttpAuth::AUTHORIZATION_RESULT_REJECT,
             handler->HandleAnotherChallenge(*challenge));

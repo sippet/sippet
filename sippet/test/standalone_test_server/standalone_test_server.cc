@@ -24,7 +24,7 @@ namespace sippet {
 
 namespace {
 // There can exist just one Standalone server at a time
-StandaloneTestServer *g_server = NULL;
+StandaloneTestServer *g_server = nullptr;
 }
 
 struct StandaloneTestServerCallbacks {
@@ -70,36 +70,36 @@ namespace {
 
 pjsip_module mod_app =
 {
-    NULL, NULL,
+    nullptr, nullptr,
     { "mod-embed-srv", 13 },
     -1,
     PJSIP_MOD_PRIORITY_APPLICATION,
-    NULL, // load()
-    NULL,	// start()
-    NULL, // stop()
-    NULL, // unload()
+    nullptr, // load()
+    nullptr,	// start()
+    nullptr, // stop()
+    nullptr, // unload()
     &StandaloneTestServerCallbacks::on_rx_request,	// on_rx_request()
     &StandaloneTestServerCallbacks::on_rx_response, // on_rx_response()
-    NULL, // on_tx_request()
-    NULL,	// on_tx_response()
-    NULL,	// on_tsx_state()
+    nullptr, // on_tx_request()
+    nullptr,	// on_tx_response()
+    nullptr,	// on_tsx_state()
 };
 
 pjsip_module msg_logger =
 {
-    NULL, NULL,
+    nullptr, nullptr,
     { "mod-msg-log", 11 },
     -1,
     PJSIP_MOD_PRIORITY_TRANSPORT_LAYER-1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
     &StandaloneTestServerCallbacks::logging_on_rx_msg,
     &StandaloneTestServerCallbacks::logging_on_rx_msg,
     &StandaloneTestServerCallbacks::logging_on_tx_msg,
     &StandaloneTestServerCallbacks::logging_on_tx_msg,
-    NULL,
+    nullptr,
 };
 
 pj_status_t LookupCredentials(pj_pool_t *pool,
@@ -127,9 +127,9 @@ struct StandaloneTestServer::ControlStruct {
   pjsip_auth_srv auth_srv_;
 
   ControlStruct()
-    : endpoint_(NULL),
-      pool_(NULL),
-      thread_(NULL) {
+    : endpoint_(nullptr),
+      pool_(nullptr),
+      thread_(nullptr) {
     memset(&caching_pool_, 0, sizeof(caching_pool_));
     memset(&auth_srv_, 0, sizeof(auth_srv_));
   }
@@ -161,7 +161,7 @@ struct StandaloneTestServer::ControlStruct {
     pj_caching_pool_init(&caching_pool_,
       &pj_pool_factory_default_policy, 0);
 
-    status = pjsip_endpt_create(&caching_pool_.factory, NULL, &endpoint_);
+    status = pjsip_endpt_create(&caching_pool_.factory, nullptr, &endpoint_);
     if (status != PJ_SUCCESS)
       return false;
 
@@ -172,7 +172,7 @@ struct StandaloneTestServer::ControlStruct {
     pjsip_endpt_register_module(endpoint_, &msg_logger);
 
     pool_ = pj_pool_create(&caching_pool_.factory, "embedsrv",
-			4000, 4000, NULL);
+			4000, 4000, nullptr);
     return true;
   }
 
@@ -187,12 +187,12 @@ struct StandaloneTestServer::ControlStruct {
     addr.sin_port = pj_htons((pj_uint16_t)port);
 
     if (Protocol::UDP == protocol) {
-      pjsip_transport *tp = NULL;
-      status = pjsip_udp_transport_start(endpoint_, &addr, NULL, 1, &tp);
+      pjsip_transport *tp = nullptr;
+      status = pjsip_udp_transport_start(endpoint_, &addr, nullptr, 1, &tp);
       if (status == PJ_SUCCESS)
         port = tp->local_name.port;
     } else {
-      pjsip_tpfactory *tf = NULL;
+      pjsip_tpfactory *tf = nullptr;
       if (Protocol::TCP == protocol) {
         status = pjsip_tcp_transport_start(endpoint_, &addr, 1, &tf);
       } else if (Protocol::TLS == protocol) {
@@ -210,7 +210,7 @@ struct StandaloneTestServer::ControlStruct {
         if (!options.password.empty())
           opt.password = pj_str(const_cast<char*>(options.password.c_str()));
         status = pjsip_tls_transport_start(endpoint_, &opt, &addr,
-          NULL, 1, &tf);
+          nullptr, 1, &tf);
       } else {
         NOTREACHED() << "Unknown protocol";
         return false;
@@ -247,7 +247,7 @@ struct StandaloneTestServer::ControlStruct {
   void StopWorkerThread() {
     quit_flag_ = true;
     pj_thread_join(thread_);
-    thread_ = NULL;
+    thread_ = nullptr;
   }
 
   static bool quit_flag_;
@@ -272,7 +272,7 @@ StandaloneTestServer::SSLOptions::~SSLOptions() {
 
 StandaloneTestServer::StandaloneTestServer(const Protocol &protocol,
     int port) {
-  Init(protocol, port, NULL);
+  Init(protocol, port, nullptr);
 }
 
 StandaloneTestServer::StandaloneTestServer(const Protocol &protocol,
@@ -287,7 +287,7 @@ StandaloneTestServer::~StandaloneTestServer() {
     LOG(ERROR) << "StandaloneTestServer failed to shut down.";
   }
   
-  g_server = NULL;
+  g_server = nullptr;
 }
 
 void StandaloneTestServer::Init(const Protocol &protocol, int port,
@@ -326,7 +326,7 @@ bool StandaloneTestServer::ShutdownAndWaitUntilComplete() {
 }
 
 bool StandaloneTestServer::Started() const {
-  return control_struct_.get() != NULL;
+  return control_struct_.get() != nullptr;
 }
 
 void StandaloneTestServer::OnReceiveRequest(pjsip_rx_data *rdata) {
@@ -339,14 +339,14 @@ void StandaloneTestServer::OnReceiveRequest(pjsip_rx_data *rdata) {
   if (rdata->msg_info.msg->line.req.method.id == PJSIP_REGISTER_METHOD) {
     // Authentication was OK, so just return success
     pj_status_t status;
-    pjsip_tx_data *tdata = NULL;
+    pjsip_tx_data *tdata = nullptr;
     do {
       status = pjsip_endpt_create_response(control_struct_->endpoint_,
-          rdata, PJSIP_SC_OK, NULL, &tdata);
+          rdata, PJSIP_SC_OK, nullptr, &tdata);
       if (status != PJ_SUCCESS)
         break;
       pjsip_transaction *uas_tsx;
-      status = pjsip_tsx_create_uas(NULL, rdata, &uas_tsx);
+      status = pjsip_tsx_create_uas(nullptr, rdata, &uas_tsx);
       if (status != PJ_SUCCESS)
         break;
       pjsip_tsx_recv_msg(uas_tsx, rdata);
@@ -357,7 +357,7 @@ void StandaloneTestServer::OnReceiveRequest(pjsip_rx_data *rdata) {
       pjsip_tx_data_dec_ref(tdata);
 	  pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
 					PJSIP_SC_INTERNAL_SERVER_ERROR, 
-					NULL, NULL, NULL);
+					nullptr, nullptr, nullptr);
   }
 }
 
@@ -379,15 +379,15 @@ bool StandaloneTestServer::VerifyRequest(pjsip_rx_data *rdata) {
   if (!PJSIP_URI_SCHEME_IS_SIP(rdata->msg_info.msg->line.req.uri) &&
       !PJSIP_URI_SCHEME_IS_SIPS(rdata->msg_info.msg->line.req.uri)) {
     pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
-        PJSIP_SC_UNSUPPORTED_URI_SCHEME, NULL, NULL, NULL);
+        PJSIP_SC_UNSUPPORTED_URI_SCHEME, nullptr, nullptr, nullptr);
     return false;
   }
 
   // 3. Require
   if (pjsip_msg_find_hdr_by_name(rdata->msg_info.msg, &STR_REQUIRE,
-      NULL) != NULL) {
+      nullptr) != nullptr) {
     pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
-        PJSIP_SC_BAD_EXTENSION, NULL, NULL, NULL);
+        PJSIP_SC_BAD_EXTENSION, nullptr, nullptr, nullptr);
     return false;
   }
 
@@ -396,18 +396,18 @@ bool StandaloneTestServer::VerifyRequest(pjsip_rx_data *rdata) {
   status = pjsip_auth_srv_verify(&control_struct_->auth_srv_, rdata,
       &status_code);
   if (status == PJSIP_EAUTHNOAUTH) {
-    pjsip_tx_data *tdata = NULL;
+    pjsip_tx_data *tdata = nullptr;
     do {
       status = pjsip_endpt_create_response(control_struct_->endpoint_,
-          rdata, status_code, NULL, &tdata);
+          rdata, status_code, nullptr, &tdata);
       if (status != PJ_SUCCESS)
         break;
       status = pjsip_auth_srv_challenge(&control_struct_->auth_srv_,
-          NULL, NULL, NULL, PJ_FALSE, tdata);
+          nullptr, nullptr, nullptr, PJ_FALSE, tdata);
       if (status != PJ_SUCCESS)
         break;
       pjsip_transaction *uas_tsx;
-      status = pjsip_tsx_create_uas(NULL, rdata, &uas_tsx);
+      status = pjsip_tsx_create_uas(nullptr, rdata, &uas_tsx);
       if (status != PJ_SUCCESS)
         break;
       pjsip_tsx_recv_msg(uas_tsx, rdata);
@@ -418,11 +418,11 @@ bool StandaloneTestServer::VerifyRequest(pjsip_rx_data *rdata) {
       pjsip_tx_data_dec_ref(tdata);
 	  pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
 					PJSIP_SC_INTERNAL_SERVER_ERROR, 
-					NULL, NULL, NULL);
+					nullptr, nullptr, nullptr);
     return false;
   } else if (status != PJ_SUCCESS) {
     pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
-        PJSIP_SC_FORBIDDEN, NULL, NULL, NULL);
+        PJSIP_SC_FORBIDDEN, nullptr, nullptr, nullptr);
     return false;
   }
 
@@ -461,7 +461,7 @@ void StandaloneTestServer::InitializeOnIOThread() {
 void StandaloneTestServer::ShutdownOnIOThread() {
   DCHECK(io_thread_->message_loop_proxy()->BelongsToCurrentThread());
 
-  control_struct_.reset(NULL);
+  control_struct_.reset(nullptr);
   pj_shutdown();
 }
 

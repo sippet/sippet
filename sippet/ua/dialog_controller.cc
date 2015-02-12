@@ -42,7 +42,7 @@ scoped_refptr<Dialog> DefaultDialogController::HandleResponse(
     DialogStore *store, const scoped_refptr<Response> &response) {
   Message::iterator i = response->find_first<Cseq>();
   if (response->end() == i)
-    return NULL;
+    return nullptr;
   Method method(dyn_cast<Cseq>(i)->method());
   scoped_refptr<Dialog> dialog;
   int response_code = response->response_code();

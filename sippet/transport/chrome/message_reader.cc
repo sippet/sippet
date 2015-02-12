@@ -33,7 +33,7 @@ int MessageReader::Read(const net::CompletionCallback& callback) {
 
 scoped_refptr<Message> MessageReader::GetIncomingMessage() {
   scoped_refptr<Message> message(current_message_);
-  current_message_ = NULL;
+  current_message_ = nullptr;
   return message;
 }
 

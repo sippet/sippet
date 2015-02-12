@@ -65,7 +65,7 @@ int AuthHandler::GenerateAuth(
     const scoped_refptr<Request> &request,
     const net::CompletionCallback& callback) {
   DCHECK(request);
-  DCHECK(credentials != NULL || AllowsDefaultCredentials());
+  DCHECK(credentials != nullptr || AllowsDefaultCredentials());
   DCHECK(callback_.is_null());
   callback_ = callback;
   net_log_.BeginEvent(EventTypeFromAuthTarget(target_));

@@ -25,7 +25,7 @@ bool InitCanonical(const STR& input_spec,
   url::StdStringCanonOutput output(canonical);
   bool success = uri::Canonicalize(
       input_spec.data(), static_cast<int>(input_spec.length()),
-      NULL, &output, parsed);
+      nullptr, &output, parsed);
 
   output.Complete();  // Must be done before using string.
   return success;
@@ -204,7 +204,7 @@ SipURI SipURI::GetOrigin() const {
 
 bool SipURI::SchemeIs(const char* lower_ascii_scheme) const {
   if (parsed_.scheme.len <= 0)
-    return lower_ascii_scheme == NULL;
+    return lower_ascii_scheme == nullptr;
   return sippet::SchemeIs(spec_, parsed_, lower_ascii_scheme);
 }
 

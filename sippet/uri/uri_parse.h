@@ -37,13 +37,13 @@ struct URIComponentSource {
   // will make them all NULL, which is no replacement. The caller would then
   // override the components they want to replace.
   URIComponentSource()
-      : scheme(NULL),
-        username(NULL),
-        password(NULL),
-        host(NULL),
-        port(NULL),
-        parameters(NULL),
-        headers(NULL) {
+      : scheme(nullptr),
+        username(nullptr),
+        password(nullptr),
+        host(nullptr),
+        port(nullptr),
+        parameters(nullptr),
+        headers(nullptr) {
   }
 
   // Constructor normally used internally to initialize all the components to
