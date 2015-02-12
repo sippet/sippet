@@ -68,7 +68,6 @@ void Lsp_Az(
   }
 }
 
-
 static Word32 mull(Word32 a, Word16 b)
 {
 #if defined(ARCH_ARM)
@@ -82,10 +81,13 @@ static Word32 mull(Word32 a, Word16 b)
           : "r"(rb), "r"(ra));
   return hi;
 #else
-  Word64 out;
-  out = (Word64) a * b;
-  out >>= 16;
-  return (Word32) out;
+  Word16 hi, lo;
+  Word32 t0;
+  hi = (Word16)(a >> 16);
+  lo = (Word16)((a >> 1) - ((Word32) hi << 15));
+  t0  = ((Word32)hi * b);
+  t0 += ((Word32)lo * b) >> 15;
+  return t0;
 #endif
 }
 
@@ -101,27 +103,21 @@ static Word32 mull(Word32 a, Word16 b)
  *-----------------------------------------------------------*/
 static void Get_lsp_pol(Word16 *lsp, Word32 *f)
 {
-  Word16 i,j;
+  Word16 i, j;
 
-   /* All computation in Q24 */
-   *f = 0x01000000;           /* f[0] = 1.0;             in Q24  */
-   f++;
-   *f = -*lsp << 10;         /* f[1] =  -2.0 * lsp[0];  in Q24  */
+  *f++ = (Word32) 0x01000000;       /* f[0] = 1.0;             in Q24 */
+  *f++ = (Word32) - *(lsp++) << 10; /* f[1] =  -2.0 * lsp[0];  in Q24 */
+  lsp++;                            /* Advance lsp pointer            */
 
-   f++;
-   lsp += 2;                            /* Advance lsp pointer             */
+  for (i=2; i<=5; f+=i,lsp++,i++)
+  {
+    *f = f[-2];
+    for (j=1; j<i; j++,f--)
+      *f += f[-2] - (mull(f[-1], *lsp) << 2);
+    *f -= (Word32)(*lsp++) << 10;
+  }
 
-   for(i=2; i<=5; i++)
-   {
-     *f = f[-2];
-
-     for(j=1; j<i; j++, f--)
-       *f += f[-2] - (mull(f[-1], *lsp) << 2);
-
-     *f -= *lsp << 10;                       /* *f -= lsp<<9        */
-     f   += i;                               /* Advance f pointer   */
-     lsp += 2;                               /* Advance lsp pointer */
-   }
+  return;
 }
 
 /*___________________________________________________________________________
