@@ -17,22 +17,25 @@ http://dev.chromium.org/developers/how-tos/install-depot-tools.
 
 == Windows ==
 
-Create a directory to hold your source code. This example assumes c:\chromium_sippet, but other names are fine.
+Create a directory to hold your source code. This example assumes c:\sippet, but other names are fine.
 
 *Important:* Make sure the full directory path has no spaces.
 
 In a shell window, execute the following commands:
 
 <code language="xml">
-cd c:\chromium_sippet
-gclient config http://sippet.googlecode.com/svn/trunk
+cd c:\sippet
+gclient config --name=src http://sippet.googlecode.com/svn/trunk
 </code>
 
 If you intend to use Visual Studio 2013, do the following before the next commands:
 
 <code language="xml">
+set GYP_GENERATORS=ninja,msvs-ninja
 set GYP_MSVS_VERSION=2013
 </code>
+
+*Note:* The generator 'msvs' is not supported anymore, so stick to 'msvs-ninja', and don't forget to add depot_tools to your Visual Studio path before executing it.
 
 To download the initial code, update your checkout as described in next section.
 
@@ -43,8 +46,8 @@ Pick a directory for your build.  We will call this directory $CHROMIUM_SIPPET_R
 Check out the code:
 
 <code language="xml">
-cd $CHROMIUM_SIPPET_ROOT
-gclient config http://sippet.googlecode.com/svn/trunk
+cd ~/sippet
+gclient config --name=src http://sippet.googlecode.com/svn/trunk
 </code>
 
 To download the initial code, update your checkout as described in next
@@ -57,8 +60,8 @@ Create a directory to hold the code.  This example assumes the directory is ~/ch
 From a shell in the Terminal, execute the following commands: 
 
 <code language="xml">
-cd ~/chromium_sippet
-gclient config http://sippet.googlecode.com/svn/trunk
+cd ~/sippet
+gclient config --name=src http://sippet.googlecode.com/svn/trunk
 </code>
 
 To download the initial code, update your checkout as described in next section.
@@ -71,7 +74,7 @@ The first time you execute gclient, there will be a delay (a minute or so) while
 In a shell window, execute the following commands:
 
 <code language="xml">
-cd chromium_sippet
+cd sippet
 gclient sync
 </code>
 
@@ -86,40 +89,14 @@ matching forms.
 
 == Linux build requisites ==
 
-If you are using Ubuntu 14.04, the following command summarizes the build requirements:
+Just run:
 
 <code language="xml">
-sudo apt-get -y install \
-    apache2.2-bin bison curl elfutils fakeroot flex g++ git-core gperf \
-    language-pack-da language-pack-fr language-pack-he \
-    language-pack-zh-hant libapache2-mod-php5 libasound2-dev libbrlapi-dev \
-    libbz2-dev libcairo2-dev libcap-dev libcups2-dev libcurl4-gnutls-dev \
-    libdrm-dev libelf-dev libgconf2-dev libgl1-mesa-dev libglib2.0-dev \
-    libglu1-mesa-dev libgnome-keyring-dev libgtk2.0-dev libkrb5-dev \
-    libnspr4-dev libnss3-dev libpam0g-dev libpci-dev libpulse-dev \
-    libsctp-dev libspeechd-dev libsqlite3-dev libssl-dev libudev-dev \
-    libwww-perl libxslt1-dev libxss-dev libxt-dev libxtst-dev \
-    mesa-common-dev openbox patch perl php5-cgi pkg-config python \
-    python-cherrypy3 python-dev python-psutil rpm ruby subversion \
-    ttf-dejavu-core ttf-indic-fonts ttf-kochi-gothic ttf-kochi-mincho \
-    wdiff xfonts-mathml
-</code>
-
-For older Ubuntu versions or other distributions, execute the following command:
-
-<code language="xml>
-cd $CHROMIUM_SIPPET_ROOT
-trunk/build/install-build-deps.sh
+./src/build/install-build-deps.sh
 </code>
 
 
 = Create the build using GYP =
-
-On Linux and Mac OSX, do the following before proceeding:
-
-<code language="xml">
-export GYP_DEFINES="werror="
-</code>
 
 The build is created using gclient 'runhooks' command:
 
