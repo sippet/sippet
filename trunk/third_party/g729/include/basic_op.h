@@ -665,8 +665,8 @@ static Word32 L_mult(/*register Word32 ra /*/Word16 var1,
  |___________________________________________________________________________|
 */
 static Word32 L_msu(register Word32 ra,
-                           register Word32 rb /*Word16 var1*/,
-                           register Word32 rc /*Word16 var2*/)
+                    register Word32 rb /*Word16 var1*/,
+                    register Word32 rc /*Word16 var2*/)
 {
   Word32 out;
 #if defined(ARCH_ARM)
