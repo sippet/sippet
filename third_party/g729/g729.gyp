@@ -39,7 +39,6 @@
         'include/tab_ld8a.h',
         'include/typedef.h',
         'source/acelp_ca.c',
-        'source/basic_op.c',
         'source/bits.c',
         'source/cod_ld8a.c',
         'source/cor_func.c',
