@@ -4,7 +4,7 @@
 
 {
   'variables': {
-    'g729_amalgamation%': 0,
+    'g729_amalgamation%': 1,
   },
   'includes': [
     '../../build/win_precompile.gypi',
