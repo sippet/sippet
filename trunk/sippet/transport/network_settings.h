@@ -34,7 +34,7 @@ class NetworkSettings {
       software_name_(GetDefaultSoftwareName()),
       branch_factory_(BranchFactory::GetDefaultBranchFactory()),
       transaction_factory_(TransactionFactory::GetDefaultTransactionFactory()),
-      ssl_cert_error_handler_factory_(NULL) {}
+      ssl_cert_error_handler_factory_(nullptr) {}
   };
 
   Data data_;

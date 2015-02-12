@@ -31,7 +31,7 @@ scoped_refptr<Dialog> DialogStore::TerminateDialog(
     const scoped_refptr<Request> &request) {
   DialogMapType::iterator i = dialogs_.find(request->GetDialogId());
   if (dialogs_.end() == i)
-    return NULL;
+    return nullptr;
   scoped_refptr<Dialog> dialog(i->second);
   dialog->set_state(Dialog::STATE_TERMINATED);
   dialogs_.erase(i);
@@ -54,7 +54,7 @@ void DialogStore::ConfirmDialog(const scoped_refptr<Dialog> &dialog) {
 scoped_refptr<Dialog> DialogStore::GetDialog(const Message *message) {
   DialogMapType::iterator i = dialogs_.find(message->GetDialogId());
   if (dialogs_.end() == i)
-    return NULL;
+    return nullptr;
   return i->second;
 }
 

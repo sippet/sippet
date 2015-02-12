@@ -325,9 +325,8 @@ class NetworkLayer :
                              const scoped_refptr<Request> &request);
   
   // Handle responses not matching any of the existing client transactions.
-  // Just pass the response to the delegate; it will be the case for 200 OK
-  // retransmissions after the INVITE transaction has been terminated, and
-  // the UAC will require to send the ACK directly.
+  // These responses are actually discarded, as they aren't related to any
+  // pending request.
   void HandleIncomingResponse(const scoped_refptr<Channel> &channel,
                               const scoped_refptr<Response> &response);
 

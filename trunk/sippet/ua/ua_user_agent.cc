@@ -136,6 +136,8 @@ bool UserAgent::HandleChallengeAuthentication(
       && SIP_PROXY_AUTHENTICATION_REQUIRED != response_code)
     return false;
   scoped_refptr<Request> original_request(incoming_response->refer_to());
+  if (nullptr == original_request)
+    return false;
   OutgoingRequestContext *outgoing_request_context;
   OutgoingRequestMap::iterator i = outgoing_requests_.find(
       original_request->id());
@@ -246,7 +248,7 @@ void UserAgent::OnIncomingResponse(
   if (HandleChallengeAuthentication(response, dialog))
     return;
   if (200 <= response->response_code()
-      && NULL != response->refer_to()) {
+      && nullptr != response->refer_to()) {
     OutgoingRequestMap::iterator i =
         outgoing_requests_.find(response->refer_to()->id());
     if (outgoing_requests_.end() != i) {

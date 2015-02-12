@@ -39,7 +39,7 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
               base::Bind(&ChromeStreamChannel::ProcessConnectDone,
                          base::Unretained(this))),
           ssl_config_(ssl_config),
-          pac_request_(NULL),
+          pac_request_(nullptr),
           destination_(destination),
           // Assume that we intend to do TLS on this socket; that means that
           // if a proxy is found, then CONNECT will be used on it first.
@@ -141,7 +141,7 @@ void ChromeStreamChannel::Connect() {
       &proxy_info_,
       proxy_resolve_callback_,
       &pac_request_,
-      NULL,
+      nullptr,
       bound_net_log_);
   if (status != net::ERR_IO_PENDING) {
     // We defer execution of ProcessProxyResolveDone instead of calling it
@@ -208,7 +208,7 @@ void ChromeStreamChannel::CloseWithError(int err) {
 }
 
 void ChromeStreamChannel::DetachDelegate() {
-  delegate_ = NULL;
+  delegate_ = nullptr;
 }
 
 void ChromeStreamChannel::RunUserConnectCallback(int status) {
@@ -227,7 +227,7 @@ void ChromeStreamChannel::RunUserChannelClosed(int status) {
 
 // Always runs asynchronously.
 void ChromeStreamChannel::ProcessProxyResolveDone(int status) {
-  pac_request_ = NULL;
+  pac_request_ = nullptr;
 
   DCHECK_NE(status, net::ERR_IO_PENDING);
   if (status == net::OK) {
@@ -368,7 +368,7 @@ int ChromeStreamChannel::ReconsiderProxyAfterError(int error) {
 
   int rv = network_session_->proxy_service()->ReconsiderProxyAfterError(
       proxy_url_, 0, net::OK, &proxy_info_, proxy_resolve_callback_, &pac_request_,
-      NULL, bound_net_log_);
+      nullptr, bound_net_log_);
   if (rv == net::OK || rv == net::ERR_IO_PENDING) {
     CloseTransportSocket();
   } else {
@@ -396,7 +396,7 @@ int ChromeStreamChannel::ReconsiderProxyAfterError(int error) {
 }
 
 void ChromeStreamChannel::ReportSuccessfulProxyConnection() {
-  network_session_->proxy_service()->ReportSuccess(proxy_info_, NULL);
+  network_session_->proxy_service()->ReportSuccess(proxy_info_, nullptr);
 }
 
 void ChromeStreamChannel::CloseTransportSocket() {
@@ -569,8 +569,8 @@ bool ChromeStreamChannel::AllowCertErrorForReconnection(net::SSLConfig* ssl_conf
       static_cast<net::SSLClientSocket*>(transport_->socket());
   net::SSLInfo ssl_info;
   ssl_socket->GetSSLInfo(&ssl_info);
-  if (ssl_info.cert.get() == NULL ||
-      ssl_config->IsAllowedBadCert(ssl_info.cert.get(), NULL)) {
+  if (ssl_info.cert.get() == nullptr ||
+      ssl_config->IsAllowedBadCert(ssl_info.cert.get(), nullptr)) {
     // If we already have the certificate in the set of allowed bad
     // certificates, we did try it and failed again, so we should not
     // retry again: the connection should fail at last.

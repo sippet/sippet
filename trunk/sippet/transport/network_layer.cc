@@ -661,7 +661,7 @@ void NetworkLayer::OnChannelConnected(const scoped_refptr<Channel> &channel,
       if (result == net::OK || result == net::ERR_IO_PENDING) {
         // Clean channel initial context, the channel will be
         // responsible for the callback now.
-        channel_context->initial_request_ = NULL;
+        channel_context->initial_request_ = nullptr;
         channel_context->initial_callback_.Reset();
       }
     }
@@ -691,7 +691,7 @@ void NetworkLayer::OnIncomingMessage(const scoped_refptr<Channel> &channel,
     else
       HandleIncomingRequest(channel, request);
   }
-  else {
+  else { // response
     scoped_refptr<Response> response = dyn_cast<Response>(message);
     scoped_refptr<ClientTransaction> client_transaction =
       GetClientTransaction(response);
@@ -723,7 +723,13 @@ void NetworkLayer::HandleIncomingResponse(
 
   DCHECK(channel_context);
 
-  delegate_->OnIncomingResponse(response);
+  // It's not a good idea to pass these responses up, as they aren't related
+  // to an initiated request, so we're going to discard them at this point.
+
+  LOG(WARNING) << "Discarded inbound response ("
+               << response->response_code()
+               << " " << response->reason_phrase()
+               << "), unattached to any request";
 }
 
 void NetworkLayer::OnChannelClosed(const scoped_refptr<Channel> &channel,

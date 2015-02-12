@@ -220,7 +220,7 @@ void ChromeDatagramChannel::CloseWithError(int err) {
 }
 
 void ChromeDatagramChannel::DetachDelegate() {
-  delegate_ = NULL;
+  delegate_ = nullptr;
 }
 
 void ChromeDatagramChannel::CloseTransportSocket() {

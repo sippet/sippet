@@ -50,7 +50,7 @@ bool ProgramMain::Init() {
 
   net::ClientSocketFactory *client_socket_factory =
       net::ClientSocketFactory::GetDefaultFactory();
-  host_resolver_ = net::HostResolver::CreateDefaultResolver(NULL);
+  host_resolver_ = net::HostResolver::CreateDefaultResolver(nullptr);
   scoped_ptr<sippet::AuthHandlerRegistryFactory> auth_handler_factory(
       sippet::AuthHandlerFactory::CreateDefault(host_resolver_.get()));
   auth_handler_factory_ =

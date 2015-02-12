@@ -73,12 +73,12 @@ class NetworkLayerTest : public testing::Test {
     EXPECT_TRUE(data_->at_read_eof());
   }
 
-  void Initialize(net::MockRead* reads = NULL, size_t reads_count = 0,
-                  net::MockWrite* writes = NULL, size_t writes_count = 0,
-                  MockEvent* events = NULL, size_t events_count = 0,
-                  const char *branches[] = NULL, size_t branches_count = 0) {
+  void Initialize(net::MockRead* reads = nullptr, size_t reads_count = 0,
+                  net::MockWrite* writes = nullptr, size_t writes_count = 0,
+                  MockEvent* events = nullptr, size_t events_count = 0,
+                  const char *branches[] = nullptr, size_t branches_count = 0) {
     NetworkSettings settings;
-    if (branches != NULL) {
+    if (branches != nullptr) {
       branch_factory_.reset(new MockBranchFactory(branches, branches_count));
       settings.set_branch_factory(branch_factory_.get());
     }

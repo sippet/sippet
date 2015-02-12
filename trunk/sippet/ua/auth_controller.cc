@@ -168,7 +168,7 @@ int AuthController::HandleAuthChallenge(
         PopulateAuthChallenge();
       }
     } else {
-      auth_info_ = NULL;
+      auth_info_ = nullptr;
     }
 
     // If we get here and we don't have a handler_, that's because we
@@ -212,7 +212,7 @@ int AuthController::AddAuthorizationHeaders(
     const scoped_refptr<Request> &request,
     const net::CompletionCallback& callback,
     const net::BoundNetLog& net_log) {
-  const net::AuthCredentials* credentials = NULL;
+  const net::AuthCredentials* credentials = nullptr;
   if (identity_.source != net::HttpAuth::IDENT_SRC_DEFAULT_CREDENTIALS)
     credentials = &identity_.credentials;
   DCHECK(callback_.is_null());
@@ -237,7 +237,7 @@ bool AuthController::HaveAuth() const {
 }
 
 bool AuthController::HaveAuthHandler() const {
-  return handler_.get() != NULL;
+  return handler_.get() != nullptr;
 }
 
 bool AuthController::IsAuthSchemeDisabled(Auth::Scheme scheme) const {

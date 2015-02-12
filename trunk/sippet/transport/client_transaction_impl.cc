@@ -70,7 +70,10 @@ void ClientTransactionImpl::HandleIncomingResponse(
     case STATE_CALLING:
       switch (response_code/100) {
         case 1: next_state_ = STATE_PROCEED_CALLING; break;
-        case 2: next_state_ = STATE_TERMINATED; break;
+        // When a 2xx arrives and the transaction is of INVITE type, don't
+        // terminate immediately, leave the transaction opened to avoid
+        // retransmissions with null refer_to attribute.
+        case 2: next_state_ = STATE_COMPLETED; break;
         default: next_state_ = STATE_COMPLETED; break;
       }
       break;
@@ -83,7 +86,8 @@ void ClientTransactionImpl::HandleIncomingResponse(
     case STATE_PROCEED_CALLING:
       switch (response_code/100) {
         case 1: break;
-        case 2: next_state_ = STATE_TERMINATED; break;
+        // Same as above.
+        case 2: next_state_ = STATE_COMPLETED; break;
         default: next_state_ = STATE_COMPLETED; break;
       }
       break;

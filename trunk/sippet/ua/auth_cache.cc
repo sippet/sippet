@@ -51,7 +51,7 @@ AuthCache::Entry* AuthCache::Lookup(const std::string& realm,
     if (it->realm() == realm && it->scheme() == scheme)
       return &(*it);
   }
-  return NULL;  // No realm entry found.
+  return nullptr;  // No realm entry found.
 }
 
 AuthCache::Entry* AuthCache::Add(const std::string& realm,

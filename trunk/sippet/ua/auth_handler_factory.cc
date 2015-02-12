@@ -90,7 +90,7 @@ AuthHandlerFactory* AuthHandlerRegistryFactory::GetSchemeFactory(
   std::string lower_scheme = base::StringToLowerASCII(scheme);
   FactoryMap::const_iterator it = factory_map_.find(lower_scheme);
   if (it == factory_map_.end()) {
-    return NULL; // |scheme| is not registered.
+    return nullptr; // |scheme| is not registered.
   }
   return it->second;
 }

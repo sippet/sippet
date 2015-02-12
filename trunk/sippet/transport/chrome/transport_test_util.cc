@@ -245,7 +245,7 @@ MockEvent::~MockEvent() {
 }
 
 StaticDataProvider::StaticDataProvider()
-  : events_(NULL), events_count_(0), events_index_(0) {
+  : events_(nullptr), events_count_(0), events_index_(0) {
 }
 
 StaticDataProvider::StaticDataProvider(MockEvent *events,

@@ -21,7 +21,7 @@ class StreamChannelTest : public testing::Test {
 
   void Initialize(net::MockWrite* writes, size_t writes_count) {
     data_.reset(
-      new net::DeterministicSocketData(NULL, 0, writes, writes_count));
+      new net::DeterministicSocketData(nullptr, 0, writes, writes_count));
     data_->set_connect_data(net::MockConnect(net::SYNCHRONOUS, 0));
     if (writes_count) {
       data_->StopAfter(writes_count);
