@@ -28,32 +28,32 @@ scoped_refptr<Request> CreateInvite() {
     new Via(ViaParam(Protocol::UDP,
                      net::HostPortPair::FromString(pc33.atlanta.com))));
   via->front().set_branch("z9hG4bK776asdhds");
-  request->push_back(via.PassAs<Header>());
+  request->push_back(via.Pass());
 
   scoped_ptr<MaxForwards> maxfw(new MaxForwards(70));
-  request->push_back(maxfw.PassAs<Header>());
+  request->push_back(maxfw.Pass());
 
   scoped_ptr<To> to(new To(GURL("sip:bob@biloxi.com"), "Bob"));
-  request->push_back(to.PassAs<Header>());
+  request->push_back(to.Pass());
 
   scoped_ptr<From> from(
     new From(GURL("sip:alice@atlanta.com"), "Alice"));
   from->set_tag("1928301774");
-  request->push_back(from.PassAs<Header>());
+  request->push_back(from.Pass());
 
   scoped_ptr<CallId> callid(
     new CallId("a84b4c76e66710@pc33.atlanta.com"));
-  request->push_back(callid.PassAs<Header>());
+  request->push_back(callid.Pass());
 
   scoped_ptr<Cseq> cseq(new Cseq(314159, Method::INVITE));
-  request->push_back(cseq.PassAs<Header>());
+  request->push_back(cseq.Pass());
 
   scoped_ptr<Contact> contact(new Contact(GURL("sip:alice@pc33.atlanta.com")));
-  request->push_back(contact.PassAs<Header>());
+  request->push_back(contact.Pass());
 
   scoped_ptr<ContentType> content_type(new ContentType);
   content_type->push_back(MediaType("application", "sdp"));
-  request->push_back(content_type.PassAs<Header>());
+  request->push_back(content_type.Pass());
 
   // The Content-Length is automatically set.
 
