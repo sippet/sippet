@@ -18,37 +18,37 @@ You'll likely need to do:
 
 == Configure GYP ==
 
-GYP is the meta-makefile system used in chromium to generate build files for the various platforms (ninja in the case of Android). Next to the .gclient file, create a file called chromium.gyp_env with the following contents:
+GYP is the meta-makefile system used in Sippet to generate build files for the various platforms (ninja in the case of Android). Next to the .gclient file, create a file called sippet.gyp_env with the following contents:
 
 {{{
-~/sippet$ echo "{ 'GYP_DEFINES': 'werror= OS=android', }" > chromium.gyp_env
+~/sippet$ echo "{ 'GYP_DEFINES': 'werror= OS=android', }" > sippet.gyp_env
 }}}
 
 If you wish to build for x86 targets:
 
 {{{
-~/sippet$ echo "{ 'GYP_DEFINES': 'werror= OS=android target_arch=ia32', }" > chromium.gyp_env
+~/sippet$ echo "{ 'GYP_DEFINES': 'werror= OS=android target_arch=ia32', }" > sippet.gyp_env
 }}}
 
 If you wish to build for MIPS targets:
 
 {{{
-~/sippet$ echo "{ 'GYP_DEFINES': 'werror= OS=android target_arch=mipsel', }" > chromium.gyp_env
+~/sippet$ echo "{ 'GYP_DEFINES': 'werror= OS=android target_arch=mipsel', }" > sippet.gyp_env
 }}}
 
 NOTE: If you are using the GYP_DEFINES environment variable, it will override any settings in this file. Either clear it or set it to the values above before running gclient runhooks.
 
-Once chromium.gyp_env is ready, you need to run the following commands to update projects from gyp files. You may need to run this again when you have added new files, updated gyp files, or sync'ed your repository.
+Once sippet.gyp_env is ready, you need to run the following commands to update projects from gyp files. You may need to run this again when you have added new files, updated gyp files, or sync'ed your repository.
 
 {{{
-~/sippet$ . trunk/build/android/envsetup.sh
+~/sippet$ . src/build/android/envsetup.sh
 ~/sippet$ gclient runhooks
 }}}
 
 
 == Install Java JDK ==
 
-You should be able to build Chrome Android with Open JDK 1.6 or 1.7. By the way, it's recommended to use the Oracle JDK 1.8.
+You should be able to build Sippet for Android with Open JDK 1.6 or 1.7. By the way, it's recommended to use the Oracle JDK 1.8.
 
 On Ubuntu, do the following:
 
@@ -60,13 +60,15 @@ sudo apt-get install oracle-java8-installer
 
 And follow screen instructions.
 
+
 == Install build dependencies ==
 
 Update the system packages required to build by running:
 
 {{{
-~/sippet$ trunk/build/install-build-deps-android.sh
+~/sippet$ src/build/install-build-deps-android.sh
 }}}
+
 
 = Build and install the APKs =
 
@@ -78,7 +80,7 @@ Unfortunately, at the moment, there's no full support to a fully featured build 
 The following command will generate all needed modules for your application:
 
 {{{
-~/sippet/trunk$ ninja -C out/Release all
+~/sippet/src$ ninja -C out/Release all
 }}}
 
 Replace 'Release' with 'Debug' above if you want to generate a Debug library.
