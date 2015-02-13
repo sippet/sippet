@@ -2,6 +2,8 @@
 
 <wiki:toc />
 
+= Android Build Instructions =
+
 NOTE: this guide is closely related to the original [https://code.google.com/p/chromium/wiki/AndroidBuildInstructions Android Build Instructions], from Google Chromium.
 
 == Prerequisites ==
