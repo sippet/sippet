@@ -13,9 +13,9 @@ Follow the documentation from Chromium build:
 http://dev.chromium.org/developers/how-tos/install-depot-tools.
 
 
-= Checkout the sources =
+== Checkout the sources ==
 
-== Windows ==
+=== Windows ===
 
 Create a directory to hold your source code. This example assumes c:\sippet, but other names are fine.
 
@@ -45,7 +45,7 @@ set DEPOT_TOOLS_WIN_TOOLCHAIN=0
 
 Now, to download the initial code, update your checkout as described in next section.
 
-== Linux ==
+=== Linux ===
 
 Pick a directory for your build.  We will call this directory ~/sippet below.
 
@@ -59,7 +59,7 @@ gamma:~/sippet$ gclient config --name=src http://sippet.googlecode.com/svn/trunk
 To download the initial code, update your checkout as described in next
 section.
 
-== Mac OSX ==
+=== Mac OSX ===
 
 Create a directory to hold the code.  This example assumes the directory is ~/sippet, but other names are fine.  Note that if you have FileVault enabled, you'll want to either disable it or put the code in a folder outside the home directory, as otherwise Xcode will be very slow or hang.  You also probably want to disable Spotlight indexing for that folder (System Preferences -> Spotlight -> mark the folder as private).
 
@@ -73,7 +73,7 @@ gamma:~/sippet$ gclient config --name=src http://sippet.googlecode.com/svn/trunk
 To download the initial code, update your checkout as described in next section.
 
 
-= Update to the latest revision =
+== Update to the latest revision ==
 
 The first time you execute gclient, there will be a delay (a minute or so) while it updates the depot tools.
 
@@ -92,7 +92,7 @@ gamma:~/sippet$ gclient sync --revision trunk@####
 and the DEPS file will make sure you get the other directories in their
 matching forms.
 
-== Linux build requisites ==
+=== Linux build requisites ===
 
 Just run:
 
@@ -101,7 +101,7 @@ gamma:~/sippet$ ./src/build/install-build-deps.sh
 </code>
 
 
-= Create the build using GYP =
+== Create the build using GYP ==
 
 The build is created using gclient 'runhooks' command:
 
@@ -111,7 +111,7 @@ gamma:~/sippet$ gclient runhooks
 
 This will generate the build, usually for Ninja.
 
-= Build it =
+== Compile ==
 
 Now that you have the build set up, just start compiling. Typically, on any operating system, you would do just:
 
