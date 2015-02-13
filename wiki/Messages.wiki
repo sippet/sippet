@@ -1,5 +1,7 @@
 #summary How to construct SIP Messages
 
+<wiki:toc />
+
 = Overview =
 
 The Sippet messages are a set of classes that gives the high-level application
