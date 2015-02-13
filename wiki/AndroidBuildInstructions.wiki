@@ -4,7 +4,7 @@
 
 NOTE: this guide is closely related to the original [https://code.google.com/p/chromium/wiki/AndroidBuildInstructions Android Build Instructions], from Google Chromium.
 
-= Prerequisites =
+== Prerequisites ==
 
 A *Linux 64-bit build machine* (Ubuntu 64-bit is recommended) capable of building Sippet for Linux (see HowToCompile). Other (Mac/Windows) platforms are not supported for Android.
 
@@ -72,12 +72,12 @@ Update the system packages required to build by running:
 }}}
 
 
-= Build and install the APKs =
+== Build and install the APKs ==
 
 Unfortunately, at the moment, there's no full support to a fully featured build of the library (WIP). However, most of the code can be compiled into static libraries (WIP).
 
 
-== Build the library ==
+=== Build the library ===
 
 The following command will generate all needed modules for your application:
 
@@ -93,6 +93,6 @@ If you use custom out dir instead of standard out/ dir, use CHROMIUM_OUT_DIR env
 > export CHROMIUM_OUT_DIR=out_android
 }}}
 
-= TO-DO =
+== TO-DO ==
 
 Document the Java API of the Sippet library.
