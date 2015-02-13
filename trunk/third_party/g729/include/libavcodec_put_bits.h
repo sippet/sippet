@@ -34,13 +34,6 @@ static uint32_t bswap_32(uint32_t x)
 {
 #if defined(ARCH_ARM)
   __asm__("rev %0, %0" : "+r"(x));
-#elif defined(ARCH_X86)
-  uint32_t t;
-  __asm__ ("eor %1, %0, %0, ror #16 \n\t"
-           "bic %1, %1, #0xFF0000   \n\t"
-           "mov %0, %0, ror #8      \n\t"
-           "eor %0, %0, %1, lsr #8  \n\t"
-           : "+r"(x), "=&r"(t));
 #else
   x= ((x<<8)&0xFF00FF00) | ((x>>8)&0x00FF00FF);
   x= (x>>16) | (x<<16);
