@@ -52,8 +52,8 @@ Pick a directory for your build.  We will call this directory ~/sippet below.
 Check out the code:
 
 <code language="xml">
-~$ cd ~/sippet
-~/sippet$ gclient config --name=src http://sippet.googlecode.com/svn/trunk
+gamma:~$ cd ~/sippet
+gamma:~/sippet$ gclient config --name=src http://sippet.googlecode.com/svn/trunk
 </code>
 
 To download the initial code, update your checkout as described in next
@@ -66,8 +66,8 @@ Create a directory to hold the code.  This example assumes the directory is ~/si
 From a shell in the Terminal, execute the following commands: 
 
 <code language="xml">
-~$ cd ~/sippet
-~/sippet$ gclient config --name=src http://sippet.googlecode.com/svn/trunk
+gamma:~$ cd ~/sippet
+gamma:~/sippet$ gclient config --name=src http://sippet.googlecode.com/svn/trunk
 </code>
 
 To download the initial code, update your checkout as described in next section.
@@ -80,13 +80,13 @@ The first time you execute gclient, there will be a delay (a minute or so) while
 In a shell window, execute the following commands:
 
 <code language="xml">
-~/sippet$ gclient sync
+gamma:~/sippet$ gclient sync
 </code>
 
 To update to a specific revision, use
 
 <code language="xml">
-~/sippet$ gclient sync --revision trunk@####
+gamma:~/sippet$ gclient sync --revision trunk@####
 </code>
 
 and the DEPS file will make sure you get the other directories in their
@@ -97,7 +97,7 @@ matching forms.
 Just run:
 
 <code language="xml">
-~/sippet$ ./src/build/install-build-deps.sh
+gamma:~/sippet$ ./src/build/install-build-deps.sh
 </code>
 
 
@@ -106,7 +106,7 @@ Just run:
 The build is created using gclient 'runhooks' command:
 
 <code language="xml">
-~/sippet$ gclient runhooks
+gamma:~/sippet$ gclient runhooks
 </code>
 
 This will generate the build, usually for Ninja.
@@ -116,7 +116,7 @@ This will generate the build, usually for Ninja.
 Now that you have the build set up, just start compiling. Typically, on any operating system, you would do just:
 
 <code language="xml">
-~/sippet$ ninja -C src/out/Release
+gamma:~/sippet$ ninja -C src/out/Release
 </code>
 
 Take a coffee. The output will be located in src/out/Release.
