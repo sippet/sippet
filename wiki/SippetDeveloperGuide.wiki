@@ -1,5 +1,7 @@
 #summary The general sippet Developer Guide
 
+<wiki:toc />
+
 = Introduction =
 
 Sippet enables you to design applications that manages real-time media sessions
@@ -63,5 +65,3 @@ These projects are as follows:
 *Notes* Sippet has some issues you should be aware of:
 
   * Sippet code is a work in progress. It is not perfect, complete, or flawless. Some aspects of the code, such as password protection, are not securely implemented, and others, such as URI parsing, are not as robust as they should be. Be sure to code your application as robustly as possible.
-
-
