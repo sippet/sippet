@@ -546,6 +546,9 @@ static Word16 mult(/*register Word32 ra */Word16 var1,
   __asm__("smulbb %0, %1, %2   \n\t"
           "mov %0, %0, ASR #15 \n\t"
           "cmp %0, %3          \n\t"
+#if defined(OS_ANDROID)
+          "it ge               \n\t"
+#endif
           "movge %0, %3        \n\t"
           : "=r"(product)
           : "r"(ra), "r"(rb), "r"(temp));

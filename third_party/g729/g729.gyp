@@ -76,19 +76,24 @@
             'source/util.c',
           ],
         }],
-        ['OS=="linux" or OS=="android" or OS=="ios"', {
+        ['OS=="android" or OS=="ios"', {
           # Available assembly optimizations are valid only
           # for GCC and LLVM compilers
           'conditions': [
-            # XXX: ARM_X86 optimizations are broken in the code
-            #['target_arch=="ia32" or target_arch=="x64"', {
-            #  'defines': [ 'ARCH_X86' ]
-            #}],
+            ['target_arch=="ia32"', {
+              'defines': [ 'ARCH_X86' ]
+            }],
             ['target_arch=="arm"', {
               'defines': [ 'ARCH_ARM' ]
             }],
+            ['OS=="android"', {
+              'defines': [ 'OS_ANDROID' ],
+            }],
+            ['OS=="ios"', {
+              'defines': [ 'OS_IOS' ],
+            }],
           ],
-        }], # OS=="linux" or OS=="android" or OS=="ios"
+        }], # OS=="android" or OS=="ios"
       ],
     },  # target g729
   ],
