@@ -37,7 +37,13 @@ set GYP_MSVS_VERSION=2013
 
 *Note:* The generator 'msvs' is not supported anymore, so stick to 'msvs-ninja', and don't forget to add depot_tools to your Visual Studio path before executing it.
 
-To download the initial code, update your checkout as described in next section.
+There is an extra environment variable to set, if you're not a Google developer (otherwise I assume you know what to do at this point):
+
+<code language="xml">
+set DEPOT_TOOLS_WIN_TOOLCHAIN=0
+</code>
+
+Now, to download the initial code, update your checkout as described in next section.
 
 == Linux ==
 
