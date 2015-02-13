@@ -47,13 +47,13 @@ Now, to download the initial code, update your checkout as described in next sec
 
 == Linux ==
 
-Pick a directory for your build.  We will call this directory $CHROMIUM_SIPPET_ROOT below.
+Pick a directory for your build.  We will call this directory ~/sippet below.
 
 Check out the code:
 
 <code language="xml">
-cd ~/sippet
-gclient config --name=src http://sippet.googlecode.com/svn/trunk
+~$ cd ~/sippet
+~/sippet$ gclient config --name=src http://sippet.googlecode.com/svn/trunk
 </code>
 
 To download the initial code, update your checkout as described in next
@@ -61,13 +61,13 @@ section.
 
 == Mac OSX ==
 
-Create a directory to hold the code.  This example assumes the directory is ~/chromium_sippet, but other names are fine.  Note that if you have FileVault enabled, you'll want to either disable it or put the code in a folder outside the home directory, as otherwise Xcode will be very slow or hang.  You also probably want to disable Spotlight indexing for that folder (System Preferences -> Spotlight -> mark the folder as private).
+Create a directory to hold the code.  This example assumes the directory is ~/sippet, but other names are fine.  Note that if you have FileVault enabled, you'll want to either disable it or put the code in a folder outside the home directory, as otherwise Xcode will be very slow or hang.  You also probably want to disable Spotlight indexing for that folder (System Preferences -> Spotlight -> mark the folder as private).
 
 From a shell in the Terminal, execute the following commands: 
 
 <code language="xml">
-cd ~/sippet
-gclient config --name=src http://sippet.googlecode.com/svn/trunk
+~$ cd ~/sippet
+~/sippet$ gclient config --name=src http://sippet.googlecode.com/svn/trunk
 </code>
 
 To download the initial code, update your checkout as described in next section.
@@ -80,14 +80,13 @@ The first time you execute gclient, there will be a delay (a minute or so) while
 In a shell window, execute the following commands:
 
 <code language="xml">
-cd sippet
-gclient sync
+~/sippet$ gclient sync
 </code>
 
 To update to a specific revision, use
 
 <code language="xml">
-gclient sync --revision trunk@####
+~/sippet$ gclient sync --revision trunk@####
 </code>
 
 and the DEPS file will make sure you get the other directories in their
@@ -98,7 +97,7 @@ matching forms.
 Just run:
 
 <code language="xml">
-./src/build/install-build-deps.sh
+~/sippet$ ./src/build/install-build-deps.sh
 </code>
 
 
@@ -107,14 +106,17 @@ Just run:
 The build is created using gclient 'runhooks' command:
 
 <code language="xml">
-cd chromium_sippet/trunk
-gclient runhooks
+~/sippet$ gclient runhooks
 </code>
 
-This will generate the build using Ninja.
+This will generate the build, usually for Ninja.
 
-Now that you have the build set up, just start compiling. Typically, on Unixes you would do:
+= Build it =
+
+Now that you have the build set up, just start compiling. Typically, on any operating system, you would do just:
 
 <code language="xml">
-ninja -C out/Release
+~/sippet$ ninja -C src/out/Release
 </code>
+
+Take a coffee. The output will be located in src/out/Release.
