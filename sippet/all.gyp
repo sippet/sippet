@@ -9,6 +9,7 @@
       'type': 'none',
       'dependencies': [
         'sippet.gyp:*',
+        'sippet_phone.gyp:*',
       ],
       'conditions': [
         ['OS != "ios"', {
