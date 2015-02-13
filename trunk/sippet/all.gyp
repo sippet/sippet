@@ -11,7 +11,7 @@
         'sippet.gyp:*',
       ],
       'conditions': [
-        ['OS != "android" and OS != "ios"', {
+        ['OS != "ios"', {
           'dependencies': [
             'sippet_tests.gyp:*',
             'sippet_examples.gyp:*',
