@@ -1,0 +1,5 @@
+This example library was inpired by GreenJ (https://github.com/danleeb/GreenJ).
+
+The Phone instance can be extended/modified in your code to adjust to your
+environment conditions. It's not a fully flexible softphone, and has been
+provided here as an usage example.
