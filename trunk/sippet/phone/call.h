@@ -51,7 +51,7 @@ class Call :
   SipURI uri() const { return uri_; }
 
   // Gets the caller username or number. It's extracted from the call URI.
-  std::string name() const;
+  std::string name() const { return uri_.username(); }
 
   // Get the time when the call was created
   base::Time creation_time() const { return creation_time_; }
@@ -79,7 +79,8 @@ class Call :
   State state_;
   SipURI uri_;
   Phone *phone_;
-  scoped_refptr<Request> invite_;
+  scoped_refptr<Request> last_request_;
+  scoped_refptr<Dialog> dialog_;
   
   base::Time creation_time_;
   base::Time start_time_;
@@ -99,7 +100,16 @@ class Call :
   //
   // Phone callbacks
   //
-  const scoped_refptr<Request> &invite() const { return invite_; }
+  const scoped_refptr<Request> &last_request() const {
+    return last_request_;
+  }
+  const scoped_refptr<Dialog> &dialog() const {
+    return dialog_;
+  }
+
+  void OnIncomingRequest(
+      const scoped_refptr<Request> &incoming_request,
+      const scoped_refptr<Dialog> &dialog);
   void OnIncomingResponse(
       const scoped_refptr<Response> &incoming_response,
       const scoped_refptr<Dialog> &dialog);

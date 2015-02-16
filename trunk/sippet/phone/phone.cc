@@ -90,7 +90,7 @@ void Phone::AccountPasswordHandler::Factory::set_account(const Account &account)
   account_ = account;
 }
 
-scoped_ptr<sippet::PasswordHandler>
+scoped_ptr<PasswordHandler>
     Phone::AccountPasswordHandler::Factory::CreatePasswordHandler() {
   scoped_ptr<PasswordHandler> password_handler(
     new AccountPasswordHandler(this));
@@ -214,29 +214,29 @@ void Phone::OnInit() {
   net::ClientSocketFactory *client_socket_factory =
     net::ClientSocketFactory::GetDefaultFactory();
   host_resolver_ = net::HostResolver::CreateDefaultResolver(nullptr);
-  scoped_ptr<sippet::AuthHandlerRegistryFactory> auth_handler_factory(
-    sippet::AuthHandlerFactory::CreateDefault(host_resolver_.get()));
+  scoped_ptr<AuthHandlerRegistryFactory> auth_handler_factory(
+    AuthHandlerFactory::CreateDefault(host_resolver_.get()));
   auth_handler_factory_ =
     auth_handler_factory.Pass();
 
-  user_agent_ = new sippet::ua::UserAgent(auth_handler_factory_.get(),
+  user_agent_ = new ua::UserAgent(auth_handler_factory_.get(),
     password_handler_factory_.get(),
     DialogController::GetDefaultDialogController(),
     net_log_);
 
-  network_layer_ = new sippet::NetworkLayer(user_agent_.get());
+  network_layer_ = new NetworkLayer(user_agent_.get());
 
   // Register the channel factory
   net::SSLConfig ssl_config;
   ssl_config.version_min = net::SSL_PROTOCOL_VERSION_TLS1;
   channel_factory_.reset(
-    new sippet::ChromeChannelFactory(client_socket_factory,
+    new ChromeChannelFactory(client_socket_factory,
     request_context_getter_, ssl_config));
-  network_layer_->RegisterChannelFactory(sippet::Protocol::UDP,
+  network_layer_->RegisterChannelFactory(Protocol::UDP,
     channel_factory_.get());
-  network_layer_->RegisterChannelFactory(sippet::Protocol::TCP,
+  network_layer_->RegisterChannelFactory(Protocol::TCP,
     channel_factory_.get());
-  network_layer_->RegisterChannelFactory(sippet::Protocol::TLS,
+  network_layer_->RegisterChannelFactory(Protocol::TLS,
     channel_factory_.get());
   user_agent_->SetNetworkLayer(network_layer_.get());
   user_agent_->AppendHandler(this);
@@ -247,9 +247,9 @@ void Phone::OnLogin(const Account &account) {
   std::string from("sip:" + username_ + "@" + host_);
   std::string to("sip:" + username_ + "@" + host_);
 
-  scoped_refptr<sippet::Request> request =
+  scoped_refptr<Request> request =
     user_agent_->CreateRequest(
-        sippet::Method::REGISTER,
+        Method::REGISTER,
         GURL(registrar_uri),
         GURL(from),
         GURL(to));
@@ -269,16 +269,16 @@ void Phone::OnLogout() {
   std::string from("sip:" + username_ + "@" + host_);
   std::string to("sip:" + username_ + "@" + host_);
 
-  scoped_refptr<sippet::Request> request =
+  scoped_refptr<Request> request =
     user_agent_->CreateRequest(
-        sippet::Method::REGISTER,
+        Method::REGISTER,
         GURL(registrar_uri),
         GURL(from),
         GURL(to));
 
   // Modifies the Contact header to include an expires=0 at the end
   // of existing parameters
-  sippet::Contact* contact = request->get<sippet::Contact>();
+  Contact* contact = request->get<Contact>();
   contact->front().set_expires(0);
 
   int rv = user_agent_->Send(request,
@@ -310,17 +310,30 @@ void Phone::OnChannelClosed(const EndPoint &destination) {
 void Phone::OnIncomingRequest(
     const scoped_refptr<Request> &incoming_request,
     const scoped_refptr<Dialog> &dialog) {
-  // TODO
+  base::AutoLock lock(lock_);
+  if (Method::BYE == incoming_request->method()) {
+    Call *call = RouteToCall(dialog);
+    if (call)
+      call->OnIncomingRequest(incoming_request, dialog);
+  }
+
+  scoped_refptr<Call> call(new Call(incoming_request, this));
+  calls_.push_back(call);
+  phone_observer_->OnIncomingCall(call);
 }
 
 void Phone::OnIncomingResponse(
     const scoped_refptr<Response> &incoming_response,
     const scoped_refptr<Dialog> &dialog) {
-  if (Method::INVITE == incoming_response->refer_to()->method()
+  if (Method::REGISTER == incoming_response->refer_to()->method()) {
+    phone_observer_->OnLoginCompleted(incoming_response->response_code(),
+        incoming_response->reason_phrase());
+    // TODO: start a timer to refresh login
+  } else if (Method::INVITE == incoming_response->refer_to()->method()
       || Method::BYE == incoming_response->refer_to()->method()) {
-    RouteToCall<const scoped_refptr<Response>&, const scoped_refptr<Dialog>&>(
-        incoming_response->refer_to()->id(), &Call::OnIncomingResponse,
-        incoming_response, dialog);
+    Call *call = RouteToCall(incoming_response->refer_to());
+    if (call)
+      call->OnIncomingResponse(incoming_response, dialog);
   }
 }
 
@@ -329,9 +342,9 @@ void Phone::OnTimedOut(
     const scoped_refptr<Dialog> &dialog) {
   if (Method::INVITE == request->method()
       || Method::BYE == request->method()) {
-    RouteToCall<const scoped_refptr<Request>&, const scoped_refptr<Dialog>&>(
-        request->id(), &Call::OnTimedOut,
-        request, dialog);
+    Call *call = RouteToCall(request);
+    if (call)
+      call->OnTimedOut(request, dialog);
   }
 }
 
@@ -340,30 +353,32 @@ void Phone::OnTransportError(
     const scoped_refptr<Dialog> &dialog) {
   if (Method::INVITE == request->method()
       || Method::BYE == request->method()) {
-    RouteToCall<const scoped_refptr<Request>&, int,
-                const scoped_refptr<Dialog>&>(
-      request->id(), &Call::OnTransportError,
-      request, error, dialog);
+    Call *call = RouteToCall(request);
+    if (call)
+      call->OnTransportError(request, error, dialog);
   }
 }
 
-template<typename... Args>
-void RouteToCall(const std::string& id,
-    void(Call::*method)(Args...), Args... args) {
+Call *Phone::RouteToCall(const scoped_refptr<Request>& request) {
   base::AutoLock lock(lock_);
   CallsVector::iterator i;
   // A simple linear search will do it for a small amount of
   // simultaneous calls... But you can improve it if you want
   for (i = calls_.begin(); i != calls_.end(); ++i) {
-    if (i->get()->invite()->id() == id)
+    if (i->get()->last_request()->id() == request->id())
       break;
   }
-  if (calls_.end() != i) {
-    scoped_refptr<Call> call(i->get());
-    (call.get()->*method)(args);
-  } else {
-    DVLOG(1) << "Couldn't route callback to call id '" << id << "'";
+  return calls_.end() != i ? i->get() : nullptr;
+}
+
+Call *Phone::RouteToCall(const scoped_refptr<Dialog>& dialog) {
+  base::AutoLock lock(lock_);
+  CallsVector::iterator i;
+  for (i = calls_.begin(); i != calls_.end(); ++i) {
+    if (i->get()->dialog()->id() == dialog->id())
+      break;
   }
+  return calls_.end() != i ? i->get() : nullptr;
 }
 
 } // namespace sippet
