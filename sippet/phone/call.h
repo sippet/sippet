@@ -10,6 +10,9 @@
 #include "base/time/time.h"
 #include "base/memory/ref_counted.h"
 
+#include "sippet/uri/uri.h"
+#include "sippet/message/request.h"
+
 namespace sippet {
 namespace phone {
 
@@ -45,16 +48,10 @@ class Call :
   State state() const { return state_; }
 
   // Gets the call URI
-  std::string uri() const { return uri_; }
+  SipURI uri() const { return uri_; }
 
-  // Gets the caller username or number
+  // Gets the caller username or number. It's extracted from the call URI.
   std::string name() const;
-
-  // Answers the call (only for incoming calls).
-  void Answer(const int code = 200);
-
-  // Hangs up the call
-  void HangUp();
 
   // Get the time when the call was created
   base::Time creation_time() const { return creation_time_; }
@@ -68,15 +65,50 @@ class Call :
   // Get the duration of the call
   base::TimeDelta duration() const { return end_time_ - start_time_; }
 
- protected:
+  // Answers the call (only for incoming calls).
+  bool Answer(int code = 200);
+
+  // Hangs up the call
+  bool HangUp();
+
+ private:
   friend class Phone;
   friend class base::RefCountedThreadSafe<Call>;
 
-  Call(const std::string& uri,
-       Phone* phone);
-  ~Call() override {}
+  Type type_;
+  State state_;
+  SipURI uri_;
+  Phone *phone_;
+  scoped_refptr<Request> invite_;
+  
+  base::Time creation_time_;
+  base::Time start_time_;
+  base::Time end_time_;
 
-  void MakeCall();
+  Call(const SipURI& uri, Phone* phone);
+  Call(const scoped_refptr<Request> &invite, Phone* phone);
+  virtual ~Call();
+
+  //
+  // Signalling thread callbacks
+  //
+  void OnMakeCall();
+  void OnAnswer(int code);
+  void OnHangup();
+
+  //
+  // Phone callbacks
+  //
+  const scoped_refptr<Request> &invite() const { return invite_; }
+  void OnIncomingResponse(
+      const scoped_refptr<Response> &incoming_response,
+      const scoped_refptr<Dialog> &dialog);
+  void OnTimedOut(
+      const scoped_refptr<Request> &request,
+      const scoped_refptr<Dialog> &dialog);
+  void OnTransportError(
+      const scoped_refptr<Request> &request, int error,
+      const scoped_refptr<Dialog> &dialog);
 };
 
 } // namespace sippet
