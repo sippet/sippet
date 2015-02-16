@@ -131,7 +131,7 @@ class PhoneObserver {
   virtual void OnIncomingCall(const scoped_refptr<Call>& call) = 0;
 
   // Called on call error
-  virtual void OnCallError(int status_line,
+  virtual void OnCallError(int status_code,
                            const std::string& status_text,
                            const scoped_refptr<Call>& call) = 0;
 
@@ -255,21 +255,20 @@ class Phone :
   void OnChannelConnected(const EndPoint &destination, int err) override;
   void OnChannelClosed(const EndPoint &destination) override;
   void OnIncomingRequest(
-    const scoped_refptr<Request> &incoming_request,
-    const scoped_refptr<Dialog> &dialog) override;
+      const scoped_refptr<Request> &incoming_request,
+      const scoped_refptr<Dialog> &dialog) override;
   void OnIncomingResponse(
-    const scoped_refptr<Response> &incoming_response,
-    const scoped_refptr<Dialog> &dialog) override;
+      const scoped_refptr<Response> &incoming_response,
+      const scoped_refptr<Dialog> &dialog) override;
   void OnTimedOut(
-    const scoped_refptr<Request> &request,
-    const scoped_refptr<Dialog> &dialog) override;
+      const scoped_refptr<Request> &request,
+      const scoped_refptr<Dialog> &dialog) override;
   void OnTransportError(
-    const scoped_refptr<Request> &request, int error,
-    const scoped_refptr<Dialog> &dialog) override;
+      const scoped_refptr<Request> &request, int error,
+      const scoped_refptr<Dialog> &dialog) override;
 
-  template<typename... Args>
-  void RouteToCall(const std::string& id,
-    void (Call::*method)(Args...), Args...);
+  Call *RouteToCall(const scoped_refptr<Request>& request);
+  Call *RouteToCall(const scoped_refptr<Dialog>& dialog);
 };
 
 } // namespace sippet
