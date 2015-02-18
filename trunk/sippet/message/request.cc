@@ -80,6 +80,7 @@ std::string Request::GetDialogId() const {
 scoped_refptr<Request> Request::CloneRequest() const {
   scoped_refptr<Request> result(
     new Request(method(), request_uri(), version()));
+  result->id_ = id_; // A cloned request has the same ID
   for (Message::const_iterator i = begin(), ie = end(); i != ie; ++i) {
     result->push_back(i->Clone().Pass());
   }

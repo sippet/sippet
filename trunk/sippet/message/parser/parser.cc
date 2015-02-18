@@ -112,19 +112,8 @@ class GenericParametersIterator {
 bool IsStatusLine(
       std::string::const_iterator line_begin,
       std::string::const_iterator line_end) {
-  const int slop = 4;
-  const int sip_len = 3;
-  int buf_len = line_end - line_begin;
-
-  if (buf_len >= sip_len) {
-    int i_max = std::min(buf_len - sip_len, slop);
-    for (int i = 0; i <= i_max; ++i) {
-      if (LowerCaseEqualsASCII(line_begin + i,
-          line_begin + i + sip_len, "sip"))
-        return true;
-    }
-  }
-  return false;
+  return ((line_end - line_begin > 4)
+    && LowerCaseEqualsASCII(line_begin, line_begin + 4, "sip/"));
 }
 
 std::string::const_iterator FindLineEnd(
@@ -278,7 +267,7 @@ bool ParseRequestLine(
   // Extract the version number
   *version = ParseVersion(p, line_end);
   if (*version == Version()) {
-    DVLOG(1) << "invalid response";
+    DVLOG(1) << "invalid request";
     return false;
   }
 

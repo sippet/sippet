@@ -46,7 +46,11 @@ NetworkLayer::NetworkLayer(Delegate *delegate,
 }
 
 NetworkLayer::~NetworkLayer() {
-  STLDeleteContainerPairSecondPointers(channels_.begin(), channels_.end());
+  DCHECK(thread_checker_.CalledOnValidThread());
+  // Close all pending transactions
+  while (!channels_.empty()) {
+    DestroyChannelContext(channels_.begin()->second);
+  }
 }
 
 void NetworkLayer::RegisterChannelFactory(const Protocol &protocol,
@@ -69,6 +73,7 @@ void NetworkLayer::ReleaseChannel(const EndPoint &destination) {
 }
 
 int NetworkLayer::Connect(const EndPoint &destination) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   ChannelContext *channel_context = GetChannelContext(destination);
   if (channel_context)
     return net::OK;
@@ -83,6 +88,7 @@ int NetworkLayer::Connect(const EndPoint &destination) {
 }
 
 int NetworkLayer::ReconnectIgnoringLastError(const EndPoint &destination) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   ChannelContext *channel_context = GetChannelContext(destination);
   if (!channel_context)
     return net::ERR_CONNECTION_CLOSED;
@@ -91,6 +97,7 @@ int NetworkLayer::ReconnectIgnoringLastError(const EndPoint &destination) {
 
 int NetworkLayer::ReconnectWithCertificate(const EndPoint &destination,
                                            net::X509Certificate* client_cert) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   ChannelContext *channel_context = GetChannelContext(destination);
   if (!channel_context)
     return net::ERR_CONNECTION_CLOSED;
@@ -98,6 +105,7 @@ int NetworkLayer::ReconnectWithCertificate(const EndPoint &destination,
 }
 
 int NetworkLayer::DismissLastConnectionAttempt(const EndPoint &destination) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   ChannelContext *channel_context = GetChannelContext(destination);
   if (!channel_context)
     return net::ERR_CONNECTION_CLOSED;
@@ -109,6 +117,7 @@ int NetworkLayer::DismissLastConnectionAttempt(const EndPoint &destination) {
 }
 
 int NetworkLayer::GetOriginOf(const EndPoint& destination, EndPoint *origin) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   ChannelContext *channel_context = GetChannelContext(destination);
   if (!channel_context)
     return net::ERR_SOCKET_NOT_CONNECTED;
@@ -117,6 +126,7 @@ int NetworkLayer::GetOriginOf(const EndPoint& destination, EndPoint *origin) {
 
 int NetworkLayer::Send(const scoped_refptr<Message> &message,
                        const net::CompletionCallback& callback) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   if (Message::Outgoing != message->direction()) {
     DVLOG(1) << "Trying to send an incoming message";
     return net::ERR_UNEXPECTED;
@@ -132,6 +142,7 @@ int NetworkLayer::Send(const scoped_refptr<Message> &message,
 }
 
 bool NetworkLayer::AddAlias(const EndPoint &destination, const EndPoint &alias) {
+  DCHECK(thread_checker_.CalledOnValidThread());
   ChannelContext *channel_context = GetChannelContext(destination);
   if (channel_context)
     aliases_map_.AddAlias(destination, alias);

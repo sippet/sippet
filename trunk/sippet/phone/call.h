@@ -9,9 +9,7 @@
 
 #include "base/time/time.h"
 #include "base/memory/ref_counted.h"
-
-#include "sippet/uri/uri.h"
-#include "sippet/message/request.h"
+#include "url/gurl.h"
 
 namespace sippet {
 namespace phone {
@@ -23,9 +21,9 @@ class Phone;
 // phone-api.
 class Call :
   public base::RefCountedThreadSafe<Call> {
- private:
-  DISALLOW_COPY_AND_ASSIGN(Call);
  public:
+  virtual ~Call() {}
+
   // Where the call is from
   enum Type {
     kTypeIncoming,
@@ -42,83 +40,34 @@ class Call :
   };
 
   // Gets the current call type.
-  Type type() const { return type_; }
+  virtual Type type() const = 0;
 
   // Gets the current call state.
-  State state() const { return state_; }
+  virtual State state() const = 0;
 
   // Gets the call URI
-  SipURI uri() const { return uri_; }
+  virtual GURL uri() const = 0;
 
-  // Gets the caller username or number. It's extracted from the call URI.
-  std::string name() const { return uri_.username(); }
+  // Gets the caller username or number.
+  virtual std::string name() const = 0;
 
   // Get the time when the call was created
-  base::Time creation_time() const { return creation_time_; }
+  virtual base::Time creation_time() const = 0;
 
   // Get the when the call was started (established)
-  base::Time start_time() const { return start_time_; }
+  virtual base::Time start_time() const = 0;
 
   // Get the time when the call was hung up
-  base::Time end_time() const { return end_time_; }
+  virtual base::Time end_time() const = 0;
 
   // Get the duration of the call
-  base::TimeDelta duration() const { return end_time_ - start_time_; }
+  virtual base::TimeDelta duration() const = 0;
 
   // Answers the call (only for incoming calls).
-  bool Answer(int code = 200);
+  virtual bool Answer(int code = 200) = 0;
 
   // Hangs up the call
-  bool HangUp();
-
- private:
-  friend class Phone;
-  friend class base::RefCountedThreadSafe<Call>;
-
-  Type type_;
-  State state_;
-  SipURI uri_;
-  Phone *phone_;
-  scoped_refptr<Request> last_request_;
-  scoped_refptr<Dialog> dialog_;
-  
-  base::Time creation_time_;
-  base::Time start_time_;
-  base::Time end_time_;
-
-  Call(const SipURI& uri, Phone* phone);
-  Call(const scoped_refptr<Request> &invite, Phone* phone);
-  virtual ~Call();
-
-  //
-  // Signalling thread callbacks
-  //
-  void OnMakeCall();
-  void OnAnswer(int code);
-  void OnHangup();
-
-  //
-  // Phone callbacks
-  //
-  const scoped_refptr<Request> &last_request() const {
-    return last_request_;
-  }
-  const scoped_refptr<Dialog> &dialog() const {
-    return dialog_;
-  }
-
-  void OnIncomingRequest(
-      const scoped_refptr<Request> &incoming_request,
-      const scoped_refptr<Dialog> &dialog);
-  void OnIncomingResponse(
-      const scoped_refptr<Response> &incoming_response,
-      const scoped_refptr<Dialog> &dialog);
-  void OnTimedOut(
-      const scoped_refptr<Request> &request,
-      const scoped_refptr<Dialog> &dialog);
-  void OnTransportError(
-      const scoped_refptr<Request> &request, int error,
-      const scoped_refptr<Dialog> &dialog);
+  virtual bool HangUp() = 0;
 };
 
 } // namespace sippet

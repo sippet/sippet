@@ -41,7 +41,6 @@ namespace ua {
 // handling, or not, their own set of requests, responses and connection
 // feedbacks.
 class UserAgent :
-  public base::RefCountedThreadSafe<UserAgent>,
   public NetworkLayer::Delegate {
  public:
   class Delegate {
@@ -124,7 +123,7 @@ class UserAgent :
       const net::CompletionCallback& callback);
 
  private:
-  friend class base::RefCountedThreadSafe<UserAgent>;
+  friend struct base::DefaultDeleter<UserAgent>;
   ~UserAgent() override;
 
   typedef std::vector<GURL> UrlListType;

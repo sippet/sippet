@@ -39,9 +39,9 @@ class ProgramMain {
   scoped_ptr<sippet::AuthHandlerFactory> auth_handler_factory_;
   net::BoundNetLog net_log_;
   scoped_ptr<StaticPasswordHandler::Factory> static_password_handler_factory_;
-  scoped_refptr<sippet::ua::UserAgent> user_agent_;
+  scoped_ptr<sippet::ua::UserAgent> user_agent_;
   scoped_ptr<DumpSSLCertError::Factory> ssl_cert_error_handler_factory_;
-  scoped_refptr<sippet::NetworkLayer> network_layer_;
+  scoped_ptr<sippet::NetworkLayer> network_layer_;
   scoped_ptr<sippet::ChromeChannelFactory> channel_factory_;
 };
 

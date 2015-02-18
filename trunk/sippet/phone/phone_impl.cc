@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/phone/phone.h"
+#include "sippet/phone/phone_impl.h"
+#include "sippet/phone/call_impl.h"
 
 #include "base/bind.h"
 #include "base/strings/utf_string_conversions.h"
@@ -12,6 +13,9 @@
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
 #include "sippet/ua/dialog_controller.h"
+#include "talk/media/devices/devicemanager.h"
+#include "jingle/glue/thread_wrapper.h"
+#include "webrtc/base/ssladapter.h"
 
 namespace sippet {
 
@@ -59,7 +63,7 @@ class URLRequestContextGetter : public net::URLRequestContextGetter {
   }
 
  private:
-  ~URLRequestContextGetter() override;
+  ~URLRequestContextGetter() override {}
 
   scoped_refptr<base::SingleThreadTaskRunner> network_task_runner_;
 
@@ -76,22 +80,22 @@ namespace phone {
 //
 // Phone::AccountPasswordHandler::Factory implementation
 //
-Phone::AccountPasswordHandler::Factory::Factory() {
+PhoneImpl::AccountPasswordHandler::Factory::Factory() {
 }
 
-Phone::AccountPasswordHandler::Factory::~Factory() {
+PhoneImpl::AccountPasswordHandler::Factory::~Factory() {
 }
 
-const Account &Phone::AccountPasswordHandler::Factory::account() const {
+const Account &PhoneImpl::AccountPasswordHandler::Factory::account() const {
   return account_;
 }
 
-void Phone::AccountPasswordHandler::Factory::set_account(const Account &account) {
+void PhoneImpl::AccountPasswordHandler::Factory::set_account(const Account &account) {
   account_ = account;
 }
 
 scoped_ptr<PasswordHandler>
-    Phone::AccountPasswordHandler::Factory::CreatePasswordHandler() {
+      PhoneImpl::AccountPasswordHandler::Factory::CreatePasswordHandler() {
   scoped_ptr<PasswordHandler> password_handler(
     new AccountPasswordHandler(this));
   return password_handler.Pass();
@@ -100,14 +104,14 @@ scoped_ptr<PasswordHandler>
 //
 // Phone::AccountPasswordHandler implementation
 //
-Phone::AccountPasswordHandler::AccountPasswordHandler(Factory *factory) :
+PhoneImpl::AccountPasswordHandler::AccountPasswordHandler(Factory *factory) :
   factory_(factory) {
 }
 
-Phone::AccountPasswordHandler::~AccountPasswordHandler() {
+PhoneImpl::AccountPasswordHandler::~AccountPasswordHandler() {
 }
 
-int Phone::AccountPasswordHandler::GetCredentials(
+int PhoneImpl::AccountPasswordHandler::GetCredentials(
       const net::AuthChallengeInfo* auth_info,
       base::string16 *username,
       base::string16 *password,
@@ -120,30 +124,32 @@ int Phone::AccountPasswordHandler::GetCredentials(
 //
 // Phone implementation
 //
-Phone::Phone(PhoneObserver *phone_observer)
+PhoneImpl::PhoneImpl(PhoneObserver *phone_observer)
   : phone_observer_(phone_observer),
     signalling_thread_("PhoneSignalling"),
+    signalling_thread_event_(false, false),
     password_handler_factory_(new AccountPasswordHandler::Factory) {
   DCHECK(phone_observer);
 }
 
-Phone::~Phone() {
+PhoneImpl::~PhoneImpl() {
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&Phone::OnDestroy, base::Unretained(this))
+    base::Bind(&PhoneImpl::OnDestroy, base::Unretained(this))
   );
+  signalling_thread_event_.Wait();
 }
 
-bool Phone::Init(const Settings& settings) {
+bool PhoneImpl::Init(const Settings& settings) {
   if (!signalling_thread_.Start()) {
     return false;
   }
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&Phone::OnInit, base::Unretained(this))
+    base::Bind(&PhoneImpl::OnInit, base::Unretained(this))
   );
   return true;
 }
 
-bool Phone::Login(const Account &account) {
+bool PhoneImpl::Login(const Account &account) {
   // Evaluate the account host attribute first
   GURL url(account.host());
   if (!url.SchemeIs("sip")
@@ -162,40 +168,41 @@ bool Phone::Login(const Account &account) {
   username_ = account.username();
   password_handler_factory_->set_account(account);
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&Phone::OnLogin, base::Unretained(this), account)
+    base::Bind(&PhoneImpl::OnLogin, base::Unretained(this), account)
   );
   return true;
 }
 
-scoped_refptr<Call> Phone::MakeCall(const std::string& destination) {
+scoped_refptr<Call> PhoneImpl::MakeCall(const std::string& destination) {
   if (destination.empty()) {
     DVLOG(1) << "Empty destination";
     return false;
   }
   base::AutoLock lock(lock_);
-  scoped_refptr<Call> call(new Call(
+  scoped_refptr<CallImpl> call(new CallImpl(
       SipURI(scheme_ + ":" + destination + "@" + host_), this));
   calls_.push_back(call);
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&Call::OnMakeCall, base::Unretained(call.get()))
+    base::Bind(&CallImpl::OnMakeCall, base::Unretained(call.get()),
+      base::Unretained(peer_connection_factory_.get()))
   );
   return call;
 }
 
-void Phone::HangUpAll() {
+void PhoneImpl::HangUpAll() {
   base::AutoLock lock(lock_);
   for (CallsVector::iterator i = calls_.begin(); i != calls_.end(); ++i) {
     i->get()->HangUp();
   }
 }
 
-void Phone::Logout() {
+void PhoneImpl::Logout() {
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&Phone::OnLogout, base::Unretained(this))
+    base::Bind(&PhoneImpl::OnLogout, base::Unretained(this))
   );
 }
 
-void Phone::RemoveCall(const scoped_refptr<Call>& call) {
+void PhoneImpl::RemoveCall(const scoped_refptr<Call>& call) {
   base::AutoLock lock(lock_);
   CallsVector::iterator i;
   for (i = calls_.begin(); i != calls_.end(); ++i) {
@@ -206,7 +213,31 @@ void Phone::RemoveCall(const scoped_refptr<Call>& call) {
     calls_.erase(i);
 }
 
-void Phone::OnInit() {
+bool PhoneImpl::InitializePeerConnectionFactory() {
+  DCHECK(peer_connection_factory_.get() == nullptr);
+
+  // To allow sending to the signaling/worker threads.
+  jingle_glue::JingleThreadWrapper::EnsureForCurrentMessageLoop();
+  jingle_glue::JingleThreadWrapper::current()->set_send_allowed(true);
+
+  peer_connection_factory_ = webrtc::CreatePeerConnectionFactory();
+  if (!peer_connection_factory_.get()) {
+    DeletePeerConnectionFactory();
+    return false;
+  }
+
+  webrtc::PeerConnectionFactoryInterface::Options options;
+  options.disable_encryption = true;
+  options.disable_sctp_data_channels = true;
+  peer_connection_factory_->SetOptions(options);
+  return true;
+}
+
+void PhoneImpl::DeletePeerConnectionFactory() {
+  peer_connection_factory_ = nullptr;
+}
+
+void PhoneImpl::OnInit() {
   base::MessageLoop *message_loop = base::MessageLoop::current();
   request_context_getter_ =
     new URLRequestContextGetter(message_loop->message_loop_proxy());
@@ -219,12 +250,12 @@ void Phone::OnInit() {
   auth_handler_factory_ =
     auth_handler_factory.Pass();
 
-  user_agent_ = new ua::UserAgent(auth_handler_factory_.get(),
+  user_agent_.reset(new ua::UserAgent(auth_handler_factory_.get(),
     password_handler_factory_.get(),
     DialogController::GetDefaultDialogController(),
-    net_log_);
+    net_log_));
 
-  network_layer_ = new NetworkLayer(user_agent_.get());
+  network_layer_.reset(new NetworkLayer(user_agent_.get()));
 
   // Register the channel factory
   net::SSLConfig ssl_config;
@@ -240,9 +271,23 @@ void Phone::OnInit() {
     channel_factory_.get());
   user_agent_->SetNetworkLayer(network_layer_.get());
   user_agent_->AppendHandler(this);
+
+  InitializePeerConnectionFactory();
 }
 
-void Phone::OnLogin(const Account &account) {
+void PhoneImpl::OnDestroy() {
+  channel_factory_.reset();
+  auth_handler_factory_.reset();
+  host_resolver_.reset();
+  user_agent_ = nullptr;
+  network_layer_ = nullptr;
+  request_context_getter_ = nullptr;
+  DeletePeerConnectionFactory();
+
+  signalling_thread_event_.Signal();
+}
+
+void PhoneImpl::OnLogin(const Account &account) {
   std::string registrar_uri("sip:" + host_);
   std::string from("sip:" + username_ + "@" + host_);
   std::string to("sip:" + username_ + "@" + host_);
@@ -255,7 +300,7 @@ void Phone::OnLogin(const Account &account) {
         GURL(to));
 
   int rv = user_agent_->Send(request,
-      base::Bind(&Phone::OnRequestSent, base::Unretained(this)));
+      base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
     phone_observer_->OnNetworkError(rv);
     return;
@@ -264,7 +309,7 @@ void Phone::OnLogin(const Account &account) {
   // Wait for SIP response now
 }
 
-void Phone::OnLogout() {
+void PhoneImpl::OnLogout() {
   std::string registrar_uri("sip:" + host_);
   std::string from("sip:" + username_ + "@" + host_);
   std::string to("sip:" + username_ + "@" + host_);
@@ -282,7 +327,7 @@ void Phone::OnLogout() {
   contact->front().set_expires(0);
 
   int rv = user_agent_->Send(request,
-      base::Bind(&Phone::OnRequestSent, base::Unretained(this)));
+      base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
     phone_observer_->OnNetworkError(rv);
     return;
@@ -291,38 +336,40 @@ void Phone::OnLogout() {
   // Wait for SIP response now
 }
 
-void Phone::OnRequestSent(int rv) {
+void PhoneImpl::OnRequestSent(int rv) {
   if (net::OK != rv) {
     phone_observer_->OnNetworkError(rv);
   }
 }
 
-void Phone::OnChannelConnected(const EndPoint &destination, int err) {
+void PhoneImpl::OnChannelConnected(const EndPoint &destination, int err) {
   if (net::OK != err) {
     phone_observer_->OnNetworkError(err);
   }
 }
 
-void Phone::OnChannelClosed(const EndPoint &destination) {
+void PhoneImpl::OnChannelClosed(const EndPoint &destination) {
   // Nothing to do
 }
 
-void Phone::OnIncomingRequest(
+void PhoneImpl::OnIncomingRequest(
     const scoped_refptr<Request> &incoming_request,
     const scoped_refptr<Dialog> &dialog) {
-  base::AutoLock lock(lock_);
-  if (Method::BYE == incoming_request->method()) {
-    Call *call = RouteToCall(dialog);
+  if (Method::INVITE == incoming_request->method()) {
+    scoped_refptr<CallImpl> call(new CallImpl(incoming_request, this));
+    {
+      base::AutoLock lock(lock_);
+      calls_.push_back(call);
+    }
+    phone_observer_->OnIncomingCall(call);
+  } else {
+    scoped_refptr<CallImpl> call = RouteToCall(dialog);
     if (call)
       call->OnIncomingRequest(incoming_request, dialog);
   }
-
-  scoped_refptr<Call> call(new Call(incoming_request, this));
-  calls_.push_back(call);
-  phone_observer_->OnIncomingCall(call);
 }
 
-void Phone::OnIncomingResponse(
+void PhoneImpl::OnIncomingResponse(
     const scoped_refptr<Response> &incoming_response,
     const scoped_refptr<Dialog> &dialog) {
   if (Method::REGISTER == incoming_response->refer_to()->method()) {
@@ -330,36 +377,36 @@ void Phone::OnIncomingResponse(
         incoming_response->reason_phrase());
     // TODO: start a timer to refresh login
   } else if (Method::INVITE == incoming_response->refer_to()->method()
-      || Method::BYE == incoming_response->refer_to()->method()) {
-    Call *call = RouteToCall(incoming_response->refer_to());
+             || Method::BYE == incoming_response->refer_to()->method()) {
+    CallImpl *call = RouteToCall(incoming_response->refer_to());
     if (call)
       call->OnIncomingResponse(incoming_response, dialog);
   }
 }
 
-void Phone::OnTimedOut(
+void PhoneImpl::OnTimedOut(
     const scoped_refptr<Request> &request,
     const scoped_refptr<Dialog> &dialog) {
   if (Method::INVITE == request->method()
       || Method::BYE == request->method()) {
-    Call *call = RouteToCall(request);
+    CallImpl *call = RouteToCall(request);
     if (call)
       call->OnTimedOut(request, dialog);
   }
 }
 
-void Phone::OnTransportError(
+void PhoneImpl::OnTransportError(
     const scoped_refptr<Request> &request, int error,
     const scoped_refptr<Dialog> &dialog) {
   if (Method::INVITE == request->method()
       || Method::BYE == request->method()) {
-    Call *call = RouteToCall(request);
+    CallImpl *call = RouteToCall(request);
     if (call)
       call->OnTransportError(request, error, dialog);
   }
 }
 
-Call *Phone::RouteToCall(const scoped_refptr<Request>& request) {
+CallImpl *PhoneImpl::RouteToCall(const scoped_refptr<Request>& request) {
   base::AutoLock lock(lock_);
   CallsVector::iterator i;
   // A simple linear search will do it for a small amount of
@@ -371,7 +418,7 @@ Call *Phone::RouteToCall(const scoped_refptr<Request>& request) {
   return calls_.end() != i ? i->get() : nullptr;
 }
 
-Call *Phone::RouteToCall(const scoped_refptr<Dialog>& dialog) {
+CallImpl *PhoneImpl::RouteToCall(const scoped_refptr<Dialog>& dialog) {
   base::AutoLock lock(lock_);
   CallsVector::iterator i;
   for (i = calls_.begin(); i != calls_.end(); ++i) {
@@ -379,6 +426,15 @@ Call *Phone::RouteToCall(const scoped_refptr<Dialog>& dialog) {
       break;
   }
   return calls_.end() != i ? i->get() : nullptr;
+}
+
+void Phone::Initialize() {
+  // Initialize the SSL libraries
+  rtc::InitializeSSL();
+}
+
+scoped_refptr<Phone> Phone::Create(PhoneObserver *phone_observer) {
+  return new PhoneImpl(phone_observer);
 }
 
 } // namespace sippet

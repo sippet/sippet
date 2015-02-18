@@ -294,6 +294,25 @@ TEST(SimpleMessages, EscapedUris) {
       "host5.example.net");
 }
 
+TEST(SimpleMessages, Bye) {
+  // The function IsStatusLine (from Message::Parse) was wrong: it was
+  // interpreting the request below as a response. The heuristic
+  // considered that the word "SIP" had to start on the first 4 characters
+  // of the message.
+  const char message_string[] =
+    "BYE sip:1.1.1.1:1;ob SIP/2.0\r\n"
+    "Via: SIP/2.0/UDP 2.2.2.2:2;branch=z9hG4bK5913.5c3b2a91.0\r\n"
+    "From: <sip:12345@1.1.1.1:1>;tag=as1e74befe\r\n"
+    "To: <sip:54321@3.3.3.3:3>;tag=NlgWLM60\r\n"
+    "Call-ID: FPN7NjRQZmVTJm1E6mII\r\n"
+    "CSeq: 1 BYE\r\n"
+    "Max-Forwards: 70\r\n"
+    "Content-Length: 0\r\n";
+
+  scoped_refptr<Message> message = Message::Parse(message_string);
+  ASSERT_TRUE(isa<Request>(message));
+}
+
 TEST(Headers, Contact) {
   struct {
     const char *input;

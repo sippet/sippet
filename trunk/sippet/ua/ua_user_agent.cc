@@ -163,8 +163,6 @@ bool UserAgent::HandleChallengeAuthentication(
     }
   }
   outgoing_request_context->outgoing_requests_.push_back(outgoing_request);
-  outgoing_requests_.insert(std::make_pair(outgoing_request->id(),
-      outgoing_request_context));
   AuthTransaction *auth_transaction =
       outgoing_request_context->auth_transaction_.get();
   int rv = auth_transaction->HandleChallengeAuthentication(outgoing_request,
