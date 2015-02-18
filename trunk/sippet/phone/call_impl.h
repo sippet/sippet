@@ -22,37 +22,21 @@ class CallImpl :
  private:
   DISALLOW_COPY_AND_ASSIGN(CallImpl);
  public:
-  // Gets the current call type.
   Type type() const override { return type_; }
-
-  // Gets the current call state.
   State state() const override { return state_; }
-
-  // Gets the call URI
   GURL uri() const override { return GURL(uri_.spec()); }
-
-  // Gets the caller username or number. It's extracted from the call URI.
   std::string name() const override { return uri_.username(); }
-
-  // Get the time when the call was created
   base::Time creation_time() const override { return creation_time_; }
-
-  // Get the when the call was started (established)
   base::Time start_time() const override { return start_time_; }
-
-  // Get the time when the call was hung up
   base::Time end_time() const override { return end_time_; }
 
-  // Get the duration of the call
   base::TimeDelta duration() const override {
     return end_time_ - start_time_;
   }
 
-  // Answers the call (only for incoming calls).
   bool Answer(int code = 200) override;
-
-  // Hangs up the call
   bool HangUp() override;
+  void SendDtmf(const std::string& digits) override;
 
  private:
   friend class PhoneImpl;
@@ -70,6 +54,7 @@ class CallImpl :
   base::Time end_time_;
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+  rtc::scoped_refptr<webrtc::DtmfSenderInterface> dtmf_sender_;
   std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
     active_streams_;
 
@@ -116,6 +101,7 @@ class CallImpl :
         webrtc::PeerConnectionFactoryInterface *peer_connection_factory);
   void OnAnswer(int code);
   void OnHangup();
+  void OnSendDtmf(const std::string& digits);
   void OnDestroy();
 
   //
