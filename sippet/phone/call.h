@@ -68,6 +68,9 @@ class Call :
 
   // Hangs up the call
   virtual bool HangUp() = 0;
+
+  // Send DTMF digits
+  virtual void SendDtmf(const std::string& digits) = 0;
 };
 
 } // namespace sippet

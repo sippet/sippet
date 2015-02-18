@@ -128,6 +128,23 @@ bool CallImpl::HangUp() {
   return true;
 }
 
+void CallImpl::SendDtmf(const std::string& digits) {
+  if (!last_request_) {
+    DVLOG(1) << "Impossible to send digit to an uninitiated call";
+    return;
+  }
+  if (kStateHungUp == state_) {
+    DVLOG(1) << "Cannot send digit to a hungup call";
+    return;
+  }
+  if (kStateError == state_) {
+    DVLOG(1) << "Cannot send digit to a call in error state";
+    return;
+  }
+  phone_->signalling_message_loop()->PostTask(FROM_HERE,
+    base::Bind(&CallImpl::OnSendDtmf, base::Unretained(this), digits));
+}
+
 bool CallImpl::InitializePeerConnection(
       webrtc::PeerConnectionFactoryInterface *peer_connection_factory) {
   webrtc::PeerConnectionInterface::RTCConfiguration config;
@@ -307,6 +324,22 @@ void CallImpl::OnHangup() {
   }
 
   // Wait for SIP response now
+}
+
+void CallImpl::OnSendDtmf(const std::string& digits) {
+  if (!dtmf_sender_) {
+    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
+        active_streams_["stream"];
+    dtmf_sender_ =
+        peer_connection_->CreateDtmfSender(stream->FindAudioTrack("audio"));
+  }
+  if (!dtmf_sender_->CanInsertDtmf()) {
+    LOG(INFO) << "Current call doesn't support DTMF";
+    return;
+  }
+  if (!dtmf_sender_->InsertDtmf(digits, 150, 50)) {
+    LOG(INFO) << "Error inserting DTMF";
+  }
 }
 
 void CallImpl::OnIncomingRequest(
