@@ -123,7 +123,8 @@ void ClientTransactionImpl::HandleIncomingResponse(
     StopTimers();
   }
 
-  if (state != STATE_COMPLETED) {
+  if (mode_ == MODE_INVITE
+      || state != STATE_COMPLETED) {
     response->set_refer_to(initial_request_);
     delegate_->OnIncomingResponse(response);
   }

@@ -66,11 +66,7 @@
       'target_name': 'sippet_examples_call',
       'type': 'executable',
       'dependencies': [
-        'sippet_examples_program_main',
-        '<(DEPTH)/jingle/jingle.gyp:jingle_glue',
-        '<(DEPTH)/third_party/libjingle/libjingle.gyp:*',
-        '<(DEPTH)/third_party/webrtc/webrtc.gyp:*',
-        '<(DEPTH)/third_party/re2/re2.gyp:*',
+        '<(DEPTH)/sippet/sippet_phone.gyp:sippet_phone',
       ],
       'sources': [
         'examples/call/call_main.cc',

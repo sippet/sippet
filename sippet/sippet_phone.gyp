@@ -28,9 +28,11 @@
       },
       'sources': [
         'phone/phone.h',
-        'phone/phone.cc',
+        'phone/phone_impl.h',
+        'phone/phone_impl.cc',
         'phone/call.h',
-        'phone/call.cc',
+        'phone/call_impl.h',
+        'phone/call_impl.cc',
       ],
     },  # target sippet_phone
   ],

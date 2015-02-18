@@ -11,6 +11,10 @@
 
 namespace sippet {
 
+namespace ua {
+class UserAgent;
+} // namespace ua
+
 class Response :
   public Message {
 private:
@@ -52,6 +56,7 @@ private:
   friend class Message;
   friend class ClientTransactionImpl;
   friend class AuthControllerTest;
+  friend class ua::UserAgent;
 
   Version version_;
   int response_code_;

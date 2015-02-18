@@ -12,6 +12,7 @@
 #include "base/memory/scoped_vector.h"
 #include "base/system_monitor/system_monitor.h"
 #include "base/gtest_prod_util.h"
+#include "base/threading/thread_checker.h"
 #include "net/base/completion_callback.h"
 #include "sippet/message/protocol.h"
 #include "sippet/message/message.h"
@@ -95,8 +96,7 @@ class SSLCertErrorTransaction;
 //   
 class NetworkLayer :
   public TransactionDelegate,
-  public Channel::Delegate,
-  public base::RefCountedThreadSafe<NetworkLayer> {
+  public Channel::Delegate {
  private:
   DISALLOW_COPY_AND_ASSIGN(NetworkLayer);
  public:
@@ -209,7 +209,7 @@ class NetworkLayer :
   static EndPoint GetMessageEndPoint(const scoped_refptr<Message> &message);
 
  private:
-  friend class base::RefCountedThreadSafe<NetworkLayer>;
+  friend struct base::DefaultDeleter<NetworkLayer>;
   ~NetworkLayer() override;
 
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
@@ -367,6 +367,7 @@ class NetworkLayer :
 
   void PostOnChannelClosed(const EndPoint &destination);
 
+  base::ThreadChecker thread_checker_;
   base::WeakPtrFactory<NetworkLayer> weak_factory_;
 };
 

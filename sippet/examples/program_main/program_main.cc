@@ -58,18 +58,18 @@ bool ProgramMain::Init() {
 
   static_password_handler_factory_.reset(new StaticPasswordHandler::Factory(
       username_, password_));
-  user_agent_ = new sippet::ua::UserAgent(auth_handler_factory_.get(),
+  user_agent_.reset(new sippet::ua::UserAgent(auth_handler_factory_.get(),
       static_password_handler_factory_.get(),
       sippet::DialogController::GetDefaultDialogController(),
-      net_log_);
+      net_log_));
   
   sippet::NetworkSettings network_settings;
   ssl_cert_error_handler_factory_.reset(new DumpSSLCertError::Factory(true));
   network_settings.set_ssl_cert_error_handler_factory(
       ssl_cert_error_handler_factory_.get());
 
-  network_layer_ = new sippet::NetworkLayer(user_agent_.get(),
-      network_settings);
+  network_layer_.reset(new sippet::NetworkLayer(user_agent_.get(),
+      network_settings));
 
   // Register the channel factory
   net::SSLConfig ssl_config;
