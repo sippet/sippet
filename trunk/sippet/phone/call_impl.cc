@@ -313,17 +313,31 @@ void CallImpl::OnAnswer(int code) {
 }
 
 void CallImpl::OnHangup() {
-  last_request_ =
-    dialog_->CreateRequest(Method::BYE);
+  if (!dialog_) {
+    // Wait while the server doesn't answer an 18x
+  } else if (Dialog::STATE_EARLY == dialog_->state()) {
+    // Send a CANCEL in this case
+    scoped_refptr<Request> cancel;
+    int rv = last_request_->CreateCancel(cancel);
+    if (net::OK != rv) {
+      LOG(ERROR) << "Unexpected error while creating CANCEL: "
+                 << net::ErrorToString(rv);
+    } else {
+      phone_->user_agent()->Send(cancel,
+          base::Bind(&PhoneImpl::OnRequestSent, phone_));
+    }
+  } else {
+    last_request_ = dialog_->CreateRequest(Method::BYE);
 
-  int rv = phone_->user_agent()->Send(last_request_,
-    base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
-  if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    phone_->phone_observer()->OnNetworkError(rv);
-    return;
+    int rv = phone_->user_agent()->Send(last_request_,
+      base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
+    if (net::OK != rv && net::ERR_IO_PENDING != rv) {
+      phone_->phone_observer()->OnNetworkError(rv);
+      return;
+    }
+
+    // Wait for SIP response now
   }
-
-  // Wait for SIP response now
 }
 
 void CallImpl::OnSendDtmf(const std::string& digits) {
