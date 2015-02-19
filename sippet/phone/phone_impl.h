@@ -10,6 +10,7 @@
 #include "base/threading/thread.h"
 #include "base/synchronization/waitable_event.h"
 #include "base/synchronization/lock.h"
+#include "base/timer/timer.h"
 #include "net/dns/host_resolver.h"
 #include "net/url_request/url_request_context_getter.h"
 
@@ -32,6 +33,8 @@ class PhoneImpl :
  private:
   DISALLOW_COPY_AND_ASSIGN(PhoneImpl);
  public:
+   State state() const override { return state_; }
+
   bool Init(const Settings& settings) override;
 
   bool Login(const Account &account) override;
@@ -55,6 +58,7 @@ class PhoneImpl :
   bool InitializePeerConnectionFactory();
   void DeletePeerConnectionFactory();
 
+  State state_;
   base::Lock lock_;
   CallsVector calls_;
   std::string username_;
@@ -101,9 +105,12 @@ class PhoneImpl :
   scoped_ptr<ua::UserAgent> user_agent_;
   scoped_ptr<NetworkLayer> network_layer_;
   scoped_ptr<ChromeChannelFactory> channel_factory_;
+  base::OneShotTimer<PhoneImpl> refresh_timer_;
 
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
     peer_connection_factory_;
+
+  scoped_refptr<Request> last_request_;
 
   //
   // Call attributes
@@ -148,8 +155,14 @@ class PhoneImpl :
       const scoped_refptr<Request> &request, int error,
       const scoped_refptr<Dialog> &dialog) override;
 
+  //
+  // Refresh Login timer callback
+  //
+  void OnRefreshLogin();
+
   CallImpl *RouteToCall(const scoped_refptr<Request>& request);
   CallImpl *RouteToCall(const scoped_refptr<Dialog>& dialog);
+  unsigned int GetContactExpiration(const scoped_refptr<Response>& response);
 };
 
 } // namespace sippet

@@ -145,11 +145,20 @@ class Phone :
  public:
   virtual ~Phone() {}
 
+  // Phone state: the life cycle of the phone
+  enum State {
+    kStateOffline,
+    kStateConnecting,
+    kStateOnline,
+  };
+
   // Initialize the |Phone| system.
   static void Initialize();
 
   // Create a |Phone| instance.
   static scoped_refptr<Phone> Create(PhoneObserver *phone_observer);
+
+  virtual State state() const = 0;
 
   // Initializes a |Phone| instance.
   virtual bool Init(const Settings& settings) = 0;
