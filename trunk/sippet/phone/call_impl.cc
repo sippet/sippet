@@ -282,7 +282,7 @@ void CallImpl::OnCreateOfferCompleted(const std::string& offer) {
   // Wait for SIP response now
 }
 
-void CallImpl::HandleSessionAnswer(
+void CallImpl::HandleSessionDescriptionAnswer(
       const scoped_refptr<Response> &incoming_response) {
   ContentType *content_type = incoming_response->get<ContentType>();
   if (content_type != nullptr
@@ -302,6 +302,117 @@ void CallImpl::HandleSessionAnswer(
   }
 }
 
+void CallImpl::SendAck(const scoped_refptr<Response> &incoming_response) {
+  scoped_refptr<Request> ack = dialog_->CreateAck(
+    incoming_response->refer_to());
+  int rv = phone_->user_agent()->Send(ack, base::Bind(
+    &PhoneImpl::OnRequestSent, phone_));
+  if (net::OK != rv && net::ERR_IO_PENDING != rv) {
+    phone_->phone_observer()->OnNetworkError(rv);
+    return;
+  }
+
+  // ACK is a final request, so there's no answer for it.
+}
+
+void CallImpl::SendCancel() {
+  // Send a CANCEL in this case
+  scoped_refptr<Request> cancel;
+  int rv = last_request_->CreateCancel(cancel);
+  if (net::OK != rv) {
+    LOG(ERROR) << "Unexpected error while creating CANCEL: "
+      << net::ErrorToString(rv);
+  }
+  else {
+    int rv = phone_->user_agent()->Send(cancel,
+      base::Bind(&PhoneImpl::OnRequestSent, phone_));
+    if (net::OK != rv && net::ERR_IO_PENDING != rv) {
+      phone_->phone_observer()->OnNetworkError(rv);
+      return;
+    }
+
+    // Wait for SIP response now
+  }
+}
+
+void CallImpl::SendBye() {
+  last_request_ = dialog_->CreateRequest(Method::BYE);
+  int rv = phone_->user_agent()->Send(last_request_,
+    base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
+  if (net::OK != rv && net::ERR_IO_PENDING != rv) {
+    phone_->phone_observer()->OnNetworkError(rv);
+    return;
+  }
+
+  // Wait for SIP response now
+}
+
+void CallImpl::HandleCallingOrRingingResponse(
+      const scoped_refptr<Response> &incoming_response,
+      const scoped_refptr<Dialog> &dialog) {
+  DCHECK(kStateRinging == state_ || kStateCalling == state_);
+
+  State next_state; // Determine the next state
+  int response_code = incoming_response->response_code();
+  if (response_code / 100 == 1) { // 1xx
+    if (response_code / 10 == 18) { // 18x
+      next_state = kStateRinging;
+    } else {
+      next_state = state_; // Keep on same state
+    }
+  } else if (response_code / 100 == 2) { // 2xx
+    next_state = kStateEstablished;
+  } else {
+    next_state = kStateError;
+  }
+
+  // Send ACK for every 2xx
+  if (next_state == kStateEstablished) {
+    SendAck(incoming_response);
+  }
+
+  // Handle Session Description on ringing or established
+  if (state_ != next_state) {
+    if (kStateRinging == next_state
+        || kStateEstablished == next_state) {
+      HandleSessionDescriptionAnswer(incoming_response);
+    }
+  }
+
+  // Now change state and process post changed state conditions
+  state_ = next_state;
+  if (kStateRinging == state_) {
+    phone_->phone_observer()->OnCallRinging(this);
+  } else if (kStateEstablished == state_) {
+    phone_->phone_observer()->OnCallEstablished(this);
+  } else if (kStateError == state_) {
+    phone_->phone_observer()->OnCallError(response_code,
+      incoming_response->reason_phrase(), this);
+    phone_->RemoveCall(this);
+  }
+}
+
+void CallImpl::HandleHungupResponse(
+      const scoped_refptr<Response> &incoming_response,
+      const scoped_refptr<Dialog> &dialog) {
+  DCHECK(kStateHungUp == state_);
+  int response_code = incoming_response->response_code();
+  if (Method::INVITE == incoming_response->refer_to()->method()) {
+    if (response_code / 100 == 2) { // 2xx
+      // In that case, we sent CANCEL, but it didn't get through,
+      // so we have to send a BYE (it's a normal race condition).
+      SendBye();
+    }
+  } else if (Method::CANCEL == incoming_response->refer_to()->method()
+             || Method::BYE == incoming_response->refer_to()->method()) {
+    if (response_code / 100 == 2) { // 2xx for CANCEL or BYE
+      // The CANCEL or BYE request concluded
+      // successfully, time to release the call.
+      phone_->RemoveCall(this);
+    }
+  }
+}
+
 void CallImpl::OnDestroy() {
   peer_connection_->Close();
   peer_connection_ = nullptr;
@@ -313,30 +424,13 @@ void CallImpl::OnAnswer(int code) {
 }
 
 void CallImpl::OnHangup() {
+  state_ = kStateHungUp;
   if (!dialog_) {
-    // Wait while the server doesn't answer an 18x
+    // Wait until the server answers a 18x before sending CANCEL
   } else if (Dialog::STATE_EARLY == dialog_->state()) {
-    // Send a CANCEL in this case
-    scoped_refptr<Request> cancel;
-    int rv = last_request_->CreateCancel(cancel);
-    if (net::OK != rv) {
-      LOG(ERROR) << "Unexpected error while creating CANCEL: "
-                 << net::ErrorToString(rv);
-    } else {
-      phone_->user_agent()->Send(cancel,
-          base::Bind(&PhoneImpl::OnRequestSent, phone_));
-    }
+    SendCancel();
   } else {
-    last_request_ = dialog_->CreateRequest(Method::BYE);
-
-    int rv = phone_->user_agent()->Send(last_request_,
-      base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
-    if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-      phone_->phone_observer()->OnNetworkError(rv);
-      return;
-    }
-
-    // Wait for SIP response now
+    SendBye();
   }
 }
 
@@ -375,44 +469,12 @@ void CallImpl::OnIncomingRequest(
 void CallImpl::OnIncomingResponse(
     const scoped_refptr<Response> &incoming_response,
     const scoped_refptr<Dialog> &dialog) {
-  int response_code = incoming_response->response_code();
-  switch (response_code / 100) {
-    case 1:
-      if (kStateCalling == state_) {
-        switch (response_code / 10) {
-          case 18: // 18x
-            state_ = kStateRinging;
-            dialog_ = dialog;
-            HandleSessionAnswer(incoming_response);
-            phone_->phone_observer()->OnCallRinging(this);
-            break;
-        }
-      }
-      break;
-    case 2: {
-      scoped_refptr<Request> ack = dialog->CreateAck(
-          incoming_response->refer_to());
-      phone_->user_agent()->Send(ack, base::Bind(
-          &PhoneImpl::OnRequestSent, phone_));
-      if (kStateCalling == state_
-          || kStateRinging == state_) {
-        state_ = kStateEstablished;
-        DCHECK(!dialog_ || dialog_ == dialog);
-        dialog_ = dialog;
-        HandleSessionAnswer(incoming_response);
-        phone_->phone_observer()->OnCallEstablished(this);
-      }
-      break;
-    }
-    default:
-      if (kStateCalling == state_
-          || kStateRinging == state_) {
-        state_ = kStateError;
-        phone_->phone_observer()->OnCallError(response_code,
-            incoming_response->reason_phrase(), this);
-        phone_->RemoveCall(this);
-      }
-      break;
+  dialog_ = dialog; // Save dialog
+  if (kStateCalling == state_
+      || kStateRinging == state_) {
+    HandleCallingOrRingingResponse(incoming_response, dialog);
+  } else if (kStateHungUp == state_) {
+    HandleHungupResponse(incoming_response, dialog);
   }
 }
 

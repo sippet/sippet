@@ -67,7 +67,16 @@ class CallImpl :
   void DeletePeerConnection();
   void CreateOffer();
   void OnCreateOfferCompleted(const std::string& offer);
-  void HandleSessionAnswer(const scoped_refptr<Response> &incoming_response);
+  void HandleSessionDescriptionAnswer(const scoped_refptr<Response> &incoming_response);
+  void SendAck(const scoped_refptr<Response> &incoming_response);
+  void SendCancel();
+  void SendBye();
+  void HandleCallingOrRingingResponse(
+      const scoped_refptr<Response> &incoming_response,
+      const scoped_refptr<Dialog> &dialog);
+  void HandleHungupResponse(
+      const scoped_refptr<Response> &incoming_response,
+      const scoped_refptr<Dialog> &dialog);
 
   //
   // PeerConnectionObserver implementation.
@@ -113,7 +122,6 @@ class CallImpl :
   const scoped_refptr<Dialog> &dialog() const {
     return dialog_;
   }
-
   void OnIncomingRequest(
       const scoped_refptr<Request> &incoming_request,
       const scoped_refptr<Dialog> &dialog);
