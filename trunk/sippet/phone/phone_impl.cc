@@ -6,6 +6,7 @@
 #include "sippet/phone/call_impl.h"
 
 #include "base/bind.h"
+#include "sippet/base/casting.h"
 #include "base/strings/utf_string_conversions.h"
 #include "net/base/net_errors.h"
 #include "net/socket/client_socket_factory.h"
@@ -125,7 +126,8 @@ int PhoneImpl::AccountPasswordHandler::GetCredentials(
 // Phone implementation
 //
 PhoneImpl::PhoneImpl(PhoneObserver *phone_observer)
-  : phone_observer_(phone_observer),
+  : state_(kStateOffline),
+    phone_observer_(phone_observer),
     signalling_thread_("PhoneSignalling"),
     signalling_thread_event_(false, false),
     password_handler_factory_(new AccountPasswordHandler::Factory) {
@@ -292,14 +294,15 @@ void PhoneImpl::OnLogin(const Account &account) {
   std::string from("sip:" + username_ + "@" + host_);
   std::string to("sip:" + username_ + "@" + host_);
 
-  scoped_refptr<Request> request =
+  last_request_ =
     user_agent_->CreateRequest(
         Method::REGISTER,
         GURL(registrar_uri),
         GURL(from),
         GURL(to));
 
-  int rv = user_agent_->Send(request,
+  state_ = kStateConnecting;
+  int rv = user_agent_->Send(last_request_,
       base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
     phone_observer_->OnNetworkError(rv);
@@ -314,7 +317,7 @@ void PhoneImpl::OnLogout() {
   std::string from("sip:" + username_ + "@" + host_);
   std::string to("sip:" + username_ + "@" + host_);
 
-  scoped_refptr<Request> request =
+  last_request_ =
     user_agent_->CreateRequest(
         Method::REGISTER,
         GURL(registrar_uri),
@@ -323,10 +326,11 @@ void PhoneImpl::OnLogout() {
 
   // Modifies the Contact header to include an expires=0 at the end
   // of existing parameters
-  Contact* contact = request->get<Contact>();
+  Contact* contact = last_request_->get<Contact>();
   contact->front().set_expires(0);
 
-  int rv = user_agent_->Send(request,
+  state_ = kStateOffline;
+  int rv = user_agent_->Send(last_request_,
       base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
     phone_observer_->OnNetworkError(rv);
@@ -373,9 +377,28 @@ void PhoneImpl::OnIncomingResponse(
     const scoped_refptr<Response> &incoming_response,
     const scoped_refptr<Dialog> &dialog) {
   if (Method::REGISTER == incoming_response->refer_to()->method()) {
-    phone_observer_->OnLoginCompleted(incoming_response->response_code(),
+    if (last_request_->id() != incoming_response->refer_to()->id()) {
+      // Discard, as it was related to current REGISTER request
+      return;
+    } else if (kStateConnecting == state_) {
+      int response_code = incoming_response->response_code();
+      if (response_code / 100 == 1) {
+        // Do nothing, wait for a final response
+        return;
+      } else if (response_code / 100 == 2) {
+        // Start a timer to refresh login
+        unsigned int expiration = GetContactExpiration(incoming_response);
+        refresh_timer_.Start(FROM_HERE, base::TimeDelta::FromSeconds(expiration),
+          base::Bind(&PhoneImpl::OnRefreshLogin, base::Unretained(this)));
+        state_ = kStateOnline;
+      } else {
+        state_ = kStateOffline;
+      }
+
+      // Notify completion
+      phone_observer_->OnLoginCompleted(incoming_response->response_code(),
         incoming_response->reason_phrase());
-    // TODO: start a timer to refresh login
+    }
   } else if (Method::INVITE == incoming_response->refer_to()->method()
              || Method::BYE == incoming_response->refer_to()->method()) {
     CallImpl *call = RouteToCall(incoming_response->refer_to());
@@ -406,6 +429,10 @@ void PhoneImpl::OnTransportError(
   }
 }
 
+void PhoneImpl::OnRefreshLogin() {
+  // TODO
+}
+
 CallImpl *PhoneImpl::RouteToCall(const scoped_refptr<Request>& request) {
   base::AutoLock lock(lock_);
   CallsVector::iterator i;
@@ -426,6 +453,40 @@ CallImpl *PhoneImpl::RouteToCall(const scoped_refptr<Dialog>& dialog) {
       break;
   }
   return calls_.end() != i ? i->get() : nullptr;
+}
+
+unsigned int PhoneImpl::GetContactExpiration(
+      const scoped_refptr<Response>& incoming_response) {
+  unsigned int header_expires = 0;
+  
+  Expires *expires = incoming_response->get<Expires>();
+  if (expires)
+    header_expires = expires->value();
+  
+  Contact *request_contact = incoming_response->refer_to()->get<Contact>();
+  DCHECK(request_contact) << "REGISTER request without Contact?";
+  
+  GURL local_uri = request_contact->front().address();
+  ContactInfo *local_contact = nullptr;
+  for (Message::iterator i = incoming_response->find_first<Contact>(),
+    ie = incoming_response->end(); i != ie; ++i) {
+    Contact *contact = dyn_cast<Contact>(i);
+    for (Contact::iterator j = contact->begin(), je = contact->end();
+      j != je; ++j) {
+      if (j->address() == local_uri) {
+        if (j->HasExpires()) {
+          return j->expires();
+        } else if (0 != header_expires) {
+          return header_expires;
+        } else {
+          LOG(WARNING) << "Malformed response, assuming expiration = 3600";
+          return 3600;
+        }
+      }
+    }
+  }
+  LOG(WARNING) << "Response doesn't contain a Contact for our local URI";
+  return 3600;
 }
 
 void Phone::Initialize() {
