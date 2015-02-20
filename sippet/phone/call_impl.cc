@@ -96,6 +96,38 @@ CallImpl::CallImpl(const scoped_refptr<Request> &invite,
 CallImpl::~CallImpl() {
 }
 
+CallImpl::Type CallImpl::type() const {
+  return type_;
+}
+
+CallImpl::State CallImpl::state() const {
+  return state_;
+}
+
+GURL CallImpl::uri() const {
+  return GURL(uri_.spec());
+}
+
+std::string CallImpl::name() const {
+  return uri_.username();
+}
+
+base::Time CallImpl::creation_time() const {
+  return creation_time_;
+}
+
+base::Time CallImpl::start_time() const {
+  return start_time_;
+}
+
+base::Time CallImpl::end_time() const {
+  return end_time_;
+}
+
+base::TimeDelta CallImpl::duration() const {
+  return end_time_ - start_time_;
+}
+
 bool CallImpl::Answer(int code) {
   if (!last_request_ || Request::Incoming != last_request_->direction()) {
     DVLOG(1) << "Impossible to answer an outgoing call";

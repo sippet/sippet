@@ -33,16 +33,11 @@ class PhoneImpl :
  private:
   DISALLOW_COPY_AND_ASSIGN(PhoneImpl);
  public:
-   State state() const override { return state_; }
-
+  State state() const override;
   bool Init(const Settings& settings) override;
-
   bool Login(const Account &account) override;
-
   scoped_refptr<Call> MakeCall(const std::string& destination) override;
-
   void HangUpAll() override;
-
   void Logout() override;
 
  private:
@@ -74,7 +69,7 @@ class PhoneImpl :
     class Factory : public PasswordHandler::Factory {
      public:
       Factory();
-      ~Factory();
+      ~Factory() override;
 
       const Account &account() const;
       void set_account(const Account &account);
@@ -105,7 +100,7 @@ class PhoneImpl :
   scoped_ptr<ua::UserAgent> user_agent_;
   scoped_ptr<NetworkLayer> network_layer_;
   scoped_ptr<ChromeChannelFactory> channel_factory_;
-  base::OneShotTimer<PhoneImpl> refresh_timer_;
+  scoped_ptr<base::OneShotTimer<PhoneImpl>> refresh_timer_;
 
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
     peer_connection_factory_;

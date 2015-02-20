@@ -5,9 +5,12 @@
 #ifndef SIPPET_PHONE_CALL_IMPL_H_
 #define SIPPET_PHONE_CALL_IMPL_H_
 
+#include <map>
+
 #include "sippet/uri/uri.h"
 #include "sippet/phone/call.h"
 #include "sippet/message/request.h"
+#include "sippet/ua/dialog.h"
 
 #include "talk/app/webrtc/peerconnectioninterface.h"
 
@@ -22,18 +25,14 @@ class CallImpl :
  private:
   DISALLOW_COPY_AND_ASSIGN(CallImpl);
  public:
-  Type type() const override { return type_; }
-  State state() const override { return state_; }
-  GURL uri() const override { return GURL(uri_.spec()); }
-  std::string name() const override { return uri_.username(); }
-  base::Time creation_time() const override { return creation_time_; }
-  base::Time start_time() const override { return start_time_; }
-  base::Time end_time() const override { return end_time_; }
-
-  base::TimeDelta duration() const override {
-    return end_time_ - start_time_;
-  }
-
+  Type type() const override;
+  State state() const override;
+  GURL uri() const override;
+  std::string name() const override;
+  base::Time creation_time() const override;
+  base::Time start_time() const override;
+  base::Time end_time() const override;
+  base::TimeDelta duration() const override;
   bool Answer(int code = 200) override;
   bool HangUp() override;
   void SendDtmf(const std::string& digits) override;
@@ -60,7 +59,7 @@ class CallImpl :
 
   CallImpl(const SipURI& uri, PhoneImpl* phone);
   CallImpl(const scoped_refptr<Request> &invite, PhoneImpl* phone);
-  virtual ~CallImpl();
+  ~CallImpl() override;
 
   bool InitializePeerConnection(
         webrtc::PeerConnectionFactoryInterface *peer_connection_factory);

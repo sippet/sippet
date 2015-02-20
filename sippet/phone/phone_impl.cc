@@ -141,8 +141,14 @@ PhoneImpl::~PhoneImpl() {
   signalling_thread_event_.Wait();
 }
 
+PhoneImpl::State PhoneImpl::state() const {
+  return state_;
+}
+
 bool PhoneImpl::Init(const Settings& settings) {
-  if (!signalling_thread_.Start()) {
+  base::Thread::Options options;
+  options.message_loop_type = base::MessageLoop::TYPE_IO;
+  if (!signalling_thread_.StartWithOptions(options)) {
     return false;
   }
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
@@ -176,9 +182,13 @@ bool PhoneImpl::Login(const Account &account) {
 }
 
 scoped_refptr<Call> PhoneImpl::MakeCall(const std::string& destination) {
+  if (kStateOnline != state_) {
+    DVLOG(1) << "Not logged in";
+    return nullptr;
+  }
   if (destination.empty()) {
     DVLOG(1) << "Empty destination";
-    return false;
+    return nullptr;
   }
   base::AutoLock lock(lock_);
   scoped_refptr<CallImpl> call(new CallImpl(
@@ -240,7 +250,9 @@ void PhoneImpl::DeletePeerConnectionFactory() {
 }
 
 void PhoneImpl::OnInit() {
-  base::MessageLoop *message_loop = base::MessageLoop::current();
+  base::MessageLoop *message_loop = signalling_thread_.message_loop();
+  refresh_timer_.reset(new base::OneShotTimer<PhoneImpl>);
+
   request_context_getter_ =
     new URLRequestContextGetter(message_loop->message_loop_proxy());
 
@@ -285,6 +297,8 @@ void PhoneImpl::OnDestroy() {
   network_layer_ = nullptr;
   request_context_getter_ = nullptr;
   DeletePeerConnectionFactory();
+  refresh_timer_->Stop();
+  refresh_timer_.reset();
 
   signalling_thread_event_.Signal();
 }
@@ -388,7 +402,7 @@ void PhoneImpl::OnIncomingResponse(
       } else if (response_code / 100 == 2) {
         // Start a timer to refresh login
         unsigned int expiration = GetContactExpiration(incoming_response);
-        refresh_timer_.Start(FROM_HERE, base::TimeDelta::FromSeconds(expiration),
+        refresh_timer_->Start(FROM_HERE, base::TimeDelta::FromSeconds(expiration),
           base::Bind(&PhoneImpl::OnRefreshLogin, base::Unretained(this)));
         state_ = kStateOnline;
       } else {
