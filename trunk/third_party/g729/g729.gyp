@@ -19,6 +19,7 @@
           # if ((UWord32)(t0 - 0xfe000000L) < 0x01ffffffL -  0xfe000000L)
           '-Wno-tautological-constant-out-of-range-compare',
         ],
+        'optimize': 'max',
       },
       'direct_dependent_settings': {
         'include_dirs': [
