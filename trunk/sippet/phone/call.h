@@ -22,8 +22,6 @@ class Phone;
 class Call :
   public base::RefCountedThreadSafe<Call> {
  public:
-  virtual ~Call() {}
-
   // Where the call is from
   enum Type {
     kTypeIncoming,
@@ -71,6 +69,10 @@ class Call :
 
   // Send DTMF digits
   virtual void SendDtmf(const std::string& digits) = 0;
+
+ protected:
+  friend class base::RefCountedThreadSafe<Call>;
+  virtual ~Call() {}
 };
 
 } // namespace sippet

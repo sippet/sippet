@@ -49,9 +49,8 @@ class Settings {
 
   typedef std::vector<IceServer> IceServers;
 
-  Settings() :
-    disable_encryption_(false) {
-  }
+  Settings();
+  ~Settings();
 
   // Enable/disable streaming encryption
   void set_disable_encryption(bool value) { disable_encryption_ = value; }
@@ -143,8 +142,6 @@ class PhoneObserver {
 class Phone :
   public base::RefCountedThreadSafe<Phone> {
  public:
-  virtual ~Phone() {}
-
   // Phone state: the life cycle of the phone
   enum State {
     kStateOffline,
@@ -174,6 +171,10 @@ class Phone :
 
   // Hangup all active calls and logout account.
   virtual void Logout() = 0;
+
+ protected:
+  friend class base::RefCountedThreadSafe<Phone>;
+  virtual ~Phone() {}
 };
 
 } // namespace sippet

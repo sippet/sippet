@@ -12,6 +12,7 @@
 #include "base/strings/stringprintf.h"
 #include "base/i18n/icu_util.h"
 #include "base/message_loop/message_loop.h"
+#include "base/threading/thread_checker.h"
 #include "net/base/net_errors.h"
 #include "sippet/phone/phone.h"
 
@@ -42,9 +43,12 @@ public:
     settings_(settings), account_(account), destination_(destination),
     phone_(Phone::Create(this)), message_loop_(message_loop) {
   }
-  virtual ~Conductor() {}
+  virtual ~Conductor() {
+    DCHECK(thread_checker_.CalledOnValidThread());
+  }
 
   bool Start() {
+    DCHECK(thread_checker_.CalledOnValidThread());
     if (!phone_->Init(settings_)) {
       LOG(ERROR) << "Phone::Init error";
       return false;
@@ -62,6 +66,7 @@ private:
   base::MessageLoop &message_loop_;
   scoped_refptr<Call> call_;
   base::OneShotTimer<Conductor> call_timeout_;
+  base::ThreadChecker thread_checker_;
 
   void OnNetworkError(int error_code) override {
     LOG(ERROR) << "Network error: " << error_code
@@ -74,8 +79,8 @@ private:
   void OnLoginCompleted(int status_code,
     const std::string& status_text) override {
     message_loop_.PostTask(FROM_HERE,
-      base::Bind(&Conductor::OnIOComplete,
-      base::Unretained(this), net::OK));
+        base::Bind(&Conductor::OnIOComplete,
+            base::Unretained(this), net::OK));
   }
 
   void OnIncomingCall(const scoped_refptr<Call>& call) override {
@@ -129,6 +134,7 @@ private:
 
   void OnIOComplete(int result) {
     DCHECK_NE(STATE_NONE, next_state_);
+    DCHECK(thread_checker_.CalledOnValidThread());
     int rv = DoLoop(result);
     if (rv != net::ERR_IO_PENDING) {
       base::MessageLoop::current()->Quit();
@@ -213,9 +219,9 @@ private:
   int DoCallTimer() {
     next_state_ = STATE_CALL_TIMER_COMPLETE;
     call_timeout_.Start(FROM_HERE,
-      base::TimeDelta::FromSeconds(3600),
-      base::Bind(&Conductor::OnIOComplete,
-      base::Unretained(this), net::OK));
+        base::TimeDelta::FromSeconds(3600),
+        base::Bind(&Conductor::OnIOComplete,
+        base::Unretained(this), net::OK));
     return net::ERR_IO_PENDING;
   }
 

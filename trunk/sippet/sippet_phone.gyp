@@ -28,6 +28,7 @@
       },
       'sources': [
         'phone/phone.h',
+        'phone/phone.cc',
         'phone/phone_impl.h',
         'phone/phone_impl.cc',
         'phone/call.h',
