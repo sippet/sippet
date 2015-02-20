@@ -95,6 +95,9 @@
           ],
         }], # OS=="android" or OS=="ios"
       ],
+      'includes': [
+        '../../build/android/increase_size_for_speed.gypi',
+      ],
     },  # target g729
   ],
 }
