@@ -5,6 +5,8 @@
 #include "sippet/phone/phone_js_wrapper.h"
 #include "sippet/phone/call_js_wrapper.h"
 
+#include "gin/per_context_data.h"
+
 namespace gin {
 
 // Extend Converter to our type Phone::State
@@ -173,20 +175,42 @@ const char Converter<sippet::phone::Account>::kHost[] =
 namespace sippet {
 namespace phone {
 
+namespace {
+
+const char kOnNetworkError[] = "::sippet::phone::OnNetworkError";
+const char kOnLoginCompleted[] = "::sippet::phone::OnLoginCompleted";
+const char kOnIncomingCall[] = "::sippet::phone::OnIncomingCall";
+const char kOnCallError[] = "::sippet::phone::OnCallError";
+const char kOnCallRinging[] = "::sippet::phone::OnCallRinging";
+const char kOnCallEstablished[] = "::sippet::phone::OnCallEstablished";
+const char kOnCallHungUp[] = "::sippet::phone::OnCallHungUp";
+
+}  // namespace
+
 gin::WrapperInfo PhoneJsWrapper::kWrapperInfo = {
     gin::kEmbedderNativeGin };
-const char PhoneJsWrapper::kModuleName[] =
-    "sippet/phone/phone";
+
+PhoneJsWrapper::PhoneJsWrapper(
+    v8::Isolate* isolate) :
+  isolate_(isolate),
+  phone_(Phone::Create(this)),
+  on_network_error_(this, kOnNetworkError),
+  on_login_completed_(this, kOnLoginCompleted),
+  on_incoming_call_(this, kOnIncomingCall),
+  on_call_error_(this, kOnCallError),
+  on_call_ringing_(this, kOnCallRinging),
+  on_call_established_(this, kOnCallEstablished),
+  on_call_hungup_(this, kOnCallHungUp) {
+}
 
 PhoneJsWrapper::~PhoneJsWrapper() {
 }
 
 gin::Handle<PhoneJsWrapper> PhoneJsWrapper::Create(
-    v8::Isolate* isolate,
-    Phone *phone) {
+    v8::Isolate* isolate) {
   return gin::CreateHandle(
       isolate,
-      new PhoneJsWrapper(isolate, phone));
+      new PhoneJsWrapper(isolate));
 }
 
 gin::ObjectTemplateBuilder PhoneJsWrapper::GetObjectTemplateBuilder(
@@ -226,6 +250,165 @@ void PhoneJsWrapper::HangUpAll() {
 
 void PhoneJsWrapper::Logout() {
   phone_->Logout();
+}
+
+void PhoneJsWrapper::OnNetworkError(int error_code) {
+  message_loop_->PostTask(FROM_HERE,
+      base::Bind(&PhoneJsWrapper::RunNetworkError, base::Unretained(this),
+          error_code));
+}
+
+void PhoneJsWrapper::OnLoginCompleted(int status_code,
+    const std::string& status_text) {
+  message_loop_->PostTask(FROM_HERE,
+      base::Bind(&PhoneJsWrapper::RunLoginCompleted, base::Unretained(this),
+          status_code, status_text));
+}
+
+void PhoneJsWrapper::OnIncomingCall(const scoped_refptr<Call>& call) {
+  message_loop_->PostTask(FROM_HERE,
+      base::Bind(&PhoneJsWrapper::RunIncomingCall, base::Unretained(this),
+          call));
+}
+
+void PhoneJsWrapper::OnCallError(int status_code,
+    const std::string& status_text,
+    const scoped_refptr<Call>& call) {
+  message_loop_->PostTask(FROM_HERE,
+      base::Bind(&PhoneJsWrapper::RunCallError, base::Unretained(this),
+          status_code, status_text, call));
+}
+
+void PhoneJsWrapper::OnCallRinging(const scoped_refptr<Call>& call) {
+  message_loop_->PostTask(FROM_HERE,
+      base::Bind(&PhoneJsWrapper::RunCallRinging, base::Unretained(this),
+          call));
+}
+
+void PhoneJsWrapper::OnCallEstablished(const scoped_refptr<Call>& call) {
+  message_loop_->PostTask(FROM_HERE,
+      base::Bind(&PhoneJsWrapper::RunCallEstablished, base::Unretained(this),
+          call));
+}
+
+void PhoneJsWrapper::OnCallHungUp(const scoped_refptr<Call>& call) {
+  message_loop_->PostTask(FROM_HERE,
+      base::Bind(&PhoneJsWrapper::RunCallHungUp, base::Unretained(this),
+          call));
+}
+
+void PhoneJsWrapper::RunNetworkError(int error_code) {
+  v8::Handle<v8::Value> args[] = {
+    gin::ConvertToV8(isolate_, error_code),
+  };
+  on_network_error_.Run(sizeof(args)/sizeof(args[0]), args);
+}
+
+void PhoneJsWrapper::RunLoginCompleted(int status_code,
+    const std::string& status_text) {
+  v8::Handle<v8::Value> args[] = {
+    gin::ConvertToV8(isolate_, status_code),
+    gin::ConvertToV8(isolate_, status_text),
+  };
+  on_login_completed_.Run(sizeof(args) / sizeof(args[0]), args);
+}
+
+void PhoneJsWrapper::RunIncomingCall(const scoped_refptr<Call>& call) {
+  v8::Handle<v8::Value> args[] = {
+    CallJsWrapper::Create(isolate_, call).ToV8(),
+  };
+  on_incoming_call_.Run(sizeof(args) / sizeof(args[0]), args);
+}
+
+void PhoneJsWrapper::RunCallError(int status_code,
+    const std::string& status_text,
+    const scoped_refptr<Call>& call) {
+  v8::Handle<v8::Value> args[] = {
+    gin::ConvertToV8(isolate_, status_code),
+    gin::ConvertToV8(isolate_, status_text),
+    CallJsWrapper::Create(isolate_, call).ToV8(),
+  };
+  on_call_error_.Run(sizeof(args) / sizeof(args[0]), args);
+}
+
+void PhoneJsWrapper::RunCallRinging(const scoped_refptr<Call>& call) {
+  v8::Handle<v8::Value> args[] = {
+    CallJsWrapper::Create(isolate_, call).ToV8(),
+  };
+  on_call_ringing_.Run(sizeof(args) / sizeof(args[0]), args);
+}
+
+void PhoneJsWrapper::RunCallEstablished(const scoped_refptr<Call>& call) {
+  v8::Handle<v8::Value> args[] = {
+    CallJsWrapper::Create(isolate_, call).ToV8(),
+  };
+  on_call_established_.Run(sizeof(args) / sizeof(args[0]), args);
+}
+
+void PhoneJsWrapper::RunCallHungUp(const scoped_refptr<Call>& call) {
+  v8::Handle<v8::Value> args[] = {
+    CallJsWrapper::Create(isolate_, call).ToV8(),
+  };
+  on_call_hungup_.Run(sizeof(args) / sizeof(args[0]), args);
+}
+
+PhoneJsWrapper::FunctionCall::FunctionCall(
+    PhoneJsWrapper* outer, const char *hidden_name) :
+  outer_(outer),
+  hidden_name_(hidden_name) {
+}
+
+PhoneJsWrapper::FunctionCall::~FunctionCall() {
+}
+
+void PhoneJsWrapper::FunctionCall::set_runner(
+    const base::WeakPtr<gin::Runner>& runner) {
+  runner_ = runner;
+}
+
+void PhoneJsWrapper::FunctionCall::Run(
+    int argc, v8::Handle<v8::Value> *argv) {
+  // This can happen in spite of the weak callback because it is possible for
+  // a gin::Handle<> to keep this object alive past when the isolate it is part
+  // of is destroyed.
+  if (!runner_.get()) {
+    return;
+  }
+
+  gin::Runner::Scope scope(runner_.get());
+  v8::Isolate* isolate = runner_->GetContextHolder()->isolate();
+  v8::Handle<v8::Function> function = v8::Handle<v8::Function>::Cast(
+      outer_->GetWrapper(isolate)->GetHiddenValue(
+          gin::StringToSymbol(isolate, hidden_name_)));
+  runner_->Call(function, v8::Undefined(isolate), argc, argv);
+}
+
+// PhoneJsModule =============================================================
+
+const char PhoneJsModule::kName[] =
+    "sippet/phone";
+gin::WrapperInfo PhoneJsModule::kWrapperInfo = {
+    gin::kEmbedderNativeGin };
+
+PhoneJsModule::PhoneJsModule() {
+}
+
+PhoneJsModule::~PhoneJsModule() {
+}
+
+gin::Handle<PhoneJsModule> PhoneJsModule::Create(v8::Isolate* isolate) {
+  return gin::CreateHandle(isolate, new PhoneJsModule);
+}
+
+v8::Local<v8::Value> PhoneJsModule::GetModule(v8::Isolate* isolate) {
+  return Create(isolate)->GetWrapper(isolate);
+}
+
+gin::ObjectTemplateBuilder PhoneJsModule::GetObjectTemplateBuilder(
+    v8::Isolate* isolate) {
+  return gin::Wrappable<PhoneJsModule>::GetObjectTemplateBuilder(isolate)
+      .SetMethod("createPhone",
+                 &PhoneJsWrapper::Create);
 }
 
 } // namespace phone
