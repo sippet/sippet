@@ -17,6 +17,7 @@ namespace phone {
 class CallJsWrapper
   : public gin::Wrappable<CallJsWrapper> {
 public:
+  static gin::WrapperInfo kWrapperInfo;
   ~CallJsWrapper() override;
   static gin::Handle<CallJsWrapper> Create(
       v8::Isolate* isolate,
@@ -39,14 +40,11 @@ public:
   bool HangUp();
   void SendDtmf(const std::string& digits);
 
-  static gin::WrapperInfo kWrapperInfo;
-  static const char kModuleName[];
-
 private:
   explicit CallJsWrapper(
       const scoped_refptr<Call>& call);
 
-  scoped_refptr<Call> phone_;
+  scoped_refptr<Call> call_;
 
   DISALLOW_COPY_AND_ASSIGN(CallJsWrapper);
 };
