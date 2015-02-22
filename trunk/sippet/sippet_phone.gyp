@@ -36,5 +36,24 @@
         'phone/call_impl.cc',
       ],
     },  # target sippet_phone
+    {
+      'target_name': 'sippet_phone_v8',
+      'type': 'static_library',
+      'dependencies': [
+        'sippet_phone',
+        '../gin/gin.gyp:gin',
+        '../v8/tools/gyp/v8.gyp:v8',
+      ],
+      'include_dirs': [
+        '<(DEPTH)',
+        '<(DEPTH)/third_party',
+      ],
+      'sources': [
+        'phone/phone_js_wrapper.h',
+        'phone/phone_js_wrapper.cc',
+        'phone/call_js_wrapper.h',
+        'phone/call_js_wrapper.cc',
+      ],
+    },  # target sippet_phone_v8
   ],
 }
