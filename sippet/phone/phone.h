@@ -16,37 +16,44 @@
 namespace sippet {
 namespace phone {
 
+class IceServer {
+ public:
+  IceServer() {}
+  ~IceServer() {}
+
+  explicit IceServer(const std::string& uri) :
+    uri_(uri) {
+  }
+  
+  explicit IceServer(const std::string& uri,
+                     const std::string& username,
+                     const std::string& password) :
+    uri_(uri),
+    username_(username),
+    password_(password) {
+  }
+
+  // URI example: stun:stun.l.google.com:19302
+  const std::string &uri() const { return uri_; }
+  void set_uri(const std::string &value) { uri_ = value; }
+
+  // STUN/TURN username
+  const std::string &username() const { return username_; }
+  void set_username(const std::string &value) { username_ = value; }
+
+  // STUN/TURN password
+  const std::string &password() const { return password_; }
+  void set_password(const std::string &value) { password_ = value; }
+
+ private:
+  std::string uri_; 
+  std::string username_;
+  std::string password_;
+};
+
 // Phone settings
 class Settings {
  public:
-  class IceServer {
-   public:
-    explicit IceServer(const std::string& uri) :
-      uri_(uri) {
-    }
-    explicit IceServer(const std::string& uri,
-                       const std::string& username,
-                       const std::string& password) :
-      uri_(uri),
-      username_(username),
-      password_(password) {
-    }
-
-    // URI example: stun:stun.l.google.com:19302
-    const std::string &uri() const { return uri_; }
-
-    // STUN/TURN username
-    const std::string &username() const { return username_; }
-
-    // STUN/TURN password
-    const std::string &password() const { return password_; }
-
-   private:
-    std::string uri_; 
-    std::string username_;
-    std::string password_;
-  };
-
   typedef std::vector<IceServer> IceServers;
 
   Settings();
@@ -54,17 +61,14 @@ class Settings {
 
   // Enable/disable streaming encryption
   void set_disable_encryption(bool value) { disable_encryption_ = value; }
-  bool disable_encryption() { return disable_encryption_; }
+  bool disable_encryption() const { return disable_encryption_; }
 
   // ICE servers list
-  void AddIceServer(const IceServer& ice_server) {
-    ice_servers_.push_back(ice_server);
+  IceServers &ice_servers() {
+    return ice_servers_;
   }
-  IceServers::const_iterator ice_servers_begin() const {
-    return ice_servers_.begin();
-  }
-  IceServers::const_iterator ice_servers_end() const {
-    return ice_servers_.end();
+  const IceServers &ice_servers() const {
+    return ice_servers_;
   }
 
  private:
