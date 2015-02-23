@@ -68,6 +68,8 @@ void RunShell(base::WeakPtr<Runner> runner) {
   Runner::Scope scope(runner.get());
   v8::Isolate *isolate = runner->GetContextHolder()->isolate();
 
+  v8::Handle<v8::String> id(StringToV8(isolate, "sippet"));
+
   v8::Handle<v8::Array> modules(v8::Array::New(isolate));
   modules->Set(0, gin::StringToV8(isolate, "sippet/phone"));
   modules->Set(1, gin::StringToV8(isolate, "console"));
@@ -78,6 +80,7 @@ void RunShell(base::WeakPtr<Runner> runner) {
   v8::Handle<v8::Function> function(function_tmpl->GetFunction());
 
   v8::Handle<v8::Value> args[] = {
+    id,
     modules,
     function
   };
@@ -88,7 +91,7 @@ void RunShell(base::WeakPtr<Runner> runner) {
       v8::Handle<v8::Function>::Cast(value));
 
   define_function->Call(runner->GetContextHolder()->context()->Global(),
-      2, args);
+      3, args);
 }
 
 std::vector<base::FilePath> GetModuleSearchPaths() {

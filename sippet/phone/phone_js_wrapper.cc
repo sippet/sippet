@@ -194,6 +194,7 @@ PhoneJsWrapper::PhoneJsWrapper(
     v8::Isolate* isolate) :
   isolate_(isolate),
   phone_(Phone::Create(this)),
+  message_loop_(base::MessageLoop::current()),
   on_network_error_(this, kOnNetworkError),
   on_login_completed_(this, kOnLoginCompleted),
   on_incoming_call_(this, kOnIncomingCall),
