@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <iostream>
+
 #include "base/at_exit.h"
 #include "base/bind.h"
 #include "base/command_line.h"
@@ -10,6 +12,7 @@
 #include "base/message_loop/message_loop.h"
 #include "gin/array_buffer.h"
 #include "gin/modules/console.h"
+#include "gin/modules/module_registry.h"
 #include "gin/modules/module_runner_delegate.h"
 #include "gin/public/isolate_holder.h"
 #include "gin/try_catch.h"
@@ -30,6 +33,62 @@ void Run(base::WeakPtr<Runner> runner, const base::FilePath& path) {
     return;
   Runner::Scope scope(runner.get());
   runner->Run(Load(path), path.AsUTF8Unsafe());
+}
+
+void OnRunShell(base::WeakPtr<Runner> runner, Arguments args) {
+  v8::Isolate *isolate = runner->GetContextHolder()->isolate();
+
+  std::cerr << "Sippet shell (V8 version "
+            << v8::V8::GetVersion()
+            << ")" << std::endl;
+
+  v8::Handle<v8::Value> sippet;
+  v8::Handle<v8::Value> console;
+  args.GetNext(&sippet);
+  args.GetNext(&console);
+  runner->GetContextHolder()->context()->Global()
+      ->Set(StringToV8(isolate, "sippet"), sippet);
+  runner->GetContextHolder()->context()->Global()
+      ->Set(StringToV8(isolate, "console"), console);
+
+  while (true) {
+    std::cerr << "> ";
+    std::string line;
+    if (!std::getline(std::cin, line))
+      break;
+    if (base::StringPiece(line).starts_with("quit()"))
+      break;
+    runner->Run(line, "(shell)");
+  }
+  
+  std::cerr << std::endl;
+}
+
+void RunShell(base::WeakPtr<Runner> runner) {
+  Runner::Scope scope(runner.get());
+  v8::Isolate *isolate = runner->GetContextHolder()->isolate();
+
+  v8::Handle<v8::Array> modules(v8::Array::New(isolate));
+  modules->Set(0, gin::StringToV8(isolate, "sippet/phone"));
+  modules->Set(1, gin::StringToV8(isolate, "console"));
+
+  v8::Handle<v8::FunctionTemplate> function_tmpl(
+      CreateFunctionTemplate(isolate, base::Bind(OnRunShell, runner)));
+
+  v8::Handle<v8::Function> function(function_tmpl->GetFunction());
+
+  v8::Handle<v8::Value> args[] = {
+    modules,
+    function
+  };
+
+  v8::Handle<v8::Value> value(runner->GetContextHolder()->context()->Global()
+      ->Get(v8::String::NewFromUtf8(isolate, "define")));
+  v8::Handle<v8::Function> define_function(
+      v8::Handle<v8::Function>::Cast(value));
+
+  define_function->Call(runner->GetContextHolder()->context()->Global(),
+      2, args);
 }
 
 std::vector<base::FilePath> GetModuleSearchPaths() {
@@ -82,12 +141,16 @@ int main(int argc, char** argv) {
 
   base::CommandLine::StringVector args =
       base::CommandLine::ForCurrentProcess()->GetArgs();
-  for (base::CommandLine::StringVector::const_iterator it = args.begin();
-       it != args.end(); ++it) {
+  if (args.size() == 0) {
     base::MessageLoop::current()->PostTask(FROM_HERE, base::Bind(
-        gin::Run, runner.GetWeakPtr(), base::FilePath(*it)));
+        gin::RunShell, runner.GetWeakPtr()));
+  } else {
+    for (base::CommandLine::StringVector::const_iterator it = args.begin();
+      it != args.end(); ++it) {
+      base::MessageLoop::current()->PostTask(FROM_HERE, base::Bind(
+          gin::Run, runner.GetWeakPtr(), base::FilePath(*it)));
+    }
   }
-
   message_loop.RunUntilIdle();
   return 0;
 }

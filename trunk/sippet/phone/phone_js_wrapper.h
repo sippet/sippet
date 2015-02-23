@@ -33,7 +33,7 @@ class PhoneJsWrapper :
 
   // JS interface implementation.
   Phone::State state() const;
-  bool Init(const Settings& settings);
+  bool Init(gin::Arguments args);
   bool Login(const Account &account);
   gin::Handle<CallJsWrapper> MakeCall(const std::string& destination);
   void HangUpAll();

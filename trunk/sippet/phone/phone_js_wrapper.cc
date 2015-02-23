@@ -230,7 +230,14 @@ Phone::State PhoneJsWrapper::state() const {
   return phone_->state();
 }
 
-bool PhoneJsWrapper::Init(const Settings& settings) {
+bool PhoneJsWrapper::Init(gin::Arguments args) {
+  sippet::phone::Settings settings;
+  if (args.Length() > 1)
+    return false;
+  else if (args.Length() == 1) {
+    if (!args.GetNext(&settings))
+      return false;
+  }
   return phone_->Init(settings);
 }
 
@@ -407,7 +414,7 @@ v8::Local<v8::Value> PhoneJsModule::GetModule(v8::Isolate* isolate) {
 gin::ObjectTemplateBuilder PhoneJsModule::GetObjectTemplateBuilder(
     v8::Isolate* isolate) {
   return gin::Wrappable<PhoneJsModule>::GetObjectTemplateBuilder(isolate)
-      .SetMethod("createPhone",
+      .SetMethod("Phone",
                  &PhoneJsWrapper::Create);
 }
 
