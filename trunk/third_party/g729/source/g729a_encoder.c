@@ -1,21 +1,6 @@
-/**
- *  g729a codec for iPhone and iPod Touch
- *  Copyright (C) 2009 Samuel <samuelv0304@gmail.com>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+// Copyright (c) 2015 The Sippet Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "typedef.h"
 #include "g729a_encoder.h"
@@ -39,11 +24,7 @@ Flag   g729a_enc_init     (void *encState)
   return 1;
 }
 
-#if defined(CONTROL_OPT) && (CONTROL_OPT == 1)
-void   g729a_enc_process  (void *encState, Word16 *pcm, Word16 *bitstream)
-#else
 void   g729a_enc_process  (void *encState, Word16 *pcm, UWord8 *bitstream)
-#endif
 {
   g729a_encode_frame_state *state = (g729a_encode_frame_state *)encState;
   Word16 prm[PRM_SIZE];          /* Analysis parameters.                  */

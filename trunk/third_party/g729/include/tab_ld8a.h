@@ -1,21 +1,7 @@
-/**
- *  g729a codec for iPhone and iPod Touch
- *  Copyright (C) 2009 Samuel <samuelv0304@gmail.com>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+// Copyright (c) 2015 The Sippet Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 /****************************************************************************************
 Portions of this file are derived from the following ITU standard:
    ITU-T G.729A Speech Coder    ANSI-C Source Code
@@ -52,7 +38,6 @@ extern Word16 thr1[NCODE1-NCAN1];
 extern Word16 thr2[NCODE2-NCAN2];
 extern Word16 imap1[NCODE1];
 extern Word16 imap2[NCODE2];
-extern Word16 bitsno[PRM_SIZE];
 extern Word16 tabpow[33];
 extern Word16 tablog[33];
 extern Word16 tabsqr[49];

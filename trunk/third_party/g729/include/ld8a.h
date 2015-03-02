@@ -1,21 +1,7 @@
-/**
- *  g729a codec for iPhone and iPod Touch
- *  Copyright (C) 2009 Samuel <samuelv0304@gmail.com>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+// Copyright (c) 2015 The Sippet Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 /****************************************************************************************
 Portions of this file are derived from the following ITU standard:
    ITU-T G.729A Speech Coder    ANSI-C Source Code
@@ -31,9 +17,6 @@ Portions of this file are derived from the following ITU standard:
 #include <stddef.h>
 #include <string.h>
 #include "typedef.h"
-
-/* Uncomment the next line, to compile codec in verification mode */
-//#define CONTROL_OPT 1
 
 
 /*---------------------------------------------------------------*
@@ -413,16 +396,8 @@ void Corr_xy2(
  * Bitstream function    *
  *-----------------------*/
 
-#if defined(CONTROL_OPT) && (CONTROL_OPT == 1)
-void  prm2bits_ld8k(Word16 prm[], Word16 bits[]);
-void  bits2prm_ld8k(Word16 bits[], Word16 prm[]);
-
-#define BIT_0     (short)0x007f /* definition of zero-bit in bit-stream      */
-#define BIT_1     (short)0x0081 /* definition of one-bit in bit-stream       */
-#else
-void  prm2bits_ld8k(Word16 prm[], UWord8 *bits);
-void  bits2prm_ld8k(UWord8 *bits, Word16 prm[]);
-#endif
+void  prm2bits_ld8k(const Word16 prm[], UWord8 *bits);
+void  bits2prm_ld8k(const UWord8 *bits, Word16 prm[]);
 
 #define SYNC_WORD (short)0x6b21 /* definition of frame erasure flag          */
 #define SIZE_WORD (short)80     /* number of speech bits                     */

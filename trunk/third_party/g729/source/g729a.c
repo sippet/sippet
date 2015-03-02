@@ -1459,9 +1459,6 @@ static Word32 Div_32(Word32 L_num, Word16 denom_hi, Word16 denom_lo)
 #include <stddef.h>
 #include <string.h>
 
-/* Uncomment the next line, to compile codec in verification mode */
-//#define CONTROL_OPT 1
-
 
 /*---------------------------------------------------------------*
  * LD8A.H                                                        *
@@ -1840,16 +1837,8 @@ static void Corr_xy2(
  * Bitstream function    *
  *-----------------------*/
 
-#if defined(CONTROL_OPT) && (CONTROL_OPT == 1)
-static void  prm2bits_ld8k(Word16 prm[], Word16 bits[]);
-static void  bits2prm_ld8k(Word16 bits[], Word16 prm[]);
-
-#define BIT_0     (short)0x007f /* definition of zero-bit in bit-stream      */
-#define BIT_1     (short)0x0081 /* definition of one-bit in bit-stream       */
-#else
 static void  prm2bits_ld8k(Word16 prm[], UWord8 *bits);
 static void  bits2prm_ld8k(UWord8 *bits, Word16 prm[]);
-#endif
 
 #define SYNC_WORD (short)0x6b21 /* definition of frame erasure flag          */
 #define SIZE_WORD (short)80     /* number of speech bits                     */
@@ -2395,17 +2384,6 @@ static Word16 imap1[NCODE1] = {
 static Word16 imap2[NCODE2] = {
  2,14, 3,13, 0,15, 1,12, 6,10, 7, 9, 4,11, 5, 8
 };
-
-/*-----------------------------------------------------*
- | Tables for routine bits().                          |
- -----------------------------------------------------*/
-
-
-static Word16 bitsno[PRM_SIZE] = {1+NC0_B,        /* MA + 1st stage   */
-                                 NC1_B*2,         /* 2nd stage        */
-                                 8, 1, 13, 4, 7,  /* first subframe   */
-                                 5,    13, 4, 7}; /* second subframe  */
-
 
 /*-----------------------------------------------------*
  | Table for routine Pow2().                           |
@@ -4570,119 +4548,49 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
 /* bit stream manipulation routines                                          */
 /*****************************************************************************/
 
-#if defined(CONTROL_OPT) && (CONTROL_OPT == 1)
-/* prototypes for local functions */
-static void  int2bin(Word16 value, Word16 no_of_bits, Word16 *bitstream);
-static Word16   bin2int(Word16 no_of_bits, Word16 *bitstream);
-
-/*----------------------------------------------------------------------------
- * prm2bits_ld8k -converts encoder parameter vector into vector of serial bits
- * bits2prm_ld8k - converts serial received bits to  encoder parameter vector
- *
- * The transmitted parameters are:
- *
- *     LPC:     1st codebook           7+1 bit
- *              2nd codebook           5+5 bit
- *
- *     1st subframe:
- *          pitch period                 8 bit
- *          parity check on 1st period   1 bit
- *          codebook index1 (positions) 13 bit
- *          codebook index2 (signs)      4 bit
- *          pitch and codebook gains   4+3 bit
- *
- *     2nd subframe:
- *          pitch period (relative)      5 bit
- *          codebook index1 (positions) 13 bit
- *          codebook index2 (signs)      4 bit
- *          pitch and codebook gains   4+3 bit
- *----------------------------------------------------------------------------
- */
-static void prm2bits_ld8k(
- Word16   prm[],           /* input : encoded parameters  (PRM_SIZE parameters)  */
-  Word16 bits[]            /* output: serial bits (SERIAL_SIZE ) bits[0] = bfi
-                                    bits[1] = 80 */
-)
-{
-   Word16 i;
-   *bits++ = SYNC_WORD;     /* bit[0], at receiver this bits indicates BFI */
-   *bits++ = SIZE_WORD;     /* bit[1], to be compatible with hardware      */
-
-   for (i = 0; i < PRM_SIZE; i++)
-     {
-        int2bin(prm[i], bitsno[i], bits);
-        bits += bitsno[i];
-     }
-
-   return;
-}
-
-/*----------------------------------------------------------------------------
- * int2bin convert integer to binary and write the bits bitstream array
- *----------------------------------------------------------------------------
- */
-static void int2bin(
- Word16 value,             /* input : decimal value         */
- Word16 no_of_bits,        /* input : number of bits to use */
- Word16 *bitstream         /* output: bitstream             */
-)
-{
-   Word16 *pt_bitstream;
-   Word16   i, bit;
-
-   pt_bitstream = bitstream + no_of_bits;
-
-   for (i = 0; i < no_of_bits; i++)
-   {
-     bit = value & (Word16)0x0001;      /* get lsb */
-     if (bit == 0)
-         *--pt_bitstream = BIT_0;
-     else
-         *--pt_bitstream = BIT_1;
-     value >>= 1;
-   }
-}
-
-/*----------------------------------------------------------------------------
- *  bits2prm_ld8k - converts serial received bits to  encoder parameter vector
- *----------------------------------------------------------------------------
- */
-static void bits2prm_ld8k(
- Word16 bits[],            /* input : serial bits (80)                       */
- Word16   prm[]            /* output: decoded parameters (11 parameters)     */
-)
-{
-   Word16 i;
-   for (i = 0; i < PRM_SIZE; i++)
-     {
-        prm[i] = bin2int(bitsno[i], bits);
-        bits  += bitsno[i];
-     }
-
-}
-
-/*----------------------------------------------------------------------------
- * bin2int - read specified bits from bit array  and convert to integer value
- *----------------------------------------------------------------------------
- */
-static Word16 bin2int(       /* output: decimal value of bit pattern */
- Word16 no_of_bits,          /* input : number of bits to read       */
- Word16 *bitstream           /* input : array containing bits        */
-)
-{
-   Word16   value, i;
-   Word16 bit;
-
-   value = 0;
-   for (i = 0; i < no_of_bits; i++)
-   {
-     value <<= 1;
-     bit = *bitstream++;
-     if (bit == BIT_1)  value += 1;
-   }
-   return(value);
-}
+#pragma pack(1)
+struct ld8k_parms {
+#ifdef WORDS_BIGENDIAN
+  UWord8 LPC;                  // 1st codebook           7 + 1 bit
+  UWord8 codebook1;            // 2nd codebook           5 + 5 bit
+  UWord8 codebook2 : 2;
+  // --- 1st subframe:
+  UWord8 pitch_period1 : 6;    // pitch period                   8 bit
+  UWord8 pitch_period2 : 2;
+  UWord8 parity_check : 1;     // parity check on 1st period     1 bit
+  UWord8 cb_index11 : 5;       // codebook index1(positions)    13 bit
+  UWord8 cb_index12;
+  UWord8 cb_index2 : 4;        // codebook index2(signs)         4 bit
+  UWord8 cb_gains1 : 4;        // pitch and codebook gains   4 + 3 bit
+  UWord8 cb_gains2 : 3;
+  // --- 2nd subframe:
+  UWord8 rel_pitch_period : 5; // pitch period(relative)         5 bit
+  UWord8 pos_cb_index11;       // codebook index1(positions)    13 bit
+  UWord8 pos_cb_index12 : 5;
+  UWord8 sign_cb_index21 : 3;  // codebook index2(signs)         4 bit
+  UWord8 sign_cb_index22 : 1;
+  UWord8 pitch_cb_gains : 7;   // pitch and codebook gains   4 + 3 bit
 #else
+  UWord8 LPC;
+  UWord8 codebook1;
+  UWord8 pitch_period1 : 6;
+  UWord8 codebook2 : 2;
+  UWord8 cb_index11 : 5;
+  UWord8 parity_check : 1;
+  UWord8 pitch_period2 : 2;
+  UWord8 cb_index12;
+  UWord8 cb_gains1 : 4;
+  UWord8 cb_index2 : 4;
+  UWord8 rel_pitch_period : 5;
+  UWord8 cb_gains2 : 3;
+  UWord8 pos_cb_index11;
+  UWord8 sign_cb_index21 : 3;
+  UWord8 pos_cb_index12 : 5;
+  UWord8 pitch_cb_gains : 7;
+  UWord8 sign_cb_index22 : 1;
+#endif
+};
+#pragma pack()
 
 /*----------------------------------------------------------------------------
  * prm2bits_ld8k -converts encoder parameter vector into vector of serial bits
@@ -4707,37 +4615,56 @@ static Word16 bin2int(       /* output: decimal value of bit pattern */
  *          pitch and codebook gains   4+3 bit
  *----------------------------------------------------------------------------
  */
-static void prm2bits_ld8k(
-                    Word16 prm[],           /* input : encoded parameters  (PRM_SIZE parameters)  */
+void prm2bits_ld8k(
+                    const Word16 prm[],     /* input : encoded parameters  (PRM_SIZE parameters)  */
                     UWord8 *bits            /* output: serial bits (SERIAL_SIZE )*/
 )
 {
-  PutBitContext pb;
-  int i;
-
-  init_put_bits(&pb, bits, 10);
-  for (i = 0; i < PRM_SIZE; ++i)
-    put_bits(&pb, bitsno[i], prm[i]);
-  flush_put_bits(&pb);
+  struct ld8k_parms *prms_map =
+    (struct ld8k_parms *)bits;
+  prms_map->LPC = (UWord8)prm[0];
+  prms_map->codebook1 = (UWord8)(prm[1] >> 2);
+  prms_map->codebook2 = (UWord8)(prm[1] & ((1 << 2) - 1));
+  prms_map->pitch_period1 = (UWord8)(prm[2] >> 2);
+  prms_map->pitch_period2 = (UWord8)(prm[2] & ((1 << 2) - 1));
+  prms_map->parity_check = (UWord8)prm[3];
+  prms_map->cb_index11 = (UWord8)(prm[4] >> 8);
+  prms_map->cb_index12 = (UWord8)(prm[4] & ((1 << 8) - 1));
+  prms_map->cb_index2 = (UWord8)prm[5];
+  prms_map->cb_gains1 = (UWord8)(prm[6] >> 3);
+  prms_map->cb_gains2 = (UWord8)(prm[6] & ((1 << 3) - 1));
+  prms_map->rel_pitch_period = (UWord8)prm[7];
+  prms_map->pos_cb_index11 = (UWord8)(prm[8] >> 5);
+  prms_map->pos_cb_index12 = (UWord8)(prm[8] & ((1 << 5) - 1));
+  prms_map->sign_cb_index21 = (UWord8)(prm[9] >> 1);
+  prms_map->sign_cb_index22 = (UWord8)(prm[9] & ((1 << 1) - 1));
+  prms_map->pitch_cb_gains = (UWord8)(prm[10]);
 }
 
 /*----------------------------------------------------------------------------
  *  bits2prm_ld8k - converts serial received bits to  encoder parameter vector
  *----------------------------------------------------------------------------
  */
-static void bits2prm_ld8k(
-                   UWord8  *bits,            /* input : serial bits (80)                       */
+void bits2prm_ld8k(
+                   const UWord8  *bits,      /* input : serial bits (80)                       */
                    Word16   prm[]            /* output: decoded parameters (11 parameters)     */
 )
 {
-  GetBitContext gb;
-  int i;
-
-  init_get_bits(&gb, bits, 10 /*buf_size*/);
-  for (i = 0; i < PRM_SIZE; ++i)
-    prm[i] = get_bits(&gb, bitsno[i]);
+  const struct ld8k_parms *prms_map =
+    (const struct ld8k_parms *)bits;
+  prm[0] = prms_map->LPC;
+  prm[1] = (prms_map->codebook1 << 2) | prms_map->codebook2;
+  prm[2] = (prms_map->pitch_period1 << 2) | prms_map->pitch_period2;
+  prm[3] = prms_map->parity_check;
+  prm[4] = (prms_map->cb_index11 << 8) | prms_map->cb_index12;
+  prm[5] = prms_map->cb_index2;
+  prm[6] = (prms_map->cb_gains1 << 3) | prms_map->cb_gains2;
+  prm[7] = prms_map->rel_pitch_period;
+  prm[8] = (prms_map->pos_cb_index11 << 5) | prms_map->pos_cb_index12;
+  prm[9] = (prms_map->sign_cb_index21 << 1) | prms_map->sign_cb_index22;
+  prm[10] = prms_map->pitch_cb_gains;
 }
-#endif
+
 /************** End of file bits.c ******************************************/
 
 /************** Begin of file cod_ld8a.c ************************************/
@@ -9404,13 +9331,8 @@ Flag   g729a_dec_init (void *decState)
   return 1;
 }
 
-#if defined(CONTROL_OPT) && (CONTROL_OPT == 1)
-void   g729a_dec_process  (void *decState, Word16 *bitstream, Word16 *pcm,
-                           Flag badFrame)
-#else
 void   g729a_dec_process  (void *decState, UWord8 *bitstream, Word16 *pcm,
                            Flag badFrame)
-#endif
 {
   g729a_decode_frame_state *state = (g729a_decode_frame_state *)decState;
   static Word16 bad_lsf = 0;          /* Initialize bad LSF indicator */
@@ -9461,11 +9383,7 @@ Flag   g729a_enc_init     (void *encState)
   return 1;
 }
 
-#if defined(CONTROL_OPT) && (CONTROL_OPT == 1)
-void   g729a_enc_process  (void *encState, Word16 *pcm, Word16 *bitstream)
-#else
 void   g729a_enc_process  (void *encState, Word16 *pcm, UWord8 *bitstream)
-#endif
 {
   g729a_encode_frame_state *state = (g729a_encode_frame_state *)encState;
   Word16 prm[PRM_SIZE];          /* Analysis parameters.                  */
