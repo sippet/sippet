@@ -15,15 +15,24 @@ extern "C" {
 namespace {
 
 template<typename T>
-void PrintWord(const T *v, size_t size, std::ostream &out) {
+void PrintWord(const T *v, size_t size, const size_t columns,
+               std::ostream &out) {
   size_t i;
   for (i = 0; i < size; i++) {
     if (i > 0)
       out << " ";
     out << std::setfill('0')
-        << std::setw(sizeof(T)*2)
+        << std::setw(sizeof(T) * 2)
         << std::hex
         << (int)v[i];
+  }
+  if (size < columns) { // Complete with spaces
+    size_t j, k;
+    for (j = i; j < columns; j++) {
+      out << " ";
+      for (k = 0; k < sizeof(T) * 2; k++)
+        out << " ";
+    }
   }
 }
 
@@ -45,7 +54,7 @@ template<typename T>
     if (i + len > size)
       len = size - i;
     out << "  ";
-    PrintWord(a + i, len, out);
+    PrintWord(a + i, len, columns, out);
     if (memcmp(a + i, b + i, len * sizeof(T)) == 0) {
       out << "   ";
     }
@@ -53,7 +62,7 @@ template<typename T>
       out << " ! ";
       ++errors;
     }
-    PrintWord(b + i, len, out);
+    PrintWord(b + i, len, columns, out);
     out << "\n";
   }
   if (!errors)
