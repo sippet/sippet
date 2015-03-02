@@ -1,21 +1,7 @@
-/**
- *  g729a codec for iPhone and iPod Touch
- *  Copyright (C) 2009 Samuel <samuelv0304@gmail.com>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
+// Copyright (c) 2015 The Sippet Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 /****************************************************************************************
 Portions of this file are derived from the following ITU standard:
    ITU-T G.729A Speech Coder    ANSI-C Source Code
@@ -508,17 +494,6 @@ Word16 imap1[NCODE1] = {
 Word16 imap2[NCODE2] = {
  2,14, 3,13, 0,15, 1,12, 6,10, 7, 9, 4,11, 5, 8
 };
-
-/*-----------------------------------------------------*
- | Tables for routine bits().                          |
- -----------------------------------------------------*/
-
-
-Word16 bitsno[PRM_SIZE] = {1+NC0_B,               /* MA + 1st stage   */
-                                 NC1_B*2,         /* 2nd stage        */
-                                 8, 1, 13, 4, 7,  /* first subframe   */
-                                 5,    13, 4, 7}; /* second subframe  */
-
 
 /*-----------------------------------------------------*
  | Table for routine Pow2().                           |

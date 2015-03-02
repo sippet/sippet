@@ -4,7 +4,7 @@
 
 {
   'variables': {
-    'g729_amalgamation%': 1,
+    'g729_amalgamation%': 0,
   },
   'includes': [
     '../../build/win_precompile.gypi',
@@ -100,5 +100,20 @@
         '../../build/android/increase_size_for_speed.gypi',
       ],
     },  # target g729
+    {
+      'target_name': 'g729_unittest',
+      'type': 'executable',
+      'include_dirs': [
+        '<(DEPTH)',
+      ],
+      'dependencies': [
+        'g729',
+        '<(DEPTH)/testing/gtest.gyp:gtest',
+        '<(DEPTH)/base/base.gyp:run_all_unittests',
+      ],
+      'sources': [
+        'source/g729a_unittest.cc',
+      ],
+    },  # target g729_unittest
   ],
 }
