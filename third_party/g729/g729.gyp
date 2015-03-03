@@ -113,5 +113,31 @@
         'source/g729a_unittest.cc',
       ],
     },  # target g729_unittest
+    {
+      'target_name': 'g729_coder',
+      'type': 'executable',
+      'include_dirs': [
+        '<(DEPTH)',
+      ],
+      'dependencies': [
+        'g729',
+      ],
+      'sources': [
+        'source/g729a_coder.cc',
+      ],
+    },  # target g729_coder
+    {
+      'target_name': 'g729_decoder',
+      'type': 'executable',
+      'include_dirs': [
+        '<(DEPTH)',
+      ],
+      'dependencies': [
+        'g729',
+      ],
+      'sources': [
+        'source/g729a_decoder.cc',
+      ],
+    },  # target g729_decoder
   ],
 }
