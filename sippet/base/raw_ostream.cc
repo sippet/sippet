@@ -168,7 +168,7 @@ raw_ostream &raw_ostream::write_hex(unsigned long long N) {
 
 raw_ostream &raw_ostream::write_escaped(const base::StringPiece &Str,
                                         bool UseHexEscapes) {
-  for (unsigned i = 0, e = Str.size(); i != e; ++i) {
+  for (size_t i = 0, e = Str.size(); i != e; ++i) {
     unsigned char c = Str[i];
 
     switch (c) {

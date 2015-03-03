@@ -136,7 +136,7 @@ int MessageReader::DoReadHeaders() {
     return ReadMore();
   }
   std::string header(data(), end + end_size);
-  DidConsume(end + end_size);
+  DidConsume(int(end + end_size));
   current_message_ = Message::Parse(header);
   if (!current_message_) {
     // Close connection: bad protocol
