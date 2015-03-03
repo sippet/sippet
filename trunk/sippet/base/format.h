@@ -55,7 +55,7 @@ protected:
   virtual void home(); // Out of line virtual method.
 
   /// snprint - Call snprintf() for this object, on the given buffer and size.
-  virtual int snprint(char *Buffer, unsigned BufferSize) const = 0;
+  virtual int snprint(char *Buffer, size_t BufferSize) const = 0;
 
 public:
   explicit format_object_base(const char *fmt) : Fmt(fmt) {}
@@ -64,7 +64,7 @@ public:
   /// print - Format the object into the specified buffer.  On success, this
   /// returns the length of the formatted string.  If the buffer is too small,
   /// this returns a length to retry with, which will be larger than BufferSize.
-  unsigned print(char *Buffer, unsigned BufferSize) const {
+  size_t print(char *Buffer, size_t BufferSize) const {
     assert(BufferSize && "Invalid buffer size!");
 
     // Print the string, leaving room for the terminating null.
@@ -75,7 +75,7 @@ public:
       return BufferSize*2;
 
     // Other impls yield number of bytes needed, not including the final '\0'.
-    if (unsigned(N) >= BufferSize)
+    if (size_t(N) >= BufferSize)
       return N+1;
 
     // Otherwise N is the length of output (not including the final '\0').
@@ -95,7 +95,7 @@ public:
     : format_object_base(fmt), Val(val) {
   }
 
-  virtual int snprint(char *Buffer, unsigned BufferSize) const {
+  virtual int snprint(char *Buffer, size_t BufferSize) const {
     return base::snprintf(Buffer, BufferSize, Fmt, Val);
   }
 };
@@ -113,7 +113,7 @@ public:
   : format_object_base(fmt), Val1(val1), Val2(val2) {
   }
 
-  virtual int snprint(char *Buffer, unsigned BufferSize) const {
+  virtual int snprint(char *Buffer, size_t BufferSize) const {
     return base::snprintf(Buffer, BufferSize, Fmt, Val1, Val2);
   }
 };
@@ -132,7 +132,7 @@ public:
     : format_object_base(fmt), Val1(val1), Val2(val2), Val3(val3) {
   }
 
-  virtual int snprint(char *Buffer, unsigned BufferSize) const {
+  virtual int snprint(char *Buffer, size_t BufferSize) const {
     return base::snprintf(Buffer, BufferSize, Fmt, Val1, Val2, Val3);
   }
 };
@@ -153,7 +153,7 @@ public:
     : format_object_base(fmt), Val1(val1), Val2(val2), Val3(val3), Val4(val4) {
   }
 
-  virtual int snprint(char *Buffer, unsigned BufferSize) const {
+  virtual int snprint(char *Buffer, size_t BufferSize) const {
     return base::snprintf(Buffer, BufferSize, Fmt, Val1, Val2, Val3, Val4);
   }
 };
@@ -176,7 +176,7 @@ public:
       Val5(val5) {
   }
 
-  virtual int snprint(char *Buffer, unsigned BufferSize) const {
+  virtual int snprint(char *Buffer, size_t BufferSize) const {
     return base::snprintf(Buffer, BufferSize, Fmt, Val1, Val2, Val3, Val4, Val5);
   }
 };

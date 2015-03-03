@@ -156,7 +156,7 @@ std::pair<base::StringPiece, base::StringPiece> getToken(
 // better: http://eternallyconfuzzled.com/tuts/algorithms/jsw_tut_hashing.aspx
 //   X*33+c -> X*33^c
 static inline unsigned HashString(const base::StringPiece &Str, unsigned Result = 0) {
-  for (unsigned i = 0, e = Str.size(); i != e; ++i)
+  for (size_t i = 0, e = Str.size(); i != e; ++i)
     Result = Result * 33 + (unsigned char)Str[i];
   return Result;
 }
