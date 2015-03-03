@@ -196,11 +196,6 @@ void Dec_lag3(        /* output: return integer pitch lag       */
   Word16 *T0_frac     /* output: fractional part of pitch lag   */
 );
 
-Word16 Interpol_3(      /* (o)  : interpolated value  */
-  Word16 *x,            /* (i)  : input vector        */
-  Word16 frac           /* (i)  : fraction            */
-);
-
 void Pred_lt_3(
   Word16   exc[],       /* in/out: excitation buffer */
   Word16   T0,          /* input : integer pitch lag */
@@ -307,11 +302,6 @@ void Lsp_get_quant(
   Word16 freq_prev[][M],     /* Q13 */
   Word16 lspq[],                /* Q13 */
   Word16 fg_sum[]               /* Q15 */
-);
-
-void Lsp_last_select(
-  Word32 L_tdist[],     /* Q27 */
-  Word16 *mode_index
 );
 
 void Lsp_stability(

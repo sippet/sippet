@@ -21,11 +21,6 @@ Portions of this file are derived from the following ITU standard:
 
 static void Lsp_iqua_cs(g729a_decoder_state *state, Word16 prm[], Word16 lsp_q[], Word16 erase);
 
-/* static memory */
-static Word16 freq_prev_reset[M] = { /* Q13 */
-  2339, 4679, 7018, 9358, 11698, 14037, 16377, 18717, 21056, 23396
-};     /* PI*(float)(j+1)/(float)(M+1) */
-
 /*----------------------------------------------------------------------------
  * Lsp_decw_reset -   set the previous LSP vectors
  *----------------------------------------------------------------------------

@@ -52,12 +52,6 @@ void Qua_lsp(
   Lsf_lsp2(lsf_q, lsp_q, M);
 }
 
-/* static memory */
-static Word16 freq_prev_reset[M] = {  /* Q13:previous LSP vector(init) */
-  2339, 4679, 7018, 9358, 11698, 14037, 16377, 18717, 21056, 23396
-};     /* PI*(float)(j+1)/(float)(M+1) */
-
-
 void Lsp_encw_reset(
   g729a_encoder_state *state
 )
@@ -248,22 +242,6 @@ void Lsp_get_tdist(
   }
   *L_tdist <<=1;
 }
-
-
-#if 0
-void Lsp_last_select(
-  Word32 L_tdist[],     /* (i) Q27 : distortion         */
-  Word16 *mode_index    /* (o)     : the selected mode  */
-)
-{
-    Word32 L_temp;
-  *mode_index = 0;
-  L_temp =L_sub(L_tdist[1] ,L_tdist[0]);
-  if (  L_temp<0L){
-    *mode_index = 1;
-
-}
-#endif
 
 void Get_wegt(
   Word16 flsp[],    /* (i) Q13 : M LSP parameters  */

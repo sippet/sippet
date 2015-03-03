@@ -42,4 +42,5 @@ extern Word16 tabpow[33];
 extern Word16 tablog[33];
 extern Word16 tabsqr[49];
 extern Word16 tab_zone[PIT_MAX+L_INTERPOL-1];
+extern Word16 freq_prev_reset[M];
 
