@@ -4,7 +4,7 @@
 
 {
   'variables': {
-    'g729_amalgamation%': 1,
+    'g729_amalgamation%': 0,
   },
   'includes': [
     '../../build/win_precompile.gypi',
@@ -41,8 +41,6 @@
             'include/g729a.h',
             'include/basic_op.h',
             'include/ld8a.h',
-            'include/libavcodec_get_bits.h',
-            'include/libavcodec_put_bits.h',
             'include/oper_32b.h',
             'include/tab_ld8a.h',
             'include/typedef.h',

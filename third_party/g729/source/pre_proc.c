@@ -56,7 +56,7 @@ void Init_Pre_Process(g729a_pre_process_state *state)
 
 void Pre_Process(
   g729a_pre_process_state *state,
-  Word16 sigin[],    /* input signal */
+  const Word16 sigin[],    /* input signal */
   Word16 sigout[],   /* output signal */
   Word16 lg)          /* length of signal    */
 {
