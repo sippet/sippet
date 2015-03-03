@@ -521,7 +521,7 @@ static Word32 L_add(register Word32 ra, register Word32 rb)
  |___________________________________________________________________________|
 */
 static Word16 mult(/*register Word32 ra */Word16 var1,
-                          /*register Word32 rb */Word16 var2)
+                   /*register Word32 rb */Word16 var2)
 {
   Word32 product;
 #if defined(ARCH_ARM)
@@ -588,8 +588,8 @@ static Word16 mult(/*register Word32 ra */Word16 var1,
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static Word32 L_mult(/*register Word32 ra /*/Word16 var1,
-                            /*register Word32 rb /*/Word16 var2)
+static Word32 L_mult(/*register Word32 ra */Word16 var1,
+                     /*register Word32 rb */Word16 var2)
 {
 #if defined(ARCH_ARM)
   register Word32 ra = var1;
@@ -708,8 +708,8 @@ static Word32 L_msu(register Word32 ra,
  |___________________________________________________________________________|
 */
 static Word32 L_mac(register Word32 ra,
-                           register Word32 rb /*Word16 var1*/,
-                           register Word32 rc /*Word16 var2*/)
+                    register Word32 rb /*Word16 var1*/,
+                    register Word32 rc /*Word16 var2*/)
 {
   Word32 out;
   Word32 tmp = 0;
@@ -1028,7 +1028,7 @@ static Word16 g_round(register Word32 ra)
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static Word16 shl(Word16 var1,Word16 var2)
+static Word16 shl(Word16 var1, Word16 var2)
 {
   Word16 tmp;
   if (var2 < 0)
@@ -1076,7 +1076,7 @@ static Word16 shl(Word16 var1,Word16 var2)
  |             range : 0xffff 8000 <= var_out <= 0x0000 7fff.                |
  |___________________________________________________________________________|
 */
-static Word16 shr(Word16 var1,Word16 var2)
+static Word16 shr(Word16 var1, Word16 var2)
 {
   if (var2 < 0)
     return shl(var1, -var2);
@@ -1117,7 +1117,7 @@ static Word16 shr(Word16 var1,Word16 var2)
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static Word32 L_shl(Word32 var1,Word32 var2)
+static Word32 L_shl(Word32 var1, Word32 var2)
 {
   Word32 tmp;
   if (var2 < 0)
@@ -1164,7 +1164,7 @@ static Word32 L_shl(Word32 var1,Word32 var2)
  |             range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.              |
  |___________________________________________________________________________|
 */
-static Word32 L_shr(Word32 var1,Word32 var2)
+static Word32 L_shr(Word32 var1, Word32 var2)
 {
   if (var2 < 0)
     return L_shl(var1, -var2);
