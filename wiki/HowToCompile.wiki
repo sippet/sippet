@@ -101,7 +101,7 @@ gamma:~/sippet$ ./src/build/install-build-deps.sh
 </code>
 
 
-== Create the build using GYP ==
+== Create the build ==
 
 The build is created using gclient 'runhooks' command:
 
@@ -110,6 +110,34 @@ gamma:~/sippet$ gclient runhooks
 </code>
 
 This will generate the build, usually for Ninja.
+
+== Building 64-bit Sippet ==
+
+=== Linux ===
+
+Run the following command prior to 'gclient runhooks':
+
+<code language="xml">
+gamma:~/sippet$ echo "{ 'GYP_DEFINES': 'target_arch=x64', }" > sippet.gyp_env
+</code>
+
+=== Mac OS X ===
+
+Run the following command prior to 'gclient runhooks':
+
+<code language="xml">
+gamma:~/sippet$ echo "{ 'GYP_DEFINES': 'target_arch=x64 host_arch=x64', }" > sippet.gyp_env
+</code>
+
+=== Windows ===
+
+Run the following command prior to 'gclient runhooks':
+
+<code language="xml">
+gamma:~/sippet$ echo "{ 'GYP_DEFINES': 'target_arch=x64', }" > sippet.gyp_env
+</code>
+
+Build either the Release_x64 or Debug_x64 target using ninja (e.g. "ninja -C src\out\Debug_x64").
 
 == Compile ==
 
