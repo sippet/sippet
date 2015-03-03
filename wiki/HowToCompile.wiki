@@ -124,7 +124,7 @@ Take a coffee. The output will be located in src/out/Release.
 
 = Building 64-bit Sippet =
 
-=== Linux ===
+== Linux ==
 
 Run the following command prior to 'gclient runhooks':
 
@@ -132,7 +132,7 @@ Run the following command prior to 'gclient runhooks':
 gamma:~/sippet$ echo "{ 'GYP_DEFINES': 'target_arch=x64', }" > sippet.gyp_env
 </code>
 
-=== Mac OS X ===
+== Mac OS X ==
 
 Run the following command prior to 'gclient runhooks':
 
@@ -140,7 +140,7 @@ Run the following command prior to 'gclient runhooks':
 gamma:~/sippet$ echo "{ 'GYP_DEFINES': 'target_arch=x64 host_arch=x64', }" > sippet.gyp_env
 </code>
 
-=== Windows ===
+== Windows ==
 
 Run the following command prior to 'gclient runhooks':
 
