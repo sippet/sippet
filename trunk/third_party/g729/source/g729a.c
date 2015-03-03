@@ -2586,7 +2586,7 @@ static void Coder_ld8a       (g729a_encoder_state *state,
 
 static void Init_Pre_Process(g729a_pre_process_state *state);
 static void Pre_Process     (g729a_pre_process_state *state,
-                      Word16 sigin[],
+                      const Word16 sigin[],
                       Word16 sigout[],
                       Word16 lg);
 
@@ -7267,7 +7267,7 @@ static void Init_Pre_Process(g729a_pre_process_state *state)
 
 static void Pre_Process(
   g729a_pre_process_state *state,
-  Word16 sigin[],    /* input signal */
+  const Word16 sigin[],    /* input signal */
   Word16 sigout[],   /* output signal */
   Word16 lg)          /* length of signal    */
 {

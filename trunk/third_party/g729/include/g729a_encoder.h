@@ -64,7 +64,7 @@ void Coder_ld8a       (g729a_encoder_state *state,
 
 void Init_Pre_Process(g729a_pre_process_state *state);
 void Pre_Process     (g729a_pre_process_state *state,
-                      Word16 sigin[],
+                      const Word16 sigin[],
                       Word16 sigout[],
                       Word16 lg);
 
