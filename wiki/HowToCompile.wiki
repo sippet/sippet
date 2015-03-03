@@ -111,7 +111,18 @@ gamma:~/sippet$ gclient runhooks
 
 This will generate the build, usually for Ninja.
 
-== Building 64-bit Sippet ==
+== Compile ==
+
+Now that you have the build set up, just start compiling. Typically, on any operating system, you would do just:
+
+<code language="xml">
+gamma:~/sippet$ ninja -C src/out/Release
+</code>
+
+Take a coffee. The output will be located in src/out/Release.
+
+
+= Building 64-bit Sippet =
 
 === Linux ===
 
@@ -138,13 +149,3 @@ gamma:~/sippet$ echo "{ 'GYP_DEFINES': 'target_arch=x64', }" > sippet.gyp_env
 </code>
 
 Build either the Release_x64 or Debug_x64 target using ninja (e.g. "ninja -C src\out\Debug_x64").
-
-== Compile ==
-
-Now that you have the build set up, just start compiling. Typically, on any operating system, you would do just:
-
-<code language="xml">
-gamma:~/sippet$ ninja -C src/out/Release
-</code>
-
-Take a coffee. The output will be located in src/out/Release.
