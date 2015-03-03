@@ -145,7 +145,8 @@ gamma:~/sippet$ echo "{ 'GYP_DEFINES': 'target_arch=x64 host_arch=x64', }" > sip
 Run the following command prior to 'gclient runhooks':
 
 <code language="xml">
-gamma:~/sippet$ echo "{ 'GYP_DEFINES': 'target_arch=x64', }" > sippet.gyp_env
+cd c:\sippet
+echo "{ 'GYP_DEFINES': 'target_arch=x64', }" > sippet.gyp_env
 </code>
 
 Build either the Release_x64 or Debug_x64 target using ninja (e.g. "ninja -C src\out\Debug_x64").
