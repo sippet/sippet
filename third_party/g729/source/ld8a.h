@@ -325,8 +325,9 @@ void Init_Post_Process(Post_Process_state *st);
 
 void Pre_Process(
   Pre_Process_state *st,
-  int16_t signal[],   /* Input/output signal */
-  int16_t lg          /* Length of signal    */
+  const int16_t sigin[], /* Input signal */
+  int16_t sigout[],      /* Output signal */
+  int16_t lg             /* Length of signal    */
 );
 
 void Post_Process(
