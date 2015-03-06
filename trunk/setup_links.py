@@ -304,7 +304,6 @@ FILES = {
   'third_party/webrtc/modules/audio_coding/neteq/audio_classifier.cc': None,
   'third_party/webrtc/modules/audio_coding/neteq/audio_classifier.h': None,
   'third_party/webrtc/modules/audio_coding/neteq/audio_classifier_unittest.cc': None,
-  'third_party/webrtc/modules/audio_coding/neteq/audio_decoder_unittest.cc': None,
   'third_party/webrtc/modules/audio_coding/neteq/audio_decoder_unittests.isolate': None,
   'third_party/webrtc/modules/audio_coding/neteq/audio_multi_vector.cc': None,
   'third_party/webrtc/modules/audio_coding/neteq/audio_multi_vector.h': None,
