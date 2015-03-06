@@ -141,23 +141,28 @@ void bits2prm_rtp(const uint8_t *bits, size_t len, int16_t prm[PRM_SIZE+2]) {
   }
 }
 
-static void Decoder_Process(G729DecInst* decInst, const uint8_t *bits,
-                            size_t len, int16_t *frame) {
+static void Decoder_Process(G729DecInst* decInst, int16_t *frame) {
   int16_t Vad;
+
+  Decod_ld8a(&decInst->state, decInst->parm, decInst->synth,
+      decInst->Az_dec, decInst->T2, &Vad, 0);
+
+  Post_Filter(&decInst->post_filter_state, decInst->synth,
+      decInst->Az_dec, decInst->T2, Vad);
+
+  Post_Process(&decInst->post_proc_state, decInst->synth,
+      frame, L_FRAME);
+}
+
+static void Decoder_Process_Packet(G729DecInst* decInst, const uint8_t *bits,
+  size_t len, int16_t *frame) {
 
   bits2prm_rtp(bits, len, decInst->parm);
 
   // Check parity and put 1 in parm[5] if parity error
   decInst->parm[5] = Check_Parity_Pitch(decInst->parm[4], decInst->parm[5]);
 
-  Decod_ld8a(&decInst->state, decInst->parm, decInst->synth,
-    decInst->Az_dec, decInst->T2, &Vad, 0);
-
-  Post_Filter(&decInst->post_filter_state, decInst->synth,
-    decInst->Az_dec, decInst->T2, Vad);
-
-  Post_Process(&decInst->post_proc_state, decInst->synth,
-    frame, L_FRAME);
+  Decoder_Process(decInst, frame);
 }
 
 int16_t WebRtcG729_EncoderCreate(G729EncInst** inst) {
@@ -251,14 +256,14 @@ int16_t WebRtcG729_Decode(G729DecInst* decInst, const uint8_t* encoded,
 
   // One or more G.729A frames
   for (i = 0; i < speech_frms; i++) {
-    Decoder_Process(decInst, &encoded[i * 10],
-                    10, &decoded[i * L_FRAME]);
+    Decoder_Process_Packet(decInst, &encoded[i * 10],
+                           10, &decoded[i * L_FRAME]);
   }
 
   // Followed by one or more G.729B frames
   for (j = 0; j < sid_frms; j++) {
-    Decoder_Process(decInst, &encoded[i * 10 + j * 2],
-                    2, &decoded[(i + j) * L_FRAME]);
+    Decoder_Process_Packet(decInst, &encoded[i * 10 + j * 2],
+                           2, &decoded[(i + j) * L_FRAME]);
   }
 
   *speechType = Vad;
@@ -268,21 +273,12 @@ int16_t WebRtcG729_Decode(G729DecInst* decInst, const uint8_t* encoded,
 int16_t WebRtcG729_DecodePlc(G729DecInst* decInst, int16_t* decoded,
                              int16_t noOfLostFrames) {
   int16_t i;
-  int16_t prm[PRM_SIZE+2], Vad;
 
-  Set_zero(prm, PRM_SIZE+2);
-  prm[0] = 1; // frame erasure
+  Set_zero(decInst->parm, PRM_SIZE+2);
+  decInst->parm[0] = 1; // frame erasure
 
   for (i = 0; i < noOfLostFrames; ++i) {
-
-    Decod_ld8a(&decInst->state, prm, decInst->synth, decInst->Az_dec,
-               decInst->T2, &Vad, 0);
-
-    Post_Filter(&decInst->post_filter_state, decInst->synth,
-                decInst->Az_dec, decInst->T2, Vad);
-
-    Post_Process(&decInst->post_proc_state, decInst->synth,
-                 &decoded[i*L_FRAME], L_FRAME);
+    Decoder_Process(decInst, &decoded[i*L_FRAME]);
   }
 
   return noOfLostFrames * L_FRAME;
