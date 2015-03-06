@@ -152,7 +152,7 @@ int16_t ACMG729::EnableDTX() {
     return 0;
   } else if (encoder_exist_) {
     // Re-init the G.729 encoder to turn on DTX
-    if (WebRtcG729_EncoderInit(encoder_inst_ptr_) < 0) {
+    if (WebRtcG729_EncoderInit(encoder_inst_ptr_, 1) < 0) {
       return -1;
     }
     dtx_enabled_ = true;
@@ -168,7 +168,7 @@ int16_t ACMG729::DisableDTX() {
     return 0;
   } else if (encoder_exist_) {
     // Re-init the G.729 decoder to turn off DTX
-    if (WebRtcG729_EncoderInit(encoder_inst_ptr_) < 0) {
+    if (WebRtcG729_EncoderInit(encoder_inst_ptr_, 0) < 0) {
       return -1;
     }
     dtx_enabled_ = false;
@@ -218,7 +218,8 @@ int32_t ACMG729::IsInternalDTXReplacedSafe(bool* internal_dtx_replaced) {
 
 int16_t ACMG729::InternalInitEncoder(WebRtcACMCodecParams* codec_params) {
   // Init G.729 encoder
-  return WebRtcG729_EncoderInit(encoder_inst_ptr_);
+  return WebRtcG729_EncoderInit(encoder_inst_ptr_,
+                                ((codec_params->enable_dtx) ? 1 : 0));
 }
 
 ACMGenericCodec* ACMG729::CreateInstance(void) {

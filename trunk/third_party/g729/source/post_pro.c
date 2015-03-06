@@ -51,35 +51,52 @@ void Init_Post_Process(Post_Process_state *st)
 
 void Post_Process(
   Post_Process_state *st,
-  int16_t signal[],    /* input/output signal */
-  int16_t lg)          /* length of signal    */
+  const int16_t sigin[], /* Input signal        */
+  int16_t sigout[],      /* Output signal       */
+  int16_t lg)            /* Length of signal    */
 {
   int16_t i, x2;
   int32_t L_tmp;
+  int16_t xx1, xx0, yy1_hi, yy1_lo, yy2_hi, yy2_lo;
+
+  xx1 = st->x1;
+  xx0 = st->x0;
+  yy1_hi = st->y1_hi;
+  yy1_lo = st->y1_lo;
+  yy2_hi = st->y2_hi;
+  yy2_lo = st->y2_lo;
 
   for(i=0; i<lg; i++)
   {
-     x2 = st->x1;
-     st->x1 = st->x0;
-     st->x0 = signal[i];
+     x2 = xx1;
+     xx1 = xx0;
+     xx0 = sigin[i];
 
      /*  y[i] = b[0]*x[i]   + b[1]*x[i-1]   + b[2]*x[i-2]    */
      /*                     + a[1]*y[i-1] + a[2] * y[i-2];      */
 
-     L_tmp     = Mpy_32_16(st->y1_hi, st->y1_lo, a100[1]);
-     L_tmp     = L_add(L_tmp, Mpy_32_16(st->y2_hi, st->y2_lo, a100[2]));
-     L_tmp     = L_mac(L_tmp, st->x0, b100[0]);
-     L_tmp     = L_mac(L_tmp, st->x1, b100[1]);
+     L_tmp     = Mpy_32_16(yy1_hi, yy1_lo, a100[1]);
+     L_tmp     = L_add(L_tmp, Mpy_32_16(yy2_hi, yy2_lo, a100[2]));
+     L_tmp     = L_mac(L_tmp, xx0, b100[0]);
+     L_tmp     = L_mac(L_tmp, xx1, b100[1]);
      L_tmp     = L_mac(L_tmp, x2, b100[2]);
      L_tmp     = L_shl(L_tmp, 2);      /* Q29 --> Q31 (Q13 --> Q15) */
 
      /* Multiplication by two of output speech with saturation. */
-     signal[i] = L_round(L_shl(L_tmp, 1));
+     sigout[i] = L_round(L_shl(L_tmp, 1));
 
-     st->y2_hi = st->y1_hi;
-     st->y2_lo = st->y1_lo;
-     L_Extract(L_tmp, &st->y1_hi, &st->y1_lo);
+     yy2_hi = yy1_hi;
+     yy2_lo = yy1_lo;
+     L_Extract(L_tmp, &yy1_hi, &yy1_lo);
   }
+
+  st->x1 = xx1;
+  st->x0 = xx0;
+  st->y1_hi = yy1_hi;
+  st->y1_lo = yy1_lo;
+  st->y2_hi = yy2_hi;
+  st->y2_lo = yy2_lo;
+
   return;
 }
 
