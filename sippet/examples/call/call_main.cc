@@ -106,7 +106,7 @@ private:
   void OnCallEstablished(const scoped_refptr<Call>& call) override {
     LOG(INFO) << "Established...";
 
-    call->SendDtmf("00345");
+    //call->SendDtmf("00345");
   }
 
   void OnCallHungUp(const scoped_refptr<Call>& call) override {
