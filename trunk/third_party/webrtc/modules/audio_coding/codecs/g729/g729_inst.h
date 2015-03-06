@@ -24,6 +24,7 @@ struct WebRtcG729EncInst {
   Pre_Process_state pre_process_state;
   Coder_ld8a_state state;
   int16_t frame; // frame counter
+  int16_t parm[PRM_SIZE+1];
 };
 
 struct WebRtcG729DecInst {
@@ -36,6 +37,9 @@ struct WebRtcG729DecInst {
   int16_t  Az_dec[MP1*2];                // Decoded Az for post-filter
   int16_t  T2[2];                        // Pitch lag for 2 subframes
 };
+
+size_t prm2bits_rtp(const int16_t prm[PRM_SIZE+1], uint8_t *pkt);
+void bits2prm_rtp(const uint8_t *bits, size_t len, int16_t prm[PRM_SIZE+2]);
 
 #ifdef __cplusplus
 }

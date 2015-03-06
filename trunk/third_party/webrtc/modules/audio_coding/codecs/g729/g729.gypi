@@ -42,7 +42,7 @@
           ],
           'include_dirs': [
             '<(webrtc_root)',
-            '<(DEPTH)/third_party/g729/include',
+            '<(DEPTH)/third_party/g729/source',
           ],
           'sources': [
             'g729_unittest.cc',

@@ -53,32 +53,49 @@ void Init_Pre_Process(Pre_Process_state *st)
 
 void Pre_Process(
   Pre_Process_state *st,
-  int16_t signal[],    /* input/output signal */
-  int16_t lg)          /* length of signal    */
+  const int16_t sigin[], /* input signal */
+  int16_t sigout[],      /* output signal */
+  int16_t lg)            /* length of signal    */
 {
   int16_t i, x2;
   int32_t L_tmp;
+  int16_t xx0, xx1, yy1_hi, yy1_lo, yy2_hi, yy2_lo;
+
+  xx1 = st->x1;
+  xx0 = st->x0;
+  yy1_hi = st->y1_hi;
+  yy1_lo = st->y1_lo;
+  yy2_hi = st->y2_hi;
+  yy2_lo = st->y2_lo;
 
   for(i=0; i<lg; i++)
   {
-     x2 = st->x1;
-     st->x1 = st->x0;
-     st->x0 = signal[i];
+     x2 = xx1;
+     xx1 = xx0;
+     xx0 = sigin[i];
 
      /*  y[i] = b[0]*x[i]/2 + b[1]*x[i-1]/2 + b140[2]*x[i-2]/2  */
      /*                     + a[1]*y[i-1] + a[2] * y[i-2];      */
 
-     L_tmp     = Mpy_32_16(st->y1_hi, st->y1_lo, a140[1]);
-     L_tmp     = L_add(L_tmp, Mpy_32_16(st->y2_hi, st->y2_lo, a140[2]));
-     L_tmp     = L_mac(L_tmp, st->x0, b140[0]);
-     L_tmp     = L_mac(L_tmp, st->x1, b140[1]);
+     L_tmp     = Mpy_32_16(yy1_hi, yy1_lo, a140[1]);
+     L_tmp     = L_add(L_tmp, Mpy_32_16(yy2_hi, yy2_lo, a140[2]));
+     L_tmp     = L_mac(L_tmp, xx0, b140[0]);
+     L_tmp     = L_mac(L_tmp, xx1, b140[1]);
      L_tmp     = L_mac(L_tmp, x2, b140[2]);
      L_tmp     = L_shl(L_tmp, 3);      /* Q28 --> Q31 (Q12 --> Q15) */
-     signal[i] = L_round(L_tmp);
+     sigout[i] = L_round(L_tmp);
 
-     st->y2_hi = st->y1_hi;
-     st->y2_lo = st->y1_lo;
-     L_Extract(L_tmp, &st->y1_hi, &st->y1_lo);
+     yy2_hi = yy1_hi;
+     yy2_lo = yy1_lo;
+     L_Extract(L_tmp, &yy1_hi, &yy1_lo);
   }
+
+  st->x1 = xx1;
+  st->x0 = xx0;
+  st->y1_hi = yy1_hi;
+  st->y1_lo = yy1_lo;
+  st->y2_hi = yy2_hi;
+  st->y2_lo = yy2_lo;
+
   return;
 }
