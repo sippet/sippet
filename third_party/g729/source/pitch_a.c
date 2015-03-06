@@ -1,33 +1,28 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/* G.729A  Version 1.1    Last modified: September 1996 */
 
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
-   ITU-T G.729A Speech Coder    ANSI-C Source Code
-   Version 1.1    Last modified: September 1996
-
+/*
+   ITU-T G.729A Speech Coder     ANSI-C Source Code
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies
+   All rights reserved.
+*/
 
 /*---------------------------------------------------------------------------*
  * Pitch related functions                                                   *
  * ~~~~~~~~~~~~~~~~~~~~~~~                                                   *
  *---------------------------------------------------------------------------*/
 
-#include "typedef.h"
+#include <stdint.h>
 #include "basic_op.h"
 #include "oper_32b.h"
 #include "ld8a.h"
 #include "tab_ld8a.h"
 
-
-static Word16 Compute_nrj_max(Word16 *scal_sig, Word16 L_frame, Word32 max)
+static int16_t Compute_nrj_max(int16_t *scal_sig, int16_t L_frame, int32_t max)
 {
-  Word32 sum;
-  Word16  max_h, max_l, ener_h, ener_l;
-  Word16 i;
+  int32_t sum;
+  int16_t  max_h, max_l, ener_h, ener_l;
+  int16_t i;
 
   sum = 0;
   for(i=0; i<L_frame; i+=2)
@@ -41,15 +36,15 @@ static Word16 Compute_nrj_max(Word16 *scal_sig, Word16 L_frame, Word32 max)
   sum = Inv_sqrt(sum);            /* 1/sqrt(energy),    result in Q30 */
   //L_Extract(max, &max_h, &max_l);
   //L_Extract(sum, &ener_h, &ener_l);
-  max_h = (Word16) (max >> 16);
-  max_l = (Word16)((max >> 1) - (max_h << 15));
-  ener_h = (Word16) (sum >> 16);
-  ener_l = (Word16)((sum >> 1) - (ener_h << 15));
+  max_h = (int16_t) (max >> 16);
+  max_l = (int16_t)((max >> 1) - (max_h << 15));
+  ener_h = (int16_t) (sum >> 16);
+  ener_l = (int16_t)((sum >> 1) - (ener_h << 15));
   //sum  = Mpy_32(max_h, max_l, ener_h, ener_l);
-  sum = (((Word32)max_h*ener_h)<<1) +
-        (( (((Word32)max_h*ener_l)>>15) + (((Word32)max_l*ener_h)>>15) )<<1);
+  sum = (((int32_t)max_h*ener_h)<<1) +
+        (( (((int32_t)max_h*ener_l)>>15) + (((int32_t)max_l*ener_h)>>15) )<<1);
 
-  return (Word16)sum;
+  return (int16_t)sum;
 }
 
 /*---------------------------------------------------------------------------*
@@ -58,23 +53,25 @@ static Word16 Compute_nrj_max(Word16 *scal_sig, Word16 L_frame, Word32 max)
  * Compute the open loop pitch lag. (fast version)                           *
  *                                                                           *
  *---------------------------------------------------------------------------*/
-Word16 Pitch_ol_fast(  /* output: open loop pitch lag                        */
-   Word16 signal[],    /* input : signal used to compute the open loop pitch */
+
+
+int16_t Pitch_ol_fast(  /* output: open loop pitch lag                        */
+   int16_t signal[],    /* input : signal used to compute the open loop pitch */
                        /*     signal[-pit_max] to signal[-1] should be known */
-   Word16   pit_max,   /* input : maximum pitch lag                          */
-   Word16   L_frame    /* input : length of frame to compute pitch           */
+   int16_t   pit_max,   /* input : maximum pitch lag                          */
+   int16_t   L_frame    /* input : length of frame to compute pitch           */
 )
 {
-  Word16  i, j;
-  Word16  max1, max2, max3;
-  Word16  T1, T2, T3;
-  Word16  *p, *p1;
-  Word32  max, sum, sum1;
+  int16_t  i, j;
+  int16_t  max1, max2, max3;
+  int16_t  T1, T2, T3;
+  int16_t  *p, *p1;
+  int32_t  max, sum, sum1;
 
   /* Scaled signal */
 
-  Word16 scaled_signal[L_FRAME+PIT_MAX];
-  Word16 *scal_sig;
+  int16_t scaled_signal[L_FRAME+PIT_MAX];
+  int16_t *scal_sig;
 
   scal_sig = &scaled_signal[pit_max];
 
@@ -85,7 +82,7 @@ Word16 Pitch_ol_fast(  /* output: open loop pitch lag                        */
    sum = 0;
    for(i= -pit_max; i< L_frame; i+=2)
    {
-     sum += ((Word32)signal[i] * (Word32)signal[i]) << 1;
+     sum += ((int32_t)signal[i] * (int32_t)signal[i]) << 1;
      if (sum < 0)  // overflow
      {
        sum = MAX_32;
@@ -106,7 +103,7 @@ Word16 Pitch_ol_fast(  /* output: open loop pitch lag                        */
        scal_sig[i] = signal[i] >> 3;
    }
    else {
-     if (sum < (Word32)0x100000) /* if (sum < 2^20) */
+     if (sum < (int32_t)0x100000) /* if (sum < 2^20) */
      {
         for(i=-pit_max; i<L_frame; i++)
           scal_sig[i] = signal[i] << 3;
@@ -189,8 +186,8 @@ Word16 Pitch_ol_fast(  /* output: open loop pitch lag                        */
      sum  <<= 1;
      sum1 <<= 1;
 
-     if (sum  > max) { max = sum;  T3 = i+(Word16)1;   }
-     if (sum1 > max) { max = sum1; T3 = i-(Word16)1;   }
+     if (sum  > max) { max = sum;  T3 = i+(int16_t)1;   }
+     if (sum1 > max) { max = sum1; T3 = i-(int16_t)1;   }
 
     /* compute energy of maximum */
     max3 = Compute_nrj_max(&scal_sig[-T3], L_frame, max);
@@ -234,27 +231,25 @@ Word16 Pitch_ol_fast(  /* output: open loop pitch lag                        */
     return T1;
 }
 
-
-
+
 
 /*--------------------------------------------------------------------------*
  *  Function  Dot_Product()                                                 *
  *  ~~~~~~~~~~~~~~~~~~~~~~                                                  *
  *--------------------------------------------------------------------------*/
 
-Word32 Dot_Product(      /* (o)   :Result of scalar product. */
-       Word16   x[],     /* (i)   :First vector.             */
-       Word16   y[],     /* (i)   :Second vector.            */
-       Word16   lg       /* (i)   :Number of point.          */
+int32_t Dot_Product(      /* (o)   :Result of scalar product. */
+       int16_t   x[],     /* (i)   :First vector.             */
+       int16_t   y[],     /* (i)   :Second vector.            */
+       int16_t   lg       /* (i)   :Number of point.          */
 )
 {
-  Word16 i;
-  Word32 sum;
+  int16_t i;
+  int32_t sum;
 
   sum = 0;
   for(i=0; i<lg; i++)
-    sum += x[i] * y [i];
-  sum <<= 1;
+    sum = L_mac(sum, x[i], y[i]);
 
   return sum;
 }
@@ -265,21 +260,21 @@ Word32 Dot_Product(      /* (o)   :Result of scalar product. */
  * Fast version of the pitch close loop.                                    *
  *--------------------------------------------------------------------------*/
 
-Word16 Pitch_fr3_fast(/* (o)     : pitch period.                          */
-  Word16 exc[],       /* (i)     : excitation buffer                      */
-  Word16 xn[],        /* (i)     : target vector                          */
-  Word16 h[],         /* (i) Q12 : impulse response of filters.           */
-  Word16 L_subfr,     /* (i)     : Length of subframe                     */
-  Word16 t0_min,      /* (i)     : minimum value in the searched range.   */
-  Word16 t0_max,      /* (i)     : maximum value in the searched range.   */
-  Word16 i_subfr,     /* (i)     : indicator for first subframe.          */
-  Word16 *pit_frac    /* (o)     : chosen fraction.                       */
+int16_t Pitch_fr3_fast(/* (o)     : pitch period.                          */
+  int16_t exc[],       /* (i)     : excitation buffer                      */
+  int16_t xn[],        /* (i)     : target vector                          */
+  int16_t h[],         /* (i) Q12 : impulse response of filters.           */
+  int16_t L_subfr,     /* (i)     : Length of subframe                     */
+  int16_t t0_min,      /* (i)     : minimum value in the searched range.   */
+  int16_t t0_max,      /* (i)     : maximum value in the searched range.   */
+  int16_t i_subfr,     /* (i)     : indicator for first subframe.          */
+  int16_t *pit_frac    /* (o)     : chosen fraction.                       */
 )
 {
-  Word16 t, t0;
-  Word16 Dn[L_SUBFR];
-  Word16 exc_tmp[L_SUBFR];
-  Word32 max, corr;
+  int16_t t, t0;
+  int16_t Dn[L_SUBFR];
+  int16_t exc_tmp[L_SUBFR];
+  int32_t max, corr, L_temp;
 
  /*-----------------------------------------------------------------*
   * Compute correlation of target vector with impulse response.     *
@@ -297,7 +292,8 @@ Word16 Pitch_fr3_fast(/* (o)     : pitch period.                          */
   for(t=t0_min; t<=t0_max; t++)
   {
     corr = Dot_Product(Dn, &exc[-t], L_subfr);
-    if(corr > max) {max = corr; t0 = t;  }
+    L_temp = L_sub(corr, max);
+    if(L_temp > 0) {max = corr; t0 = t;  }
   }
 
  /*-----------------------------------------------------------------*
@@ -312,7 +308,7 @@ Word16 Pitch_fr3_fast(/* (o)     : pitch period.                          */
 
   /* If first subframe and lag > 84 do not search fractional pitch */
 
-  if( (i_subfr == 0) && (t0 > 84) )
+  if( (i_subfr == 0) && (sub(t0, 84) > 0) )
     return t0;
 
   Copy(exc, exc_tmp, L_subfr);
@@ -321,7 +317,8 @@ Word16 Pitch_fr3_fast(/* (o)     : pitch period.                          */
 
   Pred_lt_3(exc, t0, -1, L_subfr);
   corr = Dot_Product(Dn, exc, L_subfr);
-  if(corr > max) {
+  L_temp = L_sub(corr, max);
+  if(L_temp > 0) {
      max = corr;
      *pit_frac = -1;
      Copy(exc, exc_tmp, L_subfr);
@@ -331,7 +328,8 @@ Word16 Pitch_fr3_fast(/* (o)     : pitch period.                          */
 
   Pred_lt_3(exc, t0, 1, L_subfr);
   corr = Dot_Product(Dn, exc, L_subfr);
-  if(corr > max) {
+  L_temp = L_sub(corr, max);
+  if(L_temp > 0) {
      max = corr;
      *pit_frac =  1;
   }
@@ -340,8 +338,7 @@ Word16 Pitch_fr3_fast(/* (o)     : pitch period.                          */
 
   return t0;
 }
-
-
+
 /*---------------------------------------------------------------------*
  * Function  G_pitch:                                                  *
  *           ~~~~~~~~                                                  *
@@ -353,19 +350,19 @@ Word16 Pitch_fr3_fast(/* (o)     : pitch period.                          */
  *---------------------------------------------------------------------*/
 
 
-Word16 G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
-  Word16 xn[],       /* (i)     : Pitch target.                            */
-  Word16 y1[],       /* (i)     : Filtered adaptive codebook.              */
-  Word16 g_coeff[],  /* (i)     : Correlations need for gain quantization. */
-  Word16 L_subfr     /* (i)     : Length of subframe.                      */
+int16_t G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
+  int16_t xn[],       /* (i)     : Pitch target.                            */
+  int16_t y1[],       /* (i)     : Filtered adaptive codebook.              */
+  int16_t g_coeff[],  /* (i)     : Correlations need for gain quantization. */
+  int16_t L_subfr     /* (i)     : Length of subframe.                      */
 )
 {
-   Word16 i;
-   Word16 xy, yy, exp_xy, exp_yy, gain;
-   Word32 s, s1, L_temp;
+   int16_t i;
+   int16_t xy, yy, exp_xy, exp_yy, gain;
+   int32_t s, s1, L_temp;
 
-   //Word16 scaled_y1[L_SUBFR];
-   Word16 scaled_y1;
+   //int16_t scaled_y1[L_SUBFR];
+   int16_t scaled_y1;
 
    s = 1; /* Avoid case of all zeros */
    for(i=0; i<L_subfr; i++)
@@ -380,7 +377,7 @@ Word16 G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
 
    if (i == L_subfr) {
      exp_yy = norm_l(s);
-     yy     = g_round( L_shl(s, exp_yy) );
+     yy     = L_round( L_shl(s, exp_yy) );
    }
    else {
      //for(; i<L_subfr; i++)
@@ -399,7 +396,7 @@ Word16 G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
      s++; /* Avoid case of all zeros */
 
      exp_yy = norm_l(s);
-     yy     = g_round( L_shl(s, exp_yy) );
+     yy     = L_round( L_shl(s, exp_yy) );
      exp_yy = exp_yy - 4;
    }
 
@@ -420,7 +417,7 @@ Word16 G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
 
    if (i == L_subfr) {
      exp_xy = norm_l(s);
-     xy     = g_round( L_shl(s, exp_xy) );
+     xy     = L_round( L_shl(s, exp_xy) );
    }
    else {
      s = 0;
@@ -429,7 +426,7 @@ Word16 G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
        s += xn[i] * (y1[i] >> 2);
      s <<= 1;
      exp_xy = norm_l(s);
-     xy     = g_round( L_shl(s, exp_xy) );
+     xy     = L_round( L_shl(s, exp_xy) );
      exp_xy = exp_xy - 2;
    }
 
@@ -444,7 +441,7 @@ Word16 G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
    if (xy <= 0)
    {
       g_coeff[3] = -15;   /* Force exp_xy to -15 = (15-30) */
-      return( (Word16) 0);
+      return( (int16_t) 0);
    }
 
    /* compute gain = xy/yy */
@@ -466,8 +463,7 @@ Word16 G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
    return(gain);
 }
 
-
-
+
 /*----------------------------------------------------------------------*
  *    Function Enc_lag3                                                 *
  *             ~~~~~~~~                                                 *
@@ -494,17 +490,17 @@ Word16 G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
  *----------------------------------------------------------------------*/
 
 
-Word16 Enc_lag3(     /* output: Return index of encoding */
-  Word16 T0,         /* input : Pitch delay              */
-  Word16 T0_frac,    /* input : Fractional pitch delay   */
-  Word16 *T0_min,    /* in/out: Minimum search delay     */
-  Word16 *T0_max,    /* in/out: Maximum search delay     */
-  Word16 pit_min,    /* input : Minimum pitch delay      */
-  Word16 pit_max,    /* input : Maximum pitch delay      */
-  Word16 pit_flag    /* input : Flag for 1st subframe    */
+int16_t Enc_lag3(     /* output: Return index of encoding */
+  int16_t T0,         /* input : Pitch delay              */
+  int16_t T0_frac,    /* input : Fractional pitch delay   */
+  int16_t *T0_min,    /* in/out: Minimum search delay     */
+  int16_t *T0_max,    /* in/out: Maximum search delay     */
+  int16_t pit_min,    /* input : Minimum pitch delay      */
+  int16_t pit_max,    /* input : Maximum pitch delay      */
+  int16_t pit_flag    /* input : int for 1st subframe    */
 )
 {
-  Word16 index; //, i;
+  int16_t index, i;
 
   if (pit_flag == 0)   /* if 1st subframe */
   {
@@ -513,39 +509,38 @@ Word16 Enc_lag3(     /* output: Return index of encoding */
     if (T0 <= 85)
     {
       /* index = t0*3 - 58 + t0_frac   */
-      //i = T0 + (T0 << 1);
-      //index = i - 58 + T0_frac;
-      index = T0*3 - 58 + T0_frac;
+      i = add(add(T0, T0), T0);
+      index = add(sub(i, 58), T0_frac);
     }
-    else
-    {
-      index = T0 + 112;
+    else {
+      index = add(T0, 112);
     }
 
     /* find T0_min and T0_max for second subframe */
-    *T0_min = T0 - 5;
+
+    *T0_min = sub(T0, 5);
     if (*T0_min < pit_min)
     {
       *T0_min = pit_min;
     }
 
-    *T0_max = *T0_min + 9;
+    *T0_max = add(*T0_min, 9);
     if (*T0_max > pit_max)
     {
       *T0_max = pit_max;
-      *T0_min = *T0_max - 9;
+      *T0_min = sub(*T0_max, 9);
     }
   }
   else      /* if second subframe */
   {
+
     /* i = t0 - t0_min;               */
     /* index = i*3 + 2 + t0_frac;     */
-    //i = T0 - *T0_min;
-    //i = i + (i << 1);
-    //index = i + 2 + T0_frac;
-    index = (T0 - *T0_min)*3 + 2 + T0_frac;
+    i = sub(T0, *T0_min);
+    i = add(add(i, i), i);
+    index = add(add(i, 2), T0_frac);
   }
+
 
   return index;
 }
-

@@ -1,42 +1,35 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
-   ITU-T G.729A Speech Coder    ANSI-C Source Code
-   Version 1.1    Last modified: September 1996
+/*
+   ITU-T G.729A Speech Coder with Annex B    ANSI-C Source Code
+   Version 1.3    Last modified: August 1997
 
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies,
+   Rockwell International
+   All rights reserved.
+*/
 
-#include "typedef.h"
+#include <stdint.h>
 #include "ld8a.h"
 #include "basic_op.h"
 #include "tab_ld8a.h"
 
-
-#include "g729a_decoder.h"
-
-static void Lsp_iqua_cs(g729a_decoder_state *state, Word16 prm[], Word16 lsp_q[], Word16 erase);
 
 /*----------------------------------------------------------------------------
  * Lsp_decw_reset -   set the previous LSP vectors
  *----------------------------------------------------------------------------
  */
 void Lsp_decw_reset(
-g729a_decoder_state *state
+  Decod_ld8a_state *st
 )
 {
-  Word16 i;
+  int16_t i;
 
   for(i=0; i<MA_NP; i++)
-    Copy( &freq_prev_reset[0], &(state->freq_prev[i][0]), M );
+    Copy( &freq_prev_reset[0], &st->freq_prev[i][0], M );
 
-  state->prev_ma = 0;
+  st->prev_ma = 0;
 
-  Copy( freq_prev_reset, state->prev_lsp, M);
+  Copy( freq_prev_reset, st->prev_lsp, M);
 }
 
 
@@ -46,45 +39,47 @@ g729a_decoder_state *state
  *----------------------------------------------------------------------------
  */
 void Lsp_iqua_cs(
- g729a_decoder_state *state,
- Word16 prm[],          /* (i)     : indexes of the selected LSP */
- Word16 lsp_q[],        /* (o) Q13 : Quantized LSP parameters    */
- Word16 erase           /* (i)     : frame erase information     */
+  Decod_ld8a_state *st,
+  int16_t prm[],          /* (i)     : indexes of the selected LSP */
+  int16_t lsp_q[],        /* (o) Q13 : Quantized LSP parameters    */
+  int16_t erase           /* (i)     : frame erase information     */
 )
 {
-  Word16 mode_index;
-  Word16 code0;
-  Word16 code1;
-  Word16 code2;
-  Word16 buf[M];     /* Q13 */
+  int16_t mode_index;
+  int16_t code0;
+  int16_t code1;
+  int16_t code2;
+  int16_t buf[M];     /* Q13 */
 
   if( erase==0 ) {  /* Not frame erasure */
-    mode_index = (prm[0] >> NC0_B) & (Word16)1;
-    code0 = prm[0] & (Word16)(NC0 - 1);
-    code1 = (prm[1] >> NC1_B) & (Word16)(NC1 - 1);
-    code2 = prm[1] & (Word16)(NC1 - 1);
+    mode_index = shr(prm[0] ,NC0_B) & (int16_t)1;
+    code0 = prm[0] & (int16_t)(NC0 - 1);
+    code1 = shr(prm[1] ,NC1_B) & (int16_t)(NC1 - 1);
+    code2 = prm[1] & (int16_t)(NC1 - 1);
 
     /* compose quantized LSP (lsp_q) from indexes */
 
     Lsp_get_quant(lspcb1, lspcb2, code0, code1, code2,
-      fg[mode_index], state->freq_prev, lsp_q, fg_sum[mode_index]);
+      fg[mode_index], st->freq_prev, lsp_q, fg_sum[mode_index]);
 
     /* save parameters to use in case of the frame erased situation */
 
-    Copy(lsp_q, state->prev_lsp, M);
-    state->prev_ma = mode_index;
+    Copy(lsp_q, st->prev_lsp, M);
+    st->prev_ma = mode_index;
   }
   else {           /* Frame erased */
     /* use revious LSP */
 
-    Copy(state->prev_lsp, lsp_q, M);
+    Copy(st->prev_lsp, lsp_q, M);
 
     /* update freq_prev */
 
-    Lsp_prev_extract(state->prev_lsp, buf,
-      fg[state->prev_ma], state->freq_prev, fg_sum_inv[state->prev_ma]);
-    Lsp_prev_update(buf, state->freq_prev);
+    Lsp_prev_extract(st->prev_lsp, buf,
+      fg[st->prev_ma], st->freq_prev, fg_sum_inv[st->prev_ma]);
+    Lsp_prev_update(buf, st->freq_prev);
   }
+
+  return;
 }
 
 
@@ -95,18 +90,39 @@ void Lsp_iqua_cs(
  *-------------------------------------------------------------------*/
 
 void D_lsp(
-  g729a_decoder_state *state,
-  Word16 prm[],          /* (i)     : indexes of the selected LSP */
-  Word16 lsp_q[],        /* (o) Q15 : Quantized LSP parameters    */
-  Word16 erase           /* (i)     : frame erase information     */
+  Decod_ld8a_state *st,
+  int16_t prm[],          /* (i)     : indexes of the selected LSP */
+  int16_t lsp_q[],        /* (o) Q15 : Quantized LSP parameters    */
+  int16_t erase           /* (i)     : frame erase information     */
 )
 {
-  Word16 lsf_q[M];       /* domain 0.0<= lsf_q <PI in Q13 */
+  int16_t lsf_q[M];       /* domain 0.0<= lsf_q <PI in Q13 */
 
 
-  Lsp_iqua_cs(state, prm, lsf_q, erase);
+  Lsp_iqua_cs(st, prm, lsf_q, erase);
 
   /* Convert LSFs to LSPs */
 
   Lsf_lsp2(lsf_q, lsp_q, M);
+
+  return;
 }
+
+void Get_decfreq_prev(Decod_ld8a_state *st, int16_t x[MA_NP][M])
+{
+  int16_t i;
+
+  for (i=0; i<MA_NP; i++)
+    Copy(&st->freq_prev[i][0], &x[i][0], M);
+}
+  
+void Update_decfreq_prev(Decod_ld8a_state *st, int16_t x[MA_NP][M])
+{
+  int16_t i;
+
+  for (i=0; i<MA_NP; i++)
+    Copy(&x[i][0], &st->freq_prev[i][0], M);
+}
+
+
+

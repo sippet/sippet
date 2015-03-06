@@ -1,15 +1,11 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
+/*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
 
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies
+   All rights reserved.
+*/
 
 /*------------------------------------------------------------------------*
  * Function Post_Process()                                                *
@@ -19,13 +15,12 @@ Portions of this file are derived from the following ITU standard:
  *   - Multiplication by two of output speech with saturation.            *
  *-----------------------------------------------------------------------*/
 
-#include "typedef.h"
+#include <stdint.h>
 #include "basic_op.h"
 #include "oper_32b.h"
 
 #include "ld8a.h"
-
-#include "g729a_decoder.h"
+#include "tab_ld8a.h"
 
 /*------------------------------------------------------------------------*
  * 2nd order high pass filter with cut off frequency at 100 Hz.           *
@@ -40,55 +35,51 @@ Portions of this file are derived from the following ITU standard:
  *     a[3] = {0.10000000E+01, 0.19330735E+01, -0.93589199E+00};          *
  *-----------------------------------------------------------------------*/
 
+
 /* Initialization of static values */
 
-void Init_Post_Process(g729a_post_process_state *state)
+void Init_Post_Process(Post_Process_state *st)
 {
-  state->y2_hi = 0;
-  state->y2_lo = 0;
-  state->y1_hi = 0;
-  state->y1_lo = 0;
-//  state->y1 = 0LL;
-//  state->y2 = 0LL;
-  state->x1 = 0;
-  state->x2 = 0;
+  st->y2_hi = 0;
+  st->y2_lo = 0;
+  st->y1_hi = 0;
+  st->y1_lo = 0;
+  st->x0   = 0;
+  st->x1   = 0;
 }
 
-/* acelp_high_pass_filter */
+
 void Post_Process(
-  g729a_post_process_state *state,
-  Word16 sigin[],    /* input signal */
-  Word16 sigout[],   /* output signal */
-  Word16 lg)         /* length of signal    */
+  Post_Process_state *st,
+  int16_t signal[],    /* input/output signal */
+  int16_t lg)          /* length of signal    */
 {
-  Word16 i;
-  Word32 L_tmp;
+  int16_t i, x2;
+  int32_t L_tmp;
 
   for(i=0; i<lg; i++)
   {
+     x2 = st->x1;
+     st->x1 = st->x0;
+     st->x0 = signal[i];
+
      /*  y[i] = b[0]*x[i]   + b[1]*x[i-1]   + b[2]*x[i-2]    */
      /*                     + a[1]*y[i-1] + a[2] * y[i-2];      */
-     L_tmp  = ((Word32) state->y1_hi) * 15836;
-     L_tmp += (Word32)(((Word32) state->y1_lo * 15836) >> 15);
-     L_tmp += ((Word32) state->y2_hi) * (-7667);
-     L_tmp += (Word32)(((Word32) state->y2_lo * (-7667)) >> 15);
-     L_tmp += 7699 * (sigin[i] - 2*state->x1/*signal[i-1]*/ + state->x2/*signal[i-2]*/);
-    //L_tmp  = (state->y1 * 15836) >> 16;
-    //L_tmp += (state->y2 * -7667) >> 16;
-    //L_tmp += 7699 * (signal[i] - 2*state->x1/*signal[i-1]*/ + state->x2/*signal[i-2]*/);
-    L_tmp  = L_shl(L_tmp, 3);
 
-    state->x2 = state->x1;
-    state->x1 = sigin[i];
+     L_tmp     = Mpy_32_16(st->y1_hi, st->y1_lo, a100[1]);
+     L_tmp     = L_add(L_tmp, Mpy_32_16(st->y2_hi, st->y2_lo, a100[2]));
+     L_tmp     = L_mac(L_tmp, st->x0, b100[0]);
+     L_tmp     = L_mac(L_tmp, st->x1, b100[1]);
+     L_tmp     = L_mac(L_tmp, x2, b100[2]);
+     L_tmp     = L_shl(L_tmp, 2);      /* Q29 --> Q31 (Q13 --> Q15) */
 
      /* Multiplication by two of output speech with saturation. */
-    sigout[i] = g_round(L_shl(L_tmp, 1));
+     signal[i] = L_round(L_shl(L_tmp, 1));
 
-    state->y2_hi = state->y1_hi;
-    state->y2_lo = state->y1_lo;
-    state->y1_hi = (Word16) (L_tmp >> 16);
-    state->y1_lo = (Word16)((L_tmp >> 1) - (state->y1_hi << 15));
-    //state->y2 = state->y1;
-    //state->y1 = state->L_tmp;
+     st->y2_hi = st->y1_hi;
+     st->y2_lo = st->y1_lo;
+     L_Extract(L_tmp, &st->y1_hi, &st->y1_lo);
   }
+  return;
 }
+

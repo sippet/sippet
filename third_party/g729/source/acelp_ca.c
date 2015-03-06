@@ -1,15 +1,11 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+/* G.729A  Version 1.1    Last modified: September 1996 */
 
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
-   ITU-T G.729A Speech Coder    ANSI-C Source Code
-   Version 1.1    Last modified: September 1996
-
+/*
+   ITU-T G.729A Speech Coder     ANSI-C Source Code
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies
+   All rights reserved.
+*/
 
 /*---------------------------------------------------------------------------*
  *  Function  ACELP_Code_A()                                                 *
@@ -17,7 +13,7 @@ Portions of this file are derived from the following ITU standard:
  *   Find Algebraic codebook for G.729A                                      *
  *--------------------------------------------------------------------------*/
 
-#include "typedef.h"
+#include <stdint.h>
 #include "basic_op.h"
 #include "ld8a.h"
 
@@ -31,43 +27,42 @@ Portions of this file are derived from the following ITU standard:
 /* local routines definition */
 
 static void Cor_h(
-     Word16 *H,         /* (i) Q12 :Impulse response of filters */
-     Word16 *rr         /* (o)     :Correlations of H[]         */
+     int16_t *H,         /* (i) Q12 :Impulse response of filters */
+     int16_t *rr         /* (o)     :Correlations of H[]         */
 );
-static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
-  Word16 dn[],          /* (i)    : Correlations between h[] and Xn[].       */
-  Word16 *rr,           /* (i)    : Correlations of impulse response h[].    */
-  Word16 h[],           /* (i) Q12: Impulse response of filters.             */
-  Word16 cod[],         /* (o) Q13: Selected algebraic codeword.             */
-  Word16 y[],           /* (o) Q12: Filtered algebraic codeword.             */
-  Word16 *sign          /* (o)    : Signs of 4 pulses.                       */
+static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
+  int16_t dn[],          /* (i)    : Correlations between h[] and Xn[].       */
+  int16_t *rr,           /* (i)    : Correlations of impulse response h[].    */
+  int16_t h[],           /* (i) Q12: Impulse response of filters.             */
+  int16_t cod[],         /* (o) Q13: Selected algebraic codeword.             */
+  int16_t y[],           /* (o) Q12: Filtered algebraic codeword.             */
+  int16_t *sign          /* (o)    : Signs of 4 pulses.                       */
 );
 
  /*-----------------------------------------------------------------*
   * Main ACELP function.                                            *
   *-----------------------------------------------------------------*/
 
-Word16  ACELP_Code_A(    /* (o)     :index of pulses positions    */
-  Word16 x[],            /* (i)     :Target vector                */
-  Word16 h[],            /* (i) Q12 :Inpulse response of filters  */
-  Word16 T0,             /* (i)     :Pitch lag                    */
-  Word16 pitch_sharp,    /* (i) Q14 :Last quantized pitch gain    */
-  Word16 code[],         /* (o) Q13 :Innovative codebook          */
-  Word16 y[],            /* (o) Q12 :Filtered innovative codebook */
-  Word16 *sign           /* (o)     :Signs of 4 pulses            */
+int16_t  ACELP_Code_A(    /* (o)     :index of pulses positions    */
+  int16_t x[],            /* (i)     :Target vector                */
+  int16_t h[],            /* (i) Q12 :Inpulse response of filters  */
+  int16_t T0,             /* (i)     :Pitch lag                    */
+  int16_t pitch_sharp,    /* (i) Q14 :Last quantized pitch gain    */
+  int16_t code[],         /* (o) Q13 :Innovative codebook          */
+  int16_t y[],            /* (o) Q12 :Filtered innovative codebook */
+  int16_t *sign           /* (o)     :Signs of 4 pulses            */
 )
 {
-  Word16 i, index, sharp;
-  Word16 Dn[L_SUBFR];
-  Word16 rr[DIM_RR];
+  int16_t i, index, sharp;
+  int16_t Dn[L_SUBFR];
+  int16_t rr[DIM_RR];
 
  /*-----------------------------------------------------------------*
   * Include fixed-gain pitch contribution into impulse resp. h[]    *
   * Find correlations of h[] needed for the codebook search.        *
   *-----------------------------------------------------------------*/
 
-  //sharp = shl(pitch_sharp, 1);          /* From Q14 to Q15 */
-  sharp = pitch_sharp << 1;          /* From Q14 to Q15 */
+  sharp = shl(pitch_sharp, 1);          /* From Q14 to Q15 */
   if (T0 < L_SUBFR)
      for (i = T0; i < L_SUBFR; i++)     /* h[i] += pitch_sharp*h[i-T0] */
        h[i] = add(h[i], mult(h[i-T0], sharp));
@@ -97,8 +92,7 @@ Word16  ACELP_Code_A(    /* (o)     :index of pulses positions    */
 
   return index;
 }
-
-
+
 
 /*--------------------------------------------------------------------------*
  *  Function  Cor_h()                                                       *
@@ -107,33 +101,33 @@ Word16  ACELP_Code_A(    /* (o)     :index of pulses positions    */
  *--------------------------------------------------------------------------*/
 
 static void Cor_h(
-  Word16 *H,     /* (i) Q12 :Impulse response of filters */
-  Word16 *rr     /* (o)     :Correlations of H[]         */
+  int16_t *H,     /* (i) Q12 :Impulse response of filters */
+  int16_t *rr     /* (o)     :Correlations of H[]         */
 )
 {
-  Word16 *rri0i0, *rri1i1, *rri2i2, *rri3i3, *rri4i4;
-  Word16 *rri0i1, *rri0i2, *rri0i3, *rri0i4;
-  Word16 *rri1i2, *rri1i3, *rri1i4;
-  Word16 *rri2i3, *rri2i4;
+  int16_t *rri0i0, *rri1i1, *rri2i2, *rri3i3, *rri4i4;
+  int16_t *rri0i1, *rri0i2, *rri0i3, *rri0i4;
+  int16_t *rri1i2, *rri1i3, *rri1i4;
+  int16_t *rri2i3, *rri2i4;
 
-  Word16 *p0, *p1, *p2, *p3, *p4;
+  int16_t *p0, *p1, *p2, *p3, *p4;
 
-  Word16 *ptr_hd, *ptr_hf, *ptr_h1, *ptr_h2;
-  Word32 cor;
-  Word16 i, k, ldec, l_fin_sup, l_fin_inf;
-  Word16 h[L_SUBFR];
+  int16_t *ptr_hd, *ptr_hf, *ptr_h1, *ptr_h2;
+  int32_t cor;
+  int16_t i, k, ldec, l_fin_sup, l_fin_inf;
+  int16_t h[L_SUBFR];
 
  /* Scaling h[] for maximum precision */
 
   cor = 0;
   for(i=0; i<L_SUBFR; i++)
-    cor += H[i] * H[i];
-	cor <<= 1;
+    cor = L_mac(cor, H[i], H[i]);
 
   if(extract_h(cor) > 32000)
   {
-    for(i=0; i<L_SUBFR; i++)
-      h[i] >>= 1;
+    for(i=0; i<L_SUBFR; i++) {
+      h[i] = shr(H[i], 1);
+    }
   }
   else
   {
@@ -196,7 +190,7 @@ static void Cor_h(
   *-----------------------------------------------------------------*/
 
   l_fin_sup = MSIZE-1;
-  l_fin_inf = l_fin_sup-(Word16)1;
+  l_fin_inf = l_fin_sup-(int16_t)1;
   ldec = NB_POS+1;
 
   ptr_hd = h;
@@ -213,7 +207,7 @@ static void Cor_h(
           ptr_h1 = ptr_hd;
           ptr_h2 =  ptr_hf;
 
-          for(i=k+(Word16)1; i<NB_POS; i++ ) {
+          for(i=k+(int16_t)1; i<NB_POS; i++ ) {
 
                   cor = L_mac(cor, *ptr_h1, *ptr_h2); ptr_h1++; ptr_h2++;
                   cor = L_mac(cor, *ptr_h1, *ptr_h2); ptr_h1++; ptr_h2++;
@@ -255,7 +249,7 @@ static void Cor_h(
   ptr_hd = h;
   ptr_hf = ptr_hd + 2;
   l_fin_sup = MSIZE-1;
-  l_fin_inf = l_fin_sup-(Word16)1;
+  l_fin_inf = l_fin_sup-(int16_t)1;
   for(k=0; k<NB_POS; k++) {
 
           p4 = rri2i4 + l_fin_sup;
@@ -267,7 +261,7 @@ static void Cor_h(
           cor = 0;
           ptr_h1 = ptr_hd;
           ptr_h2 =  ptr_hf;
-          for(i=k+(Word16)1; i<NB_POS; i++ ) {
+          for(i=k+(int16_t)1; i<NB_POS; i++ ) {
 
                   cor = L_mac(cor, *ptr_h1, *ptr_h2); ptr_h1++; ptr_h2++;
                   *p4 = extract_h(cor);
@@ -312,7 +306,7 @@ static void Cor_h(
   ptr_hd = h;
   ptr_hf = ptr_hd + 3;
   l_fin_sup = MSIZE-1;
-  l_fin_inf = l_fin_sup-(Word16)1;
+  l_fin_inf = l_fin_sup-(int16_t)1;
   for(k=0; k<NB_POS; k++) {
 
           p4 = rri1i4 + l_fin_sup;
@@ -324,7 +318,7 @@ static void Cor_h(
           ptr_h1 = ptr_hd;
           ptr_h2 =  ptr_hf;
           cor = 0;
-          for(i=k+(Word16)1; i<NB_POS; i++ ) {
+          for(i=k+(int16_t)1; i<NB_POS; i++ ) {
 
                   cor = L_mac(cor, *ptr_h1, *ptr_h2); ptr_h1++; ptr_h2++;
                   *p4 = extract_h(cor);
@@ -365,7 +359,7 @@ static void Cor_h(
   ptr_hd = h;
   ptr_hf = ptr_hd + 4;
   l_fin_sup = MSIZE-1;
-  l_fin_inf = l_fin_sup-(Word16)1;
+  l_fin_inf = l_fin_sup-(int16_t)1;
   for(k=0; k<NB_POS; k++) {
 
           p3 = rri0i4 + l_fin_sup;
@@ -376,7 +370,7 @@ static void Cor_h(
           ptr_h1 = ptr_hd;
           ptr_h2 =  ptr_hf;
           cor = 0;
-          for(i=k+(Word16)1; i<NB_POS; i++ ) {
+          for(i=k+(int16_t)1; i<NB_POS; i++ ) {
 
                   cor = L_mac(cor, *ptr_h1, *ptr_h2); ptr_h1++; ptr_h2++;
                   *p3 = extract_h(cor);
@@ -405,8 +399,7 @@ static void Cor_h(
   }
   return;
 }
-
-
+
 
 /*------------------------------------------------------------------------*
  * Function  D4i40_17_fast()                                              *
@@ -426,33 +419,33 @@ static void Cor_h(
  *            4, 9, 14, 19, 24, 29, 34, 39                                *
  *------------------------------------------------------------------------*/
 
-static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
-  Word16 dn[],          /* (i)    : Correlations between h[] and Xn[].       */
-  Word16 rr[],          /* (i)    : Correlations of impulse response h[].    */
-  Word16 h[],           /* (i) Q12: Impulse response of filters.             */
-  Word16 cod[],         /* (o) Q13: Selected algebraic codeword.             */
-  Word16 y[],           /* (o) Q12: Filtered algebraic codeword.             */
-  Word16 *sign          /* (o)    : Signs of 4 pulses.                       */
+static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
+  int16_t dn[],          /* (i)    : Correlations between h[] and Xn[].       */
+  int16_t rr[],          /* (i)    : Correlations of impulse response h[].    */
+  int16_t h[],           /* (i) Q12: Impulse response of filters.             */
+  int16_t cod[],         /* (o) Q13: Selected algebraic codeword.             */
+  int16_t y[],           /* (o) Q12: Filtered algebraic codeword.             */
+  int16_t *sign          /* (o)    : Signs of 4 pulses.                       */
 )
 {
-  Word16 i0, i1, i2, i3, ip0, ip1, ip2, ip3;
-  Word16 i, j, ix, iy, track, trk, max;
-  Word16 prev_i0, i1_offset;
-  Word16 psk, ps, ps0, ps1, ps2, sq, sq2;
-  Word16 alpk, alp, alp_16;
-  Word32 s, alp0, alp1, alp2;
-  Word16 *p0, *p1, *p2, *p3, *p4;
-  Word16 sign_dn[L_SUBFR], sign_dn_inv[L_SUBFR], *psign;
-  Word16 tmp_vect[NB_POS];
-  Word16 *rri0i0, *rri1i1, *rri2i2, *rri3i3, *rri4i4;
-  Word16 *rri0i1, *rri0i2, *rri0i3, *rri0i4;
-  Word16 *rri1i2, *rri1i3, *rri1i4;
-  Word16 *rri2i3, *rri2i4;
+  int16_t i0, i1, i2, i3, ip0, ip1, ip2, ip3;
+  int16_t i, j, ix, iy, track, trk, max;
+  int16_t prev_i0, i1_offset;
+  int16_t psk, ps, ps0, ps1, ps2, sq, sq2;
+  int16_t alpk, alp, alp_16;
+  int32_t s, alp0, alp1, alp2;
+  int16_t *p0, *p1, *p2, *p3, *p4;
+  int16_t sign_dn[L_SUBFR], sign_dn_inv[L_SUBFR], *psign;
+  int16_t tmp_vect[NB_POS];
+  int16_t *rri0i0, *rri1i1, *rri2i2, *rri3i3, *rri4i4;
+  int16_t *rri0i1, *rri0i2, *rri0i3, *rri0i4;
+  int16_t *rri1i2, *rri1i3, *rri1i4;
+  int16_t *rri2i3, *rri2i4;
 
-  Word16  *ptr_rri0i3_i4;
-  Word16  *ptr_rri1i3_i4;
-  Word16  *ptr_rri2i3_i4;
-  Word16  *ptr_rri3i3_i4;
+  int16_t  *ptr_rri0i3_i4;
+  int16_t  *ptr_rri1i3_i4;
+  int16_t  *ptr_rri2i3_i4;
+  int16_t  *ptr_rri3i3_i4;
 
      /* Init pointers */
    rri0i0 = rr;
@@ -503,12 +496,12 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
     psign = sign_dn;
     if (psign[i0] < 0) psign = sign_dn_inv;
 
-    for(i1=1; i1<L_SUBFR; i1+=STEP)
+    for(i=0, i1=1; i1<L_SUBFR; i1+=STEP,i++)
     {
-      *p0 = mult(*p0, psign[i1]);   p0++;
-      *p1 = mult(*p1, psign[i1+1]); p1++;
-      *p2 = mult(*p2, psign[i1+2]); p2++;
-      *p3 = mult(*p3, psign[i1+3]); p3++;
+      p0[i] = mult(p0[i], psign[i1]);
+      p1[i] = mult(p1[i], psign[i1+1]);
+      p2[i] = mult(p2[i], psign[i1+2]);
+      p3[i] = mult(p3[i], psign[i1+3]);
     }
   }
 
@@ -521,11 +514,11 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
     psign = sign_dn;
     if (psign[i1] < 0) psign = sign_dn_inv;
 
-    for(i2=2; i2<L_SUBFR; i2+=STEP)
+    for(i=0,i2=2; i2<L_SUBFR; i2+=STEP,i++)
     {
-      *p0 = mult(*p0, psign[i2]);   p0++;
-      *p1 = mult(*p1, psign[i2+1]); p1++;
-      *p2 = mult(*p2, psign[i2+2]); p2++;
+      p0[i] = mult(p0[i], psign[i2]);
+      p1[i] = mult(p1[i], psign[i2+1]);
+      p2[i] = mult(p2[i], psign[i2+2]);
     }
   }
 
@@ -537,10 +530,10 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
     psign = sign_dn;
     if (psign[i2] < 0) psign = sign_dn_inv;
 
-    for(i3=3; i3<L_SUBFR; i3+=STEP)
+    for(i=0,i3=3; i3<L_SUBFR; i3+=STEP,i++)
     {
-      *p0 = mult(*p0, psign[i3]);   p0++;
-      *p1 = mult(*p1, psign[i3+1]); p1++;
+      p0[i] = mult(p0[i], psign[i3]);
+      p1[i] = mult(p1[i], psign[i3+1]);
     }
   }
 
@@ -610,7 +603,7 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
         alp2 = L_mac(alp2, *p1++, _1_4);
 
         sq2 = mult(ps2, ps2);
-        alp_16 = g_round(alp2);
+        alp_16 = L_round(alp2);
 
         s = L_msu(L_mult(alp,sq2),sq,alp_16);
         if (s > 0)
@@ -651,7 +644,7 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
       s = L_mult(*p0, _1_4);        p0 += NB_POS;
       s = L_mac(s, *p1, _1_4);      p1 += NB_POS;
       s = L_mac(s, *p2++, _1_8);
-      *p3++ = g_round(s);
+      *p3++ = L_round(s);
     }
 
     /* i2 loop: 8 positions in track 0 */
@@ -683,7 +676,7 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
         alp2 = L_mac(alp2, *p4++, _1_2);
 
         sq2 = mult(ps2, ps2);
-        alp_16 = g_round(alp2);
+        alp_16 = L_round(alp2);
 
         s = L_msu(L_mult(alp,sq2),sq,alp_16);
         if (s > 0)
@@ -756,7 +749,7 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
         alp2 = L_mac(alp2, *p1++, _1_4);
 
         sq2 = mult(ps2, ps2);
-        alp_16 = g_round(alp2);
+        alp_16 = L_round(alp2);
 
         s = L_msu(L_mult(alp,sq2),sq,alp_16);
         if (s > 0)
@@ -797,7 +790,7 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
       s = L_mult(*p0, _1_4);         p0 += NB_POS;
       s = L_mac(s, *p1++, _1_4);
       s = L_mac(s, *p2++, _1_8);
-      *p3++ = g_round(s);
+      *p3++ = L_round(s);
     }
 
     /* i2 loop: 8 positions in track 1 */
@@ -829,7 +822,7 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
         alp2 = L_mac(alp2, *p4++, _1_2);
 
         sq2 = mult(ps2, ps2);
-        alp_16 = g_round(alp2);
+        alp_16 = L_round(alp2);
 
         s = L_msu(L_mult(alp,sq2),sq,alp_16);
         if (s > 0)
@@ -873,6 +866,7 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
  i3 = sign_dn[ip3];
 
  /* Find the codeword corresponding to the selected positions */
+
  Set_zero(cod, L_SUBFR);
 
  cod[ip0] = shr(i0, 2);         /* From Q15 to Q13 */
@@ -881,6 +875,7 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
  cod[ip3] = shr(i3, 2);
 
  /* find the filtered codeword */
+
  Set_zero(y, ip0);
 
  if(i0 > 0)
@@ -926,4 +921,3 @@ static Word16 D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
  return i;
 }
-

@@ -1,19 +1,15 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
+/*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
 
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies
+   All rights reserved.
+*/
 
 /* Functions Corr_xy2() and Cor_h_x()   */
 
-#include "typedef.h"
+#include <stdint.h>
 #include "basic_op.h"
 #include "ld8a.h"
 
@@ -28,48 +24,62 @@ Portions of this file are derived from the following ITU standard:
  *---------------------------------------------------------------------------*/
 
 void Corr_xy2(
-      Word16 xn[],           /* (i) Q0  :Target vector.                  */
-      Word16 y1[],           /* (i) Q0  :Adaptive codebook.              */
-      Word16 y2[],           /* (i) Q12 :Filtered innovative vector.     */
-      Word16 g_coeff[],      /* (o) Q[exp]:Correlations between xn,y1,y2 */
-      Word16 exp_g_coeff[]   /* (o)       :Q-format of g_coeff[]         */
+      int16_t xn[],           /* (i) Q0  :Target vector.                  */
+      int16_t y1[],           /* (i) Q0  :Adaptive codebook.              */
+      int16_t y2[],           /* (i) Q12 :Filtered innovative vector.     */
+      int16_t g_coeff[],      /* (o) Q[exp]:Correlations between xn,y1,y2 */
+      int16_t exp_g_coeff[]   /* (o)       :Q-format of g_coeff[]         */
 )
 {
-      Word16   i,exp;
+      int16_t   i,exp;
+      int16_t   exp_y2y2,exp_xny2,exp_y1y2;
+      int16_t   y2y2,    xny2,    y1y2;
+      int32_t   L_acc;
+      int16_t   scaled_y2[L_SUBFR];       /* Q9 */
 
-      Word32   scaled_y2; /* Q9 */
-      Word32   L_accy2y2, L_accxny2, L_accy1y2;
+      /*------------------------------------------------------------------*
+       * Scale down y2[] from Q12 to Q9 to avoid overflow                 *
+       *------------------------------------------------------------------*/
+      for(i=0; i<L_SUBFR; i++) {
+         scaled_y2[i] = shr(y2[i], 3);        }
 
-      L_accy2y2 = L_accxny2 = L_accy1y2 = 0;
+      /* Compute scalar product <y2[],y2[]> */
+      L_acc = 1;                       /* Avoid case of all zeros */
       for(i=0; i<L_SUBFR; i++)
-      {
-        // Scale down y2[] from Q12 to Q9 to avoid overflow
-        scaled_y2 = y2[i] >> 3;
-        // Compute scalar product <y2[],y2[]>
-        L_accy2y2 += scaled_y2 * scaled_y2;
-        // Compute scalar product <xn[],y2[]>
-        L_accxny2 += (Word32)xn[i] * scaled_y2;
-        // Compute scalar product <y1[],y2[]>
-        L_accy1y2 += (Word32)y1[i] * scaled_y2;
-      }
-      L_accy2y2 <<= 1; L_accy2y2 +=1; /* Avoid case of all zeros */
-      L_accxny2 <<= 1; L_accxny2 +=1;
-      L_accy1y2 <<= 1; L_accy1y2 +=1;
+         L_acc = L_mac(L_acc, scaled_y2[i], scaled_y2[i]);    /* L_acc:Q19 */
 
-      exp            = norm_l(L_accy2y2);
-      g_coeff[2]     = g_round( L_accy2y2 << exp );
-      exp_g_coeff[2] = exp + 3; //add(exp, 19-16);               /* Q[19+exp-16] */
+      exp      = norm_l(L_acc);
+      y2y2     = L_round( L_shl(L_acc, exp) );
+      exp_y2y2 = add(exp, 19-16);                          /* Q[19+exp-16] */
 
-      exp            = norm_l(L_accxny2);
-      g_coeff[3]     = negate(g_round( L_accxny2 << exp ));
-      exp_g_coeff[3] = sub(add(exp, 10-16), 1);                  /* Q[10+exp-16] */
+      g_coeff[2]     = y2y2;
+      exp_g_coeff[2] = exp_y2y2;
 
-      exp            = norm_l(L_accy1y2);
-      g_coeff[4]     = g_round( L_accy1y2 << exp );
-      exp_g_coeff[4] = sub(add(exp, 10-16), 1);                  /* Q[10+exp-16] */
+      /* Compute scalar product <xn[],y2[]> */
+      L_acc = 1;                       /* Avoid case of all zeros */
+      for(i=0; i<L_SUBFR; i++)
+         L_acc = L_mac(L_acc, xn[i], scaled_y2[i]);           /* L_acc:Q10 */
+
+      exp      = norm_l(L_acc);
+      xny2     = L_round( L_shl(L_acc, exp) );
+      exp_xny2 = add(exp, 10-16);                          /* Q[10+exp-16] */
+
+      g_coeff[3]     = negate(xny2);
+      exp_g_coeff[3] = sub(exp_xny2,1);                   /* -2<xn,y2> */
+
+      /* Compute scalar product <y1[],y2[]> */
+      L_acc = 1;                       /* Avoid case of all zeros */
+      for(i=0; i<L_SUBFR; i++)
+         L_acc = L_mac(L_acc, y1[i], scaled_y2[i]);           /* L_acc:Q10 */
+
+      exp      = norm_l(L_acc);
+      y1y2     = L_round( L_shl(L_acc, exp) );
+      exp_y1y2 = add(exp, 10-16);                          /* Q[10+exp-16] */
+
+      g_coeff[4]     = y1y2;
+      exp_g_coeff[4] = sub(exp_y1y2,1);    ;                /* 2<y1,y2> */
 }
-
-
+
 /*--------------------------------------------------------------------------*
  *  Function  Cor_h_X()                                                     *
  *  ~~~~~~~~~~~~~~~~~~~                                                     *
@@ -77,15 +87,15 @@ void Corr_xy2(
  *--------------------------------------------------------------------------*/
 
 void Cor_h_X(
-     Word16 h[],        /* (i) Q12 :Impulse response of filters      */
-     Word16 X[],        /* (i)     :Target vector                    */
-     Word16 D[]         /* (o)     :Correlations between h[] and D[] */
+     int16_t h[],        /* (i) Q12 :Impulse response of filters      */
+     int16_t X[],        /* (i)     :Target vector                    */
+     int16_t D[]         /* (o)     :Correlations between h[] and D[] */
                         /*          Normalized to 13 bits            */
 )
 {
-   Word16 i, j;
-   Word32 s, max;
-   Word32 y32[L_SUBFR];
+   int16_t i, j;
+   int32_t s, max, L_temp;
+   int32_t y32[L_SUBFR];
 
    /* first keep the result on 32 bits and find absolute maximum */
 
@@ -95,25 +105,29 @@ void Cor_h_X(
    {
      s = 0;
      for (j = i; j <  L_SUBFR; j++)
-       s += (Word32)X[j] * h[j-i];
-     s <<= 1;
+       s = L_mac(s, X[j], h[j-i]);
+
      y32[i] = s;
 
-     if (s < 0) s = -s;
-     if(s > max) max = s;
+     s = L_abs(s);
+     L_temp =L_sub(s,max);
+     if(L_temp>0L) {
+        max = s;
+     }
    }
 
    /* Find the number of right shifts to do on y32[]  */
    /* so that maximum is on 13 bits                   */
 
    j = norm_l(max);
-   if( j > 16) {
+   if(j > 16) {
     j = 16;
    }
 
-   j = 18 - j;
+   j = sub(18, j);
 
-   for(i=0; i<L_SUBFR; i++)
-     D[i] = (Word16)(y32[i] >> j);
+   for(i=0; i<L_SUBFR; i++) {
+     D[i] = extract_l( L_shr(y32[i], j) );
+   }
 }
 

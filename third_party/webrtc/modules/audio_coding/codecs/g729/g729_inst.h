@@ -11,15 +11,34 @@
 #ifndef WEBRTC_MODULES_AUDIO_CODING_CODECS_G729_G729_INST_H_
 #define WEBRTC_MODULES_AUDIO_CODING_CODECS_G729_G729_INST_H_
 
-#include "g729a.h"
+#include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "ld8a.h"
+#include "dtx.h"
 
 struct WebRtcG729EncInst {
-  void *enc;
+  Pre_Process_state pre_process_state;
+  Coder_ld8a_state state;
+  int16_t frame; // frame counter
 };
 
 struct WebRtcG729DecInst {
-  UWord8 last_frm[L_PACKED_G729A];
-  void *dec;
+  Decod_ld8a_state state;
+  Post_Filter_state post_filter_state;
+  Post_Process_state post_proc_state;
+
+  int16_t  synth_buf[L_FRAME+M], *synth; // Synthesis
+  int16_t  parm[PRM_SIZE+2];             // Synthesis parameters
+  int16_t  Az_dec[MP1*2];                // Decoded Az for post-filter
+  int16_t  T2[2];                        // Pitch lag for 2 subframes
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // WEBRTC_MODULES_AUDIO_CODING_CODECS_G729_G729_INST_H_

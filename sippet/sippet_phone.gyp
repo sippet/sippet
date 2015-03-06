@@ -18,6 +18,8 @@
         '<(DEPTH)/third_party/re2/re2.gyp:*',
       ],
       'include_dirs': [
+        '<(DEPTH)/third_party/webrtc/overrides',
+        '<(DEPTH)/third_party/libjingle/overrides',
         '<(DEPTH)',
         '<(DEPTH)/third_party',
       ],

@@ -23,7 +23,7 @@
       },
       'direct_dependent_settings': {
         'include_dirs': [
-          './include',
+          './source',
         ],
       },
       'conditions': [
@@ -33,46 +33,52 @@
           ],
         }, {
           'include_dirs': [
-            './include',
+            './source',
           ],
           'sources': [
-            'include/g729a_decoder.h',
-            'include/g729a_encoder.h',
-            'include/g729a.h',
-            'include/basic_op.h',
-            'include/ld8a.h',
-            'include/oper_32b.h',
-            'include/tab_ld8a.h',
-            'include/typedef.h',
             'source/acelp_ca.c',
+            'source/basic_op.h',
             'source/bits.c',
+            'source/calcexc.c',
             'source/cod_ld8a.c',
             'source/cor_func.c',
             'source/de_acelp.c',
             'source/dec_gain.c',
             'source/dec_lag3.c',
             'source/dec_ld8a.c',
+            'source/dec_sid.c',
             'source/dspfunc.c',
+            'source/dtx.c',
+            'source/dtx.h',
             'source/filter.c',
-            'source/g729a_decoder.c',
-            'source/g729a_encoder.c',
             'source/gainpred.c',
+            'source/ld8a.h',
             'source/lpc.c',
             'source/lpcfunc.c',
             'source/lspdec.c',
             'source/lspgetq.c',
+            'source/octet.h',
             'source/oper_32b.c',
+            'source/oper_32b.h',
             'source/pitch_a.c',
             'source/postfilt.c',
             'source/post_pro.c',
             'source/p_parity.c',
             'source/pred_lt3.c',
             'source/pre_proc.c',
+            'source/qsidgain.c',
+            'source/qsidlsf.c',
             'source/qua_gain.c',
             'source/qua_lsp.c',
+            'source/sid.h',
+            'source/tab_dtx.c',
+            'source/tab_dtx.h',
             'source/tab_ld8a.c',
+            'source/tab_ld8a.h',
             'source/taming.c',
             'source/util.c',
+            'source/vad.c',
+            'source/vad.h',
           ],
         }],
         ['OS=="android" or OS=="ios"', {
@@ -99,21 +105,6 @@
       ],
     },  # target g729
     {
-      'target_name': 'g729_unittest',
-      'type': 'executable',
-      'include_dirs': [
-        '<(DEPTH)',
-      ],
-      'dependencies': [
-        'g729',
-        '<(DEPTH)/testing/gtest.gyp:gtest',
-        '<(DEPTH)/base/base.gyp:run_all_unittests',
-      ],
-      'sources': [
-        'source/g729a_unittest.cc',
-      ],
-    },  # target g729_unittest
-    {
       'target_name': 'g729_coder',
       'type': 'executable',
       'include_dirs': [
@@ -123,7 +114,7 @@
         'g729',
       ],
       'sources': [
-        'source/g729a_coder.cc',
+        'source/coder.c',
       ],
     },  # target g729_coder
     {
@@ -136,7 +127,7 @@
         'g729',
       ],
       'sources': [
-        'source/g729a_decoder.cc',
+        'source/decoder.c',
       ],
     },  # target g729_decoder
   ],

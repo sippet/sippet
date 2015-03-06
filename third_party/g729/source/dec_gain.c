@@ -1,17 +1,13 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
+/*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
 
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies
+   All rights reserved.
+*/
 
-#include "typedef.h"
+#include <stdint.h>
 #include "basic_op.h"
 #include "ld8a.h"
 #include "tab_ld8a.h"
@@ -36,48 +32,44 @@ Portions of this file are derived from the following ITU standard:
  *                                                                           *
  *---------------------------------------------------------------------------*/
 void Dec_gain(
-   Word16 index,        /* (i)     :Index of quantization.         */
-   Word16 code[],       /* (i) Q13 :Innovative vector.             */
-   Word16 L_subfr,      /* (i)     :Subframe length.               */
-   Word16 bfi,          /* (i)     :Bad frame indicator            */
-   Word16 *gain_pit,    /* (o) Q14 :Pitch gain.                    */
-   Word16 *gain_cod     /* (o) Q1  :Code gain.                     */
+   Decod_ld8a_state *st,
+   int16_t index,        /* (i)     :Index of quantization.         */
+   int16_t code[],       /* (i) Q13 :Innovative vector.             */
+   int16_t L_subfr,      /* (i)     :Subframe length.               */
+   int16_t bfi,          /* (i)     :Bad frame indicator            */
+   int16_t *gain_pit,    /* (o) Q14 :Pitch gain.                    */
+   int16_t *gain_cod     /* (o) Q1  :Code gain.                     */
 )
 {
-   Word16  index1, index2, tmp;
-   Word16  gcode0, exp_gcode0;
-   Word32  L_gbk12, L_acc;
-   void    Gain_predict( Word16 past_qua_en[], Word16 code[], Word16 L_subfr,
-                        Word16 *gcode0, Word16 *exp_gcode0 );
-   void    Gain_update( Word16 past_qua_en[], Word32 L_gbk12 );
-   void    Gain_update_erasure( Word16 past_qua_en[] );
-
-        /* Gain predictor, Past quantized energies = -14.0 in Q10 */
-
-   static Word16 past_qua_en[4] = { -14336, -14336, -14336, -14336 };
-
+   int16_t  index1, index2, tmp;
+   int16_t  gcode0, exp_gcode0;
+   int32_t  L_gbk12, L_acc, L_accb;
+   void    Gain_predict( int16_t past_qua_en[], int16_t code[], int16_t L_subfr,
+                        int16_t *gcode0, int16_t *exp_gcode0 );
+   void    Gain_update( int16_t past_qua_en[], int32_t L_gbk12 );
+   void    Gain_update_erasure( int16_t past_qua_en[] );
 
    /*-------------- Case of erasure. ---------------*/
 
    if(bfi != 0){
-      *gain_pit = (Word16)((Word32)*gain_pit * 29491L >> 15);      /* *0.9 in Q15 */
+      *gain_pit = mult( *gain_pit, 29491 );      /* *0.9 in Q15 */
       if (*gain_pit > 29491) *gain_pit = 29491;
-      *gain_cod = (Word16)((Word32)*gain_cod * 32111L >> 15);      /* *0.98 in Q15 */
+      *gain_cod = mult( *gain_cod, 32111 );      /* *0.98 in Q15 */
 
      /*----------------------------------------------*
       * update table of past quantized energies      *
       *                              (frame erasure) *
       *----------------------------------------------*/
-      Gain_update_erasure(past_qua_en);
+      Gain_update_erasure(st->past_qua_en);
 
       return;
    }
 
    /*-------------- Decode pitch gain ---------------*/
 
-   index1 = imap1[ index >> NCODE2_B ] ;
+   index1 = imap1[ shr(index,NCODE2_B) ] ;
    index2 = imap2[ index & (NCODE2-1) ] ;
-   *gain_pit = gbk1[index1][0] + gbk2[index2][0];
+   *gain_pit = add( gbk1[index1][0], gbk2[index2][0] );
 
    /*-------------- Decode codebook gain ---------------*/
 
@@ -87,22 +79,26 @@ void Dec_gain(
    *-  predicted codebook gain => gcode0[exp_gcode0]  -*
    *---------------------------------------------------*/
 
-   Gain_predict( past_qua_en, code, L_subfr, &gcode0, &exp_gcode0 );
+   Gain_predict(st->past_qua_en, code, L_subfr, &gcode0, &exp_gcode0 );
 
   /*-----------------------------------------------------------------*
    * *gain_code = (gbk1[indice1][1]+gbk2[indice2][1]) * gcode0;      *
    *-----------------------------------------------------------------*/
 
-   L_gbk12 = (Word32)gbk1[index1][1] + (Word32)gbk2[index2][1]; /* Q13 */
-   tmp = (Word16)(L_gbk12 >> 1);  /* Q12 */
-   L_acc = tmp * gcode0 << 1;             /* Q[exp_gcode0+12+1] */
+   L_acc = L_deposit_l( gbk1[index1][1] );
+   L_accb = L_deposit_l( gbk2[index2][1] );
+   L_gbk12 = L_add( L_acc, L_accb );                       /* Q13 */
+   tmp = extract_l( L_shr( L_gbk12,1 ) );                  /* Q12 */
+   L_acc = L_mult(tmp, gcode0);             /* Q[exp_gcode0+12+1] */
 
    L_acc = L_shl(L_acc, add( negate(exp_gcode0),(-12-1+1+16) ));
-   *gain_cod = (Word16)(L_acc >> 16);                          /* Q1 */
+   *gain_cod = extract_h( L_acc );                          /* Q1 */
 
   /*----------------------------------------------*
    * update table of past quantized energies      *
    *----------------------------------------------*/
-   Gain_update( past_qua_en, L_gbk12 );
-}
+   Gain_update(st->past_qua_en, L_gbk12 );
 
+   return;
+
+}
