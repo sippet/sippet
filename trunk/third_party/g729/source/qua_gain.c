@@ -1,17 +1,13 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
+/*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
 
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies
+   All rights reserved.
+*/
 
-#include "typedef.h"
+#include <stdint.h>
 #include "basic_op.h"
 #include "oper_32b.h"
 
@@ -19,11 +15,11 @@ Portions of this file are derived from the following ITU standard:
 #include "tab_ld8a.h"
 
 static void Gbk_presel(
-   Word16 best_gain[],     /* (i) [0] Q9 : unquantized pitch gain     */
+   int16_t best_gain[],     /* (i) [0] Q9 : unquantized pitch gain     */
                            /* (i) [1] Q2 : unquantized code gain      */
-   Word16 *cand1,          /* (o)    : index of best 1st stage vector */
-   Word16 *cand2,          /* (o)    : index of best 2nd stage vector */
-   Word16 gcode0           /* (i) Q4 : presearch for gain codebook    */
+   int16_t *cand1,          /* (o)    : index of best 1st stage vector */
+   int16_t *cand2,          /* (o)    : index of best 2nd stage vector */
+   int16_t gcode0           /* (i) Q4 : presearch for gain codebook    */
 );
 
 
@@ -43,32 +39,29 @@ static void Gbk_presel(
  *   Index of quantization.                                                  *
  *                                                                           *
  *--------------------------------------------------------------------------*/
-Word16 Qua_gain(
-   Word16 code[],       /* (i) Q13 :Innovative vector.             */
-   Word16 g_coeff[],    /* (i)     :Correlations <xn y1> -2<y1 y1> */
+int16_t Qua_gain(
+   Coder_ld8a_state *st,
+   int16_t code[],       /* (i) Q13 :Innovative vector.             */
+   int16_t g_coeff[],    /* (i)     :Correlations <xn y1> -2<y1 y1> */
                         /*            <y2,y2>, -2<xn,y2>, 2<y1,y2> */
-   Word16 exp_coeff[],  /* (i)     :Q-Format g_coeff[]             */
-   Word16 L_subfr,      /* (i)     :Subframe length.               */
-   Word16 *gain_pit,    /* (o) Q14 :Pitch gain.                    */
-   Word16 *gain_cod,    /* (o) Q1  :Code gain.                     */
-   Word16 tameflag      /* (i)     : set to 1 if taming is needed  */
+   int16_t exp_coeff[],  /* (i)     :Q-Format g_coeff[]             */
+   int16_t L_subfr,      /* (i)     :Subframe length.               */
+   int16_t *gain_pit,    /* (o) Q14 :Pitch gain.                    */
+   int16_t *gain_cod,    /* (o) Q1  :Code gain.                     */
+   int16_t tameflag      /* (i)     : set to 1 if taming is needed  */
 )
 {
-   Word16  i, j, index1, index2;
-   Word16  cand1, cand2;
-   Word16  exp, gcode0, exp_gcode0, gcode0_org, e_min ;
-   Word16  nume, denom, inv_denom;
-   Word16  exp1,exp2,exp_nume,exp_denom,exp_inv_denom,sft,tmp;
-   Word16  g_pitch, g2_pitch, g_code, g2_code, g_pit_cod;
-   Word16  coeff[5], coeff_lsf[5];
-   Word16  exp_min[5];
-   Word32  L_gbk12;
-   Word32  L_tmp, L_dist_min, L_tmp1, L_tmp2, L_acc, L_accb;
-   Word16  best_gain[2];
-
-        /* Gain predictor, Past quantized energies = -14.0 in Q10 */
-
- static Word16 past_qua_en[4] = { -14336, -14336, -14336, -14336 };
+   int16_t  i, j, index1, index2;
+   int16_t  cand1, cand2;
+   int16_t  exp, gcode0, exp_gcode0, gcode0_org, e_min ;
+   int16_t  nume, denom, inv_denom;
+   int16_t  exp1,exp2,exp_nume,exp_denom,exp_inv_denom,sft,tmp;
+   int16_t  g_pitch, g2_pitch, g_code, g2_code, g_pit_cod;
+   int16_t  coeff[5], coeff_lsf[5];
+   int16_t  exp_min[5];
+   int32_t  L_gbk12;
+   int32_t  L_tmp, L_dist_min, L_temp, L_tmp1, L_tmp2, L_acc, L_accb;
+   int16_t  best_gain[2];
 
   /*---------------------------------------------------*
    *-  energy due to innovation                       -*
@@ -76,7 +69,7 @@ Word16 Qua_gain(
    *-  predicted codebook gain => gcode0[exp_gcode0]  -*
    *---------------------------------------------------*/
 
-   Gain_predict( past_qua_en, code, L_subfr, &gcode0, &exp_gcode0 );
+   Gain_predict(st->past_qua_en, code, L_subfr, &gcode0, &exp_gcode0);
 
   /*-----------------------------------------------------------------*
    *  pre-selection                                                  *
@@ -99,8 +92,7 @@ Word16 Qua_gain(
    L_tmp2 = L_mult( g_coeff[4], g_coeff[4] );
    exp2   = add( add( exp_coeff[4], exp_coeff[4] ), 1 );
 
-   //if( sub(exp1, exp2)>0 ){
-   if( exp1 > exp2 ){
+   if(exp1 > exp2){
       L_tmp = L_sub( L_shr( L_tmp1, sub(exp1,exp2) ), L_tmp2 );
       exp = exp2;
    }
@@ -124,8 +116,7 @@ Word16 Qua_gain(
    L_tmp2 = L_mult( g_coeff[3], g_coeff[4] );
    exp2   = add( add( exp_coeff[3], exp_coeff[4] ), 1 );
 
-   //if( sub(exp1, exp2)>0 ){
-   if (exp1 > exp2){
+   if(exp1 > exp2){
       L_tmp = L_sub( L_shr( L_tmp1, add(sub(exp1,exp2),1 )), L_shr( L_tmp2,1 ) );
       exp = sub(exp2,1);
    }
@@ -142,7 +133,6 @@ Word16 Qua_gain(
    best_gain[0] = extract_h( L_acc );             /*-- best_gain[0]:Q9 --*/
 
    if (tameflag == 1){
-     //if(sub(best_gain[0], GPCLIP2) > 0) best_gain[0] = GPCLIP2;
      if(best_gain[0] > GPCLIP2) best_gain[0] = GPCLIP2;
    }
 
@@ -154,16 +144,13 @@ Word16 Qua_gain(
    L_tmp2 = L_mult( g_coeff[1], g_coeff[4] );
    exp2   = add( add( exp_coeff[1], exp_coeff[4] ), 1 );
 
-   //if( sub(exp1, exp2)>0 ){
-   if( exp1 > exp2 ){
+   if(exp1 > exp2){
       L_tmp = L_sub( L_shr( L_tmp1, add(sub(exp1,exp2),1) ), L_shr( L_tmp2,1 ) );
       exp = sub(exp2,1);
-      //exp = exp2--;
    }
    else{
       L_tmp = L_sub( L_shr( L_tmp1,1 ), L_shr( L_tmp2, add(sub(exp2,exp1),1) ) );
       exp = sub(exp1,1);
-      //exp = exp1--;
    }
    sft = norm_l( L_tmp );
    nume = extract_h( L_shl(L_tmp, sft) );
@@ -174,8 +161,7 @@ Word16 Qua_gain(
    best_gain[1] = extract_h( L_acc );             /*-- best_gain[1]:Q2 --*/
 
    /*--- Change Q-format of gcode0 ( Q[exp_gcode0] -> Q4 ) ---*/
-   //if( sub(exp_gcode0,4) >= 0 ){
-   if (exp_gcode0 >=4) {
+   if(exp_gcode0 >= 4){
       gcode0_org = shr( gcode0, sub(exp_gcode0,4) );
    }
    else{
@@ -235,8 +221,7 @@ Word16 Qua_gain(
 
    e_min = exp_min[0];
    for(i=1; i<5; i++){
-      //if( sub(exp_min[i], e_min) < 0 ){
-     if (exp_min[i] < e_min) {
+      if(exp_min[i] < e_min){
          e_min = exp_min[i];
       }
    }
@@ -245,7 +230,7 @@ Word16 Qua_gain(
 
    for(i=0; i<5; i++){
      j = sub( exp_min[i], e_min );
-     L_tmp = (Word32)g_coeff[i] << 16;
+     L_tmp = L_deposit_h( g_coeff[i] );
      L_tmp = L_shr( L_tmp, j );          /* L_tmp:Q[exp_g_coeff[i]+16-j] */
      L_Extract( L_tmp, &coeff[i], &coeff_lsf[i] );          /* DPF */
    }
@@ -274,19 +259,14 @@ if(tameflag == 1){
          g_pit_cod= mult(g_code,  g_pitch);      /* Q[exp_gcode0-3+14-15] */
 
          L_tmp = Mpy_32_16(coeff[0], coeff_lsf[0], g2_pitch);
-         //L_tmp = L_add(L_tmp, Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch) );
-         //L_tmp = L_add(L_tmp, Mpy_32_16(coeff[2], coeff_lsf[2], g2_code) );
-         //L_tmp = L_add(L_tmp, Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
-         //L_tmp = L_add(L_tmp, Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
-         L_tmp += Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch);
-         L_tmp += Mpy_32_16(coeff[2], coeff_lsf[2], g2_code);
-         L_tmp += Mpy_32_16(coeff[3], coeff_lsf[3], g_code);
-         L_tmp += Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod);
+         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch) );
+         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[2], coeff_lsf[2], g2_code) );
+         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
+         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
 
-         //L_temp = L_sub(L_tmp, L_dist_min);
+         L_temp = L_sub(L_tmp, L_dist_min);
 
-         //if( L_temp < 0L ){
-         if( L_tmp < L_dist_min ){
+         if( L_temp < 0L ){
             L_dist_min = L_tmp;
             index1 = add(cand1,i);
             index2 = add(cand2,j);
@@ -311,16 +291,14 @@ else{
          g_pit_cod= mult(g_code,  g_pitch);      /* Q[exp_gcode0-3+14-15] */
 
          L_tmp = Mpy_32_16(coeff[0], coeff_lsf[0], g2_pitch);
-         //L_tmp = L_add(L_tmp, Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch) );
-         //L_tmp = L_add(L_tmp, Mpy_32_16(coeff[2], coeff_lsf[2], g2_code) );
-         //L_tmp = L_add(L_tmp, Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
-         //L_tmp = L_add(L_tmp, Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
-         L_tmp += Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch);
-         L_tmp += Mpy_32_16(coeff[2], coeff_lsf[2], g2_code);
-         L_tmp += Mpy_32_16(coeff[3], coeff_lsf[3], g_code);
-         L_tmp += Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod);
+         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch) );
+         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[2], coeff_lsf[2], g2_code) );
+         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
+         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
 
-         if( L_tmp < L_dist_min ){
+         L_temp = L_sub(L_tmp, L_dist_min);
+
+         if( L_temp < 0L ){
             L_dist_min = L_tmp;
             index1 = add(cand1,i);
             index2 = add(cand2,j);
@@ -339,7 +317,9 @@ else{
   /*-----------------------------------------------------------------*
    * *gain_code = (gbk1[indice1][1]+gbk2[indice2][1]) * gcode0;      *
    *-----------------------------------------------------------------*/
-   L_gbk12 = (Word32)gbk1[index1][1] + (Word32)gbk2[index2][1]; /* Q13 */
+   L_acc = L_deposit_l( gbk1[index1][1] );
+   L_accb = L_deposit_l( gbk2[index2][1] );
+   L_gbk12 = L_add( L_acc, L_accb );                          /* Q13 */
    tmp = extract_l( L_shr( L_gbk12,1 ) );                     /* Q12 */
    L_acc = L_mult(tmp, gcode0);                /* Q[exp_gcode0+12+1] */
 
@@ -349,28 +329,28 @@ else{
   /*----------------------------------------------*
    * update table of past quantized energies      *
    *----------------------------------------------*/
-   Gain_update( past_qua_en, L_gbk12 );
+   Gain_update(st->past_qua_en, L_gbk12);
 
-   return( add( map1[index1]*(Word16)NCODE2, map2[index2] ) );
-
+   return add(map1[index1]*(int16_t)NCODE2, map2[index2]);
 }
+
 /*---------------------------------------------------------------------------*
  * Function Gbk_presel                                                       *
  * ~~~~~~~~~~~~~~~~~~~                                                       *
  *   - presearch for gain codebook -                                         *
  *---------------------------------------------------------------------------*/
 static void Gbk_presel(
-   Word16 best_gain[],     /* (i) [0] Q9 : unquantized pitch gain     */
+   int16_t best_gain[],     /* (i) [0] Q9 : unquantized pitch gain     */
                            /* (i) [1] Q2 : unquantized code gain      */
-   Word16 *cand1,          /* (o)    : index of best 1st stage vector */
-   Word16 *cand2,          /* (o)    : index of best 2nd stage vector */
-   Word16 gcode0           /* (i) Q4 : presearch for gain codebook    */
+   int16_t *cand1,          /* (o)    : index of best 1st stage vector */
+   int16_t *cand2,          /* (o)    : index of best 2nd stage vector */
+   int16_t gcode0           /* (i) Q4 : presearch for gain codebook    */
 )
 {
-   Word16    acc_h;
-   Word16    sft_x,sft_y;
-   Word32    L_acc,L_preg,L_cfbg,L_tmp,L_tmp_x,L_tmp_y;
-   Word32 L_temp;
+   int16_t    acc_h;
+   int16_t    sft_x,sft_y;
+   int32_t    L_acc,L_preg,L_cfbg,L_tmp,L_tmp_x,L_tmp_y;
+   int32_t L_temp;
 
  /*--------------------------------------------------------------------------*
    x = (best_gain[1]-(coef[0][0]*best_gain[0]+coef[1][1])*gcode0) * inv_coef;
@@ -410,23 +390,19 @@ static void Gbk_presel(
       do{
          L_temp = L_sub( L_tmp_y, L_shr(L_mult(thr1[*cand1],gcode0),sft_y));
          if(L_temp >0L  ){
-        //(*cand1) =add(*cand1,1);
-           *cand1 += 1;
+        (*cand1) =add(*cand1,1);
      }
          else               break ;
-      //} while(sub((*cand1),(NCODE1-NCAN1))<0) ;
-      } while ((*cand1) < (NCODE1-NCAN1));
+      } while(sub((*cand1),(NCODE1-NCAN1))<0) ;
       /*-- pre select codebook #2 --*/
       *cand2 = 0 ;
       do{
         L_temp = L_sub( L_tmp_x , L_shr(L_mult(thr2[*cand2],gcode0),sft_x));
          if( L_temp >0L) {
-        //(*cand2) =add(*cand2,1);
-           *cand2 += 1;
+        (*cand2) =add(*cand2,1);
      }
          else               break ;
-      //} while(sub((*cand2),(NCODE2-NCAN2))<0) ;
-      } while((*cand2) < (NCODE2-NCAN2)) ;
+      } while(sub((*cand2),(NCODE2-NCAN2))<0) ;
    }
    else{
       /*-- pre select codebook #1 --*/
@@ -434,23 +410,19 @@ static void Gbk_presel(
       do{
         L_temp = L_sub(L_tmp_y ,L_shr(L_mult(thr1[*cand1],gcode0),sft_y));
          if( L_temp <0L){
-        //(*cand1) =add(*cand1,1);
-           *cand1 += 1;
+        (*cand1) =add(*cand1,1);
      }
          else               break ;
-      //} while(sub((*cand1),(NCODE1-NCAN1))) ;
-      } while (*cand1 != (NCODE1-NCAN1)) ;
+      } while(sub((*cand1),(NCODE1-NCAN1))) ;
       /*-- pre select codebook #2 --*/
       *cand2 = 0 ;
       do{
          L_temp =L_sub(L_tmp_x ,L_shr(L_mult(thr2[*cand2],gcode0),sft_x));
          if( L_temp <0L){
-        //(*cand2) =add(*cand2,1);
-           *cand2 += 1;
+        (*cand2) =add(*cand2,1);
      }
          else               break ;
-      //} while(sub( (*cand2),(NCODE2-NCAN2))) ;
-      } while(*cand2 != (NCODE2-NCAN2)) ;
+      } while(sub( (*cand2),(NCODE2-NCAN2))) ;
    }
 
    return ;

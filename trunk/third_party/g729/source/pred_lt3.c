@@ -1,15 +1,11 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
+/*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
 
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies
+   All rights reserved.
+*/
 
 /*-------------------------------------------------------------------*
  * Function  Pred_lt_3()                                             *
@@ -22,48 +18,47 @@ Portions of this file are derived from the following ITU standard:
  *   (adaptive codebook excitation)                                  *
  *-------------------------------------------------------------------*/
 
-#include "typedef.h"
+#include <stdint.h>
 #include "basic_op.h"
 #include "ld8a.h"
 #include "tab_ld8a.h"
 
-
-/*ff_acelp_interpolate / ff_acelp_weighted_vector_sum */
 void Pred_lt_3(
-  Word16   exc[],       /* in/out: excitation buffer */
-  Word16   T0,          /* input : integer pitch lag */
-  Word16   frac,        /* input : fraction of lag   */
-  Word16   L_subfr      /* input : subframe size     */
+  int16_t   exc[],       /* in/out: excitation buffer */
+  int16_t   T0,          /* input : integer pitch lag */
+  int16_t   frac,        /* input : fraction of lag   */
+  int16_t   L_subfr      /* input : subframe size     */
 )
 {
-  Word16   i, j, k;
-  Word16   *x0, *x1, *x2, *c1, *c2;
-  Word32  s;
+  int16_t   i, j, k;
+  int16_t   *x0, *x1, *x2, *c1, *c2;
+  int32_t  s;
 
   x0 = &exc[-T0];
 
-  if (frac > 0)
+  frac = negate(frac);
+  if (frac < 0)
   {
-    frac = UP_SAMP - frac;
+    frac = add(frac, UP_SAMP);
     x0--;
   }
-  else
-    frac = -frac;
 
   for (j=0; j<L_subfr; j++)
   {
     x1 = x0++;
     x2 = x0;
     c1 = &inter_3l[frac];
-    c2 = &inter_3l[UP_SAMP - frac];
+    c2 = &inter_3l[sub(UP_SAMP,frac)];
 
     s = 0;
     for(i=0, k=0; i< L_INTER10; i++, k+=UP_SAMP)
     {
-      s = L_add(s, (Word32)x1[-i] * (Word32)c1[k] << 1);
-      s = L_add(s, (Word32)x2[i]  * (Word32)c2[k] << 1);
+      s = L_mac(s, x1[-i], c1[k]);
+      s = L_mac(s, x2[i],  c2[k]);
     }
-    exc[j] = (s + 0x8000L) >> 16;
-  }
-}
 
+    exc[j] = L_round(s);
+  }
+
+  return;
+}

@@ -12,6 +12,11 @@ vars = {
   'pjsip_trunk': 'http://svn.pjsip.org/repos/pjproject/trunk',
   'pjsip_revision': '4796',  # Corresponds to version 2.2.1
 
+  # WebRTC repository for recovering the resources dir
+  # Using the testfile32kHz.pcm for testing
+  'webrtc_trunk': 'http://webrtc.googlecode.com/svn/trunk',
+  'resources_revision': '2280',
+
   # Siphon G.729 codec was forked here 
   'siphon_trunk': 'http://siphon.googlecode.com/svn/trunk',
   'siphon_revision': '793',
@@ -28,6 +33,9 @@ deps = {
 
   'src/resources/g729a':
     Var('siphon_trunk') + '/g729a/Data@' + Var('siphon_revision'),
+
+  'src/resources/audio_coding':
+    Var('webrtc_trunk') + '/data/audio_coding@' + Var('resources_revision'),
 }
 
 hooks = [

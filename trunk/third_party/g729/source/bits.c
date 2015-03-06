@@ -1,66 +1,29 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
-   ITU-T G.729A Speech Coder    ANSI-C Source Code
-   Version 1.1    Last modified: September 1996
+/*
+   ITU-T G.729A Speech Coder with Annex B    ANSI-C Source Code
+   Version 1.3    Last modified: August 1997
 
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies,
+   Rockwell International
+   All rights reserved.
+*/
 
 /*****************************************************************************/
 /* bit stream manipulation routines                                          */
 /*****************************************************************************/
-#include "typedef.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 #include "ld8a.h"
 #include "tab_ld8a.h"
+#include "vad.h"
+#include "dtx.h"
+#include "tab_dtx.h"
+#include "octet.h"
 
-#pragma pack(1)
-struct ld8k_parms {
-#ifdef WORDS_BIGENDIAN
-  UWord8 LPC_cb1;              // 1st codebook           7 + 1 bit
-  UWord8 LPC_cb21;             // 2nd codebook           5 + 5 bit
-  UWord8 LPC_cb22 : 2;
-                               // --- 1st subframe:
-  UWord8 pitch_period1 : 6;    // pitch period                   8 bit
-  UWord8 pitch_period2 : 2;
-  UWord8 parity_check : 1;     // parity check on 1st period     1 bit
-  UWord8 cb_index11 : 5;       // codebook index1(positions)    13 bit
-  UWord8 cb_index12;
-  UWord8 cb_index2 : 4;        // codebook index2(signs)         4 bit
-  UWord8 cb_gains1 : 4;        // pitch and codebook gains   4 + 3 bit
-  UWord8 cb_gains2 : 3;
-                               // --- 2nd subframe:
-  UWord8 rel_pitch_period : 5; // pitch period(relative)         5 bit
-  UWord8 pos_cb_index11;       // codebook index1(positions)    13 bit
-  UWord8 pos_cb_index12 : 5;
-  UWord8 sign_cb_index21 : 3;  // codebook index2(signs)         4 bit
-  UWord8 sign_cb_index22 : 1;
-  UWord8 pitch_cb_gains : 7;   // pitch and codebook gains   4 + 3 bit
-#else
-  UWord8 LPC_cb1;
-  UWord8 LPC_cb21;
-  UWord8 pitch_period1 : 6;
-  UWord8 LPC_cb22 : 2;
-  UWord8 cb_index11 : 5;
-  UWord8 parity_check : 1;
-  UWord8 pitch_period2 : 2;
-  UWord8 cb_index12;
-  UWord8 cb_gains1 : 4;
-  UWord8 cb_index2 : 4;
-  UWord8 rel_pitch_period : 5;
-  UWord8 cb_gains2 : 3;
-  UWord8 pos_cb_index11;
-  UWord8 sign_cb_index21 : 3;
-  UWord8 pos_cb_index12 : 5;
-  UWord8 pitch_cb_gains : 7;
-  UWord8 sign_cb_index22 : 1;
-#endif
-};
-#pragma pack()
+/* prototypes for local functions */
+static void  int2bin(int16_t value, int16_t no_of_bits, int16_t *bitstream);
+static int16_t   bin2int(int16_t no_of_bits, int16_t *bitstream);
 
 /*----------------------------------------------------------------------------
  * prm2bits_ld8k -converts encoder parameter vector into vector of serial bits
@@ -86,29 +49,85 @@ struct ld8k_parms {
  *----------------------------------------------------------------------------
  */
 void prm2bits_ld8k(
-                    const Word16 prm[],     /* input : encoded parameters  (PRM_SIZE parameters)  */
-                    UWord8 *bits            /* output: serial bits (SERIAL_SIZE )*/
+ int16_t   prm[],           /* input : encoded parameters  (PRM_SIZE parameters)  */
+  int16_t bits[]           /* output: serial bits (SERIAL_SIZE ) bits[0] = bfi
+                                    bits[1] = 80 */
 )
 {
-  struct ld8k_parms *prms_map =
-    (struct ld8k_parms *)bits;
-  prms_map->LPC_cb1 = (UWord8)prm[0];
-  prms_map->LPC_cb21 = (UWord8)(prm[1] >> 2);
-  prms_map->LPC_cb22 = (UWord8)(prm[1] & ((1 << 2) - 1));
-  prms_map->pitch_period1 = (UWord8)(prm[2] >> 2);
-  prms_map->pitch_period2 = (UWord8)(prm[2] & ((1 << 2) - 1));
-  prms_map->parity_check = (UWord8)prm[3];
-  prms_map->cb_index11 = (UWord8)(prm[4] >> 8);
-  prms_map->cb_index12 = (UWord8)(prm[4] & ((1 << 8) - 1));
-  prms_map->cb_index2 = (UWord8)prm[5];
-  prms_map->cb_gains1 = (UWord8)(prm[6] >> 3);
-  prms_map->cb_gains2 = (UWord8)(prm[6] & ((1 << 3) - 1));
-  prms_map->rel_pitch_period = (UWord8)prm[7];
-  prms_map->pos_cb_index11 = (UWord8)(prm[8] >> 5);
-  prms_map->pos_cb_index12 = (UWord8)(prm[8] & ((1 << 5) - 1));
-  prms_map->sign_cb_index21 = (UWord8)(prm[9] >> 1);
-  prms_map->sign_cb_index22 = (UWord8)(prm[9] & ((1 << 1) - 1));
-  prms_map->pitch_cb_gains = (UWord8)(prm[10]);
+  int16_t i;
+  *bits++ = SYNC_WORD;     /* bit[0], at receiver this bits indicates BFI */
+
+  switch(prm[0]){
+
+    /* not transmitted */
+  case 0 : {
+    *bits = RATE_0;
+    break;
+  }
+
+  case 1 : {
+    *bits++ = RATE_8000;
+    for (i = 0; i < PRM_SIZE; i++) {
+      int2bin(prm[i+1], bitsno[i], bits);
+      bits += bitsno[i];
+    }
+    break;
+  }
+
+  case 2 : {
+
+#ifndef OCTET_TX_MODE
+    *bits++ = RATE_SID;
+    for (i = 0; i < 4; i++) {
+      int2bin(prm[i+1], bitsno2[i], bits);
+      bits += bitsno2[i];
+    }
+#else
+    *bits++ = RATE_SID_OCTET;
+    for (i = 0; i < 4; i++) {
+      int2bin(prm[i+1], bitsno2[i], bits);
+      bits += bitsno2[i];
+    }
+    *bits++ = BIT_0;
+#endif
+
+    break;
+  }
+
+  default : {
+    printf("Unrecognized frame type\n");
+    exit(-1);
+  }
+
+  }
+
+  return;
+}
+
+/*----------------------------------------------------------------------------
+ * int2bin convert integer to binary and write the bits bitstream array
+ *----------------------------------------------------------------------------
+ */
+static void int2bin(
+ int16_t value,             /* input : decimal value */
+ int16_t no_of_bits,        /* input : number of bits to use */
+ int16_t *bitstream       /* output: bitstream  */
+)
+{
+   int16_t *pt_bitstream;
+   int16_t   i, bit;
+
+   pt_bitstream = bitstream + no_of_bits;
+
+   for (i = 0; i < no_of_bits; i++)
+   {
+     bit = value & (int16_t)0x0001;      /* get lsb */
+     if (bit == 0)
+         *--pt_bitstream = BIT_0;
+     else
+         *--pt_bitstream = BIT_1;
+     value >>= 1;
+   }
 }
 
 /*----------------------------------------------------------------------------
@@ -116,22 +135,104 @@ void prm2bits_ld8k(
  *----------------------------------------------------------------------------
  */
 void bits2prm_ld8k(
-                   const UWord8  *bits,      /* input : serial bits (80)                       */
-                   Word16   prm[]            /* output: decoded parameters (11 parameters)     */
+ int16_t bits[],          /* input : serial bits (80)                       */
+ int16_t   prm[]          /* output: decoded parameters (11 parameters)     */
 )
 {
-  const struct ld8k_parms *prms_map =
-    (const struct ld8k_parms *)bits;
-  prm[0] = prms_map->LPC_cb1;
-  prm[1] = (prms_map->LPC_cb21 << 2) | prms_map->LPC_cb22;
-  prm[2] = (prms_map->pitch_period1 << 2) | prms_map->pitch_period2;
-  prm[3] = prms_map->parity_check;
-  prm[4] = (prms_map->cb_index11 << 8) | prms_map->cb_index12;
-  prm[5] = prms_map->cb_index2;
-  prm[6] = (prms_map->cb_gains1 << 3) | prms_map->cb_gains2;
-  prm[7] = prms_map->rel_pitch_period;
-  prm[8] = (prms_map->pos_cb_index11 << 5) | prms_map->pos_cb_index12;
-  prm[9] = (prms_map->sign_cb_index21 << 1) | prms_map->sign_cb_index22;
-  prm[10] = prms_map->pitch_cb_gains;
+  int16_t i;
+  int16_t nb_bits;
+
+  nb_bits = *bits++;        /* Number of bits in this frame       */
+
+  if(nb_bits == RATE_8000) {
+    prm[1] = 1;
+    for (i = 0; i < PRM_SIZE; i++) {
+      prm[i+2] = bin2int(bitsno[i], bits);
+      bits  += bitsno[i];
+    }
+  }
+  else
+#ifndef OCTET_TX_MODE
+    if(nb_bits == RATE_SID) {
+      prm[1] = 2;
+      for (i = 0; i < 4; i++) {
+        prm[i+2] = bin2int(bitsno2[i], bits);
+        bits += bitsno2[i];
+      }
+    }
+#else
+  /* the last bit of the SID bit stream under octet mode will be discarded */
+  if(nb_bits == RATE_SID_OCTET) {
+    prm[1] = 2;
+    for (i = 0; i < 4; i++) {
+      prm[i+2] = bin2int(bitsno2[i], bits);
+      bits += bitsno2[i];
+    }
+  }
+#endif
+
+  else {
+    prm[1] = 0;
+  }
+  return;
+
 }
 
+/*----------------------------------------------------------------------------
+ * bin2int - read specified bits from bit array  and convert to integer value
+ *----------------------------------------------------------------------------
+ */
+static int16_t bin2int(            /* output: decimal value of bit pattern */
+ int16_t no_of_bits,        /* input : number of bits to read */
+ int16_t *bitstream       /* input : array containing bits */
+)
+{
+   int16_t   value, i;
+   int16_t bit;
+
+   value = 0;
+   for (i = 0; i < no_of_bits; i++)
+   {
+     value <<= 1;
+     bit = *bitstream++;
+     if (bit == BIT_1)  value += 1;
+   }
+   return(value);
+}
+
+int16_t read_frame(FILE *f_serial, int16_t *parm)
+{
+  int16_t  i;
+  int16_t  serial[SERIAL_SIZE];          /* Serial stream               */
+
+  if(fread(serial, sizeof(short), 2, f_serial) != 2) {
+    return(0);
+  }
+
+  if(fread(&serial[2], sizeof(int16_t), (size_t)serial[1], f_serial)
+     != (size_t)serial[1]) {
+    return(0);
+  }
+
+  bits2prm_ld8k(&serial[1], parm);
+
+  /* This part was modified for version V1.3 */
+  /* for speech and SID frames, the hardware detects frame erasures
+     by checking if all bits are set to zero */
+  /* for untransmitted frames, the hardware detects frame erasures
+     by testing serial[0] */
+
+  parm[0] = 0;           /* No frame erasure */
+  if(serial[1] != 0) {
+   for (i=0; i < serial[1]; i++)
+     if (serial[i+2] == 0 ) parm[0] = 1;  /* frame erased     */
+  }
+  else if(serial[0] != SYNC_WORD) parm[0] = 1;
+
+  if(parm[1] == 1) {
+    /* check parity and put 1 in parm[5] if parity error */
+    parm[5] = Check_Parity_Pitch(parm[4], parm[5]);
+  }
+
+  return(1);
+}

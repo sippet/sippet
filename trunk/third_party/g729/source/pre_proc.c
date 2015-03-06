@@ -1,15 +1,11 @@
-// Copyright (c) 2015 The Sippet Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/****************************************************************************************
-Portions of this file are derived from the following ITU standard:
+/*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
 
    Copyright (c) 1996,
-   AT&T, France Telecom, NTT, Universite de Sherbrooke
-****************************************************************************************/
+   AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies
+   All rights reserved.
+*/
 
 /*------------------------------------------------------------------------*
  * Function Pre_Process()                                                 *
@@ -19,10 +15,12 @@ Portions of this file are derived from the following ITU standard:
  *   - Divide input by two.                                               *
  *-----------------------------------------------------------------------*/
 
-#include "typedef.h"
-#include "ld8a.h"
+#include <stdint.h>
 #include "basic_op.h"
+#include "oper_32b.h"
 
+#include "ld8a.h"
+#include "tab_ld8a.h"
 
 /*------------------------------------------------------------------------*
  * 2nd order high pass filter with cut off frequency at 140 Hz.           *
@@ -38,78 +36,49 @@ Portions of this file are derived from the following ITU standard:
  *                                                                        *
  *  Input are divided by two in the filtering process.                    *
  *-----------------------------------------------------------------------*/
-#include "g729a_encoder.h"
+
+
 /* Initialization of static values */
 
-void Init_Pre_Process(g729a_pre_process_state *state)
+void Init_Pre_Process(Pre_Process_state *st)
 {
-  state->y2_hi = 0;
-  state->y2_lo = 0;
-  state->y1_hi = 0;
-  state->y1_lo = 0;
- // state->y1 = 0;
- // state->y2 = 0;
-  state->x1   = 0;
-  state->x2   = 0;
+  st->y2_hi = 0;
+  st->y2_lo = 0;
+  st->y1_hi = 0;
+  st->y1_lo = 0;
+  st->x0   = 0;
+  st->x1   = 0;
 }
 
 
 void Pre_Process(
-  g729a_pre_process_state *state,
-  const Word16 sigin[],    /* input signal */
-  Word16 sigout[],   /* output signal */
-  Word16 lg)          /* length of signal    */
+  Pre_Process_state *st,
+  int16_t signal[],    /* input/output signal */
+  int16_t lg)          /* length of signal    */
 {
-  Word16 i;
-  Word32 L_tmp;
-  Word32 L_temp;
+  int16_t i, x2;
+  int32_t L_tmp;
 
   for(i=0; i<lg; i++)
   {
+     x2 = st->x1;
+     st->x1 = st->x0;
+     st->x0 = signal[i];
+
      /*  y[i] = b[0]*x[i]/2 + b[1]*x[i-1]/2 + b140[2]*x[i-2]/2  */
      /*                     + a[1]*y[i-1] + a[2] * y[i-2];      */
-     L_tmp     = ((Word32) state->y1_hi) * 7807;
-     L_tmp    += (Word32)(((Word32) state->y1_lo * 7807) >> 15);
-     //L_tmp = (y1 * 7807LL) >> 12;
 
-     L_tmp    += ((Word32) state->y2_hi) * (-3733);
-     L_tmp    += (Word32)(((Word32) state->y2_lo * (-3733)) >> 15);
-     //L_tmp += (y2 * -3733LL) >> 12;
+     L_tmp     = Mpy_32_16(st->y1_hi, st->y1_lo, a140[1]);
+     L_tmp     = L_add(L_tmp, Mpy_32_16(st->y2_hi, st->y2_lo, a140[2]));
+     L_tmp     = L_mac(L_tmp, st->x0, b140[0]);
+     L_tmp     = L_mac(L_tmp, st->x1, b140[1]);
+     L_tmp     = L_mac(L_tmp, x2, b140[2]);
+     L_tmp     = L_shl(L_tmp, 3);      /* Q28 --> Q31 (Q12 --> Q15) */
+     signal[i] = L_round(L_tmp);
 
-     L_tmp += 1899 * (sigin[i] - 2*state->x1/*signal[i-1]*/ + state->x2/*signal[i-2]*/);
-
-     state->x2 = state->x1;
-     state->x1 = sigin[i];
-     //signal[i] = (Word16)((L_tmp + 0x800L) >> 12);
-
-     state->y2_hi = state->y1_hi;
-     state->y2_lo = state->y1_lo;
-     //state->y2 = state->y1;
-
-     L_temp = L_tmp;
-     L_tmp = L_temp << 4;
-     if (L_tmp >> 4 != L_temp)
-     //y1 = L_tmp << 4;
-     //if (y1 >> 4 != L_tmp)
-     {
-       sigout[i] = MIN_16;
-       //y1 = (L_tmp & 0x80000000 ? MIN_32 : MAX_32);
-       if (L_temp & 0x80000000)
-       {
-         state->y1_hi = MIN_16;
-         state->y1_lo = 0x0000;
-       }
-       else
-       {
-         state->y1_hi = MAX_16;
-         state->y1_lo = 0xffff;
-       }
-     }
-     else
-     {
-       sigout[i] = (Word16)((L_tmp + 0x00008000) >> 16);
-       state->y1_hi = (Word16) (L_tmp >> 16);
-       state->y1_lo = (Word16)((L_tmp >> 1) - (state->y1_hi << 15));
-     }
+     st->y2_hi = st->y1_hi;
+     st->y2_lo = st->y1_lo;
+     L_Extract(L_tmp, &st->y1_hi, &st->y1_lo);
   }
+  return;
 }
