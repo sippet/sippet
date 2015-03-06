@@ -9,6 +9,8 @@
  */
 #include <string>
 #include <sstream>
+#include <bitset>
+#include <vector>
 
 #include "testing/gtest/include/gtest/gtest.h"
 #include "webrtc/modules/audio_coding/codecs/g729/include/g729_interface.h"
@@ -44,6 +46,167 @@ const int16_t expected_test_parm[2][PRM_SIZE] = {
     0x0056, 0x0002, 0x1fff, 0x000a, 0x0050 },
   { 0x00e0, 0x028b, 0x0050, 0x0001, 0x0141, 0x0006,
     0x004a, 0x0019, 0x1de4, 0x0000, 0x0050 },
+};
+
+std::vector<uint8_t> string2bits(const std::string& s) {
+  std::vector<uint8_t> out;
+  out.resize(s.length() / 8);
+  for (size_t i = 0; i < s.length() / 8; i++) {
+    out[i] = 0;
+    for (size_t j = 0; j < 8; j++) {
+      char bit = s[i * 8 + j];
+      if (bit == '1')
+        out[i] |= (uint8_t)(1 << (7 - j));
+    }
+  }
+  return out;
+}
+
+int16_t string2value(const std::string& s) {
+  int16_t value = 0;
+  for (size_t i = 0; i < s.length(); i++) {
+    char bit = s[i];
+    if (bit == '1')
+      value |= ((int16_t)1 << ((s.length() - 1) - i));
+  }
+  return value;
+}
+
+class TestFrame {
+ public:
+  //  0                   1                   2                   3
+  //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  // |L|      L1     |    L2   |    L3   |       P1      |P|    C1   |
+  // |0|             |         |         |               |0|         |
+  // | |0 1 2 3 4 5 6|0 1 2 3 4|0 1 2 3 4|0 1 2 3 4 5 6 7| |0 1 2 3 4|
+  // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  // |       C1      |  S1   | GA1 |  GB1  |    P2   |      C2       |
+  // |          1 1 1|       |     |       |         |               |
+  // |5 6 7 8 9 0 1 2|0 1 2 3|0 1 2|0 1 2 3|0 1 2 3 4|0 1 2 3 4 5 6 7|
+  // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  // |   C2    |  S2   | GA2 |  GB2  |
+  // |    1 1 1|       |     |       |
+  // |8 9 0 1 2|0 1 2 3|0 1 2|0 1 2 3|
+  // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+  TestFrame(const std::string& L0,
+            const std::string& L1,
+            const std::string& L2,
+            const std::string& L3,
+            const std::string& P1,
+            const std::string& P0,
+            const std::string& C1,
+            const std::string& S1,
+            const std::string& GA1,
+            const std::string& GB1,
+            const std::string& P2,
+            const std::string& C2,
+            const std::string& S2,
+            const std::string& GA2,
+            const std::string& GB2);
+  ~TestFrame();
+
+  const std::vector<uint8_t> &bits() const { return bits_; }
+  const std::vector<int16_t> &parm() const { return parm_; }
+
+ private:
+  std::bitset<1> L0_;
+  std::bitset<7> L1_;
+  std::bitset<5> L2_;
+  std::bitset<5> L3_;
+  std::bitset<8> P1_;
+  std::bitset<1> P0_;
+  std::bitset<13> C1_;
+  std::bitset<4> S1_;
+  std::bitset<3> GA1_;
+  std::bitset<4> GB1_;
+  std::bitset<5> P2_;
+  std::bitset<13> C2_;
+  std::bitset<4> S2_;
+  std::bitset<3> GA2_;
+  std::bitset<4> GB2_;
+
+  std::vector<uint8_t> bits_;
+  std::vector<int16_t> parm_;
+
+  std::vector<uint8_t> ToBits() const;
+  std::vector<int16_t> ToParm() const;
+};
+
+TestFrame::TestFrame(
+    const std::string& L0, const std::string& L1, const std::string& L2,
+    const std::string& L3, const std::string& P1, const std::string& P0,
+    const std::string& C1, const std::string& S1, const std::string& GA1,
+    const std::string& GB1, const std::string& P2, const std::string& C2,
+    const std::string& S2, const std::string& GA2, const std::string& GB2)
+	:  L0_(L0), L1_(L1), L2_(L2), L3_(L3), P1_(P1), P0_(P0), C1_(C1), S1_(S1),
+       GA1_(GA1), GB1_(GB1), P2_(P2), C2_(C2), S2_(S2), GA2_(GA2), GB2_(GB2) {
+  bits_ = ToBits();
+  parm_ = ToParm();
+}
+
+TestFrame::~TestFrame() {}
+
+std::vector<uint8_t> TestFrame::ToBits() const {
+  std::ostringstream in;
+  in << L0_ << L1_ << L2_ << L3_ << P1_ << P0_ << C1_ << S1_ << GA1_ << GB1_
+     << P2_ << C2_ << S2_ << GA2_ << GB2_;
+  return string2bits(in.str());
+}
+
+std::vector<int16_t> TestFrame::ToParm() const {
+  std::vector<int16_t> out;
+  std::stringstream prm[PRM_SIZE];
+  prm[0] << L0_ << L1_;
+  prm[1] << L2_ << L3_;
+  prm[2] << P1_;
+  prm[3] << P0_;
+  prm[4] << C1_;
+  prm[5] << S1_;
+  prm[6] << GA1_ << GB1_;
+  prm[7] << P2_;
+  prm[8] << C2_;
+  prm[9] << S2_;
+  prm[10] << GA2_ << GB2_;
+  for (size_t i = 0; i < arraysize(prm); i++)
+    out.push_back(string2value(prm[i].str()));
+  return out;
+}
+
+TestFrame test_frames[] = {
+
+  TestFrame(/* L0 (1 bit)   : */ "1",
+            /* L1 (7 bits)  : */ "1011011",
+            /* L2 (5 bits)  : */ "10101",
+            /* L3 (5 bits)  : */ "11011",
+            /* P1 (8 bits)  : */ "11011001",
+            /* P0 (1 bit)   : */ "0",
+            /* C1 (13 bits) : */ "1000010000011",
+            /* S1 (4 bits)  : */ "1101",
+            /* GA1 (3 bits) : */ "101",
+            /* GB1 (4 bits) : */ "1011",
+            /* P2 (5 bits)  : */ "10011",
+            /* C2 (13 bits) : */ "1001000101010",
+            /* S2 (4 bits)  : */ "1001",
+            /* GA2 (3 bits) : */ "110",
+            /* GB2 (4 bits) : */ "1101"),
+  
+  TestFrame(/* L0 (1 bit)   : */ "0",
+            /* L1 (7 bits)  : */ "0100100",
+            /* L2 (5 bits)  : */ "01010",
+            /* L3 (5 bits)  : */ "00100",
+            /* P1 (8 bits)  : */ "00100110",
+            /* P0 (1 bit)   : */ "1",
+            /* C1 (13 bits) : */ "0111101111100",
+            /* S1 (4 bits)  : */ "0010",
+            /* GA1 (3 bits) : */ "010",
+            /* GB1 (4 bits) : */ "0100",
+            /* P2 (5 bits)  : */ "01100",
+            /* C2 (13 bits) : */ "0110111010101",
+            /* S2 (4 bits)  : */ "0110",
+            /* GA2 (3 bits) : */ "001",
+            /* GB2 (4 bits) : */ "0010"),
 };
 
 template<typename T>
@@ -114,15 +277,15 @@ class G729BitFieldTest : public TestWithParam<
 protected:
   G729BitFieldTest();
 
-  const uint8_t *expected_bits_;
+  uint8_t expected_bits_[10];
   size_t expected_bits_size_;
-  const int16_t *expected_params_;
+  int16_t expected_params_[PRM_SIZE];
 };
 
 G729BitFieldTest::G729BitFieldTest()
-  : expected_bits_(std::get<0>(GetParam())),
-    expected_bits_size_(std::get<1>(GetParam())),
-    expected_params_(std::get<2>(GetParam())) {
+    : expected_bits_size_(std::get<1>(GetParam())) {
+  memcpy(expected_bits_, std::get<0>(GetParam()), expected_bits_size_);
+  memcpy(expected_params_, std::get<2>(GetParam()), PRM_SIZE*sizeof(int16_t));
 }
 
 // Test the bitfield encoder
@@ -151,7 +314,13 @@ INSTANTIATE_TEST_CASE_P(VariousBitFields,
                           std::make_tuple(expected_test_bits[0], 10,
                                           expected_test_parm[0]),
                           std::make_tuple(expected_test_bits[1], 10,
-                                          expected_test_parm[1])
+                                          expected_test_parm[1]),
+                          std::make_tuple(&test_frames[0].bits()[0],
+                                          test_frames[0].bits().size(),
+                                          &test_frames[0].parm()[0]),
+                          std::make_tuple(&test_frames[1].bits()[0],
+                                          test_frames[1].bits().size(),
+                                          &test_frames[1].parm()[0])
                         ));
 
 class G729Test : public TestWithParam<const char*> {
@@ -263,7 +432,7 @@ TEST_P(G729Test, G729EncodeDecode) {
   EXPECT_EQ(0, WebRtcG729_DecoderCreate(&g729_decoder_));
 
   // Initialize
-  EXPECT_EQ(0, WebRtcG729_EncoderInit(g729_encoder_));
+  EXPECT_EQ(0, WebRtcG729_EncoderInit(g729_encoder_, 0));
   EXPECT_EQ(0, WebRtcG729_DecoderInit(g729_decoder_));
 
   // Encode & decode.
@@ -290,7 +459,7 @@ TEST_P(G729Test, G729DecodeInit) {
   EXPECT_EQ(0, WebRtcG729_DecoderCreate(&g729_decoder_));
 
   // Initialize
-  EXPECT_EQ(0, WebRtcG729_EncoderInit(g729_encoder_));
+  EXPECT_EQ(0, WebRtcG729_EncoderInit(g729_encoder_, 0));
   EXPECT_EQ(0, WebRtcG729_DecoderInit(g729_decoder_));
 
   // Encode & decode.
@@ -323,7 +492,7 @@ TEST_P(G729Test, G729DecodePlc) {
   EXPECT_EQ(0, WebRtcG729_DecoderCreate(&g729_decoder_));
 
   // Initialize
-  EXPECT_EQ(0, WebRtcG729_EncoderInit(g729_encoder_));
+  EXPECT_EQ(0, WebRtcG729_EncoderInit(g729_encoder_, 0));
   EXPECT_EQ(0, WebRtcG729_DecoderInit(g729_decoder_));
 
   // Encode & decode.
@@ -355,7 +524,7 @@ TEST_P(G729Test, G729DurationEstimation) {
   EXPECT_EQ(0, WebRtcG729_DecoderCreate(&g729_decoder_));
 
   // Initialize
-  EXPECT_EQ(0, WebRtcG729_EncoderInit(g729_encoder_));
+  EXPECT_EQ(0, WebRtcG729_EncoderInit(g729_encoder_, 0));
   EXPECT_EQ(0, WebRtcG729_DecoderInit(g729_decoder_));
 
   // 10 ms. We use only first 10 ms of a 20 ms block.

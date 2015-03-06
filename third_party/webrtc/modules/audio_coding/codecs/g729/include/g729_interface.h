@@ -28,7 +28,7 @@ int16_t WebRtcG729_EncoderFree(G729EncInst* inst);
 int16_t WebRtcG729_DecoderFree(G729DecInst* inst);
 int16_t WebRtcG729_Encode(G729EncInst* encInst, const int16_t* input,
                           int16_t len, uint8_t* output);
-int16_t WebRtcG729_EncoderInit(G729EncInst* encInst);
+int16_t WebRtcG729_EncoderInit(G729EncInst* encInst, int enableDtx);
 int16_t WebRtcG729_Decode(G729DecInst* decInst, const uint8_t* encoded,
                           int16_t len, int16_t* decoded, int16_t* speechType);
 int16_t WebRtcG729_DecodePlc(G729DecInst* decInst, int16_t* decodec,

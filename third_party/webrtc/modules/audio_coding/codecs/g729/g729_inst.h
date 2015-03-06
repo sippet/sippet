@@ -25,6 +25,7 @@ struct WebRtcG729EncInst {
   Coder_ld8a_state state;
   int16_t frame; // frame counter
   int16_t parm[PRM_SIZE+1];
+  int dtx;
 };
 
 struct WebRtcG729DecInst {

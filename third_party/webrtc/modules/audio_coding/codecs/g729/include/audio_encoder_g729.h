@@ -17,10 +17,12 @@ class AudioEncoderG729 : public AudioEncoder {
   struct Config {
    public:
     explicit Config()
-        : frame_size_ms(10), num_channels(1), payload_type(18) {}
+        : frame_size_ms(10), num_channels(1),
+          payload_type(18), enable_dtx(false) {}
     int frame_size_ms;
     int num_channels;
     int payload_type;
+    bool enable_dtx;
   };
 
   AudioEncoderG729(const Config& config);
