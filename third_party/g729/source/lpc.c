@@ -50,14 +50,13 @@ void Autocorr(
     Overflow = 0;
     sum = 1;                   /* Avoid case of all zeros */
     for(i=0; i<L_WINDOW; i++) {
-      sum = L_mac(sum, y[i], y[i]);
-    }
-    if (sum == MAX_32) {
-      /* Assumes that if MAX_32 is reached, probably we had an overflow.
-       * It has a very small chance of an error here: when the previous
-       * loop results exactly MAX_32.
-       */
-      Overflow = 1;
+      //sum = L_mac(sum, y[i], y[i]);
+      sum += y[i] * y[i] << 1;
+      if (sum < 0) {
+        sum = MAX_32;
+        Overflow = 1;
+        break;
+      }
     }
 
     /* If overflow divide y[] by 4 */
