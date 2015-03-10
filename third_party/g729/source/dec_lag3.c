@@ -37,16 +37,16 @@ void WebRtcG729fix_Dec_lag3(
     {
       /* *T0 = (index+2)/3 + 19 */
 
-      *T0 = add(mult(add(index, 2), 10923), 19);
+      *T0 = WebRtcSpl_AddSatW16(mult(WebRtcSpl_AddSatW16(index, 2), 10923), 19);
 
       /* *T0_frac = index - *T0*3 + 58 */
 
-      i = add(add(*T0, *T0), *T0);
-      *T0_frac = add(sub(index, i), 58);
+      i = WebRtcSpl_AddSatW16(WebRtcSpl_AddSatW16(*T0, *T0), *T0);
+      *T0_frac = WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(index, i), 58);
     }
     else
     {
-      *T0 = sub(index, 112);
+      *T0 = WebRtcSpl_SubSatW16(index, 112);
       *T0_frac = 0;
     }
 
@@ -56,29 +56,29 @@ void WebRtcG729fix_Dec_lag3(
   {
     /* find T0_min and T0_max for 2nd subframe */
 
-    T0_min = sub(*T0, 5);
+    T0_min = WebRtcSpl_SubSatW16(*T0, 5);
     if (T0_min < pit_min)
     {
       T0_min = pit_min;
     }
 
-    T0_max = add(T0_min, 9);
+    T0_max = WebRtcSpl_AddSatW16(T0_min, 9);
     if (T0_max > pit_max)
     {
       T0_max = pit_max;
-      T0_min = sub(T0_max, 9);
+      T0_min = WebRtcSpl_SubSatW16(T0_max, 9);
     }
 
     /* i = (index+2)/3 - 1 */
     /* *T0 = i + t0_min;    */
 
-    i = sub(mult(add(index, 2), 10923), 1);
-    *T0 = add(i, T0_min);
+    i = WebRtcSpl_SubSatW16(mult(WebRtcSpl_AddSatW16(index, 2), 10923), 1);
+    *T0 = WebRtcSpl_AddSatW16(i, T0_min);
 
     /* t0_frac = index - 2 - i*3; */
 
-    i = add(add(i, i), i);
-    *T0_frac = sub(sub(index, 2), i);
+    i = WebRtcSpl_AddSatW16(WebRtcSpl_AddSatW16(i, i), i);
+    *T0_frac = WebRtcSpl_SubSatW16(WebRtcSpl_SubSatW16(index, 2), i);
   }
 
   return;

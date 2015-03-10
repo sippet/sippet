@@ -95,7 +95,7 @@ void WebRtcG729fix_Relspwed(
     tindex1[mode] = index;
 
     for( j = 0 ; j < NC ; j++ )
-      buf[j] = add( lspcb1[cand_cur][j], lspcb2[index][j] );
+      buf[j] = WebRtcSpl_AddSatW16( lspcb1[cand_cur][j], lspcb2[index][j] );
 
     WebRtcG729fix_Lsp_expand_1(buf, GAP1);
 
@@ -104,7 +104,7 @@ void WebRtcG729fix_Relspwed(
     tindex2[mode] = index;
 
     for( j = NC ; j < M ; j++ )
-      buf[j] = add( lspcb1[cand_cur][j], lspcb2[index][j] );
+      buf[j] = WebRtcSpl_AddSatW16( lspcb1[cand_cur][j], lspcb2[index][j] );
 
     WebRtcG729fix_Lsp_expand_2(buf, GAP1);
 
@@ -145,7 +145,7 @@ void WebRtcG729fix_Lsp_pre_select(
   for ( i = 0 ; i < NC0 ; i++ ) {
     L_tmp = 0;
     for ( j = 0 ; j < M ; j++ ) {
-      tmp = sub(rbuf[j], lspcb1[i][j]);
+      tmp = WebRtcSpl_SubSatW16(rbuf[j], lspcb1[i][j]);
       L_tmp = L_mac( L_tmp, tmp, tmp );
     }
 
@@ -176,7 +176,7 @@ void WebRtcG729fix_Lsp_select_1(
   int32_t L_temp;
 
   for ( j = 0 ; j < NC ; j++ )
-    buf[j] = sub(rbuf[j], lspcb1[j]);
+    buf[j] = WebRtcSpl_SubSatW16(rbuf[j], lspcb1[j]);
 
                    /* avoid the worst case. (all over flow) */
   *index = 0;
@@ -184,7 +184,7 @@ void WebRtcG729fix_Lsp_select_1(
   for ( k1 = 0 ; k1 < NC1 ; k1++ ) {
     L_dist = 0;
     for ( j = 0 ; j < NC ; j++ ) {
-      tmp = sub(buf[j], lspcb2[k1][j]);
+      tmp = WebRtcSpl_SubSatW16(buf[j], lspcb2[k1][j]);
       tmp2 = mult( wegt[j], tmp );
       L_dist = L_mac( L_dist, tmp2, tmp );
     }
@@ -216,7 +216,7 @@ void WebRtcG729fix_Lsp_select_2(
   int32_t L_temp;
 
   for ( j = NC ; j < M ; j++ )
-    buf[j] = sub(rbuf[j], lspcb1[j]);
+    buf[j] = WebRtcSpl_SubSatW16(rbuf[j], lspcb1[j]);
 
                             /* avoid the worst case. (all over flow) */
   *index = 0;
@@ -224,7 +224,7 @@ void WebRtcG729fix_Lsp_select_2(
   for ( k1 = 0 ; k1 < NC1 ; k1++ ) {
     L_dist = 0;
     for ( j = NC ; j < M ; j++ ) {
-      tmp = sub(buf[j], lspcb2[k1][j]);
+      tmp = WebRtcSpl_SubSatW16(buf[j], lspcb2[k1][j]);
       tmp2 = mult( wegt[j], tmp );
       L_dist = L_mac( L_dist, tmp2, tmp );
     }
@@ -255,7 +255,7 @@ void WebRtcG729fix_Lsp_get_tdist(
   *L_tdist = 0;
   for ( j = 0 ; j < M ; j++ ) {
     /* tmp = (buf - rbuf)*fg_sum */
-    tmp = sub( buf[j], rbuf[j] );
+    tmp = WebRtcSpl_SubSatW16( buf[j], rbuf[j] );
     tmp = mult( tmp, fg_sum[j] );
 
     /* *L_tdist += wegt * tmp * tmp */
@@ -295,14 +295,14 @@ void WebRtcG729fix_Get_wegt(
   int16_t buf[M]; /* in Q13 */
 
 
-  buf[0] = sub( flsp[1], (PI04+8192) );           /* 8192:1.0(Q13) */
+  buf[0] = WebRtcSpl_SubSatW16( flsp[1], (PI04+8192) );           /* 8192:1.0(Q13) */
 
   for ( i = 1 ; i < M-1 ; i++ ) {
-    tmp = sub( flsp[i+1], flsp[i-1] );
-    buf[i] = sub( tmp, 8192 );
+    tmp = WebRtcSpl_SubSatW16( flsp[i+1], flsp[i-1] );
+    buf[i] = WebRtcSpl_SubSatW16( tmp, 8192 );
   }
 
-  buf[M-1] = sub( (PI92-8192), flsp[M-2] );
+  buf[M-1] = WebRtcSpl_SubSatW16( (PI92-8192), flsp[M-2] );
 
   /* */
   for ( i = 0 ; i < M ; i++ ) {
@@ -316,7 +316,7 @@ void WebRtcG729fix_Get_wegt(
       L_acc = L_mult( tmp, CONST10 );             /* L_acc in Q25 */
       tmp = extract_h( L_shl( L_acc, 2 ) );       /* tmp in Q11 */
 
-      wegt[i] = add( tmp, 2048 );                 /* wegt in Q11 */
+      wegt[i] = WebRtcSpl_AddSatW16( tmp, 2048 );                 /* wegt in Q11 */
     }
   }
 

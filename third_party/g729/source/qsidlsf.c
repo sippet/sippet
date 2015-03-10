@@ -83,12 +83,12 @@ void WebRtcG729fix_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
   if (lsf[0] < L_LIMIT)
     lsf[0] = L_LIMIT;
   for (i=0 ; i < M-1 ; i++)
-    if (sub(lsf[i+1], lsf[i]) < 2*GAP3) 
-      lsf[i+1] = add(lsf[i], 2*GAP3);
+    if (WebRtcSpl_SubSatW16(lsf[i+1], lsf[i]) < 2*GAP3) 
+      lsf[i+1] = WebRtcSpl_AddSatW16(lsf[i], 2*GAP3);
   if (lsf[M-1] > M_LIMIT)
     lsf[M-1] = M_LIMIT;
   if (lsf[M-1] < lsf[M-2]) 
-    lsf[M-2] = sub(lsf[M-1], GAP3);
+    lsf[M-2] = WebRtcSpl_SubSatW16(lsf[M-1], GAP3);
 
   /* get the lsf weighting */
   WebRtcG729fix_Get_wegt(lsf, weight);
@@ -156,9 +156,9 @@ static void Qnt_e(int16_t *errlsf,    /* (i)  : error lsf vector             */
   /* generating the quantized vector */
   Copy(lspcb1[PtrTab_1[cluster[0]]], qlsf, M);
   for (i=0; i<M/2; i++)
-    qlsf[i] = add(qlsf[i], lspcb2[PtrTab_2[0][cluster[1]]][i]);
+    qlsf[i] = WebRtcSpl_AddSatW16(qlsf[i], lspcb2[PtrTab_2[0][cluster[1]]][i]);
   for (i=M/2; i<M; i++)
-    qlsf[i] = add(qlsf[i], lspcb2[PtrTab_2[1][cluster[1]]][i]);
+    qlsf[i] = WebRtcSpl_AddSatW16(qlsf[i], lspcb2[PtrTab_2[1][cluster[1]]][i]);
 
 }
 
@@ -184,7 +184,7 @@ static void New_ML_search_1(int16_t *d_data,    /* (i) : error vector           
     for (m=0; m<MQ; m++){
       acc0 = 0;
       for (l=0; l<M; l++){
-        tmp = sub(d_data[p*M+l], lspcb1[PtrTab[m]][l]);
+        tmp = WebRtcSpl_SubSatW16(d_data[p*M+l], lspcb1[PtrTab[m]][l]);
         acc0 = L_mac(acc0, tmp, tmp);
       }
       sum[p*MQ+m] = extract_h(acc0);
@@ -209,7 +209,7 @@ static void New_ML_search_1(int16_t *d_data,    /* (i) : error vector           
   /* compute the candidates */
   for (q=0; q<K; q++){
     for (l=0; l<M; l++)
-      new_d_data[q*M+l] = sub(d_data[min_indx_p[q]*M+l], 
+      new_d_data[q*M+l] = WebRtcSpl_SubSatW16(d_data[min_indx_p[q]*M+l], 
                               lspcb1[PtrTab[min_indx_m[q]]][l]);
     
     ptr_back[q] = min_indx_p[q];
@@ -245,7 +245,7 @@ static void New_ML_search_2(int16_t *d_data,    /* (i) : error vector           
         tmp1 = extract_h(L_shl(L_mult(noise_fg_sum[ptr_prd[p]][l], 
                                       noise_fg_sum[ptr_prd[p]][l]), 2));
         tmp1 = mult(tmp1, weight[l]);
-        tmp2 = sub(d_data[p*M+l], lspcb2[PtrTab[0][m]][l]);
+        tmp2 = WebRtcSpl_SubSatW16(d_data[p*M+l], lspcb2[PtrTab[0][m]][l]);
         tmp1 = extract_h(L_shl(L_mult(tmp1, tmp2), 3));
         acc0 = L_mac(acc0, tmp1, tmp2);
       }
@@ -254,7 +254,7 @@ static void New_ML_search_2(int16_t *d_data,    /* (i) : error vector           
         tmp1 = extract_h(L_shl(L_mult(noise_fg_sum[ptr_prd[p]][l], 
                                       noise_fg_sum[ptr_prd[p]][l]), 2));
         tmp1 = mult(tmp1, weight[l]);
-        tmp2 = sub(d_data[p*M+l], lspcb2[PtrTab[1][m]][l]);
+        tmp2 = WebRtcSpl_SubSatW16(d_data[p*M+l], lspcb2[PtrTab[1][m]][l]);
         tmp1 = extract_h(L_shl(L_mult(tmp1, tmp2), 3));
         acc0 = L_mac(acc0, tmp1, tmp2);
       }
@@ -280,10 +280,10 @@ static void New_ML_search_2(int16_t *d_data,    /* (i) : error vector           
   /* compute the candidates */
   for (q=0; q<K; q++){
     for (l=0; l<M/2; l++)
-      new_d_data[q*M+l] = sub(d_data[min_indx_p[q]*M+l], 
+      new_d_data[q*M+l] = WebRtcSpl_SubSatW16(d_data[min_indx_p[q]*M+l], 
                               lspcb2[PtrTab[0][min_indx_m[q]]][l]);
     for (l=M/2; l<M; l++)
-      new_d_data[q*M+l] = sub(d_data[min_indx_p[q]*M+l], 
+      new_d_data[q*M+l] = WebRtcSpl_SubSatW16(d_data[min_indx_p[q]*M+l], 
                               lspcb2[PtrTab[1][min_indx_m[q]]][l]);
     
     ptr_back[q] = min_indx_p[q];

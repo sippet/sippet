@@ -79,7 +79,7 @@ void WebRtcG729fix_Pre_Process(
      /*                     + a[1]*y[i-1] + a[2] * y[i-2];      */
 
      L_tmp     = WebRtcG729fix_Mpy_32_16(yy1_hi, yy1_lo, a140[1]);
-     L_tmp     = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(yy2_hi, yy2_lo, a140[2]));
+     L_tmp     = WebRtcSpl_AddSatW32(L_tmp, WebRtcG729fix_Mpy_32_16(yy2_hi, yy2_lo, a140[2]));
      L_tmp     = L_mac(L_tmp, xx0, b140[0]);
      L_tmp     = L_mac(L_tmp, xx1, b140[1]);
      L_tmp     = L_mac(L_tmp, x2, b140[2]);

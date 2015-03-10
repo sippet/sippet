@@ -94,12 +94,12 @@ void WebRtcG729fix_vad(vad_state *st,
   acc0 = WebRtcG729fix_L_Comp(r_h[0], r_l[0]);
   WebRtcG729fix_Log2(acc0, &exp, &frac);
   acc0 = WebRtcG729fix_Mpy_32_16(exp, frac, 9864);
-  i = sub(exp_R0, 1);
-  i = sub(i, 1);
+  i = WebRtcSpl_SubSatW16(exp_R0, 1);
+  i = WebRtcSpl_SubSatW16(i, 1);
   acc0 = L_mac(acc0, 9864, i);
   acc0 = L_shl(acc0, 11);
   ENERGY = extract_h(acc0);
-  ENERGY = sub(ENERGY, 4875);
+  ENERGY = WebRtcSpl_SubSatW16(ENERGY, 4875);
 
   /* compute the low band energy */
   acc0 = 0;
@@ -109,17 +109,17 @@ void WebRtcG729fix_vad(vad_state *st,
   acc0 = L_mac(acc0, r_h[0], lbf_corr[0]);
   WebRtcG729fix_Log2(acc0, &exp, &frac);
   acc0 = WebRtcG729fix_Mpy_32_16(exp, frac, 9864);
-  i = sub(exp_R0, 1);
-  i = sub(i, 1);
+  i = WebRtcSpl_SubSatW16(exp_R0, 1);
+  i = WebRtcSpl_SubSatW16(i, 1);
   acc0 = L_mac(acc0, 9864, i);
   acc0 = L_shl(acc0, 11);
   ENERGY_low = extract_h(acc0);
-  ENERGY_low = sub(ENERGY_low, 4875);
+  ENERGY_low = WebRtcSpl_SubSatW16(ENERGY_low, 4875);
 
   /* compute SD */
   acc0 = 0;
   for (i=0; i<M; i++){
-    j = sub(lsf[i], st->MeanLSF[i]);
+    j = WebRtcSpl_SubSatW16(lsf[i], st->MeanLSF[i]);
     acc0 = L_mac(acc0, j, j);
   }
   SD = extract_h(acc0);      /* Q15 */
@@ -128,7 +128,7 @@ void WebRtcG729fix_vad(vad_state *st,
   ZC = 0;
   for (i=ZC_START+1; i<=ZC_END; i++)
     if (mult(sigpp[i-1], sigpp[i]) < 0)
-      ZC = add(ZC, 410);     /* Q15 */
+      ZC = WebRtcSpl_AddSatW16(ZC, 410);     /* Q15 */
 
   /* Initialize and update Mins */
   if (frm_count < 129) {
@@ -138,7 +138,7 @@ void WebRtcG729fix_vad(vad_state *st,
     }
 
     if ((frm_count & 0x0007) == 0) {
-      i = sub(shr(frm_count,3),1);
+      i = WebRtcSpl_SubSatW16(shr(frm_count,3),1);
       st->Min_buffer[i] = st->Min;
       st->Min = WEBRTC_SPL_WORD16_MAX;
     }
@@ -211,13 +211,13 @@ void WebRtcG729fix_vad(vad_state *st,
         st->MeanLSF[i] = extract_h(acc0);
       }
 
-      st->MeanSE = sub(st->MeanE, 2048);   /* Q11 */
-      st->MeanSLE = sub(st->MeanE, 2458);  /* Q11 */
+      st->MeanSE = WebRtcSpl_SubSatW16(st->MeanE, 2048);   /* Q11 */
+      st->MeanSLE = WebRtcSpl_SubSatW16(st->MeanE, 2458);  /* Q11 */
     }
 
-    dSE = sub(st->MeanSE, ENERGY);
-    dSLE = sub(st->MeanSLE, ENERGY_low);
-    dSZC = sub(st->MeanSZC, ZC);
+    dSE = WebRtcSpl_SubSatW16(st->MeanSE, ENERGY);
+    dSLE = WebRtcSpl_SubSatW16(st->MeanSLE, ENERGY_low);
+    dSZC = WebRtcSpl_SubSatW16(st->MeanSZC, ZC);
 
     if(ENERGY < 3072) {
       *marker = NOISE;
@@ -227,7 +227,7 @@ void WebRtcG729fix_vad(vad_state *st,
     }
 
     st->v_flag = 0;
-    if((prev_marker==VOICE) && (*marker==NOISE) && (add(dSE,410) < 0)
+    if((prev_marker==VOICE) && (*marker==NOISE) && (WebRtcSpl_AddSatW16(dSE,410) < 0)
        && (ENERGY>3072)){
       *marker = VOICE;
       st->v_flag = 1;
@@ -237,7 +237,7 @@ void WebRtcG729fix_vad(vad_state *st,
       if((pprev_marker == VOICE) &&
          (prev_marker == VOICE) &&
          (*marker == NOISE) &&
-         (sub(abs_s(sub(st->prev_energy,ENERGY)), 614) <= 0)){
+         (WebRtcSpl_SubSatW16(abs_s(WebRtcSpl_SubSatW16(st->prev_energy,ENERGY)), 614) <= 0)){
         st->count_ext++;
         *marker = VOICE;
         st->v_flag = 1;
@@ -256,7 +256,7 @@ void WebRtcG729fix_vad(vad_state *st,
       st->count_sil++;
 
     if((*marker == VOICE) && (st->count_sil > 10) &&
-       (sub(ENERGY,st->prev_energy) <= 614)){
+       (WebRtcSpl_SubSatW16(ENERGY,st->prev_energy) <= 614)){
       *marker = NOISE;
       st->count_sil=0;
     }
@@ -264,11 +264,11 @@ void WebRtcG729fix_vad(vad_state *st,
     if(*marker == VOICE)
       st->count_sil=0;
 
-    if ((sub(ENERGY, 614) < st->MeanSE) && (frm_count > 128)
+    if ((WebRtcSpl_SubSatW16(ENERGY, 614) < st->MeanSE) && (frm_count > 128)
         && (!st->v_flag) && (rc < 19661))
       *marker = NOISE;
 
-    if ((sub(ENERGY,614) < st->MeanSE) && (rc < 24576)
+    if ((WebRtcSpl_SubSatW16(ENERGY,614) < st->MeanSE) && (rc < 24576)
         && (SD < 83)){
       st->count_update++;
       if (st->count_update < INIT_COUNT) {
@@ -344,7 +344,7 @@ void WebRtcG729fix_vad(vad_state *st,
     }
 
     if((frm_count > 128) && (((st->MeanSE < st->Min) &&
-                        (SD < 83)) || (sub(st->MeanSE, st->Min) > 2048))){
+                        (SD < 83)) || (WebRtcSpl_SubSatW16(st->MeanSE, st->Min) > 2048))){
       st->MeanSE = st->Min;
       st->count_update = 0;
     }
@@ -367,26 +367,26 @@ static int16_t MakeDec(
   acc0 = L_mult(dSZC, -14680);          /* Q15*Q23*2 = Q39 */
   acc0 = L_mac(acc0, 8192, -28521);     /* Q15*Q23*2 = Q39 */
   acc0 = L_shr(acc0, 8);                /* Q39 -> Q31 */
-  acc0 = L_add(acc0, L_deposit_h(SD));
+  acc0 = WebRtcSpl_AddSatW32(acc0, L_deposit_h(SD));
   if (acc0 > 0) return VOICE;
 
   acc0 = L_mult(dSZC, 19065);           /* Q15*Q22*2 = Q38 */
   acc0 = L_mac(acc0, 8192, -19446);     /* Q15*Q22*2 = Q38 */
   acc0 = L_shr(acc0, 7);                /* Q38 -> Q31 */
-  acc0 = L_add(acc0, L_deposit_h(SD));
+  acc0 = WebRtcSpl_AddSatW32(acc0, L_deposit_h(SD));
   if (acc0 > 0) return VOICE;
 
   /* dSE vs dSZC */
   acc0 = L_mult(dSZC, 20480);           /* Q15*Q13*2 = Q29 */
   acc0 = L_mac(acc0, 8192, 16384);      /* Q13*Q15*2 = Q29 */
   acc0 = L_shr(acc0, 2);                /* Q29 -> Q27 */
-  acc0 = L_add(acc0, L_deposit_h(dSE));
+  acc0 = WebRtcSpl_AddSatW32(acc0, L_deposit_h(dSE));
   if (acc0 < 0) return VOICE;
 
   acc0 = L_mult(dSZC, -16384);          /* Q15*Q13*2 = Q29 */
   acc0 = L_mac(acc0, 8192, 19660);      /* Q13*Q15*2 = Q29 */
   acc0 = L_shr(acc0, 2);                /* Q29 -> Q27 */
-  acc0 = L_add(acc0, L_deposit_h(dSE));
+  acc0 = WebRtcSpl_AddSatW32(acc0, L_deposit_h(dSE));
   if (acc0 < 0) return VOICE;
 
   acc0 = L_mult(dSE, 32767);            /* Q11*Q15*2 = Q27 */
@@ -407,13 +407,13 @@ static int16_t MakeDec(
   acc0 = L_mult(dSZC, -20480);          /* Q15*Q13*2 = Q29 */
   acc0 = L_mac(acc0, 8192, 22938);      /* Q13*Q15*2 = Q29 */
   acc0 = L_shr(acc0, 2);                /* Q29 -> Q27 */
-  acc0 = L_add(acc0, L_deposit_h(dSE));
+  acc0 = WebRtcSpl_AddSatW32(acc0, L_deposit_h(dSE));
   if (acc0 < 0) return VOICE;
 
   acc0 = L_mult(dSZC, 23831);           /* Q15*Q13*2 = Q29 */
   acc0 = L_mac(acc0, 4096, 31576);      /* Q12*Q16*2 = Q29 */
   acc0 = L_shr(acc0, 2);                /* Q29 -> Q27 */
-  acc0 = L_add(acc0, L_deposit_h(dSE));
+  acc0 = WebRtcSpl_AddSatW32(acc0, L_deposit_h(dSE));
   if (acc0 < 0) return VOICE;
 
   acc0 = L_mult(dSE, 32767);            /* Q11*Q15*2 = Q27 */
@@ -429,12 +429,12 @@ static int16_t MakeDec(
   /* dSLE vs dSE */
   acc0 = L_mult(dSE, -30427);           /* Q11*Q15*2 = Q27 */
   acc0 = L_mac(acc0, 256, -29959);      /* Q8*Q18*2 = Q27 */
-  acc0 = L_add(acc0, L_deposit_h(dSLE));
+  acc0 = WebRtcSpl_AddSatW32(acc0, L_deposit_h(dSLE));
   if (acc0 > 0) return VOICE;
 
   acc0 = L_mult(dSE, -23406);           /* Q11*Q15*2 = Q27 */
   acc0 = L_mac(acc0, 512, 28087);       /* Q19*Q17*2 = Q27 */
-  acc0 = L_add(acc0, L_deposit_h(dSLE));
+  acc0 = WebRtcSpl_AddSatW32(acc0, L_deposit_h(dSLE));
   if (acc0 < 0) return VOICE;
 
   acc0 = L_mult(dSE, 24576);            /* Q11*Q14*2 = Q26 */

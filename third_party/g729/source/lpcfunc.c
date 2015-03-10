@@ -40,10 +40,10 @@ void WebRtcG729fix_Lsp_Az(
   a[0] = 4096;
   for (i = 1; i <= 5; i++)
   {
-    ff1  = L_add(f1[i], f1[i-1]);               /* f1[i] += f1[i-1];         */
+    ff1  = WebRtcSpl_AddSatW32(f1[i], f1[i-1]);               /* f1[i] += f1[i-1];         */
     ff2  = L_sub(f2[i], f2[i-1]);               /* f2[i] -= f2[i-1];         */
 
-    fff1 = L_add(ff1, ff2);                     /* f1[i] + f2[i]             */
+    fff1 = WebRtcSpl_AddSatW32(ff1, ff2);                     /* f1[i] + f2[i]             */
     fff2 = L_sub(ff1, ff2);                     /* f1[i] - f2[i]             */
 
     a[i] = extract_l(L_shr_r(fff1, 13));        /* from Q24 to Q12 and * 0.5 */
@@ -85,7 +85,7 @@ static void Get_lsp_pol(int16_t *lsp, int32_t *f)
        WebRtcG729fix_L_Extract(f[-1] ,&hi, &lo);
        t0 = WebRtcG729fix_Mpy_32_16(hi, lo, *lsp);         /* t0 = f[-1] * lsp    */
        t0 = L_shl(t0, 1);
-       *f = L_add(*f, f[-2]);                /* *f += f[-2]         */
+       *f = WebRtcSpl_AddSatW32(*f, f[-2]);                /* *f += f[-2]         */
        *f = L_sub(*f, t0);                   /* *f -= t0            */
      }
      *f   = L_msu(*f, *lsp, 512);            /* *f -= lsp<<9        */
@@ -125,8 +125,8 @@ void WebRtcG729fix_Lsf_lsp(
 
     /* lsp[i] = table[ind]+ ((table[ind+1]-table[ind])*offset) / 256 */
 
-    L_tmp   = L_mult(sub(table[ind+1], table[ind]), offset);
-    lsp[i] = add(table[ind], extract_l(L_shr(L_tmp, 9)));
+    L_tmp   = L_mult(WebRtcSpl_SubSatW16(table[ind+1], table[ind]), offset);
+    lsp[i] = WebRtcSpl_AddSatW16(table[ind], extract_l(L_shr(L_tmp, 9)));
   }
 }
 
@@ -145,16 +145,16 @@ void WebRtcG729fix_Lsp_lsf(
   for(i= m-(int16_t)1; i >= 0; i--)
   {
     /* find value in table that is just greater than lsp[i] */
-    while( sub(table[ind], lsp[i]) < 0 )
+    while( WebRtcSpl_SubSatW16(table[ind], lsp[i]) < 0 )
     {
-      ind = sub(ind,1);
+      ind = WebRtcSpl_SubSatW16(ind,1);
     }
 
     /* acos(lsp[i])= ind*256 + ( ( lsp[i]-table[ind] ) * slope[ind] )/4096 */
 
-    L_tmp  = L_mult( sub(lsp[i], table[ind]) , slope[ind] );
+    L_tmp  = L_mult( WebRtcSpl_SubSatW16(lsp[i], table[ind]) , slope[ind] );
     tmp = L_round(L_shl(L_tmp, 3));     /*(lsp[i]-table[ind])*slope[ind])>>12*/
-    lsf[i] = add(tmp, shl(ind, 8));
+    lsf[i] = WebRtcSpl_AddSatW16(tmp, shl(ind, 8));
   }
 }
 
@@ -197,7 +197,7 @@ void WebRtcG729fix_Lsf_lsp2(
     /* lsp[i] = table2[ind]+ (slope_cos[ind]*offset >> 12) */
 
     L_tmp   = L_mult(slope_cos[ind], offset);   /* L_tmp in Q28 */
-    lsp[i] = add(table2[ind], extract_l(L_shr(L_tmp, 13)));
+    lsp[i] = WebRtcSpl_AddSatW16(table2[ind], extract_l(L_shr(L_tmp, 13)));
 
   }
 }
@@ -220,19 +220,19 @@ void WebRtcG729fix_Lsp_lsf2(
   for(i= m-(int16_t)1; i >= 0; i--)
   {
     /* find value in table2 that is just greater than lsp[i] */
-    while( sub(table2[ind], lsp[i]) < 0 )
+    while( WebRtcSpl_SubSatW16(table2[ind], lsp[i]) < 0 )
     {
-      ind = sub(ind,1);
+      ind = WebRtcSpl_SubSatW16(ind,1);
       if ( ind <= 0 )
         break;
     }
 
-    offset = sub(lsp[i], table2[ind]);
+    offset = WebRtcSpl_SubSatW16(lsp[i], table2[ind]);
 
     /* acos(lsp[i])= ind*512 + (slope_acos[ind]*offset >> 11) */
 
     L_tmp  = L_mult( slope_acos[ind], offset );   /* L_tmp in Q28 */
-    freq = add(shl(ind, 9), extract_l(L_shr(L_tmp, 12)));
+    freq = WebRtcSpl_AddSatW16(shl(ind, 9), extract_l(L_shr(L_tmp, 12)));
     lsf[i] = mult(freq, 25736);           /* 25736: 2.0*PI in Q12 */
 
   }
@@ -286,7 +286,7 @@ void WebRtcG729fix_Int_qlpc(
   /*  lsp[i] = lsp_new[i] * 0.5 + lsp_old[i] * 0.5 */
 
   for (i = 0; i < M; i++) {
-    lsp[i] = add(shr(lsp_new[i], 1), shr(lsp_old[i], 1));
+    lsp[i] = WebRtcSpl_AddSatW16(shr(lsp_new[i], 1), shr(lsp_old[i], 1));
   }
 
   WebRtcG729fix_Lsp_Az(lsp, Az);              /* Subframe 1 */

@@ -309,7 +309,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
 
   /* If first subframe and lag > 84 do not search fractional pitch */
 
-  if( (i_subfr == 0) && (sub(t0, 84) > 0) )
+  if( (i_subfr == 0) && (WebRtcSpl_SubSatW16(t0, 84) > 0) )
     return t0;
 
   Copy(exc, exc_tmp, L_subfr);
@@ -510,26 +510,26 @@ int16_t WebRtcG729fix_Enc_lag3(/* output: Return index of encoding */
     if (T0 <= 85)
     {
       /* index = t0*3 - 58 + t0_frac   */
-      i = add(add(T0, T0), T0);
-      index = add(sub(i, 58), T0_frac);
+      i = WebRtcSpl_AddSatW16(WebRtcSpl_AddSatW16(T0, T0), T0);
+      index = WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(i, 58), T0_frac);
     }
     else {
-      index = add(T0, 112);
+      index = WebRtcSpl_AddSatW16(T0, 112);
     }
 
     /* find T0_min and T0_max for second subframe */
 
-    *T0_min = sub(T0, 5);
+    *T0_min = WebRtcSpl_SubSatW16(T0, 5);
     if (*T0_min < pit_min)
     {
       *T0_min = pit_min;
     }
 
-    *T0_max = add(*T0_min, 9);
+    *T0_max = WebRtcSpl_AddSatW16(*T0_min, 9);
     if (*T0_max > pit_max)
     {
       *T0_max = pit_max;
-      *T0_min = sub(*T0_max, 9);
+      *T0_min = WebRtcSpl_SubSatW16(*T0_max, 9);
     }
   }
   else      /* if second subframe */
@@ -537,9 +537,9 @@ int16_t WebRtcG729fix_Enc_lag3(/* output: Return index of encoding */
 
     /* i = t0 - t0_min;               */
     /* index = i*3 + 2 + t0_frac;     */
-    i = sub(T0, *T0_min);
-    i = add(add(i, i), i);
-    index = add(add(i, 2), T0_frac);
+    i = WebRtcSpl_SubSatW16(T0, *T0_min);
+    i = WebRtcSpl_AddSatW16(WebRtcSpl_AddSatW16(i, i), i);
+    index = WebRtcSpl_AddSatW16(WebRtcSpl_AddSatW16(i, 2), T0_frac);
   }
 
 

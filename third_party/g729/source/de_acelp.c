@@ -31,25 +31,25 @@ void WebRtcG729fix_Decod_ACELP(
   /* Decode the positions */
 
   i      = index & (int16_t)7;
-  pos[0] = add(i, shl(i, 2));           /* pos0 =i*5 */
+  pos[0] = WebRtcSpl_AddSatW16(i, shl(i, 2));           /* pos0 =i*5 */
 
   index  = shr(index, 3);
   i      = index & (int16_t)7;
-  i      = add(i, shl(i, 2));           /* pos1 =i*5+1 */
-  pos[1] = add(i, 1);
+  i      = WebRtcSpl_AddSatW16(i, shl(i, 2));           /* pos1 =i*5+1 */
+  pos[1] = WebRtcSpl_AddSatW16(i, 1);
 
   index  = shr(index, 3);
   i      = index & (int16_t)7;
-  i      = add(i, shl(i, 2));           /* pos2 =i*5+1 */
-  pos[2] = add(i, 2);
+  i      = WebRtcSpl_AddSatW16(i, shl(i, 2));           /* pos2 =i*5+1 */
+  pos[2] = WebRtcSpl_AddSatW16(i, 2);
 
   index  = shr(index, 3);
   j      = index & (int16_t)1;
   index  = shr(index, 1);
   i      = index & (int16_t)7;
-  i      = add(i, shl(i, 2));           /* pos3 =i*5+3+j */
-  i      = add(i, 3);
-  pos[3] = add(i, j);
+  i      = WebRtcSpl_AddSatW16(i, shl(i, 2));           /* pos3 =i*5+3+j */
+  i      = WebRtcSpl_AddSatW16(i, 3);
+  pos[3] = WebRtcSpl_AddSatW16(i, j);
 
   /* decode the signs  and build the codeword */
 

@@ -40,7 +40,7 @@ void WebRtcG729fix_Pred_lt_3(
   frac = negate(frac);
   if (frac < 0)
   {
-    frac = add(frac, UP_SAMP);
+    frac = WebRtcSpl_AddSatW16(frac, UP_SAMP);
     x0--;
   }
 
@@ -49,7 +49,7 @@ void WebRtcG729fix_Pred_lt_3(
     x1 = x0++;
     x2 = x0;
     c1 = &inter_3l[frac];
-    c2 = &inter_3l[sub(UP_SAMP,frac)];
+    c2 = &inter_3l[WebRtcSpl_SubSatW16(UP_SAMP,frac)];
 
     s = 0;
     for(i=0, k=0; i< L_INTER10; i++, k+=UP_SAMP)

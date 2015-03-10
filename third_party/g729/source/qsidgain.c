@@ -67,13 +67,13 @@ void WebRtcG729fix_Qua_Sidgain(
     for(i=1; i<nb_ener; i++) {
       if(sh_ener[i] < sh1) sh1 = sh_ener[i];
     }
-    sh1 = add(sh1, (16-marg[nb_ener]));
+    sh1 = WebRtcSpl_AddSatW16(sh1, (16-marg[nb_ener]));
     L_x = 0L;
     for(i=0; i<nb_ener; i++) {
-      temp = sub(sh1, sh_ener[i]);
+      temp = WebRtcSpl_SubSatW16(sh1, sh_ener[i]);
       L_acc = L_deposit_l(ener[i]);
       L_acc = L_shl(L_acc, temp);
-      L_x = L_add(L_x, L_acc);
+      L_x = WebRtcSpl_AddSatW32(L_x, L_acc);
     }
     WebRtcG729fix_L_Extract(L_x, &hi, &lo);
     L_x = WebRtcG729fix_Mpy_32_16(hi, lo, fact[i]);
@@ -98,37 +98,37 @@ static int16_t Quant_Energy(
   int16_t e_tmp, temp, index;
 
   WebRtcG729fix_Log2(L_x, &exp, &frac);
-  temp = sub(exp, sh);
+  temp = WebRtcSpl_SubSatW16(exp, sh);
   e_tmp = shl(temp, 10);
-  e_tmp = add(e_tmp, mult_r(frac, 1024)); /* 2^10 x log2(L_x . 2^-sh) */
+  e_tmp = WebRtcSpl_AddSatW16(e_tmp, mult_r(frac, 1024)); /* 2^10 x log2(L_x . 2^-sh) */
   /* log2(ener) = 10log10(ener) / K */
   /* K = 10 Log2 / Log10 */
 
-  temp = sub(e_tmp, -2721);      /* -2721 -> -8dB */
+  temp = WebRtcSpl_SubSatW16(e_tmp, -2721);      /* -2721 -> -8dB */
   if(temp <= 0) {
     *enerq = -12;
     return(0);
   }
 
-  temp = sub(e_tmp, 22111);      /* 22111 -> 65 dB */  
+  temp = WebRtcSpl_SubSatW16(e_tmp, 22111);      /* 22111 -> 65 dB */  
   if(temp > 0) {
     *enerq = 66;
     return(31);
   }
 
-  temp = sub(e_tmp, 4762);       /* 4762 -> 14 dB */
+  temp = WebRtcSpl_SubSatW16(e_tmp, 4762);       /* 4762 -> 14 dB */
   if(temp <= 0){
-    e_tmp = add(e_tmp, 3401);
+    e_tmp = WebRtcSpl_AddSatW16(e_tmp, 3401);
     index = mult(e_tmp, 24);
     if (index < 1) index = 1;
-    *enerq = sub(shl(index, 2), 8);
+    *enerq = WebRtcSpl_SubSatW16(shl(index, 2), 8);
     return(index);
   }
 
-  e_tmp = sub(e_tmp, 340);
-  index = sub(shr(mult(e_tmp, 193), 2), 1);
+  e_tmp = WebRtcSpl_SubSatW16(e_tmp, 340);
+  index = WebRtcSpl_SubSatW16(shr(mult(e_tmp, 193), 2), 1);
   if (index < 6) index = 6;
-  *enerq = add(shl(index, 1), 4);
+  *enerq = WebRtcSpl_AddSatW16(shl(index, 1), 4);
   return(index);
 }
 

@@ -31,10 +31,10 @@ void WebRtcG729fix_Lsp_get_quant(
 
 
   for ( j = 0 ; j < NC ; j++ )
-    buf[j] = add( lspcb1[code0][j], lspcb2[code1][j] );
+    buf[j] = WebRtcSpl_AddSatW16( lspcb1[code0][j], lspcb2[code1][j] );
 
   for ( j = NC ; j < M ; j++ )
-    buf[j] = add( lspcb1[code0][j], lspcb2[code2][j] );
+    buf[j] = WebRtcSpl_AddSatW16( lspcb1[code0][j], lspcb2[code2][j] );
 
   WebRtcG729fix_Lsp_expand_1_2(buf, GAP1);
   WebRtcG729fix_Lsp_expand_1_2(buf, GAP2);
@@ -58,12 +58,12 @@ void WebRtcG729fix_Lsp_expand_1(
   int16_t diff;        /* Q13 */
 
   for ( j = 1 ; j < NC ; j++ ) {
-    diff = sub( buf[j-1], buf[j] );
-    tmp = shr( add( diff, gap), 1 );
+    diff = WebRtcSpl_SubSatW16( buf[j-1], buf[j] );
+    tmp = shr( WebRtcSpl_AddSatW16( diff, gap), 1 );
 
     if ( tmp >  0 ) {
-      buf[j-1] = sub( buf[j-1], tmp );
-      buf[j]   = add( buf[j], tmp );
+      buf[j-1] = WebRtcSpl_SubSatW16( buf[j-1], tmp );
+      buf[j]   = WebRtcSpl_AddSatW16( buf[j], tmp );
     }
   }
   return;
@@ -79,12 +79,12 @@ void WebRtcG729fix_Lsp_expand_2(
   int16_t diff;        /* Q13 */
 
   for ( j = NC ; j < M ; j++ ) {
-    diff = sub( buf[j-1], buf[j] );
-    tmp = shr( add( diff, gap), 1 );
+    diff = WebRtcSpl_SubSatW16( buf[j-1], buf[j] );
+    tmp = shr( WebRtcSpl_AddSatW16( diff, gap), 1 );
 
     if ( tmp > 0 ) {
-      buf[j-1] = sub( buf[j-1], tmp );
-      buf[j]   = add( buf[j], tmp );
+      buf[j-1] = WebRtcSpl_SubSatW16( buf[j-1], tmp );
+      buf[j]   = WebRtcSpl_AddSatW16( buf[j], tmp );
     }
   }
   return;
@@ -100,12 +100,12 @@ void WebRtcG729fix_Lsp_expand_1_2(
   int16_t diff;        /* Q13 */
 
   for ( j = 1 ; j < M ; j++ ) {
-    diff = sub( buf[j-1], buf[j] );
-    tmp = shr( add( diff, gap), 1 );
+    diff = WebRtcSpl_SubSatW16( buf[j-1], buf[j] );
+    tmp = shr( WebRtcSpl_AddSatW16( diff, gap), 1 );
 
     if ( tmp > 0 ) {
-      buf[j-1] = sub( buf[j-1], tmp );
-      buf[j]   = add( buf[j], tmp );
+      buf[j-1] = WebRtcSpl_SubSatW16( buf[j-1], tmp );
+      buf[j]   = WebRtcSpl_AddSatW16( buf[j], tmp );
     }
   }
   return;
@@ -222,7 +222,7 @@ void WebRtcG729fix_Lsp_stability(
     L_diff = L_sub( L_acc, L_accb );
 
     if( L_sub(L_diff, GAP3)<0L ) {
-      buf[j+1] = add( buf[j], GAP3 );
+      buf[j+1] = WebRtcSpl_AddSatW16( buf[j], GAP3 );
     }
   }
 
