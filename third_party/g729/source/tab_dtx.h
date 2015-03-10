@@ -1,3 +1,4 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Annex B     ANSI-C Source Code
    Version 1.3    Last modified: August 1997

@@ -1,3 +1,4 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
@@ -53,9 +54,9 @@ void Init_Pre_Process(Pre_Process_state *st)
 
 void Pre_Process(
   Pre_Process_state *st,
-  const int16_t sigin[], /* input signal */
-  int16_t sigout[],      /* output signal */
-  int16_t lg)            /* length of signal    */
+  const int16_t sigin[], /* Input signal        */
+  int16_t sigout[],      /* Output signal       */
+  int16_t lg)            /* Length of signal    */
 {
   int16_t i, x2;
   int32_t L_tmp;

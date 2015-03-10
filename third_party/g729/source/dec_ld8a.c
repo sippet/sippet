@@ -1,6 +1,7 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder with Annex B    ANSI-C Source Code
-   Version 1.3    Last modified: August 1997
+   Version 1.5    Last modified: October 2006 
 
    Copyright (c) 1996,
    AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies,
@@ -125,7 +126,10 @@ void Decod_ld8a(
   ftyp = *parm;
 
   if(bfi == 1) {
-    if(st->past_ftyp == 1) ftyp = 1;
+    if(st->past_ftyp == 1) {
+      ftyp = 1;
+      parm[4] = 1;    /* G.729 maintenance */
+    }
     else ftyp = 0;
     *parm = ftyp;  /* modification introduced in version V1.3 */
   }

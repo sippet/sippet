@@ -1,3 +1,4 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /* G.729A  Version 1.1    Last modified: September 1996 */
 
 /*

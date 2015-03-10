@@ -1,3 +1,4 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder with Annex B    ANSI-C Source Code
    Version 1.3    Last modified: August 1997
@@ -50,7 +51,7 @@ void Autocorr(
     Overflow = 0;
     sum = 1;                   /* Avoid case of all zeros */
     for(i=0; i<L_WINDOW; i++) {
-      //sum = L_mac(sum, y[i], y[i]);
+      /* sum = L_mac(sum, y[i], y[i]); */
       sum += y[i] * y[i] << 1;
       if (sum < 0) {
         sum = MAX_32;
@@ -352,7 +353,7 @@ void Az_lsp(
  int16_t x, y, sign, exp;
  int16_t *coef;
  int16_t f1[M/2+1], f2[M/2+1];
- int32_t L_temp1, L_temp2;
+ int32_t t0, L_temp1, L_temp2;
  int16_t (*pChebps)(int16_t x, int16_t f[], int16_t n);
 
 /*-------------------------------------------------------------*
@@ -376,7 +377,7 @@ void Az_lsp(
 
  for (i = 0; i< NC; i++)
  {
-	 L_temp1 = (int32_t)a[i+1];
+   L_temp1 = (int32_t)a[i+1];
    L_temp2 = (int32_t)a[M-i];
 
    /* x = (a[i+1] + a[M-i]) >> 1        */
@@ -440,17 +441,16 @@ void Az_lsp(
    xlow  = grid[j];
    ylow  = (*pChebps)(xlow,coef,NC);
 
-   if (((int32_t)ylow*yhigh) <= 0)
+   if (L_mult(ylow ,yhigh) <= 0)
    {
      /* divide 2 times the interval */
      for (i = 0; i < 2; i++)
      {
-       /* xmid = (xlow + xhigh)/2 */
-			 xmid = (xlow >> 1) + (xhigh >> 1);
+       xmid = add( shr(xlow, 1) , shr(xhigh, 1)); /* xmid = (xlow + xhigh)/2 */
 
        ymid = (*pChebps)(xmid,coef,NC);
 
-       if ( ((int32_t)ylow*ymid) <= (int32_t)0)
+       if (L_mult(ylow,ymid) <= (int32_t)0)
        {
          yhigh = ymid;
          xhigh = xmid;
@@ -467,8 +467,8 @@ void Az_lsp(
      *    xint = xlow - ylow*(xhigh-xlow)/(yhigh-ylow);            *
      *-------------------------------------------------------------*/
 
-     x   = xhigh - xlow;
-     y   = yhigh - ylow;
+     x   = sub(xhigh, xlow);
+     y   = sub(yhigh, ylow);
 
      if(y == 0)
      {
@@ -479,15 +479,17 @@ void Az_lsp(
        sign= y;
        y   = abs_s(y);
        exp = norm_s(y);
-       y <<= exp;
+       y   = shl(y, exp);
        y   = div_s( (int16_t)16383, y);
-       /* y= (xhigh-xlow)/(yhigh-ylow) in Q11 */
-			 y = ((int32_t)x * (int32_t)y) >> (19 - exp);
+       t0  = L_mult(x, y);
+       t0  = L_shr(t0, sub(20, exp) );
+       y   = extract_l(t0);            /* y= (xhigh-xlow)/(yhigh-ylow) in Q11 */
 
-       if(sign < 0) y = -y;
+       if(sign < 0) y = negate(y);
 
-       /* xint = xlow - ylow*y */
-       xint = xlow - (int16_t)(((int32_t) ylow * y) >> 10);
+       t0   = L_mult(ylow, y);                  /* result in Q26 */
+       t0   = L_shr(t0, 11);                    /* result in Q15 */
+       xint = sub(xlow, extract_l(t0));         /* xint = xlow - ylow*y */
      }
 
      lsp[nf] = xint;

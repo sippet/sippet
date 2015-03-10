@@ -1,3 +1,4 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder with Annex B    ANSI-C Source Code
    Version 1.3    Last modified: August 1997
@@ -62,7 +63,7 @@
  *   Function  Init_Coder_ld8a                                     *
  *            ~~~~~~~~~~~~~~~                                      *
  *                                                                 *
- *  Init_Coder_ld8a();                                         *
+ *  Init_Coder_ld8a();                                             *
  *                                                                 *
  *   ->Initialization of variables for the coder section.          *
  *       - initialize pointers to speech buffer                    *
@@ -138,7 +139,7 @@ void Init_Coder_ld8a(Coder_ld8a_state *st)
 /*-----------------------------------------------------------------*
  *   Functions Coder_ld8a                                          *
  *            ~~~~~~~~~~                                           *
- *  Coder_ld8a(int16_t ana[]);                                      *
+ *  Coder_ld8a(int16_t ana[]);                                     *
  *                                                                 *
  *   ->Main coder function.                                        *
  *                                                                 *

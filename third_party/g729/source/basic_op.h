@@ -1,6 +1,7 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder with Annex B    ANSI-C Source Code
-   Version 1.3    Last modified: August 1997
+   Version 1.5    Last modified: October 2006
 
    Copyright (c) 1996,
    AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies,

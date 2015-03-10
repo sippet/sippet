@@ -1,6 +1,7 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder with Annex B    ANSI-C Source Code
-   Version 1.4    Last modified: November 2000
+   Version 1.5    Last modified: October 2006
 
    Copyright (c) 1996,
    AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies,
@@ -53,7 +54,7 @@ int main(int argc, char *argv[] )
   printf("\n");
   printf("------------------ Fixed point C simulation --------------------\n");
   printf("\n");
-  printf("------------------       Version 1.4       --------------------\n");
+  printf("------------ Version 1.5 (Release 2, November 2006) ------------\n");
   printf("\n");
 
    /* Passed arguments */
@@ -130,7 +131,7 @@ int main(int argc, char *argv[] )
     }
 
     Post_Filter(&post_filter_state, synth, Az_dec, T2, Vad); /* Post-filter */
-    Post_Process(&post_proc_state, synth, L_FRAME);
+    Post_Process(&post_proc_state, synth, synth, L_FRAME);
 
     fwrite(synth, sizeof(short), L_FRAME, f_syn);
 
