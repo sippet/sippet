@@ -97,7 +97,7 @@ static int16_t Quant_Energy(
   int16_t exp, frac;
   int16_t e_tmp, temp, index;
 
-  Log2(L_x, &exp, &frac);
+  WebRtcG729fix_Log2(L_x, &exp, &frac);
   temp = sub(exp, sh);
   e_tmp = shl(temp, 10);
   e_tmp = add(e_tmp, mult_r(frac, 1024)); /* 2^10 x log2(L_x . 2^-sh) */

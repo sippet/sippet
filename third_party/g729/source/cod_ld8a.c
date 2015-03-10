@@ -13,12 +13,12 @@
  *   Functions Coder_ld8a and Init_Coder_ld8a                      *
  *             ~~~~~~~~~~     ~~~~~~~~~~~~~~~                      *
  *                                                                 *
- *  Init_Coder_ld8a();                                             *
+ *  WebRtcG729fix_Init_Coder_ld8a();                               *
  *                                                                 *
  *   ->Initialization of variables for the coder section.          *
  *                                                                 *
  *                                                                 *
- *  Coder_ld8a(int16_t ana[]);                                     *
+ *  WebRtcG729fix_Coder_ld8a(int16_t ana[]);                       *
  *                                                                 *
  *   ->Main coder function.                                        *
  *                                                                 *
@@ -63,7 +63,7 @@
  *   Function  Init_Coder_ld8a                                     *
  *            ~~~~~~~~~~~~~~~                                      *
  *                                                                 *
- *  Init_Coder_ld8a();                                             *
+ *  WebRtcG729fix_Init_Coder_ld8a();                               *
  *                                                                 *
  *   ->Initialization of variables for the coder section.          *
  *       - initialize pointers to speech buffer                    *
@@ -72,7 +72,7 @@
  *                                                                 *
  *-----------------------------------------------------------------*/
 
-void Init_Coder_ld8a(Coder_ld8a_state *st)
+void WebRtcG729fix_Init_Coder_ld8a(Coder_ld8a_state *st)
 {
 
   /*----------------------------------------------------------------------*
@@ -117,8 +117,8 @@ void Init_Coder_ld8a(Coder_ld8a_state *st)
   /* Initialize lsp_old_q[] */
 
   Copy(st->lsp_old, st->lsp_old_q, M);
-  Lsp_encw_reset(st);
-  Init_exc_err(st->L_exc_err);
+  WebRtcG729fix_Lsp_encw_reset(st);
+  WebRtcG729fix_Init_exc_err(st->L_exc_err);
 
   /* For G.729B */
   /* Initialize VAD/DTX parameters */
@@ -139,7 +139,7 @@ void Init_Coder_ld8a(Coder_ld8a_state *st)
 /*-----------------------------------------------------------------*
  *   Functions Coder_ld8a                                          *
  *            ~~~~~~~~~~                                           *
- *  Coder_ld8a(int16_t ana[]);                                     *
+ *  WebRtcG729fix_Coder_ld8a(int16_t ana[]);                       *
  *                                                                 *
  *   ->Main coder function.                                        *
  *                                                                 *
@@ -155,7 +155,7 @@ void Init_Coder_ld8a(Coder_ld8a_state *st)
  *                                                                 *
  *-----------------------------------------------------------------*/
 
-void Coder_ld8a(
+void WebRtcG729fix_Coder_ld8a(
      Coder_ld8a_state *st,
      int16_t ana[],       /* output  : Analysis parameters */
      int16_t frame,       /* input   : frame counter       */
@@ -214,19 +214,19 @@ void Coder_ld8a(
     int16_t exp_R0, Vad;
 
     /* LP analysis */
-    Autocorr(st->p_window, NP, r_h, r_l, &exp_R0); /* Autocorrelations */
+    WebRtcG729fix_Autocorr(st->p_window, NP, r_h, r_l, &exp_R0); /* Autocorrelations */
     Copy(r_h, rh_nbe, MP1);
     Lag_window(NP, r_h, r_l);                      /* Lag windowing    */
-    Levinson(st, r_h, r_l, Ap_t, rc, &temp);       /* Levinson Durbin  */
-    Az_lsp(Ap_t, lsp_new, st->lsp_old);            /* From A(z) to lsp */
+    WebRtcG729fix_Levinson(st, r_h, r_l, Ap_t, rc, &temp);       /* Levinson Durbin  */
+    WebRtcG729fix_Az_lsp(Ap_t, lsp_new, st->lsp_old);            /* From A(z) to lsp */
 
     /* For G.729B */
     /* ------ VAD ------- */
-    Lsp_lsf(lsp_new, lsf_new, M);
+    WebRtcG729fix_Lsp_lsf(lsp_new, lsf_new, M);
     vad(&st->vad_state, rc[1], lsf_new, r_h, r_l, exp_R0, st->p_window, frame, 
         st->pastVad, st->ppastVad, &Vad);
 
-    Update_cng(st, rh_nbe, exp_R0, Vad);
+    WebRtcG729fix_Update_cng(st, rh_nbe, exp_R0, Vad);
     
     /* ---------------------- */
     /* Case of Inactive frame */
@@ -234,9 +234,9 @@ void Coder_ld8a(
 
     if ((Vad == 0) && (vad_enable == 1)){
 
-      Get_freq_prev(st, lsfq_mem);
-      Cod_cng(st, st->exc, st->pastVad, st->lsp_old_q, Aq_t, ana, lsfq_mem, &st->seed);
-      Update_freq_prev(st, lsfq_mem);
+      WebRtcG729fix_Get_freq_prev(st, lsfq_mem);
+      WebRtcG729fix_Cod_cng(st, st->exc, st->pastVad, st->lsp_old_q, Aq_t, ana, lsfq_mem, &st->seed);
+      WebRtcG729fix_Update_freq_prev(st, lsfq_mem);
       st->ppastVad = st->pastVad;
       st->pastVad = Vad;
 
@@ -245,22 +245,22 @@ void Coder_ld8a(
       for(i_subfr=0; i_subfr < L_FRAME; i_subfr += L_SUBFR) {
         
         /* Residual signal in xn */
-        Residu(Aq, &st->speech[i_subfr], xn, L_SUBFR);
+        WebRtcG729fix_Residu(Aq, &st->speech[i_subfr], xn, L_SUBFR);
         
-        Weight_Az(Aq, GAMMA1, M, Ap_t);
+        WebRtcG729fix_Weight_Az(Aq, GAMMA1, M, Ap_t);
         
         /* Compute wsp and mem_w */
         Ap = Ap_t + MP1;
         Ap[0] = 4096;
         for(i=1; i<=M; i++)    /* Ap[i] = Ap_t[i] - 0.7 * Ap_t[i-1]; */
           Ap[i] = sub(Ap_t[i], mult(Ap_t[i-1], 22938));
-        Syn_filt(Ap, xn, &st->wsp[i_subfr], L_SUBFR, st->mem_w, 1);
+        WebRtcG729fix_Syn_filt(Ap, xn, &st->wsp[i_subfr], L_SUBFR, st->mem_w, 1);
         
         /* Compute mem_w0 */
         for(i=0; i<L_SUBFR; i++) {
           xn[i] = sub(xn[i], st->exc[i_subfr+i]);  /* residu[] - exc[] */
         }
-        Syn_filt(Ap_t, xn, xn, L_SUBFR, st->mem_w0, 1);
+        WebRtcG729fix_Syn_filt(Ap_t, xn, xn, L_SUBFR, st->mem_w0, 1);
                 
         Aq += MP1;
       }
@@ -289,7 +289,7 @@ void Coder_ld8a(
     st->pastVad = Vad;
 
     /* LSP quantization */
-    Qua_lsp(st, lsp_new, lsp_new_q, ana);
+    WebRtcG729fix_Qua_lsp(st, lsp_new, lsp_new_q, ana);
     ana += 2;                         /* Advance analysis parameters pointer */
 
     /*--------------------------------------------------------------------*
@@ -297,12 +297,12 @@ void Coder_ld8a(
      * The interpolated parameters are in array Aq_t[].                   *
      *--------------------------------------------------------------------*/
 
-    Int_qlpc(st->lsp_old_q, lsp_new_q, Aq_t);
+    WebRtcG729fix_Int_qlpc(st->lsp_old_q, lsp_new_q, Aq_t);
 
     /* Compute A(z/gamma) */
 
-    Weight_Az(&Aq_t[0],   GAMMA1, M, &Ap_t[0]);
-    Weight_Az(&Aq_t[MP1], GAMMA1, M, &Ap_t[MP1]);
+    WebRtcG729fix_Weight_Az(&Aq_t[0],   GAMMA1, M, &Ap_t[0]);
+    WebRtcG729fix_Weight_Az(&Aq_t[MP1], GAMMA1, M, &Ap_t[MP1]);
 
     /* update the LSPs for the next frame */
 
@@ -315,8 +315,8 @@ void Coder_ld8a(
   * - Find the open-loop pitch delay                                     *
   *----------------------------------------------------------------------*/
 
-  Residu(&Aq_t[0], &st->speech[0], &st->exc[0], L_SUBFR);
-  Residu(&Aq_t[MP1], &st->speech[L_SUBFR], &st->exc[L_SUBFR], L_SUBFR);
+  WebRtcG729fix_Residu(&Aq_t[0], &st->speech[0], &st->exc[0], L_SUBFR);
+  WebRtcG729fix_Residu(&Aq_t[MP1], &st->speech[L_SUBFR], &st->exc[L_SUBFR], L_SUBFR);
 
   {
     int16_t Ap1[MP1];
@@ -325,17 +325,17 @@ void Coder_ld8a(
     Ap1[0] = 4096;
     for(i=1; i<=M; i++)    /* Ap1[i] = Ap[i] - 0.7 * Ap[i-1]; */
        Ap1[i] = sub(Ap[i], mult(Ap[i-1], 22938));
-    Syn_filt(Ap1, &st->exc[0], &st->wsp[0], L_SUBFR, st->mem_w, 1);
+    WebRtcG729fix_Syn_filt(Ap1, &st->exc[0], &st->wsp[0], L_SUBFR, st->mem_w, 1);
 
     Ap += MP1;
     for(i=1; i<=M; i++)    /* Ap1[i] = Ap[i] - 0.7 * Ap[i-1]; */
        Ap1[i] = sub(Ap[i], mult(Ap[i-1], 22938));
-    Syn_filt(Ap1, &st->exc[L_SUBFR], &st->wsp[L_SUBFR], L_SUBFR, st->mem_w, 1);
+    WebRtcG729fix_Syn_filt(Ap1, &st->exc[L_SUBFR], &st->wsp[L_SUBFR], L_SUBFR, st->mem_w, 1);
   }
 
   /* Find open loop pitch lag */
 
-  T_op = Pitch_ol_fast(st->wsp, PIT_MAX, L_FRAME);
+  T_op = WebRtcG729fix_Pitch_ol_fast(st->wsp, PIT_MAX, L_FRAME);
 
   /* Range for closed loop pitch search in 1st subframe */
 
@@ -381,27 +381,27 @@ void Coder_ld8a(
 
     h1[0] = 4096;
     Set_zero(&h1[1], L_SUBFR-1);
-    Syn_filt(Ap, h1, h1, L_SUBFR, &h1[1], 0);
+    WebRtcG729fix_Syn_filt(Ap, h1, h1, L_SUBFR, &h1[1], 0);
 
    /*----------------------------------------------------------------------*
     *  Find the target vector for pitch search:                            *
     *----------------------------------------------------------------------*/
 
-    Syn_filt(Ap, &st->exc[i_subfr], xn, L_SUBFR, st->mem_w0, 0);
+    WebRtcG729fix_Syn_filt(Ap, &st->exc[i_subfr], xn, L_SUBFR, st->mem_w0, 0);
 
     /*---------------------------------------------------------------------*
      *                 Closed-loop fractional pitch search                 *
      *---------------------------------------------------------------------*/
 
-    T0 = Pitch_fr3_fast(&st->exc[i_subfr], xn, h1, L_SUBFR, T0_min, T0_max,
+    T0 = WebRtcG729fix_Pitch_fr3_fast(&st->exc[i_subfr], xn, h1, L_SUBFR, T0_min, T0_max,
                     i_subfr, &T0_frac);
 
-    index = Enc_lag3(T0, T0_frac, &T0_min, &T0_max,PIT_MIN,PIT_MAX,i_subfr);
+    index = WebRtcG729fix_Enc_lag3(T0, T0_frac, &T0_min, &T0_max,PIT_MIN,PIT_MAX,i_subfr);
 
     *ana++ = index;
 
     if (i_subfr == 0) {
-      *ana++ = Parity_Pitch(index);
+      *ana++ = WebRtcG729fix_Parity_Pitch(index);
     }
 
    /*-----------------------------------------------------------------*
@@ -410,13 +410,13 @@ void Coder_ld8a(
     *   - update target vector for codebook search                    *
     *-----------------------------------------------------------------*/
 
-    Syn_filt(Ap, &st->exc[i_subfr], y1, L_SUBFR, st->mem_zero, 0);
+    WebRtcG729fix_Syn_filt(Ap, &st->exc[i_subfr], y1, L_SUBFR, st->mem_zero, 0);
 
-    gain_pit = G_pitch(xn, y1, g_coeff, L_SUBFR);
+    gain_pit = WebRtcG729fix_G_pitch(xn, y1, g_coeff, L_SUBFR);
 
     /* clip pitch gain if taming is necessary */
 
-    taming = test_err(st->L_exc_err, T0, T0_frac);
+    taming = WebRtcG729fix_test_err(st->L_exc_err, T0, T0_frac);
 
     if( taming == 1){
       if (gain_pit > GPCLIP) {
@@ -438,7 +438,7 @@ void Coder_ld8a(
     * - Innovative codebook search.                       *
     *-----------------------------------------------------*/
 
-    index = ACELP_Code_A(xn2, h1, T0, st->sharp, code, y2, &i);
+    index = WebRtcG729fix_ACELP_Code_A(xn2, h1, T0, st->sharp, code, y2, &i);
 
     *ana++ = index;        /* Positions index */
     *ana++ = i;            /* Signs index     */
@@ -453,12 +453,12 @@ void Coder_ld8a(
     g_coeff_cs[1]     = negate(g_coeff[2]);    /* (xn,y1) -> -2<xn,y1> */
     exp_g_coeff_cs[1] = negate(add(g_coeff[3], 1)); /* Q-Format:XXX -> JPN */
 
-    Corr_xy2( xn, y1, y2, g_coeff_cs, exp_g_coeff_cs );  /* Q0 Q0 Q12 ^Qx ^Q0 */
+    WebRtcG729fix_Corr_xy2( xn, y1, y2, g_coeff_cs, exp_g_coeff_cs );  /* Q0 Q0 Q12 ^Qx ^Q0 */
                          /* g_coeff_cs[3]:exp_g_coeff_cs[3] = <y2,y2>   */
                          /* g_coeff_cs[4]:exp_g_coeff_cs[4] = -2<xn,y2> */
                          /* g_coeff_cs[5]:exp_g_coeff_cs[5] = 2<y1,y2>  */
 
-    *ana++ = Qua_gain(st, code, g_coeff_cs, exp_g_coeff_cs,
+    *ana++ = WebRtcG729fix_Qua_gain(st, code, g_coeff_cs, exp_g_coeff_cs,
                       L_SUBFR, &gain_pit, &gain_code, taming);
 
 
@@ -488,7 +488,7 @@ void Coder_ld8a(
       st->exc[i+i_subfr] = L_round(L_temp);
     }
 
-    update_exc_err(st->L_exc_err, gain_pit, T0);
+    WebRtcG729fix_update_exc_err(st->L_exc_err, gain_pit, T0);
 
     for (i = L_SUBFR-M, j = 0; i < L_SUBFR; i++, j++)
     {

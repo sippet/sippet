@@ -41,7 +41,7 @@
 
 /* Initialization of static values */
 
-void Init_Pre_Process(Pre_Process_state *st)
+void WebRtcG729fix_Init_Pre_Process(Pre_Process_state *st)
 {
   st->y2_hi = 0;
   st->y2_lo = 0;
@@ -52,7 +52,7 @@ void Init_Pre_Process(Pre_Process_state *st)
 }
 
 
-void Pre_Process(
+void WebRtcG729fix_Pre_Process(
   Pre_Process_state *st,
   const int16_t sigin[], /* Input signal        */
   int16_t sigout[],      /* Output signal       */

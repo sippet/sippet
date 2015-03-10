@@ -99,8 +99,8 @@ int main(int argc, char *argv[] )
  * Initialization of the coder.                                             *
  *--------------------------------------------------------------------------*/
 
-  Init_Pre_Process(&pre_process_state);
-  Init_Coder_ld8a(&state);
+  WebRtcG729fix_Init_Pre_Process(&pre_process_state);
+  WebRtcG729fix_Init_Coder_ld8a(&state);
   Set_zero(prm, PRM_SIZE+1);
 
   /* for G.729B */
@@ -118,9 +118,9 @@ int main(int argc, char *argv[] )
     if (frame == 32767) frame = 256;
     else frame++;
 
-    Pre_Process(&pre_process_state, state.new_speech, state.new_speech, L_FRAME);
-    Coder_ld8a(&state, prm, frame, vad_enable);
-    prm2bits_ld8k( prm, serial);
+    WebRtcG729fix_Pre_Process(&pre_process_state, state.new_speech, state.new_speech, L_FRAME);
+    WebRtcG729fix_Coder_ld8a(&state, prm, frame, vad_enable);
+    WebRtcG729fix_prm2bits_ld8k( prm, serial);
     nb_words = serial[1] +  (int16_t)2;
     fwrite(serial, sizeof(int16_t), nb_words, f_serial);
   }

@@ -32,7 +32,7 @@
  *   gain_cod   :Quantized codebook gain                                     *
  *                                                                           *
  *---------------------------------------------------------------------------*/
-void Dec_gain(
+void WebRtcG729fix_Dec_gain(
    Decod_ld8a_state *st,
    int16_t index,        /* (i)     :Index of quantization.         */
    int16_t code[],       /* (i) Q13 :Innovative vector.             */
@@ -45,10 +45,6 @@ void Dec_gain(
    int16_t  index1, index2, tmp;
    int16_t  gcode0, exp_gcode0;
    int32_t  L_gbk12, L_acc, L_accb;
-   void    Gain_predict( int16_t past_qua_en[], int16_t code[], int16_t L_subfr,
-                        int16_t *gcode0, int16_t *exp_gcode0 );
-   void    Gain_update( int16_t past_qua_en[], int32_t L_gbk12 );
-   void    Gain_update_erasure( int16_t past_qua_en[] );
 
    /*-------------- Case of erasure. ---------------*/
 
@@ -61,7 +57,7 @@ void Dec_gain(
       * update table of past quantized energies      *
       *                              (frame erasure) *
       *----------------------------------------------*/
-      Gain_update_erasure(st->past_qua_en);
+      WebRtcG729fix_Gain_update_erasure(st->past_qua_en);
 
       return;
    }
@@ -80,7 +76,7 @@ void Dec_gain(
    *-  predicted codebook gain => gcode0[exp_gcode0]  -*
    *---------------------------------------------------*/
 
-   Gain_predict(st->past_qua_en, code, L_subfr, &gcode0, &exp_gcode0 );
+   WebRtcG729fix_Gain_predict(st->past_qua_en, code, L_subfr, &gcode0, &exp_gcode0 );
 
   /*-----------------------------------------------------------------*
    * *gain_code = (gbk1[indice1][1]+gbk2[indice2][1]) * gcode0;      *
@@ -98,7 +94,7 @@ void Dec_gain(
   /*----------------------------------------------*
    * update table of past quantized energies      *
    *----------------------------------------------*/
-   Gain_update(st->past_qua_en, L_gbk12 );
+   WebRtcG729fix_Gain_update(st->past_qua_en, L_gbk12 );
 
    return;
 

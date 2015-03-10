@@ -40,7 +40,7 @@ static void Gbk_presel(
  *   Index of quantization.                                                  *
  *                                                                           *
  *--------------------------------------------------------------------------*/
-int16_t Qua_gain(
+int16_t WebRtcG729fix_Qua_gain(
    Coder_ld8a_state *st,
    int16_t code[],       /* (i) Q13 :Innovative vector.             */
    int16_t g_coeff[],    /* (i)     :Correlations <xn y1> -2<y1 y1> */
@@ -70,7 +70,7 @@ int16_t Qua_gain(
    *-  predicted codebook gain => gcode0[exp_gcode0]  -*
    *---------------------------------------------------*/
 
-   Gain_predict(st->past_qua_en, code, L_subfr, &gcode0, &exp_gcode0);
+   WebRtcG729fix_Gain_predict(st->past_qua_en, code, L_subfr, &gcode0, &exp_gcode0);
 
   /*-----------------------------------------------------------------*
    *  pre-selection                                                  *
@@ -330,7 +330,7 @@ else{
   /*----------------------------------------------*
    * update table of past quantized energies      *
    *----------------------------------------------*/
-   Gain_update(st->past_qua_en, L_gbk12);
+   WebRtcG729fix_Gain_update(st->past_qua_en, L_gbk12);
 
    return add(map1[index1]*(int16_t)NCODE2, map2[index2]);
 }

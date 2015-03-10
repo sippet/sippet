@@ -12,7 +12,7 @@
  *  Function  ACELP_Code_A()                                                 *
  *  ~~~~~~~~~~~~~~~~~~~~~~~~                                                 *
  *   Find Algebraic codebook for G.729A                                      *
- *--------------------------------------------------------------------------*/
+ *---------------------------------------------------------------------------*/
 
 #include <stdint.h>
 #include "basic_op.h"
@@ -31,27 +31,27 @@ static void Cor_h(
      int16_t *H,         /* (i) Q12 :Impulse response of filters */
      int16_t *rr         /* (o)     :Correlations of H[]         */
 );
-static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
-  int16_t dn[],          /* (i)    : Correlations between h[] and Xn[].       */
-  int16_t *rr,           /* (i)    : Correlations of impulse response h[].    */
-  int16_t h[],           /* (i) Q12: Impulse response of filters.             */
-  int16_t cod[],         /* (o) Q13: Selected algebraic codeword.             */
-  int16_t y[],           /* (o) Q12: Filtered algebraic codeword.             */
-  int16_t *sign          /* (o)    : Signs of 4 pulses.                       */
+static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.             */
+  int16_t dn[],          /* (i)    : Correlations between h[] and Xn[].     */
+  int16_t *rr,           /* (i)    : Correlations of impulse response h[].  */
+  int16_t h[],           /* (i) Q12: Impulse response of filters.           */
+  int16_t cod[],         /* (o) Q13: Selected algebraic codeword.           */
+  int16_t y[],           /* (o) Q12: Filtered algebraic codeword.           */
+  int16_t *sign          /* (o)    : Signs of 4 pulses.                     */
 );
 
  /*-----------------------------------------------------------------*
   * Main ACELP function.                                            *
   *-----------------------------------------------------------------*/
 
-int16_t  ACELP_Code_A(    /* (o)     :index of pulses positions    */
-  int16_t x[],            /* (i)     :Target vector                */
-  int16_t h[],            /* (i) Q12 :Inpulse response of filters  */
-  int16_t T0,             /* (i)     :Pitch lag                    */
-  int16_t pitch_sharp,    /* (i) Q14 :Last quantized pitch gain    */
-  int16_t code[],         /* (o) Q13 :Innovative codebook          */
-  int16_t y[],            /* (o) Q12 :Filtered innovative codebook */
-  int16_t *sign           /* (o)     :Signs of 4 pulses            */
+int16_t  WebRtcG729fix_ACELP_Code_A(/* (o):index of pulses positions        */
+  int16_t x[],           /* (i)     :Target vector                          */
+  int16_t h[],           /* (i) Q12 :Inpulse response of filters            */
+  int16_t T0,            /* (i)     :Pitch lag                              */
+  int16_t pitch_sharp,   /* (i) Q14 :Last quantized pitch gain              */
+  int16_t code[],        /* (o) Q13 :Innovative codebook                    */
+  int16_t y[],           /* (o) Q12 :Filtered innovative codebook           */
+  int16_t *sign          /* (o)     :Signs of 4 pulses                      */
 )
 {
   int16_t i, index, sharp;
@@ -74,7 +74,7 @@ int16_t  ACELP_Code_A(    /* (o)     :index of pulses positions    */
   * Compute correlation of target vector with impulse response.     *
   *-----------------------------------------------------------------*/
 
-  Cor_h_X(h, x, Dn);
+  WebRtcG729fix_Cor_h_X(h, x, Dn);
 
  /*-----------------------------------------------------------------*
   * Find innovative codebook.                                       *

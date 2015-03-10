@@ -22,7 +22,7 @@
 #include "ld8a.h"
 #include "tab_ld8a.h"
 
-void Autocorr(
+void WebRtcG729fix_Autocorr(
   int16_t x[],      /* (i)    : Input signal                      */
   int16_t m,        /* (i)    : LPC order                         */
   int16_t r_h[],    /* (o)    : Autocorrelations  (msb)           */
@@ -192,7 +192,7 @@ void Lag_window(
 */
 
 
-void Levinson(
+void WebRtcG729fix_Levinson(
   Coder_ld8a_state *st,
   int16_t Rh[],      /* (i)     : Rh[M+1] Vector of autocorrelations (msb) */
   int16_t Rl[],      /* (i)     : Rl[M+1] Vector of autocorrelations (lsb) */
@@ -342,7 +342,7 @@ void Levinson(
 static int16_t Chebps_11(int16_t x, int16_t f[], int16_t n);
 static int16_t Chebps_10(int16_t x, int16_t f[], int16_t n);
 
-void Az_lsp(
+void WebRtcG729fix_Az_lsp(
   int16_t a[],        /* (i) Q12 : predictor coefficients              */
   int16_t lsp[],      /* (o) Q15 : line spectral pairs                 */
   int16_t old_lsp[]   /* (i)     : old lsp[] (in case not found 10 roots) */

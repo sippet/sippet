@@ -46,7 +46,7 @@
  *                                                                 *
  *-----------------------------------------------------------------*/
 
-void Init_Decod_ld8a(Decod_ld8a_state *st)
+void WebRtcG729fix_Init_Decod_ld8a(Decod_ld8a_state *st)
 {
   /* Initialize lsp_old[] */
 
@@ -66,7 +66,7 @@ void Init_Decod_ld8a(Decod_ld8a_state *st)
   st->gain_code = 0;
   st->gain_pitch = 0;
 
-  Lsp_decw_reset(st);
+  WebRtcG729fix_Lsp_decw_reset(st);
 
   /* for G.729B */
   st->seed_fer = 21845;
@@ -89,7 +89,7 @@ void Init_Decod_ld8a(Decod_ld8a_state *st)
  *                                                                 *
  *-----------------------------------------------------------------*/
 
-void Decod_ld8a(
+void WebRtcG729fix_Decod_ld8a(
   Decod_ld8a_state *st,
   int16_t  parm[],      /* (i)   : vector of synthesis parameters
                                   parm[0] = bad frame indicator (bfi)   */
@@ -139,14 +139,14 @@ void Decod_ld8a(
   /* Processing non active frames (SID & not transmitted) */
   if(ftyp != 1) {
     
-    Get_decfreq_prev(st, lsfq_mem);
-    Dec_cng(st, st->past_ftyp, st->sid_sav, st->sh_sid_sav, parm, st->exc, st->lsp_old,
-            A_t, &st->seed, lsfq_mem);
-    Update_decfreq_prev(st, lsfq_mem);
+    WebRtcG729fix_Get_decfreq_prev(st, lsfq_mem);
+    WebRtcG729fix_Dec_cng(st, st->past_ftyp, st->sid_sav, st->sh_sid_sav,
+            parm, st->exc, st->lsp_old, A_t, &st->seed, lsfq_mem);
+    WebRtcG729fix_Update_decfreq_prev(st, lsfq_mem);
 
     Az = A_t;
     for (i_subfr = 0; i_subfr < L_FRAME; i_subfr += L_SUBFR) {
-      Overflow = Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 0);
+      Overflow = WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 0);
       if(Overflow != 0) {
         /* In case of overflow in the synthesis          */
         /* -> Scale down vector exc[] and redo synthesis */
@@ -154,7 +154,7 @@ void Decod_ld8a(
         for(i=0; i<PIT_MAX+L_INTERPOL+L_FRAME; i++)
           st->old_exc[i] = shr(st->old_exc[i], 2);
         
-        Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
+        WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
       }
       else
         Copy(&synth[i_subfr+L_SUBFR-M], st->mem_syn, M);
@@ -174,7 +174,7 @@ void Decod_ld8a(
 
     /* Decode the LSPs */
     
-    D_lsp(st, parm, lsp_new, add(bfi, bad_lsf));
+    WebRtcG729fix_D_lsp(st, parm, lsp_new, add(bfi, bad_lsf));
     parm += 2;
     
     /*
@@ -184,7 +184,7 @@ void Decod_ld8a(
     
     /* Interpolation of LPC for the 2 subframes */
     
-    Int_qlpc(st->lsp_old, lsp_new, A_t);
+    WebRtcG729fix_Int_qlpc(st->lsp_old, lsp_new, A_t);
     
     /* update the LSFs for the next frame */
     
@@ -214,7 +214,7 @@ void Decod_ld8a(
             bad_pitch = add(bfi, i);
             if( bad_pitch == 0)
               {
-                Dec_lag3(index, PIT_MIN, PIT_MAX, i_subfr, &T0, &T0_frac);
+                WebRtcG729fix_Dec_lag3(index, PIT_MIN, PIT_MAX, i_subfr, &T0, &T0_frac);
                 st->old_T0 = T0;
               }
             else                /* Bad frame, or parity error */
@@ -231,7 +231,7 @@ void Decod_ld8a(
           {
             if(bfi == 0)
               {
-                Dec_lag3(index, PIT_MIN, PIT_MAX, i_subfr, &T0, &T0_frac);
+                WebRtcG729fix_Dec_lag3(index, PIT_MIN, PIT_MAX, i_subfr, &T0, &T0_frac);
                 st->old_T0 = T0;
               }
             else
@@ -250,7 +250,7 @@ void Decod_ld8a(
          * - Find the adaptive codebook vector.            *
          *-------------------------------------------------*/
 
-        Pred_lt_3(&st->exc[i_subfr], T0, T0_frac, L_SUBFR);
+        WebRtcG729fix_Pred_lt_3(&st->exc[i_subfr], T0, T0_frac, L_SUBFR);
 
         /*-------------------------------------------------------*
          * - Decode innovative codebook.                         *
@@ -260,11 +260,11 @@ void Decod_ld8a(
         if(bfi != 0)            /* Bad frame */
           {
 
-            parm[0] = Random(&st->seed_fer) & (int16_t)0x1fff; /* 13 bits random */
-            parm[1] = Random(&st->seed_fer) & (int16_t)0x000f; /*  4 bits random */
+            parm[0] = WebRtcG729fix_Random(&st->seed_fer) & (int16_t)0x1fff; /* 13 bits random */
+            parm[1] = WebRtcG729fix_Random(&st->seed_fer) & (int16_t)0x000f; /*  4 bits random */
           }
 
-        Decod_ACELP(parm[1], parm[0], code);
+        WebRtcG729fix_Decod_ACELP(parm[1], parm[0], code);
         parm +=2;
 
         j = shl(st->sharp, 1);      /* From Q14 to Q15 */
@@ -280,7 +280,7 @@ void Decod_ld8a(
 
         index = *parm++;        /* index of energy VQ */
 
-        Dec_gain(st, index, code, L_SUBFR, bfi, &st->gain_pitch, &st->gain_code);
+        WebRtcG729fix_Dec_gain(st, index, code, L_SUBFR, bfi, &st->gain_pitch, &st->gain_code);
 
         /*-------------------------------------------------------------*
          * - Update pitch sharpening "sharp" with quantized gain_pitch *
@@ -307,7 +307,7 @@ void Decod_ld8a(
             st->exc[i+i_subfr] = L_round(L_temp);
           }
         
-        Overflow = Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 0);
+        Overflow = WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 0);
         if(Overflow != 0)
           {
             /* In case of overflow in the synthesis          */
@@ -316,7 +316,7 @@ void Decod_ld8a(
             for(i=0; i<PIT_MAX+L_INTERPOL+L_FRAME; i++)
               st->old_exc[i] = shr(st->old_exc[i], 2);
 
-            Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
+            WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
           }
         else
           Copy(&synth[i_subfr+L_SUBFR-M], st->mem_syn, M);

@@ -302,17 +302,17 @@ typedef struct Post_Filter_state {
  * Mathematic functions.         *
  *-------------------------------*/
 
-int32_t Inv_sqrt(   /* (o) Q30 : output value   (range: 0<=val<1)           */
+int32_t WebRtcG729fix_Inv_sqrt(   /* (o) Q30 : output value   (range: 0<=val<1)           */
   int32_t L_x       /* (i) Q0  : input value    (range: 0<=val<=7fffffff)   */
 );
 
-void Log2(
+void WebRtcG729fix_Log2(
   int32_t L_x,       /* (i) Q0 : input value                                 */
   int16_t *exponent, /* (o) Q0 : Integer part of Log2.   (range: 0<=val<=30) */
   int16_t *fraction  /* (o) Q15: Fractionnal part of Log2. (range: 0<=val<1) */
 );
 
-int32_t Pow2(        /* (o) Q0  : result       (range: 0<=val<=0x7fffffff) */
+int32_t WebRtcG729fix_Pow2(        /* (o) Q0  : result       (range: 0<=val<=0x7fffffff) */
   int16_t exponent,  /* (i) Q0  : Integer part.      (range: 0<=val<=30)   */
   int16_t fraction   /* (i) Q15 : Fractionnal part.  (range: 0.0<=val<1.0) */
 );
@@ -321,17 +321,17 @@ int32_t Pow2(        /* (o) Q0  : result       (range: 0<=val<=0x7fffffff) */
  * Pre and post-process.         *
  *-------------------------------*/
 
-void Init_Pre_Process(Pre_Process_state *st);
-void Init_Post_Process(Post_Process_state *st);
+void WebRtcG729fix_Init_Pre_Process(Pre_Process_state *st);
+void WebRtcG729fix_Init_Post_Process(Post_Process_state *st);
 
-void Pre_Process(
+void WebRtcG729fix_Pre_Process(
   Pre_Process_state *st,
   const int16_t sigin[], /* Input signal        */
   int16_t sigout[],      /* Output signal       */
   int16_t lg             /* Length of signal    */
 );
 
-void Post_Process(
+void WebRtcG729fix_Post_Process(
   Post_Process_state *st,
   const int16_t sigin[], /* Input signal        */
   int16_t sigout[],      /* Output signal       */
@@ -342,18 +342,18 @@ void Post_Process(
  * Main coder and decoder functions *
  *----------------------------------*/
 
-void Init_Coder_ld8a(Coder_ld8a_state *st);
+void WebRtcG729fix_Init_Coder_ld8a(Coder_ld8a_state *st);
 
-void Coder_ld8a(
+void WebRtcG729fix_Coder_ld8a(
   Coder_ld8a_state *st,
   int16_t ana[],       /* output  : Analysis parameters */
   int16_t frame,
   int16_t vad_enable
 );
 
-void Init_Decod_ld8a(Decod_ld8a_state *st);
+void WebRtcG729fix_Init_Decod_ld8a(Decod_ld8a_state *st);
 
-void Decod_ld8a(
+void WebRtcG729fix_Decod_ld8a(
   Decod_ld8a_state *st,
   int16_t  parm[],      /* (i)   : vector of synthesis parameters
                                    parm[0] = bad frame indicator (bfi)  */
@@ -378,7 +378,7 @@ void Decod_ld8a(
  * LPC analysis and filtering.   *
  *-------------------------------*/
 
-void Autocorr(
+void WebRtcG729fix_Autocorr(
   int16_t x[],      /* (i)    : Input signal                      */
   int16_t m,        /* (i)    : LPC order                         */
   int16_t r_h[],    /* (o)    : Autocorrelations  (msb)           */
@@ -392,7 +392,7 @@ void Lag_window(
   int16_t r_l[]      /* (i/o)   : Autocorrelations  (lsb)          */
 );
 
-void Levinson(
+void WebRtcG729fix_Levinson(
   Coder_ld8a_state *st,
   int16_t Rh[],      /* (i)     : Rh[m+1] Vector of autocorrelations (msb) */
   int16_t Rl[],      /* (i)     : Rl[m+1] Vector of autocorrelations (lsb) */
@@ -401,50 +401,50 @@ void Levinson(
   int16_t *Err       /* (o)     : Residual energy                          */
 );
 
-void Az_lsp(
+void WebRtcG729fix_Az_lsp(
   int16_t a[],        /* (i) Q12 : predictor coefficients              */
   int16_t lsp[],      /* (o) Q15 : line spectral pairs                 */
   int16_t old_lsp[]   /* (i)     : old lsp[] (in case not found 10 roots) */
 );
 
-void Lsp_Az(
+void WebRtcG729fix_Lsp_Az(
   int16_t lsp[],    /* (i) Q15 : line spectral frequencies            */
   int16_t a[]       /* (o) Q12 : predictor coefficients (order = 10)  */
 );
 
-void Lsf_lsp(
+void WebRtcG729fix_Lsf_lsp(
   int16_t lsf[],    /* (i) Q15 : lsf[m] normalized (range: 0.0<=val<=0.5) */
   int16_t lsp[],    /* (o) Q15 : lsp[m] (range: -1<=val<1)                */
   int16_t m         /* (i)     : LPC order                                */
 );
 
-void Lsp_lsf(
+void WebRtcG729fix_Lsp_lsf(
   int16_t lsp[],    /* (i) Q15 : lsp[m] (range: -1<=val<1)                */
   int16_t lsf[],    /* (o) Q15 : lsf[m] normalized (range: 0.0<=val<=0.5) */
   int16_t m         /* (i)     : LPC order                                */
 );
 
-void Int_qlpc(
+void WebRtcG729fix_Int_qlpc(
  int16_t lsp_old[], /* input : LSP vector of past frame              */
  int16_t lsp_new[], /* input : LSP vector of present frame           */
  int16_t Az[]       /* output: interpolated Az() for the 2 subframes */
 );
 
-void Weight_Az(
+void WebRtcG729fix_Weight_Az(
   int16_t a[],      /* (i) Q12 : a[m+1]  LPC coefficients             */
   int16_t gamma,    /* (i) Q15 : Spectral expansion factor.           */
   int16_t m,        /* (i)     : LPC order.                           */
   int16_t ap[]      /* (o) Q12 : Spectral expanded LPC coefficients   */
 );
 
-void Residu(
+void WebRtcG729fix_Residu(
   int16_t a[],    /* (i) Q12 : prediction coefficients                     */
   int16_t x[],    /* (i)     : speech (values x[-m..-1] are needed (m=10)  */
   int16_t y[],    /* (o)     : residual signal                             */
   int16_t lg      /* (i)     : size of filtering                           */
 );
 
-int Syn_filt(
+int WebRtcG729fix_Syn_filt(
   int16_t a[],     /* (i) Q12 : a[m+1] prediction coefficients   (m=10)  */
   int16_t x[],     /* (i)     : input signal                             */
   int16_t y[],     /* (o)     : output signal                            */
@@ -453,7 +453,7 @@ int Syn_filt(
   int16_t update   /* (i)     : 0=no update, 1=update of memory.         */
 );
 
-void Convolve(
+void WebRtcG729fix_Convolve(
   int16_t x[],      /* (i)     : input vector                           */
   int16_t h[],      /* (i) Q12 : impulse response                       */
   int16_t y[],      /* (o)     : output vector                          */
@@ -472,14 +472,14 @@ void Convolve(
  * Pitch functions.      *
  *-----------------------*/
 
-int16_t Pitch_ol_fast(  /* output: open loop pitch lag                        */
+int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag                        */
    int16_t signal[],    /* input : signal used to compute the open loop pitch */
                        /*     signal[-pit_max] to signal[-1] should be known */
    int16_t   pit_max,   /* input : maximum pitch lag                          */
    int16_t   L_frame    /* input : length of frame to compute pitch           */
 );
 
-int16_t Pitch_fr3_fast(/* (o)     : pitch period.                          */
+int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.                          */
   int16_t exc[],       /* (i)     : excitation buffer                      */
   int16_t xn[],        /* (i)     : target vector                          */
   int16_t h[],         /* (i) Q12 : impulse response of filters.           */
@@ -490,14 +490,14 @@ int16_t Pitch_fr3_fast(/* (o)     : pitch period.                          */
   int16_t *pit_frac    /* (o)     : chosen fraction.                       */
 );
 
-int16_t G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
+int16_t WebRtcG729fix_G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
   int16_t xn[],       /* (i)     : Pitch target.                            */
   int16_t y1[],       /* (i)     : Filtered adaptive codebook.              */
   int16_t g_coeff[],  /* (i)     : Correlations need for gain quantization. */
   int16_t L_subfr     /* (i)     : Length of subframe.                      */
 );
 
-int16_t Enc_lag3(     /* output: Return index of encoding */
+int16_t WebRtcG729fix_Enc_lag3(     /* output: Return index of encoding */
   int16_t T0,         /* input : Pitch delay              */
   int16_t T0_frac,    /* input : Fractional pitch delay   */
   int16_t *T0_min,    /* in/out: Minimum search delay     */
@@ -507,7 +507,7 @@ int16_t Enc_lag3(     /* output: Return index of encoding */
   int16_t pit_flag    /* input : int for 1st subframe    */
 );
 
-void Dec_lag3(        /* output: return integer pitch lag       */
+void WebRtcG729fix_Dec_lag3(        /* output: return integer pitch lag       */
   int16_t index,       /* input : received pitch index           */
   int16_t pit_min,     /* input : minimum pitch lag              */
   int16_t pit_max,     /* input : maximum pitch lag              */
@@ -516,28 +516,28 @@ void Dec_lag3(        /* output: return integer pitch lag       */
   int16_t *T0_frac     /* output: fractional part of pitch lag   */
 );
 
-int16_t Interpol_3(      /* (o)  : interpolated value  */
+int16_t WebRtcG729fix_Interpol_3(      /* (o)  : interpolated value  */
   int16_t *x,            /* (i)  : input vector        */
   int16_t frac           /* (i)  : fraction            */
 );
 
-void Pred_lt_3(
+void WebRtcG729fix_Pred_lt_3(
   int16_t   exc[],       /* in/out: excitation buffer */
   int16_t   T0,          /* input : integer pitch lag */
   int16_t   frac,        /* input : fraction of lag   */
   int16_t   L_subfr      /* input : subframe size     */
 );
 
-int16_t Parity_Pitch(    /* output: parity bit (XOR of 6 MSB bits)    */
+int16_t WebRtcG729fix_Parity_Pitch(    /* output: parity bit (XOR of 6 MSB bits)    */
    int16_t pitch_index   /* input : index for which parity to compute */
 );
 
-int16_t  Check_Parity_Pitch( /* output: 0 = no error, 1= error */
+int16_t  WebRtcG729fix_Check_Parity_Pitch( /* output: 0 = no error, 1= error */
   int16_t pitch_index,       /* input : index of parameter     */
   int16_t parity             /* input : parity bit             */
 );
 
-void Cor_h_X(
+void WebRtcG729fix_Cor_h_X(
      int16_t h[],        /* (i) Q12 :Impulse response of filters      */
      int16_t X[],        /* (i)     :Target vector                    */
      int16_t D[]         /* (o)     :Correlations between h[] and D[] */
@@ -561,7 +561,7 @@ void Cor_h_X(
 #define _1_8    (int16_t)( 4096)
 #define _1_16   (int16_t)( 2048)
 
-int16_t  ACELP_Code_A(    /* (o)     :index of pulses positions    */
+int16_t  WebRtcG729fix_ACELP_Code_A(    /* (o)     :index of pulses positions    */
   int16_t x[],            /* (i)     :Target vector                */
   int16_t h[],            /* (i) Q12 :Inpulse response of filters  */
   int16_t T0,             /* (i)     :Pitch lag                    */
@@ -571,7 +571,7 @@ int16_t  ACELP_Code_A(    /* (o)     :index of pulses positions    */
   int16_t *sign           /* (o)     :Signs of 4 pulses            */
 );
 
-void Decod_ACELP(
+void WebRtcG729fix_Decod_ACELP(
   int16_t sign,      /* (i)     : signs of 4 pulses.                       */
   int16_t index,     /* (i)     : Positions of the 4 pulses.               */
   int16_t cod[]      /* (o) Q13 : algebraic (fixed) codebook excitation    */
@@ -581,57 +581,57 @@ void Decod_ACELP(
  * LSP VQ functions.             *
  *-------------------------------*/
 
-void Lsf_lsp2(
+void WebRtcG729fix_Lsf_lsp2(
   int16_t lsf[],    /* (i) Q13 : lsf[m] (range: 0.0<=val<PI) */
   int16_t lsp[],    /* (o) Q15 : lsp[m] (range: -1<=val<1)   */
   int16_t m         /* (i)     : LPC order                   */
 );
 
-void Lsp_lsf2(
+void WebRtcG729fix_Lsp_lsf2(
   int16_t lsp[],    /* (i) Q15 : lsp[m] (range: -1<=val<1)   */
   int16_t lsf[],    /* (o) Q13 : lsf[m] (range: 0.0<=val<PI) */
   int16_t m         /* (i)     : LPC order                   */
 );
 
-void Qua_lsp(
+void WebRtcG729fix_Qua_lsp(
   Coder_ld8a_state *st,
   int16_t lsp[],       /* (i) Q15 : Unquantized LSP            */
   int16_t lsp_q[],     /* (o) Q15 : Quantized LSP              */
   int16_t ana[]        /* (o)     : indexes                    */
 );
 
-void Get_wegt(
+void WebRtcG729fix_Get_wegt(
   int16_t flsp[],    /* Q13 */
   int16_t wegt[]     /* Q11 -> normalized */
 );
 
-void Lsp_encw_reset(
+void WebRtcG729fix_Lsp_encw_reset(
   Coder_ld8a_state *st
 );
 
-void Lsp_qua_cs(
+void WebRtcG729fix_Lsp_qua_cs(
   Coder_ld8a_state *st,
   int16_t flsp_in[M],       /* Q13 */
   int16_t lspq_out[M],      /* Q13 */
   int16_t *code
 );
 
-void Lsp_expand_1(
+void WebRtcG729fix_Lsp_expand_1(
   int16_t buf[],            /* Q13 */
   int16_t gap               /* Q13 */
 );
 
-void Lsp_expand_2(
+void WebRtcG729fix_Lsp_expand_2(
   int16_t buf[],            /* Q13 */
   int16_t gap               /* Q13 */
 );
 
-void Lsp_expand_1_2(
+void WebRtcG729fix_Lsp_expand_1_2(
   int16_t buf[],            /* Q13 */
   int16_t gap               /* Q13 */
 );
 
-void Lsp_get_quant(
+void WebRtcG729fix_Lsp_get_quant(
   int16_t lspcb1[][M],      /* Q13 */
   int16_t lspcb2[][M],      /* Q13 */
   int16_t code0,
@@ -643,7 +643,7 @@ void Lsp_get_quant(
   int16_t fg_sum[]          /* Q15 */
 );
 
-void Lsp_get_tdist(
+void WebRtcG729fix_Lsp_get_tdist(
   int16_t wegt[],        /* normalized */
   int16_t buf[],         /* Q13 */
   int32_t *L_tdist,      /* Q27 */
@@ -651,18 +651,18 @@ void Lsp_get_tdist(
   int16_t fg_sum[]       /* Q15 */
 );
 
-void Lsp_last_select(
+void WebRtcG729fix_Lsp_last_select(
   int32_t L_tdist[],     /* Q27 */
   int16_t *mode_index
 );
 
-void Lsp_pre_select(
+void WebRtcG729fix_Lsp_pre_select(
   int16_t rbuf[],              /* Q13 */
   int16_t lspcb1[][M],         /* Q13 */
   int16_t *cand
 );
 
-void Lsp_select_1(
+void WebRtcG729fix_Lsp_select_1(
   int16_t rbuf[],              /* Q13 */
   int16_t lspcb1[],            /* Q13 */
   int16_t wegt[],              /* normalized */
@@ -670,7 +670,7 @@ void Lsp_select_1(
   int16_t *index
 );
 
-void Lsp_select_2(
+void WebRtcG729fix_Lsp_select_2(
   int16_t rbuf[],              /* Q13 */
   int16_t lspcb1[],            /* Q13 */
   int16_t wegt[],              /* normalized */
@@ -678,11 +678,11 @@ void Lsp_select_2(
   int16_t *index
 );
 
-void Lsp_stability(
+void WebRtcG729fix_Lsp_stability(
   int16_t buf[]     /* Q13 */
 );
 
-void Relspwed(
+void WebRtcG729fix_Relspwed(
   int16_t lsp[],                       /* Q13 */
   int16_t wegt[],                      /* normalized */
   int16_t lspq[],                      /* Q13 */
@@ -695,25 +695,25 @@ void Relspwed(
   int16_t code_ana[]
 );
 
-void D_lsp(
+void WebRtcG729fix_D_lsp(
   Decod_ld8a_state *st,
   int16_t prm[],          /* (i)     : indexes of the selected LSP */
   int16_t lsp_q[],        /* (o) Q15 : Quantized LSP parameters    */
   int16_t erase           /* (i)     : frame erase information     */
 );
 
-void Lsp_decw_reset(
+void WebRtcG729fix_Lsp_decw_reset(
   Decod_ld8a_state *st
 );
 
-void Lsp_iqua_cs(
+void WebRtcG729fix_Lsp_iqua_cs(
   Decod_ld8a_state *st,
   int16_t prm[],          /* input : codes of the selected LSP*/
   int16_t lsp_q[],        /* output: Quantized LSP parameters*/
   int16_t erase           /* input : frame erase information */
 );
 
-void Lsp_prev_compose(
+void WebRtcG729fix_Lsp_prev_compose(
   int16_t lsp_ele[],             /* Q13 */
   int16_t lsp[],                 /* Q13 */
   int16_t fg[][M],            /* Q15 */
@@ -721,7 +721,7 @@ void Lsp_prev_compose(
   int16_t fg_sum[]               /* Q15 */
 );
 
-void Lsp_prev_extract(
+void WebRtcG729fix_Lsp_prev_extract(
   int16_t lsp[M],                 /* Q13 */
   int16_t lsp_ele[M],             /* Q13 */
   int16_t fg[MA_NP][M],           /* Q15 */
@@ -729,7 +729,7 @@ void Lsp_prev_extract(
   int16_t fg_sum_inv[M]           /* Q12 */
 );
 
-void Lsp_prev_update(
+void WebRtcG729fix_Lsp_prev_update(
   int16_t lsp_ele[M],             /* Q13 */
   int16_t freq_prev[MA_NP][M]     /* Q13 */
 );
@@ -750,7 +750,7 @@ void Lsp_prev_update(
  * gain VQ functions.                                                       *
  *--------------------------------------------------------------------------*/
 
-int16_t Qua_gain(
+int16_t WebRtcG729fix_Qua_gain(
   Coder_ld8a_state *st,
   int16_t code[],    /* (i) Q13 : Innovative vector.                         */
   int16_t g_coeff[], /* (i)     : Correlations <xn y1> -2<y1 y1>             */
@@ -762,7 +762,7 @@ int16_t Qua_gain(
   int16_t tameflag   /* (i)     : flag set to 1 if taming is needed          */
 );
 
-void Dec_gain(
+void WebRtcG729fix_Dec_gain(
   Decod_ld8a_state *st,
   int16_t index,     /* (i)     : Index of quantization.                     */
   int16_t code[],    /* (i) Q13 : Innovative vector.                         */
@@ -772,7 +772,7 @@ void Dec_gain(
   int16_t *gain_cod  /* (o) Q1  : Code gain.                                 */
 );
 
-void Gain_predict(
+void WebRtcG729fix_Gain_predict(
   int16_t past_qua_en[], /* (i) Q10 : Past quantized energies                */
   int16_t code[],        /* (i) Q13 : Innovative vector.                     */
   int16_t L_subfr,       /* (i)     : Subframe length.                       */
@@ -780,16 +780,16 @@ void Gain_predict(
   int16_t *exp_gcode0    /* (o)     : Q-Format(gcode0)                       */
 );
 
-void Gain_update(
+void WebRtcG729fix_Gain_update(
   int16_t past_qua_en[],  /* (i) Q10 :Past quantized energies                */
   int32_t L_gbk12         /* (i) Q13 : gbk1[indice1][1]+gbk2[indice2][1]     */
 );
 
-void Gain_update_erasure(
+void WebRtcG729fix_Gain_update_erasure(
   int16_t past_qua_en[]   /* (i) Q10 :Past quantized energies                */
 );
 
-void Corr_xy2(
+void WebRtcG729fix_Corr_xy2(
   int16_t xn[],           /* (i) Q0  :Target vector.                         */
   int16_t y1[],           /* (i) Q0  :Adaptive codebook.                     */
   int16_t y2[],           /* (i) Q12 :Filtered innovative vector.            */
@@ -801,8 +801,8 @@ void Corr_xy2(
  * Bitstream function    *
  *-----------------------*/
 
-void  prm2bits_ld8k(int16_t prm[], int16_t bits[]);
-void  bits2prm_ld8k(int16_t bits[], int16_t prm[]);
+void  WebRtcG729fix_prm2bits_ld8k(int16_t prm[], int16_t bits[]);
+void  WebRtcG729fix_bits2prm_ld8k(int16_t bits[], int16_t prm[]);
 #define BIT_0     (short)0x007f /* definition of zero-bit in bit-stream      */
 #define BIT_1     (short)0x0081 /* definition of one-bit in bit-stream       */
 #define SYNC_WORD (short)0x6b21 /* definition of frame erasure flag          */
@@ -827,9 +827,9 @@ void  bits2prm_ld8k(int16_t bits[], int16_t prm[]);
 #define  AGC_FAC1 (int16_t)(32767 - AGC_FAC)   /* 1-AGC_FAC in Q15          */
 
 
-void Init_Post_Filter(Post_Filter_state *st);
+void WebRtcG729fix_Init_Post_Filter(Post_Filter_state *st);
 
-void Post_Filter(
+void WebRtcG729fix_Post_Filter(
   Post_Filter_state *st,
   int16_t *syn,     /* in/out: synthesis speech (postfiltered is output)    */
   int16_t *Az_4,    /* input : interpolated LPC parameters in all subframes */
@@ -837,7 +837,7 @@ void Post_Filter(
   int16_t Vad
 );
 
-void pit_pst_filt(
+void WebRtcG729fix_pit_pst_filt(
   int16_t *signal,      /* (i)     : input signal                           */
   int16_t *scal_sig,    /* (i)     : input signal (scaled, divided by 4)    */
   int16_t t0_min,       /* (i)     : minimum value in the searched range    */
@@ -846,14 +846,14 @@ void pit_pst_filt(
   int16_t *signal_pst   /* (o)     : harmonically postfiltered signal       */
 );
 
-void preemphasis(
+void WebRtcG729fix_preemphasis(
   int16_t *mem_pre,
   int16_t *signal,      /* (i/o)   : input signal overwritten by the output */
   int16_t g,            /* (i) Q15 : preemphasis coefficient                */
   int16_t L             /* (i)     : size of filtering                      */
 );
 
-void agc(
+void WebRtcG729fix_agc(
   int16_t *past_gain,   /* (i/o)   : past gain in Q12                       */
   int16_t *sig_in,      /* (i)     : postfilter input signal                */
   int16_t *sig_out,     /* (i/o)   : postfilter output signal               */
@@ -869,9 +869,9 @@ void agc(
 #define GP0999      16383      /* Maximum pitch gain if taming is needed    */
 #define L_THRESH_ERR 983040000L /* Error threshold taming 16384. * 60000.   */
 
-void   Init_exc_err(int32_t L_exc_err[]);
-void   update_exc_err(int32_t L_exc_err[], int16_t gain_pit, int16_t t0);
-int16_t test_err(int32_t L_exc_err[], int16_t t0, int16_t t0_frac);
+void   WebRtcG729fix_Init_exc_err(int32_t L_exc_err[]);
+void   WebRtcG729fix_update_exc_err(int32_t L_exc_err[], int16_t gain_pit, int16_t t0);
+int16_t WebRtcG729fix_test_err(int32_t L_exc_err[], int16_t t0, int16_t t0_frac);
 
 /*--------------------------------------------------------------------------*
  * Prototypes for auxiliary functions.                                      *
@@ -881,7 +881,7 @@ int16_t test_err(int32_t L_exc_err[], int16_t t0, int16_t t0_frac);
 #define Copy(x,y,L)    memmove((y), (x), (L)*sizeof(int16_t))
 #define Set_zero(x, L) memset((x), 0, (L)*sizeof(int16_t))
 
-int16_t Random(int16_t *seed);
+int16_t WebRtcG729fix_Random(int16_t *seed);
 
 #endif /* __LD8A_H__ */
 

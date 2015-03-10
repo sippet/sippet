@@ -8,7 +8,7 @@
    All rights reserved.
 */
 
-/* Functions Corr_xy2() and Cor_h_x()   */
+/* Functions Corr_xy2() and Cor_h_X()   */
 
 #include <stdint.h>
 #include "basic_op.h"
@@ -24,7 +24,7 @@
  *   g_coeff[4]:exp_g_coeff[4] = 2<y1,y2>                                    *
  *---------------------------------------------------------------------------*/
 
-void Corr_xy2(
+void WebRtcG729fix_Corr_xy2(
       int16_t xn[],           /* (i) Q0  :Target vector.                  */
       int16_t y1[],           /* (i) Q0  :Adaptive codebook.              */
       int16_t y2[],           /* (i) Q12 :Filtered innovative vector.     */
@@ -87,7 +87,7 @@ void Corr_xy2(
  * Compute correlations of input response h[] with the target vector X[].   *
  *--------------------------------------------------------------------------*/
 
-void Cor_h_X(
+void WebRtcG729fix_Cor_h_X(
      int16_t h[],        /* (i) Q12 :Impulse response of filters      */
      int16_t X[],        /* (i)     :Target vector                    */
      int16_t D[]         /* (o)     :Correlations between h[] and D[] */

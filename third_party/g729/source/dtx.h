@@ -15,8 +15,8 @@
  *--------------------------------------------------------------------------*/
 
 /* Encoder DTX/CNG functions */
-void Init_Cod_cng(Coder_ld8a_state *st);
-void Cod_cng(
+void WebRtcG729fix_Init_Cod_cng(Coder_ld8a_state *st);
+void WebRtcG729fix_Cod_cng(
   Coder_ld8a_state *st,
   int16_t *exc,          /* (i/o) : excitation array                     */
   int16_t pastVad,       /* (i)   : previous VAD decision                */
@@ -27,7 +27,7 @@ void Cod_cng(
                         /* (i/o) : previous LPS for quantization        */
   int16_t *seed          /* (i/o) : random generator seed                */
 );
-void Update_cng(
+void WebRtcG729fix_Update_cng(
   Coder_ld8a_state *st,
   int16_t *r_h,      /* (i) :   MSB of frame autocorrelation        */
   int16_t exp_r,     /* (i) :   scaling factor associated           */
@@ -35,7 +35,7 @@ void Update_cng(
 );
 
 /* SID gain Quantization */
-void Qua_Sidgain(
+void WebRtcG729fix_Qua_Sidgain(
   int16_t *ener,     /* (i)   array of energies                   */
   int16_t *sh_ener,  /* (i)   corresponding scaling factors       */
   int16_t nb_ener,   /* (i)   number of energies or               */
@@ -44,7 +44,7 @@ void Qua_Sidgain(
 );
 
 /* CNG excitation generation */
-void Calc_exc_rand(
+void WebRtcG729fix_Calc_exc_rand(
   int32_t L_exc_err[],
   int16_t cur_gain,      /* (i)   :   target sample gain                 */
   int16_t *exc,          /* (i/o) :   excitation array                   */
@@ -53,14 +53,14 @@ void Calc_exc_rand(
 );
 
 /* SID LSP Quantization */
-void Get_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M]);
-void Update_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M]);
-void Get_decfreq_prev(Decod_ld8a_state *st, int16_t x[MA_NP][M]);
-void Update_decfreq_prev(Decod_ld8a_state *st, int16_t x[MA_NP][M]);
+void WebRtcG729fix_Get_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M]);
+void WebRtcG729fix_Update_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M]);
+void WebRtcG729fix_Get_decfreq_prev(Decod_ld8a_state *st, int16_t x[MA_NP][M]);
+void WebRtcG729fix_Update_decfreq_prev(Decod_ld8a_state *st, int16_t x[MA_NP][M]);
 
 /* Decoder CNG generation */
-void Init_Dec_cng(Decod_ld8a_state *st);
-void Dec_cng(
+void WebRtcG729fix_Init_Dec_cng(Decod_ld8a_state *st);
+void WebRtcG729fix_Dec_cng(
   Decod_ld8a_state *st,
   int16_t past_ftyp,     /* (i)   : past frame type                      */
   int16_t sid_sav,       /* (i)   : energy to recover SID gain           */
@@ -73,7 +73,7 @@ void Dec_cng(
   int16_t freq_prev[MA_NP][M]
                         /* (i/o) : previous LPS for quantization        */
 );
-int16_t read_frame(FILE *f_serial, int16_t *parm);
+int16_t WebRtcG729fix_read_frame(FILE *f_serial, int16_t *parm);
 
 #endif /* __DTX_H__ */
 

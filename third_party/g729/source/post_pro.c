@@ -39,7 +39,7 @@
 
 /* Initialization of static values */
 
-void Init_Post_Process(Post_Process_state *st)
+void WebRtcG729fix_Init_Post_Process(Post_Process_state *st)
 {
   st->y2_hi = 0;
   st->y2_lo = 0;
@@ -50,7 +50,7 @@ void Init_Post_Process(Post_Process_state *st)
 }
 
 
-void Post_Process(
+void WebRtcG729fix_Post_Process(
   Post_Process_state *st,
   const int16_t sigin[], /* Input signal        */
   int16_t sigout[],      /* Output signal       */

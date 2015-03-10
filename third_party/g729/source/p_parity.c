@@ -16,7 +16,7 @@
 #include "basic_op.h"
 #include "ld8a.h"
 
-int16_t Parity_Pitch(    /* output: parity bit (XOR of 6 MSB bits)    */
+int16_t WebRtcG729fix_Parity_Pitch(    /* output: parity bit (XOR of 6 MSB bits)    */
    int16_t pitch_index   /* input : index for which parity to compute */
 )
 {
@@ -40,7 +40,7 @@ int16_t Parity_Pitch(    /* output: parity bit (XOR of 6 MSB bits)    */
  * check_parity_pitch - check parity of index with transmitted parity *
  *--------------------------------------------------------------------*/
 
-int16_t  Check_Parity_Pitch( /* output: 0 = no error, 1= error */
+int16_t  WebRtcG729fix_Check_Parity_Pitch( /* output: 0 = no error, 1= error */
   int16_t pitch_index,       /* input : index of parameter     */
   int16_t parity             /* input : parity bit             */
 )

@@ -19,7 +19,7 @@
 #include "basic_op.h"
 #include "ld8a.h"
 
-void Dec_lag3(
+void WebRtcG729fix_Dec_lag3(
   int16_t index,       /* input : received pitch index           */
   int16_t pit_min,     /* input : minimum pitch lag              */
   int16_t pit_max,     /* input : maximum pitch lag              */

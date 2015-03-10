@@ -18,7 +18,7 @@
 #include "basic_op.h"
 #include "ld8a.h"
 
-void Decod_ACELP(
+void WebRtcG729fix_Decod_ACELP(
   int16_t sign,      /* (i)     : signs of 4 pulses.                       */
   int16_t index,     /* (i)     : Positions of the 4 pulses.               */
   int16_t cod[]      /* (o) Q13 : algebraic (fixed) codebook excitation    */

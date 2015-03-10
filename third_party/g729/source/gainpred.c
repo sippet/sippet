@@ -27,7 +27,7 @@
  * MA prediction is performed on the innovation energy (in dB with mean      *
  * removed).                                                                 *
  *---------------------------------------------------------------------------*/
-void Gain_predict(
+void WebRtcG729fix_Gain_predict(
    int16_t past_qua_en[], /* (i) Q10 :Past quantized energies        */
    int16_t code[],        /* (i) Q13 :Innovative vector.             */
    int16_t L_subfr,       /* (i)     :Subframe length.               */
@@ -57,7 +57,7 @@ void Gain_predict(
    * = 127.298 - 3.0103 * log2(ener_code)                            *
    *-----------------------------------------------------------------*/
 
-   Log2(L_tmp, &exp, &frac);               /* Q27->Q0 ^Q0 ^Q15       */
+   WebRtcG729fix_Log2(L_tmp, &exp, &frac); /* Q27->Q0 ^Q0 ^Q15       */
    L_tmp = Mpy_32_16(exp, frac, -24660);   /* Q0 Q15 Q13 -> ^Q14     */
                                            /* hi:Q0+Q13+1            */
                                            /* lo:Q15+Q13-15+1        */
@@ -85,7 +85,8 @@ void Gain_predict(
    L_tmp = L_shr(L_tmp, 8);             /* From Q24 to Q16             */
    L_Extract(L_tmp, &exp, &frac);       /* Extract exponent of gcode0  */
 
-   *gcode0 = extract_l(Pow2(14, frac)); /* Put 14 as exponent so that  */
+   *gcode0 = extract_l(WebRtcG729fix_Pow2(14, frac));
+                                        /* Put 14 as exponent so that  */
                                         /* output of Pow2() will be:   */
                                         /* 16768 < Pow2() <= 32767     */
    *exp_gcode0 = sub(14,exp);
@@ -97,7 +98,7 @@ void Gain_predict(
  * ~~~~~~~~~~~~~~~~~~~~~~                                                    *
  * update table of past quantized energies                                   *
  *---------------------------------------------------------------------------*/
-void Gain_update(
+void WebRtcG729fix_Gain_update(
    int16_t past_qua_en[],   /* (io) Q10 :Past quantized energies           */
    int32_t  L_gbk12         /* (i) Q13 : gbk1[indice1][1]+gbk2[indice2][1] */
 )
@@ -117,8 +118,8 @@ void Gain_update(
    *                                                 24660:Q12(6.0205)    *
    *----------------------------------------------------------------------*/
 
-   Log2( L_gbk12, &exp, &frac );               /* L_gbk12:Q13       */
-   L_acc = L_Comp( sub(exp,13), frac);         /* L_acc:Q16           */
+   WebRtcG729fix_Log2( L_gbk12, &exp, &frac ); /* L_gbk12:Q13       */
+   L_acc = L_Comp(sub(exp,13), frac);          /* L_acc:Q16         */
    tmp = extract_h( L_shl( L_acc,13 ) );       /* tmp:Q13           */
    past_qua_en[0] = mult( tmp, 24660 );        /* past_qua_en[]:Q10 */
 }
@@ -135,7 +136,7 @@ void Gain_update(
  *     av_pred_en = av_pred_en*0.25 - 4.0;                                   *
  *     if (av_pred_en < -14.0) av_pred_en = -14.0;                           *
  *---------------------------------------------------------------------------*/
-void Gain_update_erasure(
+void WebRtcG729fix_Gain_update_erasure(
    int16_t past_qua_en[]     /* (i) Q10 :Past quantized energies        */
 )
 {

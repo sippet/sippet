@@ -18,7 +18,7 @@
 #include "ld8a.h"
 #include "tab_ld8a.h"
 
-void Init_exc_err(int32_t L_exc_err[])
+void WebRtcG729fix_Init_exc_err(int32_t L_exc_err[])
 {
   int16_t i;
   for(i=0; i<4; i++) L_exc_err[i] = 0x00004000L;   /* Q14 */
@@ -29,7 +29,7 @@ void Init_exc_err(int32_t L_exc_err[])
  * adaptive codebook contribution                                         *
  **************************************************************************/
 
-int16_t test_err(  /* (o) flag set to 1 if taming is necessary  */
+int16_t WebRtcG729fix_test_err(  /* (o) flag set to 1 if taming is necessary  */
  int32_t L_exc_err[],
  int16_t T0,       /* (i) integer part of pitch delay           */
  int16_t T0_frac   /* (i) fractional part of pitch delay        */
@@ -76,7 +76,7 @@ int16_t test_err(  /* (o) flag set to 1 if taming is necessary  */
  * decoder                                                                *
  **************************************************************************/
 
-void update_exc_err(
+void WebRtcG729fix_update_exc_err(
  int32_t L_exc_err[],
  int16_t gain_pit,      /* (i) pitch gain */
  int16_t T0             /* (i) integer part of pitch delay */
