@@ -112,7 +112,7 @@ void WebRtcG729fix_Init_Coder_ld8a(Coder_ld8a_state *st)
 
   /* Initialize lsp_old[] */
 
-  Copy(lsp_old_reset, st->lsp_old, M);
+  Copy(WebRtcG729fix_lsp_old_reset, st->lsp_old, M);
 
   /* Initialize lsp_old_q[] */
 
@@ -129,10 +129,10 @@ void WebRtcG729fix_Init_Coder_ld8a(Coder_ld8a_state *st)
   WebRtcG729fix_Init_lsfq_noise(st->noise_fg);
 
   /* Initialize Qua_gain */
-  Copy(past_qua_en_reset, st->past_qua_en, 4);
+  Copy(WebRtcG729fix_past_qua_en_reset, st->past_qua_en, 4);
 
   /* Initialize Levinson */
-  Copy(old_A_reset, st->old_A, M+1);
+  Copy(WebRtcG729fix_old_A_reset, st->old_A, M+1);
   Set_zero(st->old_rc, 2);
 }
 

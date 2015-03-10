@@ -40,7 +40,7 @@ void WebRtcG729fix_Autocorr(
 
   for(i=0; i<L_WINDOW; i++)
   {
-    y[i] = mult_r(x[i], hamwindow[i]);
+    y[i] = mult_r(x[i], WebRtcG729fix_hamwindow[i]);
   }
 
   /* Compute r[0] and test for overflow */
@@ -116,7 +116,7 @@ void WebRtcG729fix_Lag_window(
 
   for(i=1; i<=m; i++)
   {
-     x  = WebRtcG729fix_Mpy_32(r_h[i], r_l[i], lag_h[i-1], lag_l[i-1]);
+     x  = WebRtcG729fix_Mpy_32(r_h[i], r_l[i], WebRtcG729fix_lag_h[i-1], WebRtcG729fix_lag_l[i-1]);
      WebRtcG729fix_L_Extract(x, &r_h[i], &r_l[i]);
   }
   return;
@@ -429,7 +429,7 @@ void WebRtcG729fix_Az_lsp(
 
  coef = f1;
 
- xlow = grid[0];
+ xlow = WebRtcG729fix_grid[0];
  ylow = (*pChebps)(xlow, coef, NC);
 
  j = 0;
@@ -438,7 +438,7 @@ void WebRtcG729fix_Az_lsp(
    j++;
    xhigh = xlow;
    yhigh = ylow;
-   xlow  = grid[j];
+   xlow  = WebRtcG729fix_grid[j];
    ylow  = (*pChebps)(xlow,coef,NC);
 
    if (L_mult(ylow ,yhigh) <= 0)

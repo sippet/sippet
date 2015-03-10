@@ -49,10 +49,10 @@ int16_t WebRtcG729fix_test_err(  /* (o) flag set to 1 if taming is necessary  */
     if(i < 0) {
         i = 0;
     }
-    zone1 = tab_zone[i];
+    zone1 = WebRtcG729fix_tab_zone[i];
 
     i = WebRtcSpl_AddSatW16(t1, (L_INTER10 - 2));
-    zone2 = tab_zone[i];
+    zone2 = WebRtcG729fix_tab_zone[i];
 
     L_maxloc = -1L;
     flag = 0 ;
@@ -111,10 +111,10 @@ void WebRtcG729fix_update_exc_err(
 
     else {
 
-        zone1 = tab_zone[n];
+        zone1 = WebRtcG729fix_tab_zone[n];
 
         i = WebRtcSpl_SubSatW16(T0, 1);
-        zone2 = tab_zone[i];
+        zone2 = WebRtcG729fix_tab_zone[i];
 
         for(i = zone1; i <= zone2; i++) {
                 WebRtcG729fix_L_Extract(L_exc_err[i], &hi, &lo);

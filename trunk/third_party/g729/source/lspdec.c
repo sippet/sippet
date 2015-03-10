@@ -26,11 +26,11 @@ void WebRtcG729fix_Lsp_decw_reset(
   int16_t i;
 
   for(i=0; i<MA_NP; i++)
-    Copy( &freq_prev_reset[0], &st->freq_prev[i][0], M );
+    Copy(&WebRtcG729fix_freq_prev_reset[0], &st->freq_prev[i][0], M);
 
   st->prev_ma = 0;
 
-  Copy( freq_prev_reset, st->prev_lsp, M);
+  Copy( WebRtcG729fix_freq_prev_reset, st->prev_lsp, M);
 }
 
 
@@ -60,8 +60,9 @@ void WebRtcG729fix_Lsp_iqua_cs(
 
     /* compose quantized LSP (lsp_q) from indexes */
 
-    WebRtcG729fix_Lsp_get_quant(lspcb1, lspcb2, code0, code1, code2,
-      fg[mode_index], st->freq_prev, lsp_q, fg_sum[mode_index]);
+    WebRtcG729fix_Lsp_get_quant(WebRtcG729fix_lspcb1, WebRtcG729fix_lspcb2,
+      code0, code1, code2, WebRtcG729fix_fg[mode_index], st->freq_prev,
+      lsp_q, WebRtcG729fix_fg_sum[mode_index]);
 
     /* save parameters to use in case of the frame erased situation */
 
@@ -76,7 +77,8 @@ void WebRtcG729fix_Lsp_iqua_cs(
     /* update freq_prev */
 
     WebRtcG729fix_Lsp_prev_extract(st->prev_lsp, buf,
-      fg[st->prev_ma], st->freq_prev, fg_sum_inv[st->prev_ma]);
+      WebRtcG729fix_fg[st->prev_ma], st->freq_prev,
+      WebRtcG729fix_fg_sum_inv[st->prev_ma]);
     WebRtcG729fix_Lsp_prev_update(buf, st->freq_prev);
   }
 

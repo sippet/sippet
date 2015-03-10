@@ -48,8 +48,8 @@ void WebRtcG729fix_Pred_lt_3(
   {
     x1 = x0++;
     x2 = x0;
-    c1 = &inter_3l[frac];
-    c2 = &inter_3l[WebRtcSpl_SubSatW16(UP_SAMP,frac)];
+    c1 = &WebRtcG729fix_inter_3l[frac];
+    c2 = &WebRtcG729fix_inter_3l[WebRtcSpl_SubSatW16(UP_SAMP,frac)];
 
     s = 0;
     for(i=0, k=0; i< L_INTER10; i++, k+=UP_SAMP)

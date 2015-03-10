@@ -47,8 +47,8 @@ int32_t WebRtcG729fix_Pow2(        /* (o) Q0  : result       (range: 0<=val<=0x7
   a   = extract_l(L_x);                 /* Extract b0-b9   of fraction */
   a   = a & (int16_t)0x7fff;
 
-  L_x = L_deposit_h(tabpow[i]);         /* tabpow[i] << 16        */
-  tmp = WebRtcSpl_SubSatW16(tabpow[i], tabpow[i+1]);    /* tabpow[i] - tabpow[i+1] */
+  L_x = L_deposit_h(WebRtcG729fix_tabpow[i]);         /* tabpow[i] << 16        */
+  tmp = WebRtcSpl_SubSatW16(WebRtcG729fix_tabpow[i], WebRtcG729fix_tabpow[i+1]);    /* tabpow[i] - tabpow[i+1] */
   L_x = L_msu(L_x, tmp, a);             /* L_x -= tmp*a*2        */
 
   exp = WebRtcSpl_SubSatW16(30, exponent);
@@ -109,8 +109,8 @@ void WebRtcG729fix_Log2(
 
   i   = WebRtcSpl_SubSatW16(i, 32);
 
-  L_y = L_deposit_h(tablog[i]);         /* tablog[i] << 16        */
-  tmp = WebRtcSpl_SubSatW16(tablog[i], tablog[i+1]);    /* tablog[i] - tablog[i+1] */
+  L_y = L_deposit_h(WebRtcG729fix_tablog[i]);         /* tablog[i] << 16        */
+  tmp = WebRtcSpl_SubSatW16(WebRtcG729fix_tablog[i], WebRtcG729fix_tablog[i+1]);    /* tablog[i] - tablog[i+1] */
   L_y = L_msu(L_y, tmp, a);             /* L_y -= tmp*a*2        */
 
   *fraction = extract_h( L_y);
@@ -169,8 +169,8 @@ int32_t WebRtcG729fix_Inv_sqrt( /* (o) Q30 : output value (range: 0<=val<1) */
 
   i   = WebRtcSpl_SubSatW16(i, 16);
 
-  L_y = L_deposit_h(tabsqr[i]);         /* tabsqr[i] << 16          */
-  tmp = WebRtcSpl_SubSatW16(tabsqr[i], tabsqr[i+1]);    /* tabsqr[i] - tabsqr[i+1])  */
+  L_y = L_deposit_h(WebRtcG729fix_tabsqr[i]);         /* tabsqr[i] << 16          */
+  tmp = WebRtcSpl_SubSatW16(WebRtcG729fix_tabsqr[i], WebRtcG729fix_tabsqr[i+1]);    /* tabsqr[i] - tabsqr[i+1])  */
   L_y = L_msu(L_y, tmp, a);             /* L_y -=  tmp*a*2         */
 
   L_y = L_shr(L_y, exp);                /* denormalization */

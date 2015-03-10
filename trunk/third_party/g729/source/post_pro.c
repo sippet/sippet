@@ -76,11 +76,11 @@ void WebRtcG729fix_Post_Process(
      /*  y[i] = b[0]*x[i]   + b[1]*x[i-1]   + b[2]*x[i-2]    */
      /*                     + a[1]*y[i-1] + a[2] * y[i-2];      */
 
-     L_tmp     = WebRtcG729fix_Mpy_32_16(yy1_hi, yy1_lo, a100[1]);
-     L_tmp     = WebRtcSpl_AddSatW32(L_tmp, WebRtcG729fix_Mpy_32_16(yy2_hi, yy2_lo, a100[2]));
-     L_tmp     = L_mac(L_tmp, xx0, b100[0]);
-     L_tmp     = L_mac(L_tmp, xx1, b100[1]);
-     L_tmp     = L_mac(L_tmp, x2, b100[2]);
+     L_tmp     = WebRtcG729fix_Mpy_32_16(yy1_hi, yy1_lo, WebRtcG729fix_a100[1]);
+     L_tmp     = WebRtcSpl_AddSatW32(L_tmp, WebRtcG729fix_Mpy_32_16(yy2_hi, yy2_lo, WebRtcG729fix_a100[2]));
+     L_tmp     = L_mac(L_tmp, xx0, WebRtcG729fix_b100[0]);
+     L_tmp     = L_mac(L_tmp, xx1, WebRtcG729fix_b100[1]);
+     L_tmp     = L_mac(L_tmp, x2, WebRtcG729fix_b100[2]);
      L_tmp     = L_shl(L_tmp, 2);      /* Q29 --> Q31 (Q13 --> Q15) */
 
      /* Multiplication by two of output speech with saturation. */
