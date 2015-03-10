@@ -239,21 +239,8 @@ int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag            
  *  ~~~~~~~~~~~~~~~~~~~~~~                                                  *
  *--------------------------------------------------------------------------*/
 
-static int32_t Dot_Product(/* (o)   :Result of scalar product. */
-       int16_t   x[],     /* (i)   :First vector.             */
-       int16_t   y[],     /* (i)   :Second vector.            */
-       int16_t   lg       /* (i)   :Number of point.          */
-)
-{
-  int16_t i;
-  int32_t sum;
-
-  sum = 0;
-  for(i=0; i<lg; i++)
-    sum = L_mac(sum, x[i], y[i]);
-
-  return sum;
-}
+#define Dot_Product(x, y, lg) \
+  WebRtcSpl_DotProductWithScale(x, y, lg, -1)
 
 /*--------------------------------------------------------------------------*
  *  Function  Pitch_fr3_fast()                                              *
