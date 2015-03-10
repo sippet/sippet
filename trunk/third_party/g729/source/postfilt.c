@@ -210,7 +210,7 @@ void WebRtcG729fix_pit_pst_filt(
   int16_t *scal_sig,    /* (i)     : input signal (scaled, divided by 4) */
   int16_t t0_min,       /* (i)     : minimum value in the searched range */
   int16_t t0_max,       /* (i)     : maximum value in the searched range */
-  int16_t WebRtcSpl_SubSatW32fr,      /* (i)     : size of filtering                   */
+  int16_t L_subfr,      /* (i)     : size of filtering                   */
   int16_t *signal_pst   /* (o)     : harmonically postfiltered signal    */
 )
 {
@@ -233,7 +233,7 @@ void WebRtcG729fix_pit_pst_filt(
     corr = 0;
     p    = scal_sig;
     p1   = deb_sig;
-    for (j=0; j<WebRtcSpl_SubSatW32fr; j++)
+    for (j=0; j<L_subfr; j++)
        corr = L_mac(corr, *p++, *p1++);
 
     L_temp = WebRtcSpl_SubSatW32(corr, cor_max);
@@ -249,14 +249,14 @@ void WebRtcG729fix_pit_pst_filt(
 
   ener = 1;
   p = scal_sig - t0;
-  for ( i=0; i<WebRtcSpl_SubSatW32fr ;i++, p++)
+  for ( i=0; i<L_subfr ;i++, p++)
     ener = L_mac(ener, *p, *p);
 
   /* Compute the signal energy in the present subframe */
 
   ener0 = 1;
   p = scal_sig;
-  for ( i=0; i<WebRtcSpl_SubSatW32fr; i++, p++)
+  for ( i=0; i<L_subfr; i++, p++)
     ener0 = L_mac(ener0, *p, *p);
 
   if (cor_max < 0)
@@ -288,7 +288,7 @@ void WebRtcG729fix_pit_pst_filt(
 
   if (temp < (int32_t)0)           /* if prediction gain < 3 dB   */
   {                               /* switch off pitch postfilter */
-    for (i = 0; i < WebRtcSpl_SubSatW32fr; i++)
+    for (i = 0; i < L_subfr; i++)
       signal_pst[i] = signal[i];
     return;
   }
@@ -315,7 +315,7 @@ void WebRtcG729fix_pit_pst_filt(
   }
 
 
-  for (i = 0; i < WebRtcSpl_SubSatW32fr; i++)
+  for (i = 0; i < L_subfr; i++)
   {
     /* signal_pst[i] = g0*signal[i] + gain*signal[i-t0]; */
 
