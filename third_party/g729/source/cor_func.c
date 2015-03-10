@@ -49,7 +49,7 @@ void WebRtcG729fix_Corr_xy2(
       for(i=0; i<L_SUBFR; i++)
          L_acc = L_mac(L_acc, scaled_y2[i], scaled_y2[i]);    /* L_acc:Q19 */
 
-      exp      = norm_l(L_acc);
+      exp      = WebRtcSpl_NormW32(L_acc);
       y2y2     = L_round( L_shl(L_acc, exp) );
       exp_y2y2 = WebRtcSpl_AddSatW16(exp, 19-16);                          /* Q[19+exp-16] */
 
@@ -61,7 +61,7 @@ void WebRtcG729fix_Corr_xy2(
       for(i=0; i<L_SUBFR; i++)
          L_acc = L_mac(L_acc, xn[i], scaled_y2[i]);           /* L_acc:Q10 */
 
-      exp      = norm_l(L_acc);
+      exp      = WebRtcSpl_NormW32(L_acc);
       xny2     = L_round( L_shl(L_acc, exp) );
       exp_xny2 = WebRtcSpl_AddSatW16(exp, 10-16);                          /* Q[10+exp-16] */
 
@@ -73,7 +73,7 @@ void WebRtcG729fix_Corr_xy2(
       for(i=0; i<L_SUBFR; i++)
          L_acc = L_mac(L_acc, y1[i], scaled_y2[i]);           /* L_acc:Q10 */
 
-      exp      = norm_l(L_acc);
+      exp      = WebRtcSpl_NormW32(L_acc);
       y1y2     = L_round( L_shl(L_acc, exp) );
       exp_y1y2 = WebRtcSpl_AddSatW16(exp, 10-16);                          /* Q[10+exp-16] */
 
@@ -110,8 +110,8 @@ void WebRtcG729fix_Cor_h_X(
 
      y32[i] = s;
 
-     s = L_abs(s);
-     L_temp =L_sub(s,max);
+     s = WEBRTC_SPL_ABS_W32(s);
+     L_temp =WebRtcSpl_SubSatW32(s,max);
      if(L_temp>0L) {
         max = s;
      }
@@ -120,7 +120,7 @@ void WebRtcG729fix_Cor_h_X(
    /* Find the number of right shifts to do on y32[]  */
    /* so that maximum is on 13 bits                   */
 
-   j = norm_l(max);
+   j = WebRtcSpl_NormW32(max);
    if(j > 16) {
     j = 16;
    }

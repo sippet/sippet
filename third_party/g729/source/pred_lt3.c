@@ -15,7 +15,7 @@
  * Compute the result of long term prediction with fractional        *
  * interpolation of resolution 1/3.                                  *
  *                                                                   *
- * On return exc[0..L_subfr-1] contains the interpolated signal      *
+ * On return exc[0..WebRtcSpl_SubSatW32fr-1] contains the interpolated signal      *
  *   (adaptive codebook excitation)                                  *
  *-------------------------------------------------------------------*/
 
@@ -28,7 +28,7 @@ void WebRtcG729fix_Pred_lt_3(
   int16_t   exc[],       /* in/out: excitation buffer */
   int16_t   T0,          /* input : integer pitch lag */
   int16_t   frac,        /* input : fraction of lag   */
-  int16_t   L_subfr      /* input : subframe size     */
+  int16_t   WebRtcSpl_SubSatW32fr      /* input : subframe size     */
 )
 {
   int16_t   i, j, k;
@@ -44,7 +44,7 @@ void WebRtcG729fix_Pred_lt_3(
     x0--;
   }
 
-  for (j=0; j<L_subfr; j++)
+  for (j=0; j<WebRtcSpl_SubSatW32fr; j++)
   {
     x1 = x0++;
     x2 = x0;

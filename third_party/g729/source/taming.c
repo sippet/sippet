@@ -57,12 +57,12 @@ int16_t WebRtcG729fix_test_err(  /* (o) flag set to 1 if taming is necessary  */
     L_maxloc = -1L;
     flag = 0 ;
     for(i=zone2; i>=zone1; i--) {
-        L_acc = L_sub(L_exc_err[i], L_maxloc);
+        L_acc = WebRtcSpl_SubSatW32(L_exc_err[i], L_maxloc);
         if(L_acc > 0L) {
                 L_maxloc = L_exc_err[i];
         }
     }
-    L_acc = L_sub(L_maxloc, L_THRESH_ERR);
+    L_acc = WebRtcSpl_SubSatW32(L_maxloc, L_THRESH_ERR);
     if(L_acc > 0L) {
         flag = 1;
     }
@@ -95,7 +95,7 @@ void WebRtcG729fix_update_exc_err(
         L_temp = WebRtcG729fix_Mpy_32_16(hi, lo, gain_pit);
         L_temp = L_shl(L_temp, 1);
         L_temp = WebRtcSpl_AddSatW32(0x00004000L, L_temp);
-        L_acc = L_sub(L_temp, L_worst);
+        L_acc = WebRtcSpl_SubSatW32(L_temp, L_worst);
         if(L_acc > 0L) {
                 L_worst = L_temp;
         }
@@ -103,7 +103,7 @@ void WebRtcG729fix_update_exc_err(
         L_temp = WebRtcG729fix_Mpy_32_16(hi, lo, gain_pit);
         L_temp = L_shl(L_temp, 1);
         L_temp = WebRtcSpl_AddSatW32(0x00004000L, L_temp);
-        L_acc = L_sub(L_temp, L_worst);
+        L_acc = WebRtcSpl_SubSatW32(L_temp, L_worst);
         if(L_acc > 0L) {
                 L_worst = L_temp;
         }
@@ -121,7 +121,7 @@ void WebRtcG729fix_update_exc_err(
                 L_temp = WebRtcG729fix_Mpy_32_16(hi, lo, gain_pit);
                 L_temp = L_shl(L_temp, 1);
                 L_temp = WebRtcSpl_AddSatW32(0x00004000L, L_temp);
-                L_acc = L_sub(L_temp, L_worst);
+                L_acc = WebRtcSpl_SubSatW32(L_temp, L_worst);
                 if(L_acc > 0L) L_worst = L_temp;
         }
     }

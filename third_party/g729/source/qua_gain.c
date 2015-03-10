@@ -30,7 +30,7 @@ static void Gbk_presel(
  * Inputs:                                                                   *
  *   code[]     :Innovative codebook.                                        *
  *   g_coeff[]  :Correlations compute for pitch.                             *
- *   L_subfr    :Subframe length.                                            *
+ *   WebRtcSpl_SubSatW32fr    :Subframe length.                                            *
  *                                                                           *
  * Outputs:                                                                  *
  *   gain_pit   :Quantized pitch gain.                                       *
@@ -46,7 +46,7 @@ int16_t WebRtcG729fix_Qua_gain(
    int16_t g_coeff[],    /* (i)     :Correlations <xn y1> -2<y1 y1> */
                         /*            <y2,y2>, -2<xn,y2>, 2<y1,y2> */
    int16_t exp_coeff[],  /* (i)     :Q-Format g_coeff[]             */
-   int16_t L_subfr,      /* (i)     :Subframe length.               */
+   int16_t WebRtcSpl_SubSatW32fr,      /* (i)     :Subframe length.               */
    int16_t *gain_pit,    /* (o) Q14 :Pitch gain.                    */
    int16_t *gain_cod,    /* (o) Q1  :Code gain.                     */
    int16_t tameflag      /* (i)     : set to 1 if taming is needed  */
@@ -70,7 +70,7 @@ int16_t WebRtcG729fix_Qua_gain(
    *-  predicted codebook gain => gcode0[exp_gcode0]  -*
    *---------------------------------------------------*/
 
-   WebRtcG729fix_Gain_predict(st->past_qua_en, code, L_subfr, &gcode0, &exp_gcode0);
+   WebRtcG729fix_Gain_predict(st->past_qua_en, code, WebRtcSpl_SubSatW32fr, &gcode0, &exp_gcode0);
 
   /*-----------------------------------------------------------------*
    *  pre-selection                                                  *
@@ -94,14 +94,14 @@ int16_t WebRtcG729fix_Qua_gain(
    exp2   = WebRtcSpl_AddSatW16( WebRtcSpl_AddSatW16( exp_coeff[4], exp_coeff[4] ), 1 );
 
    if(exp1 > exp2){
-      L_tmp = L_sub( L_shr( L_tmp1, WebRtcSpl_SubSatW16(exp1,exp2) ), L_tmp2 );
+      L_tmp = WebRtcSpl_SubSatW32( L_shr( L_tmp1, WebRtcSpl_SubSatW16(exp1,exp2) ), L_tmp2 );
       exp = exp2;
    }
    else{
-      L_tmp = L_sub( L_tmp1, L_shr( L_tmp2, WebRtcSpl_SubSatW16(exp2,exp1) ) );
+      L_tmp = WebRtcSpl_SubSatW32( L_tmp1, L_shr( L_tmp2, WebRtcSpl_SubSatW16(exp2,exp1) ) );
       exp = exp1;
    }
-   sft = norm_l( L_tmp );
+   sft = WebRtcSpl_NormW32( L_tmp );
    denom = extract_h( L_shl(L_tmp, sft) );
    exp_denom = WebRtcSpl_SubSatW16( WebRtcSpl_AddSatW16( exp, sft ), 16 );
 
@@ -118,14 +118,14 @@ int16_t WebRtcG729fix_Qua_gain(
    exp2   = WebRtcSpl_AddSatW16( WebRtcSpl_AddSatW16( exp_coeff[3], exp_coeff[4] ), 1 );
 
    if(exp1 > exp2){
-      L_tmp = L_sub( L_shr( L_tmp1, WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(exp1,exp2),1 )), L_shr( L_tmp2,1 ) );
+      L_tmp = WebRtcSpl_SubSatW32( L_shr( L_tmp1, WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(exp1,exp2),1 )), L_shr( L_tmp2,1 ) );
       exp = WebRtcSpl_SubSatW16(exp2,1);
    }
    else{
-      L_tmp = L_sub( L_shr( L_tmp1,1 ), L_shr( L_tmp2, WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(exp2,exp1),1 )) );
+      L_tmp = WebRtcSpl_SubSatW32( L_shr( L_tmp1,1 ), L_shr( L_tmp2, WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(exp2,exp1),1 )) );
       exp = WebRtcSpl_SubSatW16(exp1,1);
    }
-   sft = norm_l( L_tmp );
+   sft = WebRtcSpl_NormW32( L_tmp );
    nume = extract_h( L_shl(L_tmp, sft) );
    exp_nume = WebRtcSpl_SubSatW16( WebRtcSpl_AddSatW16( exp, sft ), 16 );
 
@@ -146,14 +146,14 @@ int16_t WebRtcG729fix_Qua_gain(
    exp2   = WebRtcSpl_AddSatW16( WebRtcSpl_AddSatW16( exp_coeff[1], exp_coeff[4] ), 1 );
 
    if(exp1 > exp2){
-      L_tmp = L_sub( L_shr( L_tmp1, WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(exp1,exp2),1) ), L_shr( L_tmp2,1 ) );
+      L_tmp = WebRtcSpl_SubSatW32( L_shr( L_tmp1, WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(exp1,exp2),1) ), L_shr( L_tmp2,1 ) );
       exp = WebRtcSpl_SubSatW16(exp2,1);
    }
    else{
-      L_tmp = L_sub( L_shr( L_tmp1,1 ), L_shr( L_tmp2, WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(exp2,exp1),1) ) );
+      L_tmp = WebRtcSpl_SubSatW32( L_shr( L_tmp1,1 ), L_shr( L_tmp2, WebRtcSpl_AddSatW16(WebRtcSpl_SubSatW16(exp2,exp1),1) ) );
       exp = WebRtcSpl_SubSatW16(exp1,1);
    }
-   sft = norm_l( L_tmp );
+   sft = WebRtcSpl_NormW32( L_tmp );
    nume = extract_h( L_shl(L_tmp, sft) );
    exp_nume = WebRtcSpl_SubSatW16( WebRtcSpl_AddSatW16( exp, sft ), 16 );
 
@@ -265,7 +265,7 @@ if(tameflag == 1){
          L_tmp = WebRtcSpl_AddSatW32(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
          L_tmp = WebRtcSpl_AddSatW32(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
 
-         L_temp = L_sub(L_tmp, L_dist_min);
+         L_temp = WebRtcSpl_SubSatW32(L_tmp, L_dist_min);
 
          if( L_temp < 0L ){
             L_dist_min = L_tmp;
@@ -297,7 +297,7 @@ else{
          L_tmp = WebRtcSpl_AddSatW32(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
          L_tmp = WebRtcSpl_AddSatW32(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
 
-         L_temp = L_sub(L_tmp, L_dist_min);
+         L_temp = WebRtcSpl_SubSatW32(L_tmp, L_dist_min);
 
          if( L_temp < 0L ){
             L_dist_min = L_tmp;
@@ -362,7 +362,7 @@ static void Gbk_presel(
    acc_h = extract_h( L_acc );                         /* acc_h:Q4      */
    L_preg = L_mult( acc_h, gcode0 );                   /* L_preg:Q9     */
    L_acc = L_shl( L_deposit_l( best_gain[1] ), 7 );    /* L_acc:Q9      */
-   L_acc = L_sub( L_acc, L_preg );
+   L_acc = WebRtcSpl_SubSatW32( L_acc, L_preg );
    acc_h = extract_h( L_shl( L_acc,2 ) );              /* L_acc_h:Q[-5] */
    L_tmp_x = L_mult( acc_h, INV_COEF );                /* L_tmp_x:Q15   */
 
@@ -371,13 +371,13 @@ static void Gbk_presel(
                                       -coef[0][0]*best_gain[1]) * inv_coef;
   *--------------------------------------------------------------------------*/
    L_acc = L_shr( L_coef[0][1], 10 );                  /* L_acc:Q20   */
-   L_acc = L_sub( L_cfbg, L_acc );                     /* !!x -> L_cfbg:Q20 */
+   L_acc = WebRtcSpl_SubSatW32( L_cfbg, L_acc );                     /* !!x -> L_cfbg:Q20 */
    acc_h = extract_h( L_acc );                         /* acc_h:Q4    */
    acc_h = mult( acc_h, gcode0 );                      /* acc_h:Q[-7] */
    L_tmp = L_mult( acc_h, coef[1][0] );                /* L_tmp:Q10   */
 
    L_preg = L_mult( coef[0][0], best_gain[1] );        /* L_preg:Q13  */
-   L_acc = L_sub( L_tmp, L_shr(L_preg,3) );            /* L_acc:Q10   */
+   L_acc = WebRtcSpl_SubSatW32( L_tmp, L_shr(L_preg,3) );            /* L_acc:Q10   */
 
    acc_h = extract_h( L_shl( L_acc,2 ) );              /* acc_h:Q[-4] */
    L_tmp_y = L_mult( acc_h, INV_COEF );                /* L_tmp_y:Q16 */
@@ -389,7 +389,7 @@ static void Gbk_presel(
       /*-- pre select codebook #1 --*/
       *cand1 = 0 ;
       do{
-         L_temp = L_sub( L_tmp_y, L_shr(L_mult(thr1[*cand1],gcode0),sft_y));
+         L_temp = WebRtcSpl_SubSatW32( L_tmp_y, L_shr(L_mult(thr1[*cand1],gcode0),sft_y));
          if(L_temp >0L  ){
         (*cand1) =WebRtcSpl_AddSatW16(*cand1,1);
      }
@@ -398,7 +398,7 @@ static void Gbk_presel(
       /*-- pre select codebook #2 --*/
       *cand2 = 0 ;
       do{
-        L_temp = L_sub( L_tmp_x , L_shr(L_mult(thr2[*cand2],gcode0),sft_x));
+        L_temp = WebRtcSpl_SubSatW32( L_tmp_x , L_shr(L_mult(thr2[*cand2],gcode0),sft_x));
          if( L_temp >0L) {
         (*cand2) =WebRtcSpl_AddSatW16(*cand2,1);
      }
@@ -409,7 +409,7 @@ static void Gbk_presel(
       /*-- pre select codebook #1 --*/
       *cand1 = 0 ;
       do{
-        L_temp = L_sub(L_tmp_y ,L_shr(L_mult(thr1[*cand1],gcode0),sft_y));
+        L_temp = WebRtcSpl_SubSatW32(L_tmp_y ,L_shr(L_mult(thr1[*cand1],gcode0),sft_y));
          if( L_temp <0L){
         (*cand1) =WebRtcSpl_AddSatW16(*cand1,1);
      }
@@ -418,7 +418,7 @@ static void Gbk_presel(
       /*-- pre select codebook #2 --*/
       *cand2 = 0 ;
       do{
-         L_temp =L_sub(L_tmp_x ,L_shr(L_mult(thr2[*cand2],gcode0),sft_x));
+         L_temp =WebRtcSpl_SubSatW32(L_tmp_x ,L_shr(L_mult(thr2[*cand2],gcode0),sft_x));
          if( L_temp <0L){
         (*cand2) =WebRtcSpl_AddSatW16(*cand2,1);
      }

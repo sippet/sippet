@@ -201,7 +201,7 @@ void WebRtcG729fix_Lsp_stability(
   for(j=0; j<M-1; j++) {
     L_acc = L_deposit_l( buf[j+1] );
     L_accb = L_deposit_l( buf[j] );
-    L_diff = L_sub( L_acc, L_accb );
+    L_diff = WebRtcSpl_SubSatW32( L_acc, L_accb );
 
     if( L_diff < 0L ) {
       /* exchange buf[j]<->buf[j+1] */
@@ -219,9 +219,9 @@ void WebRtcG729fix_Lsp_stability(
   for(j=0; j<M-1; j++) {
     L_acc = L_deposit_l( buf[j+1] );
     L_accb = L_deposit_l( buf[j] );
-    L_diff = L_sub( L_acc, L_accb );
+    L_diff = WebRtcSpl_SubSatW32( L_acc, L_accb );
 
-    if( L_sub(L_diff, GAP3)<0L ) {
+    if( WebRtcSpl_SubSatW32(L_diff, GAP3)<0L ) {
       buf[j+1] = WebRtcSpl_AddSatW16( buf[j], GAP3 );
     }
   }

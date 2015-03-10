@@ -125,7 +125,7 @@ void WebRtcG729fix_Cod_cng(
     }
       
     /* compare energy difference between current frame and last frame */
-    temp = abs_s(WebRtcSpl_SubSatW16(st->prev_energy, energyq));
+    temp = WEBRTC_SPL_ABS_W16(WebRtcSpl_SubSatW16(st->prev_energy, energyq));
     temp = WebRtcSpl_SubSatW16(temp, 2);
     if (temp > 0) st->flag_chang = 1;
       
@@ -276,7 +276,7 @@ static void Calc_RCoeff(int16_t *Coeff, int16_t *RCoeff, int16_t *sh_RCoeff)
   }
   
   /* Compute exponent RCoeff */
-  sh1 = norm_l(L_acc);
+  sh1 = WebRtcSpl_NormW32(L_acc);
   L_acc = L_shl(L_acc, sh1);
   RCoeff[0] = L_round(L_acc);
   
@@ -341,7 +341,7 @@ static int16_t Cmp_filt(int16_t *RCoeff, int16_t sh_RCoeff, int16_t *acf,
   temp1 = WebRtcSpl_SubSatW16(temp1, temp2);
   L_temp1 = L_shl(L_temp1, temp1);
   
-  L_temp0 = L_sub(L_temp0, L_temp1);
+  L_temp0 = WebRtcSpl_SubSatW32(L_temp0, L_temp1);
   if(L_temp0 > 0L) diff = 1;
   else diff = 0;
 
@@ -423,7 +423,7 @@ static void Calc_sum_acf(int16_t *acf, int16_t *sh_acf,
       L_tab[j] = WebRtcSpl_AddSatW32(L_tab[j], L_temp);
     }
   } 
-  temp = norm_l(L_tab[0]);
+  temp = WebRtcSpl_NormW32(L_tab[0]);
   for(i=0; i<=M; i++) {
     sum[i] = extract_h(L_shl(L_tab[i], temp));
   }

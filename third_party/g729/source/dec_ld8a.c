@@ -333,7 +333,7 @@ void WebRtcG729fix_Decod_ld8a(
     for(i=0; i<L_FRAME; i++) {
       L_temp = L_mac(L_temp, st->exc[i], st->exc[i]);
     } /* may overflow => last level of SID quantizer */
-    st->sh_sid_sav = norm_l(L_temp);
+    st->sh_sid_sav = WebRtcSpl_NormW32(L_temp);
     st->sid_sav = L_round(L_shl(L_temp, st->sh_sid_sav));
     st->sh_sid_sav = WebRtcSpl_SubSatW16(16, st->sh_sid_sav);
   }

@@ -483,7 +483,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.                 
   int16_t exc[],       /* (i)     : excitation buffer                      */
   int16_t xn[],        /* (i)     : target vector                          */
   int16_t h[],         /* (i) Q12 : impulse response of filters.           */
-  int16_t L_subfr,     /* (i)     : Length of subframe                     */
+  int16_t WebRtcSpl_SubSatW32fr,     /* (i)     : Length of subframe                     */
   int16_t t0_min,      /* (i)     : minimum value in the searched range.   */
   int16_t t0_max,      /* (i)     : maximum value in the searched range.   */
   int16_t i_subfr,     /* (i)     : indicator for first subframe.          */
@@ -494,7 +494,7 @@ int16_t WebRtcG729fix_G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 
   int16_t xn[],       /* (i)     : Pitch target.                            */
   int16_t y1[],       /* (i)     : Filtered adaptive codebook.              */
   int16_t g_coeff[],  /* (i)     : Correlations need for gain quantization. */
-  int16_t L_subfr     /* (i)     : Length of subframe.                      */
+  int16_t WebRtcSpl_SubSatW32fr     /* (i)     : Length of subframe.                      */
 );
 
 int16_t WebRtcG729fix_Enc_lag3(     /* output: Return index of encoding */
@@ -525,7 +525,7 @@ void WebRtcG729fix_Pred_lt_3(
   int16_t   exc[],       /* in/out: excitation buffer */
   int16_t   T0,          /* input : integer pitch lag */
   int16_t   frac,        /* input : fraction of lag   */
-  int16_t   L_subfr      /* input : subframe size     */
+  int16_t   WebRtcSpl_SubSatW32fr      /* input : subframe size     */
 );
 
 int16_t WebRtcG729fix_Parity_Pitch(    /* output: parity bit (XOR of 6 MSB bits)    */
@@ -756,7 +756,7 @@ int16_t WebRtcG729fix_Qua_gain(
   int16_t g_coeff[], /* (i)     : Correlations <xn y1> -2<y1 y1>             */
                     /*            <y2,y2>, -2<xn,y2>, 2<y1,y2>              */
   int16_t exp_coeff[],/* (i)    : Q-Format g_coeff[]                         */
-  int16_t L_subfr,   /* (i)     : Subframe length.                           */
+  int16_t WebRtcSpl_SubSatW32fr,   /* (i)     : Subframe length.                           */
   int16_t *gain_pit, /* (o) Q14 : Pitch gain.                                */
   int16_t *gain_cod, /* (o) Q1  : Code gain.                                 */
   int16_t tameflag   /* (i)     : flag set to 1 if taming is needed          */
@@ -766,7 +766,7 @@ void WebRtcG729fix_Dec_gain(
   Decod_ld8a_state *st,
   int16_t index,     /* (i)     : Index of quantization.                     */
   int16_t code[],    /* (i) Q13 : Innovative vector.                         */
-  int16_t L_subfr,   /* (i)     : Subframe length.                           */
+  int16_t WebRtcSpl_SubSatW32fr,   /* (i)     : Subframe length.                           */
   int16_t bfi,       /* (i)     : Bad frame indicator                        */
   int16_t *gain_pit, /* (o) Q14 : Pitch gain.                                */
   int16_t *gain_cod  /* (o) Q1  : Code gain.                                 */
@@ -775,7 +775,7 @@ void WebRtcG729fix_Dec_gain(
 void WebRtcG729fix_Gain_predict(
   int16_t past_qua_en[], /* (i) Q10 : Past quantized energies                */
   int16_t code[],        /* (i) Q13 : Innovative vector.                     */
-  int16_t L_subfr,       /* (i)     : Subframe length.                       */
+  int16_t WebRtcSpl_SubSatW32fr,       /* (i)     : Subframe length.                       */
   int16_t *gcode0,       /* (o) Qxx : Predicted codebook gain                */
   int16_t *exp_gcode0    /* (o)     : Q-Format(gcode0)                       */
 );
@@ -842,7 +842,7 @@ void WebRtcG729fix_pit_pst_filt(
   int16_t *scal_sig,    /* (i)     : input signal (scaled, divided by 4)    */
   int16_t t0_min,       /* (i)     : minimum value in the searched range    */
   int16_t t0_max,       /* (i)     : maximum value in the searched range    */
-  int16_t L_subfr,      /* (i)     : size of filtering                      */
+  int16_t WebRtcSpl_SubSatW32fr,      /* (i)     : size of filtering                      */
   int16_t *signal_pst   /* (o)     : harmonically postfiltered signal       */
 );
 

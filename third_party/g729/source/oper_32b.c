@@ -273,7 +273,7 @@ int32_t WebRtcG729fix_Div_32(int32_t L_num, int16_t denom_hi, int16_t denom_lo)
   L_32 = WebRtcG729fix_Mpy_32_16(denom_hi, denom_lo, approx); /* result in Q30 */
 
 
-  L_32 = L_sub( (int32_t)0x7fffffffL, L_32);      /* result in Q30 */
+  L_32 = WebRtcSpl_SubSatW32( (int32_t)0x7fffffffL, L_32);      /* result in Q30 */
 
   WebRtcG729fix_L_Extract(L_32, &hi, &lo);
 
