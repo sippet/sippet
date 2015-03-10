@@ -30,8 +30,6 @@
  |___________________________________________________________________________|
 */
 
-G729_INLINE int16_t WebRtcSpl_SubSatW16(int16_t var1, int16_t var2);    /* Short sub,           1 */
-G729_INLINE int16_t abs_s(int16_t var1);                /* Short abs,           1 */
 G729_INLINE int16_t shl(int16_t var1, int16_t var2);    /* Short shift left,    1 */
 G729_INLINE int16_t shr(int16_t var1, int16_t var2);    /* Short shift right,   1 */
 G729_INLINE int16_t mult(int16_t var1, int16_t var2);   /* Short mult,          1 */
@@ -43,7 +41,6 @@ G729_INLINE int16_t L_round(int32_t L_var1);            /* Round,               
 G729_INLINE int32_t L_mac(int32_t L_var3, int16_t var1, int16_t var2); /* Mac,  1 */
 G729_INLINE int32_t L_msu(int32_t L_var3, int16_t var1, int16_t var2); /* Msu,  1 */
 
-G729_INLINE int32_t L_sub(int32_t L_var1, int32_t L_var2);  /* Long sub,        2 */
 G729_INLINE int32_t L_negate(int32_t L_var1);               /* Long negate,     2 */
 G729_INLINE int16_t mult_r(int16_t var1, int16_t var2);  /* Mult with round,    2 */
 G729_INLINE int32_t L_shl(int32_t L_var1, int16_t var2); /* Long shift left,    2 */
@@ -54,57 +51,8 @@ G729_INLINE int32_t L_deposit_h(int16_t var1);       /* 16 bit var1 -> MSB,     
 G729_INLINE int32_t L_deposit_l(int16_t var1);       /* 16 bit var1 -> LSB,     2 */
 
 G729_INLINE int32_t L_shr_r(int32_t L_var1, int16_t var2);/* Long shift right w/ round,  3*/
-G729_INLINE int32_t L_abs(int32_t L_var1);            /* Long abs,              3 */
-
-G729_INLINE int16_t norm_s(int16_t var1);             /* Short norm,           15 */
 
 G729_INLINE int16_t div_s(int16_t var1, int16_t var2); /* Short division,      18 */
-
-G729_INLINE int16_t norm_l(int32_t L_var1);           /* Long norm,            30 */
-
-/*___________________________________________________________________________
- |                                                                           |
- |   Function Name : abs_s                                                   |
- |                                                                           |
- |   Purpose :                                                               |
- |                                                                           |
- |    Absolute value of var1; abs_s(-32768) = 32767.                         |
- |                                                                           |
- |   Complexity weight : 1                                                   |
- |                                                                           |
- |   Inputs :                                                                |
- |                                                                           |
- |    var1                                                                   |
- |            16 bit short signed integer (int16_t) whose value falls in the |
- |            range : 0xffff 8000 <= var1 <= 0x0000 7fff.                    |
- |                                                                           |
- |   Outputs :                                                               |
- |                                                                           |
- |    none                                                                   |
- |                                                                           |
- |   Return Value :                                                          |
- |                                                                           |
- |    var_out                                                                |
- |            16 bit short signed integer (int16_t) whose value falls in the |
- |            range : 0x0000 0000 <= var_out <= 0x0000 7fff.                 |
- |___________________________________________________________________________|
-*/
-G729_INLINE int16_t abs_s(int16_t var1)
-{
-  int16_t var_out;
-
-  if (var1 == (int16_t)0x8000) {
-    var_out = WEBRTC_SPL_WORD16_MAX;
-  } else {
-    if (var1 < 0) {
-      var_out = -var1;
-    } else {
-      var_out = var1;
-    }
-  }
-
-  return var_out;
-}
 
 /*___________________________________________________________________________
  |                                                                           |
@@ -515,7 +463,7 @@ G729_INLINE int32_t L_mac(int32_t L_var3, int16_t var1, int16_t var2)
  |                                                                           |
  |   Multiply var1 by var2 and shift the result left by 1. Subtract the 32   |
  |   bit result to L_var3 with saturation, return a 32 bit result:           |
- |        L_msu(L_var3,var1,var2) = L_sub(L_var3,(L_mult(var1,var2)).        |
+ |        L_msu(L_var3,var1,var2) = WebRtcSpl_SubSatW32(L_var3,(L_mult(var1,var2)).        |
  |                                                                           |
  |   Complexity weight : 1                                                   |
  |                                                                           |
@@ -558,65 +506,7 @@ G729_INLINE int32_t L_msu(int32_t L_var3, int16_t var1, int16_t var2)
             "r"(rb),
             "r"(rc));
 #else
-  return L_sub(L_var3, L_mult(var1, var2));
-#endif
-}
-
-/*___________________________________________________________________________
- |                                                                           |
- |   Function Name : L_sub                                                   |
- |                                                                           |
- |   Purpose :                                                               |
- |                                                                           |
- |   32 bits subtraction of the two 32 bits variables (L_var1-L_var2) with   |
- |   overflow control and saturation; the result is set at +214783647 when   |
- |   overflow occurs or at -214783648 when underflow occurs.                 |
- |                                                                           |
- |   Complexity weight : 2                                                   |
- |                                                                           |
- |   Inputs :                                                                |
- |                                                                           |
- |    L_var1  32 bit long signed integer (int32_t) whose value falls in the  |
- |            range : 0x8000 0000 <= L_var3 <= 0x7fff ffff.                  |
- |                                                                           |
- |    L_var2  32 bit long signed integer (int32_t) whose value falls in the  |
- |            range : 0x8000 0000 <= L_var3 <= 0x7fff ffff.                  |
- |                                                                           |
- |   Outputs :                                                               |
- |                                                                           |
- |    none                                                                   |
- |                                                                           |
- |   Return Value :                                                          |
- |                                                                           |
- |    L_var_out                                                              |
- |            32 bit long signed integer (int32_t) whose value falls in the  |
- |            range : 0x8000 0000 <= L_var_out <= 0x7fff ffff.               |
- |___________________________________________________________________________|
-*/
-G729_INLINE int32_t L_sub(int32_t L_var1, int32_t L_var2)
-{
-#ifdef ARCH_ARM
-  register int32_t L_var_out;
-  register int32_t ra = L_var1;
-  register int32_t rb = L_var2;
-
-  __asm__("qsub %0, %1, %2"
-          : "=&r*i"(L_var_out)
-          : "r"(ra),
-            "r"(rb));
-
-  return L_var_out;
-#else
-  int32_t L_var_out;
-
-  L_var_out = L_var1 - L_var2;
-  if ((L_var1 ^ L_var2) < 0) {
-    if ((L_var_out ^ L_var1) & WEBRTC_SPL_WORD32_MIN) {
-      L_var_out = (L_var1 < 0L) ? WEBRTC_SPL_WORD32_MIN : WEBRTC_SPL_WORD32_MAX;
-    }
-  }
-
-  return L_var_out;
+  return WebRtcSpl_SubSatW32(L_var3, L_mult(var1, var2));
 #endif
 }
 
@@ -1015,111 +905,6 @@ G729_INLINE int32_t L_shr_r(int32_t L_var1,int16_t var2)
 
 /*___________________________________________________________________________
  |                                                                           |
- |   Function Name : L_abs                                                   |
- |                                                                           |
- |   Purpose :                                                               |
- |                                                                           |
- |    Absolute value of L_var1; Saturate in case where the input is          |
- |                                                               -214783648  |
- |                                                                           |
- |   Complexity weight : 3                                                   |
- |                                                                           |
- |   Inputs :                                                                |
- |                                                                           |
- |    L_var1                                                                 |
- |            32 bit long signed integer (int32_t) whose value falls in the  |
- |            range : 0x8000 0000 <= var1 <= 0x7fff ffff.                    |
- |                                                                           |
- |   Outputs :                                                               |
- |                                                                           |
- |    none                                                                   |
- |                                                                           |
- |   Return Value :                                                          |
- |                                                                           |
- |    L_var_out                                                              |
- |            32 bit long signed integer (int32_t) whose value falls in the  |
- |            range : 0x0000 0000 <= var_out <= 0x7fff ffff.                 |
- |___________________________________________________________________________|
-*/
-G729_INLINE int32_t L_abs(int32_t L_var1)
-{
- int32_t L_var_out;
-
-  if (L_var1 == WEBRTC_SPL_WORD32_MIN) {
-    L_var_out = WEBRTC_SPL_WORD32_MAX;
-  } else {
-    L_var_out = (L_var1 < 0 ? -L_var1 : L_var1);
-  }
-
-  return L_var_out;
-}
-
-/*___________________________________________________________________________
- |                                                                           |
- |   Function Name : norm_s                                                  |
- |                                                                           |
- |   Purpose :                                                               |
- |                                                                           |
- |   Produces the number of left shift needed to normalize the 16 bit varia- |
- |   ble var1 for positive values on the interval with minimum of 16384 and  |
- |   maximum of 32767, and for negative values on the interval with minimum  |
- |   of -32768 and maximum of -16384; in order to normalize the result, the  |
- |   following operation must be done :                                      |
- |                    norm_var1 = shl(var1,norm_s(var1)).                    |
- |                                                                           |
- |   Complexity weight : 15                                                  |
- |                                                                           |
- |   Inputs :                                                                |
- |                                                                           |
- |    var1                                                                   |
- |            16 bit short signed integer (int16_t) whose value falls in the |
- |            range : 0xffff 8000 <= var1 <= 0x0000 7fff.                    |
- |                                                                           |
- |   Outputs :                                                               |
- |                                                                           |
- |    none                                                                   |
- |                                                                           |
- |   Return Value :                                                          |
- |                                                                           |
- |    var_out                                                                |
- |            16 bit short signed integer (int16_t) whose value falls in the |
- |            range : 0x0000 0000 <= var_out <= 0x0000 000f.                 |
- |___________________________________________________________________________|
-*/
-G729_INLINE int16_t norm_s(int16_t var1)
-{
-#ifdef ARCH_ARM
-  register int32_t var_out = 0;
-  register int32_t ra = var1 << 16;
-  if (ra) {
-    ra ^= (ra << 1);
-    __asm__("clz %0, %1"
-            : "=r"(var_out)
-            : "r"(ra));
-  }
-  return (int16_t)var_out;
-#else
-  int16_t var_out;
-
-  if (var1 == 0) {
-    var_out = 0;
-  } else if (var1 == (int16_t)0xffff) {
-      var_out = 15;
-  } else {
-    if (var1 < 0) {
-      var1 = ~var1;
-    }
-    for (var_out = 0; var1 < 0x4000; var_out++) {
-       var1 <<= 1;
-    }
-  }
-
-  return var_out;
-#endif
-}
-
-/*___________________________________________________________________________
- |                                                                           |
  |   Function Name : div_s                                                   |
  |                                                                           |
  |   Purpose :                                                               |
@@ -1193,70 +978,6 @@ G729_INLINE int16_t div_s(int16_t var1, int16_t var2)
   }
 
   return(var_out);
-}
-
-/*___________________________________________________________________________
- |                                                                           |
- |   Function Name : norm_l                                                  |
- |                                                                           |
- |   Purpose :                                                               |
- |                                                                           |
- |   Produces the number of left shift needed to normalize the 32 bit varia- |
- |   ble l_var1 for positive values on the interval with minimum of          |
- |   1073741824 and maximum of 2147483647, and for negative values on the in-|
- |   terval with minimum of -2147483648 and maximum of -1073741824; in order |
- |   to normalize the result, the following operation must be done :         |
- |                   norm_L_var1 = L_shl(L_var1,norm_l(L_var1)).             |
- |                                                                           |
- |   Complexity weight : 30                                                  |
- |                                                                           |
- |   Inputs :                                                                |
- |                                                                           |
- |    L_var1                                                                 |
- |            32 bit long signed integer (int32_t) whose value falls in the  |
- |            range : 0x8000 0000 <= var1 <= 0x7fff ffff.                    |
- |                                                                           |
- |   Outputs :                                                               |
- |                                                                           |
- |    none                                                                   |
- |                                                                           |
- |   Return Value :                                                          |
- |                                                                           |
- |    var_out                                                                |
- |            16 bit short signed integer (int16_t) whose value falls in the |
- |            range : 0x0000 0000 <= var_out <= 0x0000 001f.                 |
- |___________________________________________________________________________|
-*/
-G729_INLINE int16_t norm_l(int32_t L_var1)
-{
-#ifdef ARCH_ARM
-  register int32_t var_out = 0;
-  register int32_t ra = L_var1;
-  if (L_var1) {
-    ra ^= (ra << 1);
-    __asm__("clz %0, %1"
-            : "=r"(var_out)
-            : "r"(ra));
-  }
-  return var_out;
-#else
-  int16_t var_out;
-
-  if (L_var1 == 0) {
-    var_out = 0;
-  } else if (L_var1 == (int32_t)0xffffffffL) {
-    var_out = 31;
-  } else {
-    if (L_var1 < 0) {
-      L_var1 = ~L_var1;
-    }
-    for (var_out = 0; L_var1 < (int32_t)0x40000000L; var_out++) {
-      L_var1 <<= 1;
-    }
-  }
-
-  return var_out;
-#endif
 }
 
 /*___________________________________________________________________________

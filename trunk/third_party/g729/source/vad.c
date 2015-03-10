@@ -237,7 +237,7 @@ void WebRtcG729fix_vad(vad_state *st,
       if((pprev_marker == VOICE) &&
          (prev_marker == VOICE) &&
          (*marker == NOISE) &&
-         (WebRtcSpl_SubSatW16(abs_s(WebRtcSpl_SubSatW16(st->prev_energy,ENERGY)), 614) <= 0)){
+         (WebRtcSpl_SubSatW16(WEBRTC_SPL_ABS_W16(WebRtcSpl_SubSatW16(st->prev_energy,ENERGY)), 614) <= 0)){
         st->count_ext++;
         *marker = VOICE;
         st->v_flag = 1;

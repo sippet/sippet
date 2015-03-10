@@ -149,7 +149,7 @@ void WebRtcG729fix_Lsp_pre_select(
       L_tmp = L_mac( L_tmp, tmp, tmp );
     }
 
-    L_temp = L_sub(L_tmp,L_dmin);
+    L_temp = WebRtcSpl_SubSatW32(L_tmp,L_dmin);
     if (  L_temp< 0L) {
       L_dmin = L_tmp;
       *cand = i;
@@ -189,7 +189,7 @@ void WebRtcG729fix_Lsp_select_1(
       L_dist = L_mac( L_dist, tmp2, tmp );
     }
 
-    L_temp =L_sub(L_dist,L_dmin);
+    L_temp =WebRtcSpl_SubSatW32(L_dist,L_dmin);
     if ( L_temp <0L ) {
       L_dmin = L_dist;
       *index = k1;
@@ -229,7 +229,7 @@ void WebRtcG729fix_Lsp_select_2(
       L_dist = L_mac( L_dist, tmp2, tmp );
     }
 
-    L_temp = L_sub(L_dist, L_dmin);
+    L_temp = WebRtcSpl_SubSatW32(L_dist, L_dmin);
     if ( L_temp <0L ) {
       L_dmin = L_dist;
       *index = k1;
@@ -276,7 +276,7 @@ void WebRtcG729fix_Lsp_last_select(
 {
     int32_t L_temp;
   *mode_index = 0;
-  L_temp =L_sub(L_tdist[1] ,L_tdist[0]);
+  L_temp =WebRtcSpl_SubSatW32(L_tdist[1] ,L_tdist[0]);
   if (  L_temp<0L){
     *mode_index = 1;
   }
@@ -335,7 +335,7 @@ void WebRtcG729fix_Get_wegt(
     }
   }
 
-  sft = norm_s(tmp);
+  sft = WebRtcSpl_NormW16(tmp);
   for ( i = 0; i < M; i++ ) {
     wegt[i] = shl(wegt[i], sft);                  /* wegt in Q(11+sft) */
   }

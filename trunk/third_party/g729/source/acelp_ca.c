@@ -132,7 +132,7 @@ static void Cor_h(
   }
   else
   {
-    k = norm_l(cor);
+    k = WebRtcSpl_NormW32(cor);
     k = shr(k, 1);
 
     for(i=0; i<L_SUBFR; i++) {

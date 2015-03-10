@@ -96,7 +96,7 @@ void WebRtcG729fix_Log2(
     return;
   }
 
-  exp = norm_l(L_x);
+  exp = WebRtcSpl_NormW32(L_x);
   L_x = L_shl(L_x, exp );               /* L_x is normalized */
 
   *exponent = WebRtcSpl_SubSatW16(30, exp);
@@ -151,7 +151,7 @@ int32_t WebRtcG729fix_Inv_sqrt( /* (o) Q30 : output value (range: 0<=val<1) */
 
   if( L_x <= (int32_t)0) return ( (int32_t)0x3fffffffL);
 
-  exp = norm_l(L_x);
+  exp = WebRtcSpl_NormW32(L_x);
   L_x = L_shl(L_x, exp );               /* L_x is normalize */
 
   exp = WebRtcSpl_SubSatW16(30, exp);

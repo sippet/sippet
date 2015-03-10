@@ -41,10 +41,10 @@ void WebRtcG729fix_Lsp_Az(
   for (i = 1; i <= 5; i++)
   {
     ff1  = WebRtcSpl_AddSatW32(f1[i], f1[i-1]);               /* f1[i] += f1[i-1];         */
-    ff2  = L_sub(f2[i], f2[i-1]);               /* f2[i] -= f2[i-1];         */
+    ff2  = WebRtcSpl_SubSatW32(f2[i], f2[i-1]);               /* f2[i] -= f2[i-1];         */
 
     fff1 = WebRtcSpl_AddSatW32(ff1, ff2);                     /* f1[i] + f2[i]             */
-    fff2 = L_sub(ff1, ff2);                     /* f1[i] - f2[i]             */
+    fff2 = WebRtcSpl_SubSatW32(ff1, ff2);                     /* f1[i] - f2[i]             */
 
     a[i] = extract_l(L_shr_r(fff1, 13));        /* from Q24 to Q12 and * 0.5 */
     a[11-i] = extract_l(L_shr_r(fff2, 13));     /* from Q24 to Q12 and * 0.5 */
@@ -86,7 +86,7 @@ static void Get_lsp_pol(int16_t *lsp, int32_t *f)
        t0 = WebRtcG729fix_Mpy_32_16(hi, lo, *lsp);         /* t0 = f[-1] * lsp    */
        t0 = L_shl(t0, 1);
        *f = WebRtcSpl_AddSatW32(*f, f[-2]);                /* *f += f[-2]         */
-       *f = L_sub(*f, t0);                   /* *f -= t0            */
+       *f = WebRtcSpl_SubSatW32(*f, t0);                   /* *f -= t0            */
      }
      *f   = L_msu(*f, *lsp, 512);            /* *f -= lsp<<9        */
      f   += i;                               /* Advance f pointer   */
@@ -185,7 +185,7 @@ void WebRtcG729fix_Lsf_lsp2(
 
   for(i=0; i<m; i++)
   {
-/*    freq = abs_s(freq);*/
+/*    freq = WEBRTC_SPL_ABS_W16(freq);*/
     freq = mult(lsf[i], 20861);          /* 20861: 1.0/(2.0*PI) in Q17 */
     ind    = shr(freq, 8);               /* ind    = b8-b15 of freq */
     offset = freq & (int16_t)0x00ff;      /* offset = b0-b7  of freq */

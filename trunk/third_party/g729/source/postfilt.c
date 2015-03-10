@@ -210,7 +210,7 @@ void WebRtcG729fix_pit_pst_filt(
   int16_t *scal_sig,    /* (i)     : input signal (scaled, divided by 4) */
   int16_t t0_min,       /* (i)     : minimum value in the searched range */
   int16_t t0_max,       /* (i)     : maximum value in the searched range */
-  int16_t L_subfr,      /* (i)     : size of filtering                   */
+  int16_t WebRtcSpl_SubSatW32fr,      /* (i)     : size of filtering                   */
   int16_t *signal_pst   /* (o)     : harmonically postfiltered signal    */
 )
 {
@@ -233,10 +233,10 @@ void WebRtcG729fix_pit_pst_filt(
     corr = 0;
     p    = scal_sig;
     p1   = deb_sig;
-    for (j=0; j<L_subfr; j++)
+    for (j=0; j<WebRtcSpl_SubSatW32fr; j++)
        corr = L_mac(corr, *p++, *p1++);
 
-    L_temp = L_sub(corr, cor_max);
+    L_temp = WebRtcSpl_SubSatW32(corr, cor_max);
     if (L_temp > (int32_t)0)
     {
       cor_max = corr;
@@ -249,14 +249,14 @@ void WebRtcG729fix_pit_pst_filt(
 
   ener = 1;
   p = scal_sig - t0;
-  for ( i=0; i<L_subfr ;i++, p++)
+  for ( i=0; i<WebRtcSpl_SubSatW32fr ;i++, p++)
     ener = L_mac(ener, *p, *p);
 
   /* Compute the signal energy in the present subframe */
 
   ener0 = 1;
   p = scal_sig;
-  for ( i=0; i<L_subfr; i++, p++)
+  for ( i=0; i<WebRtcSpl_SubSatW32fr; i++, p++)
     ener0 = L_mac(ener0, *p, *p);
 
   if (cor_max < 0)
@@ -275,7 +275,7 @@ void WebRtcG729fix_pit_pst_filt(
   {
     temp = ener0;
   }
-  j = norm_l(temp);
+  j = WebRtcSpl_NormW32(temp);
   cmax = L_round(L_shl(cor_max, j));
   en = L_round(L_shl(ener, j));
   en0 = L_round(L_shl(ener0, j));
@@ -284,11 +284,11 @@ void WebRtcG729fix_pit_pst_filt(
 
   /* temp = (cor_max * cor_max) - (0.5 * ener * ener0)  */
   temp = L_mult(cmax, cmax);
-  temp = L_sub(temp, L_shr(L_mult(en, en0), 1));
+  temp = WebRtcSpl_SubSatW32(temp, L_shr(L_mult(en, en0), 1));
 
   if (temp < (int32_t)0)           /* if prediction gain < 3 dB   */
   {                               /* switch off pitch postfilter */
-    for (i = 0; i < L_subfr; i++)
+    for (i = 0; i < WebRtcSpl_SubSatW32fr; i++)
       signal_pst[i] = signal[i];
     return;
   }
@@ -315,7 +315,7 @@ void WebRtcG729fix_pit_pst_filt(
   }
 
 
-  for (i = 0; i < L_subfr; i++)
+  for (i = 0; i < WebRtcSpl_SubSatW32fr; i++)
   {
     /* signal_pst[i] = g0*signal[i] + gain*signal[i-t0]; */
 
@@ -391,7 +391,7 @@ void WebRtcG729fix_agc(
     *past_gain = 0;
     return;
   }
-  exp = WebRtcSpl_SubSatW16(norm_l(s), 1);
+  exp = WebRtcSpl_SubSatW16(WebRtcSpl_NormW32(s), 1);
   gain_out = L_round(L_shl(s, exp));
 
   /* calculate gain_in with exponent */
@@ -407,7 +407,7 @@ void WebRtcG729fix_agc(
     g0 = 0;
   }
   else {
-    i = norm_l(s);
+    i = WebRtcSpl_NormW32(s);
     gain_in = L_round(L_shl(s, i));
     exp = WebRtcSpl_SubSatW16(exp, i);
 

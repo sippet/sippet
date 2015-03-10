@@ -30,7 +30,7 @@
 void WebRtcG729fix_Gain_predict(
    int16_t past_qua_en[], /* (i) Q10 :Past quantized energies        */
    int16_t code[],        /* (i) Q13 :Innovative vector.             */
-   int16_t L_subfr,       /* (i)     :Subframe length.               */
+   int16_t WebRtcSpl_SubSatW32fr,       /* (i)     :Subframe length.               */
    int16_t *gcode0,       /* (o) Qxx :Predicted codebook gain        */
    int16_t *exp_gcode0    /* (o)     :Q-Format(gcode0)               */
 )
@@ -43,7 +43,7 @@ void WebRtcG729fix_Gain_predict(
    *-------------------------------*/
 
    L_tmp = 0;
-   for(i=0; i<L_subfr; i++)
+   for(i=0; i<WebRtcSpl_SubSatW32fr; i++)
      L_tmp = L_mac(L_tmp, code[i], code[i]);
 
   /*-----------------------------------------------------------------*
