@@ -92,7 +92,7 @@ void vad(vad_state *st,
 
   /* compute the frame energy */
   acc0 = L_Comp(r_h[0], r_l[0]);
-  Log2(acc0, &exp, &frac);
+  WebRtcG729fix_Log2(acc0, &exp, &frac);
   acc0 = Mpy_32_16(exp, frac, 9864);
   i = sub(exp_R0, 1);
   i = sub(i, 1);
@@ -107,7 +107,7 @@ void vad(vad_state *st,
     acc0 = L_mac(acc0, r_h[i], lbf_corr[i]);
   acc0 = L_shl(acc0, 1);
   acc0 = L_mac(acc0, r_h[0], lbf_corr[0]);
-  Log2(acc0, &exp, &frac);
+  WebRtcG729fix_Log2(acc0, &exp, &frac);
   acc0 = Mpy_32_16(exp, frac, 9864);
   i = sub(exp_R0, 1);
   i = sub(i, 1);

@@ -77,7 +77,7 @@ void lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
   int16_t MS[MODE]={32, 16}, Clust[MODE], mode, errlsf[M*MODE];
 
   /* convert lsp to lsf */
-  Lsp_lsf2(lsp, lsf, M);
+  WebRtcG729fix_Lsp_lsf2(lsp, lsf, M);
 
   /* spacing to ~100Hz */
   if (lsf[0] < L_LIMIT)
@@ -91,7 +91,7 @@ void lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
     lsf[M-2] = sub(lsf[M-1], GAP3);
 
   /* get the lsf weighting */
-  Get_wegt(lsf, weight);
+  WebRtcG729fix_Get_wegt(lsf, weight);
   
   /**********************/
   /* quantize the lsf's */
@@ -99,7 +99,7 @@ void lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
   
   /* get the prediction error vector */
   for (mode=0; mode<MODE; mode++)
-    Lsp_prev_extract(lsf, errlsf+mode*M, noise_fg[mode], freq_prev, 
+    WebRtcG729fix_Lsp_prev_extract(lsf, errlsf+mode*M, noise_fg[mode], freq_prev, 
                      noise_fg_sum_inv[mode]);
 
   /* quantize the lsf and get the corresponding indices */
@@ -110,20 +110,20 @@ void lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
 
   /* guarantee minimum distance of 0.0012 (~10 in Q13) between tmpbuf[j]
      and tmpbuf[j+1] */
-  Lsp_expand_1_2(tmpbuf, 10);
+  WebRtcG729fix_Lsp_expand_1_2(tmpbuf, 10);
 
   /* compute the quantized lsf vector */
-  Lsp_prev_compose(tmpbuf, lsfq, noise_fg[mode], freq_prev, 
+  WebRtcG729fix_Lsp_prev_compose(tmpbuf, lsfq, noise_fg[mode], freq_prev, 
                    noise_fg_sum[mode]);
   
   /* update the prediction memory */
-  Lsp_prev_update(tmpbuf, freq_prev);
+  WebRtcG729fix_Lsp_prev_update(tmpbuf, freq_prev);
   
   /* lsf stability check */
-  Lsp_stability(lsfq);
+  WebRtcG729fix_Lsp_stability(lsfq);
 
   /* convert lsf to lsp */
-  Lsf_lsp2(lsfq, lspq, M);
+  WebRtcG729fix_Lsf_lsp2(lsfq, lspq, M);
 
 }
 

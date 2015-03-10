@@ -36,7 +36,7 @@ static void Update_sumAcf(Coder_ld8a_state *st);
  *           ~~~~~~~~~~~~                                    *
  *   Initialize variables used for dtx at the encoder        *
  *-----------------------------------------------------------*/
-void Init_Cod_cng(Coder_ld8a_state *st)
+void WebRtcG729fix_Init_Cod_cng(Coder_ld8a_state *st)
 {
   int16_t i;
 
@@ -64,7 +64,7 @@ void Init_Cod_cng(Coder_ld8a_state *st)
  *   encodes SID frames                                      *
  *   computes CNG excitation for encoder update              *
  *-----------------------------------------------------------*/
-void Cod_cng(
+void WebRtcG729fix_Cod_cng(
   Coder_ld8a_state *st,
   int16_t *exc,          /* (i/o) : excitation array                     */
   int16_t pastVad,       /* (i)   : previous VAD decision                */
@@ -102,7 +102,7 @@ void Cod_cng(
   }
   else {
     Set_zero(zero, MP1);
-    Levinson(st, curAcf, zero, curCoeff, bid, &st->ener[0]);
+    WebRtcG729fix_Levinson(st, curAcf, zero, curCoeff, bid, &st->ener[0]);
   }
 
   /* if first frame of silence => SID frame */
@@ -110,13 +110,13 @@ void Cod_cng(
     ana[0] = 2;
     st->count_fr0 = 0;
     st->nb_ener = 1;
-    Qua_Sidgain(st->ener, st->sh_ener, st->nb_ener, &energyq, &cur_igain);
+    WebRtcG729fix_Qua_Sidgain(st->ener, st->sh_ener, st->nb_ener, &energyq, &cur_igain);
 
   }
   else {
     st->nb_ener = add(st->nb_ener, 1);
     if(st->nb_ener > NB_GAIN) st->nb_ener = NB_GAIN;
-    Qua_Sidgain(st->ener, st->sh_ener, st->nb_ener, &energyq, &cur_igain);
+    WebRtcG729fix_Qua_Sidgain(st->ener, st->sh_ener, st->nb_ener, &energyq, &cur_igain);
       
     /* Compute stationarity of current filter   */
     /* versus reference filter                  */
@@ -175,7 +175,7 @@ void Cod_cng(
 
     /* Compute SID frame codes */
 
-    Az_lsp(lpcCoeff, lsp_new, lsp_old_q); /* From A(z) to lsp */
+    WebRtcG729fix_Az_lsp(lpcCoeff, lsp_new, lsp_old_q); /* From A(z) to lsp */
 
     /* LSP quantization */
     lsfq_noise(st->noise_fg, lsp_new, st->lspSid_q, freq_prev, &ana[1]);
@@ -196,9 +196,9 @@ void Cod_cng(
     st->cur_gain = add(st->cur_gain, mult_r(st->sid_gain, A_GAIN1));
   }
 
-  Calc_exc_rand(st->L_exc_err, st->cur_gain, st->exc, seed, FLAG_COD);
+  WebRtcG729fix_Calc_exc_rand(st->L_exc_err, st->cur_gain, st->exc, seed, FLAG_COD);
 
-  Int_qlpc(lsp_old_q, st->lspSid_q, Aq);
+  WebRtcG729fix_Int_qlpc(lsp_old_q, st->lspSid_q, Aq);
   for(i=0; i<M; i++) {
     lsp_old_q[i]   = st->lspSid_q[i];
   }
@@ -218,7 +218,7 @@ void Cod_cng(
  *   used for DTX/CNG                                        *
  *   If Vad=1 : updating of array sumAcf                     *
  *-----------------------------------------------------------*/
-void Update_cng(
+void WebRtcG729fix_Update_cng(
   Coder_ld8a_state *st,
   int16_t *r_h,      /* (i) :   MSB of frame autocorrelation        */
   int16_t exp_r,     /* (i) :   scaling factor associated           */
@@ -366,7 +366,7 @@ static void Calc_pastfilt(Coder_ld8a_state *st, int16_t *Coeff)
   }
 
   Set_zero(zero, MP1);
-  Levinson(st, s_sumAcf, zero, Coeff, bid, &temp);
+  WebRtcG729fix_Levinson(st, s_sumAcf, zero, Coeff, bid, &temp);
   return;
 }
 

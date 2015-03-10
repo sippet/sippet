@@ -14,7 +14,7 @@
 #include "ld8a.h"
 
 
-void Lsp_get_quant(
+void WebRtcG729fix_Lsp_get_quant(
   int16_t lspcb1[][M],      /* (i) Q13 : first stage LSP codebook      */
   int16_t lspcb2[][M],      /* (i) Q13 : Second stage LSP codebook     */
   int16_t code0,            /* (i)     : selected code of first stage  */
@@ -36,20 +36,20 @@ void Lsp_get_quant(
   for ( j = NC ; j < M ; j++ )
     buf[j] = add( lspcb1[code0][j], lspcb2[code2][j] );
 
-  Lsp_expand_1_2(buf, GAP1);
-  Lsp_expand_1_2(buf, GAP2);
+  WebRtcG729fix_Lsp_expand_1_2(buf, GAP1);
+  WebRtcG729fix_Lsp_expand_1_2(buf, GAP2);
 
-  Lsp_prev_compose(buf, lspq, fg, freq_prev, fg_sum);
+  WebRtcG729fix_Lsp_prev_compose(buf, lspq, fg, freq_prev, fg_sum);
 
-  Lsp_prev_update(buf, freq_prev);
+  WebRtcG729fix_Lsp_prev_update(buf, freq_prev);
 
-  Lsp_stability( lspq );
+  WebRtcG729fix_Lsp_stability( lspq );
 
   return;
 }
 
 
-void Lsp_expand_1(
+void WebRtcG729fix_Lsp_expand_1(
   int16_t buf[],        /* (i/o) Q13 : LSP vectors */
   int16_t gap           /* (i)   Q13 : gap         */
 )
@@ -70,7 +70,7 @@ void Lsp_expand_1(
 }
 
 
-void Lsp_expand_2(
+void WebRtcG729fix_Lsp_expand_2(
   int16_t buf[],       /* (i/o) Q13 : LSP vectors */
   int16_t gap          /* (i)   Q13 : gap         */
 )
@@ -91,7 +91,7 @@ void Lsp_expand_2(
 }
 
 
-void Lsp_expand_1_2(
+void WebRtcG729fix_Lsp_expand_1_2(
   int16_t buf[],       /* (i/o) Q13 : LSP vectors */
   int16_t gap          /* (i)   Q13 : gap         */
 )
@@ -120,7 +120,7 @@ void Lsp_expand_1_2(
 /*
   compose LSP parameter from elementary LSP with previous LSP.
 */
-void Lsp_prev_compose(
+void WebRtcG729fix_Lsp_prev_compose(
   int16_t lsp_ele[],             /* (i) Q13 : LSP vectors                 */
   int16_t lsp[],                 /* (o) Q13 : quantized LSP parameters    */
   int16_t fg[][M],               /* (i) Q15 : MA prediction coef.         */
@@ -145,7 +145,7 @@ void Lsp_prev_compose(
 /*
   extract elementary LSP from composed LSP with previous LSP
 */
-void Lsp_prev_extract(
+void WebRtcG729fix_Lsp_prev_extract(
   int16_t lsp[M],                /* (i) Q13 : unquantized LSP parameters  */
   int16_t lsp_ele[M],            /* (o) Q13 : target vector               */
   int16_t fg[MA_NP][M],          /* (i) Q15 : MA prediction coef.         */
@@ -175,7 +175,7 @@ void Lsp_prev_extract(
 /*
   update previous LSP parameter
 */
-void Lsp_prev_update(
+void WebRtcG729fix_Lsp_prev_update(
   int16_t lsp_ele[M],             /* (i)   Q13 : LSP vectors           */
   int16_t freq_prev[MA_NP][M]     /* (i/o) Q13 : previous LSP vectors  */
 )
@@ -189,7 +189,7 @@ void Lsp_prev_update(
   return;
 }
 
-void Lsp_stability(
+void WebRtcG729fix_Lsp_stability(
   int16_t buf[]       /* (i/o) Q13 : quantized LSP parameters      */
 )
 {

@@ -42,7 +42,7 @@ void Init_Dec_cng(Decod_ld8a_state *st)
 {
   st->sid_gain = tab_Sidgain[0];
   Copy(lspSid_reset, st->lspSid, M);
-  Init_exc_err(st->L_exc_err);
+  WebRtcG729fix_Init_exc_err(st->L_exc_err);
   return;
 }
 
@@ -93,7 +93,7 @@ void Dec_cng(
     /* Case of 1st SID frame erased : quantize-decode   */
     /* energy estimate stored in sid_gain         */
     if(dif == 0) {
-      Qua_Sidgain(&sid_sav, &sh_sid_sav, 0, &temp, &ind);
+      WebRtcG729fix_Qua_Sidgain(&sid_sav, &sh_sid_sav, 0, &temp, &ind);
       st->sid_gain = tab_Sidgain[(int)ind];
     }
     
@@ -107,10 +107,10 @@ void Dec_cng(
     st->cur_gain = add(st->cur_gain, mult_r(st->sid_gain, A_GAIN1));
   }
  
-  Calc_exc_rand(st->L_exc_err, st->cur_gain, exc, seed, FLAG_DEC);
+  WebRtcG729fix_Calc_exc_rand(st->L_exc_err, st->cur_gain, exc, seed, FLAG_DEC);
 
   /* Interpolate the Lsp vectors */
-  Int_qlpc(lsp_old, st->lspSid, A_t);
+  WebRtcG729fix_Int_qlpc(lsp_old, st->lspSid, A_t);
   Copy(st->lspSid, lsp_old, M);
   
   return;
@@ -174,17 +174,17 @@ void sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
   }
   
   /* compute the quantized lsf vector */
-  Lsp_prev_compose(tmpbuf, lsfq, noise_fg[index[0]], freq_prev, 
+  WebRtcG729fix_Lsp_prev_compose(tmpbuf, lsfq, noise_fg[index[0]], freq_prev, 
                    noise_fg_sum[index[0]]);
   
   /* update the prediction memory */
-  Lsp_prev_update(tmpbuf, freq_prev);
+  WebRtcG729fix_Lsp_prev_update(tmpbuf, freq_prev);
   
   /* lsf stability check */
-  Lsp_stability(lsfq);
+  WebRtcG729fix_Lsp_stability(lsfq);
 
   /* convert lsf to lsp */
-  Lsf_lsp2(lsfq, lspq, M);
+  WebRtcG729fix_Lsf_lsp2(lsfq, lspq, M);
 
 }
 

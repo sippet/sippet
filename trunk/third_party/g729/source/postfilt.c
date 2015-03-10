@@ -43,7 +43,7 @@
  *  Initializes the postfilter parameters:                       *
  *---------------------------------------------------------------*/
 
-void Init_Post_Filter(Post_Filter_state *st)
+void WebRtcG729fix_Init_Post_Filter(Post_Filter_state *st)
 {
   st->res2 = st->res2_buf + PIT_MAX;
   st->scal_res2 = st->scal_res2_buf + PIT_MAX;
@@ -73,7 +73,7 @@ void Init_Post_Filter(Post_Filter_state *st)
  *  - adaptive gain control                                               *
  *------------------------------------------------------------------------*/
 
-void Post_Filter(
+void WebRtcG729fix_Post_Filter(
   Post_Filter_state *st,
   int16_t *syn,       /* in/out: synthesis speech (postfiltered is output)    */
   int16_t *Az_4,      /* input : interpolated LPC parameters in all subframes */
@@ -120,12 +120,12 @@ void Post_Filter(
 
       /* Find weighted filter coefficients Ap3[] and ap[4] */
 
-      Weight_Az(Az, GAMMA2_PST, M, Ap3);
-      Weight_Az(Az, GAMMA1_PST, M, Ap4);
+      WebRtcG729fix_Weight_Az(Az, GAMMA2_PST, M, Ap3);
+      WebRtcG729fix_Weight_Az(Az, GAMMA1_PST, M, Ap4);
 
       /* filtering of synthesis speech by A(z/GAMMA2_PST) to find res2[] */
 
-      Residu(Ap3, &syn[i_subfr], st->res2, L_SUBFR);
+      WebRtcG729fix_Residu(Ap3, &syn[i_subfr], st->res2, L_SUBFR);
 
       /* scaling of "res2[]" to avoid energy overflow */
 
@@ -136,7 +136,7 @@ void Post_Filter(
 
       /* pitch postfiltering */
       if (Vad == 1)
-        pit_pst_filt(st->res2, st->scal_res2, t0_min, t0_max, L_SUBFR, res2_pst);
+        WebRtcG729fix_pit_pst_filt(st->res2, st->scal_res2, t0_min, t0_max, L_SUBFR, res2_pst);
       else
         for (j=0; j<L_SUBFR; j++)
           res2_pst[j] = st->res2[j];
@@ -147,7 +147,7 @@ void Post_Filter(
 
       Copy(Ap3, h, M+1);
       Set_zero(&h[M+1], L_H-M-1);
-      Syn_filt(Ap4, h, h, L_H, &h[M+1], 0);
+      WebRtcG729fix_Syn_filt(Ap4, h, h, L_H, &h[M+1], 0);
 
       /* 1st correlation of h[] */
 
@@ -167,15 +167,15 @@ void Post_Filter(
         temp2 = div_s(temp2, temp1);
       }
 
-      preemphasis(&st->mem_pre, res2_pst, temp2, L_SUBFR);
+      WebRtcG729fix_preemphasis(&st->mem_pre, res2_pst, temp2, L_SUBFR);
 
       /* filtering through  1/A(z/GAMMA1_PST) */
 
-      Syn_filt(Ap4, res2_pst, &syn_pst[i_subfr], L_SUBFR, st->mem_syn_pst, 1);
+      WebRtcG729fix_Syn_filt(Ap4, res2_pst, &syn_pst[i_subfr], L_SUBFR, st->mem_syn_pst, 1);
 
       /* scale output to input */
 
-      agc(&st->past_gain, &syn[i_subfr], &syn_pst[i_subfr], L_SUBFR);
+      WebRtcG729fix_agc(&st->past_gain, &syn[i_subfr], &syn_pst[i_subfr], L_SUBFR);
 
       /* update res2[] buffer;  shift by L_SUBFR */
 
@@ -205,7 +205,7 @@ void Post_Filter(
  * Filtering through   (1 + g z^-T) / (1+g) ;   g = min(pit_gain*gammap, 1)  *
  *--------------------------------------------------------------------------*/
 
-void pit_pst_filt(
+void WebRtcG729fix_pit_pst_filt(
   int16_t *signal,      /* (i)     : input signal                        */
   int16_t *scal_sig,    /* (i)     : input signal (scaled, divided by 4) */
   int16_t t0_min,       /* (i)     : minimum value in the searched range */
@@ -332,7 +332,7 @@ void pit_pst_filt(
  * Preemphasis: filtering through 1 - g z^-1                           *
  *---------------------------------------------------------------------*/
 
-void preemphasis(
+void WebRtcG729fix_preemphasis(
   int16_t *mem_pre,
   int16_t *signal,  /* (i/o)   : input signal overwritten by the output */
   int16_t g,        /* (i) Q15 : preemphasis coefficient                */
@@ -365,7 +365,7 @@ void preemphasis(
  *  gain[n] = AGC_FAC * gain[n-1] + (1 - AGC_FAC) g_in/g_out            *
  *----------------------------------------------------------------------*/
 
-void agc(
+void WebRtcG729fix_agc(
   int16_t *past_gain,/* (i/o)   : past gain in Q12         */
   int16_t *sig_in,   /* (i)     : postfilter input signal  */
   int16_t *sig_out,  /* (i/o)   : postfilter output signal */
@@ -420,7 +420,7 @@ void agc(
     s = L_shr(s, exp);         /* Q22, add exponent */
 
     /* i(Q12) = s(Q19) = 1 / sqrt(s(Q22)) */
-    s = Inv_sqrt(s);           /* Q19 */
+    s = WebRtcG729fix_Inv_sqrt(s);           /* Q19 */
     i = L_round(L_shl(s,9));     /* Q12 */
 
     /* g0(Q12) = i(Q12) * (1-AGC_FAC)(Q15) */

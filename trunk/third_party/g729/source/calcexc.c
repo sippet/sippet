@@ -58,7 +58,7 @@ void Calc_exc_rand(
     Gp = 0;
     t0 = add(L_SUBFR,1);
     for (i_subfr = 0;  i_subfr < L_FRAME; i_subfr += L_SUBFR) {
-      if(flag_cod != FLAG_DEC) update_exc_err(L_exc_err, Gp, t0);
+      if(flag_cod != FLAG_DEC) WebRtcG729fix_update_exc_err(L_exc_err, Gp, t0);
     }
 
     return;
@@ -74,7 +74,7 @@ void Calc_exc_rand(
 
     /* generate random adaptive codebook & fixed codebook parameters */
     /*****************************************************************/
-    temp1 = Random(seed);
+    temp1 = WebRtcG729fix_Random(seed);
     frac = sub((temp1 & (int16_t)0x0003), 1);
     if(frac == 2) frac = 0;
     temp1 = shr(temp1, 2);
@@ -90,7 +90,7 @@ void Calc_exc_rand(
     pos[1] = add(temp2, 1);     /* 5 * x + 1 */
     temp1 = shr(temp1, 3);
     sign[1] = temp1 & (int16_t)0x0001;
-    temp1 = Random(seed);
+    temp1 = WebRtcG729fix_Random(seed);
     temp2 = temp1 & (int16_t)0x0007;
     temp2 = add(shl(temp2, 2), temp2);
     pos[2] = add(temp2, 2);     /* 5 * x + 2 */
@@ -104,7 +104,7 @@ void Calc_exc_rand(
     pos[3] = add(pos[3], temp2);
     temp1 = shr(temp1, 4);
     sign[3] = temp1 & (int16_t)0x0001;
-    Gp = Random(seed) & (int16_t)0x1FFF; /* < 0.5 Q14 */
+    Gp = WebRtcG729fix_Random(seed) & (int16_t)0x1FFF; /* < 0.5 Q14 */
     Gp2 = shl(Gp, 1);           /* Q15 */
 
 
@@ -123,7 +123,7 @@ void Calc_exc_rand(
     and alpha = 0.5
     alpha x sqrt(L_SUBFR)/2 = 1 + FRAC1
 */
-    L_acc = Inv_sqrt(L_shr(L_acc,1));  /* Q30 */
+    L_acc = WebRtcG729fix_Inv_sqrt(L_shr(L_acc,1));  /* Q30 */
     L_Extract(L_acc, &hi, &lo);
     /* cur_gain = cur_gainR << 3 */
     temp1 = mult_r(cur_gain, FRAC1);
@@ -143,7 +143,7 @@ void Calc_exc_rand(
 
     /* generate random  adaptive excitation */
     /****************************************/
-    Pred_lt_3(cur_exc, t0, frac, L_SUBFR);
+    WebRtcG729fix_Pred_lt_3(cur_exc, t0, frac, L_SUBFR);
 
 
     /* compute adaptive + gaussian exc -> cur_exc */
@@ -257,7 +257,7 @@ void Calc_exc_rand(
       }
     }
 
-    if(flag_cod != FLAG_DEC) update_exc_err(L_exc_err, Gp, t0);
+    if(flag_cod != FLAG_DEC) WebRtcG729fix_update_exc_err(L_exc_err, Gp, t0);
 
     cur_exc += L_SUBFR;
 
@@ -287,7 +287,7 @@ static int16_t Gauss(int16_t *seed)
   
   L_acc = 0L;
   for(i=0; i<12; i++) {
-    L_acc = L_add(L_acc, L_deposit_l(Random(seed)));
+    L_acc = L_add(L_acc, L_deposit_l(WebRtcG729fix_Random(seed)));
   }
   L_acc = L_shr(L_acc, 7);
   temp = extract_l(L_acc);

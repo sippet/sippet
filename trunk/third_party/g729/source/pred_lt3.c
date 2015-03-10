@@ -24,7 +24,7 @@
 #include "ld8a.h"
 #include "tab_ld8a.h"
 
-void Pred_lt_3(
+void WebRtcG729fix_Pred_lt_3(
   int16_t   exc[],       /* in/out: excitation buffer */
   int16_t   T0,          /* input : integer pitch lag */
   int16_t   frac,        /* input : fraction of lag   */

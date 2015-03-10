@@ -19,7 +19,7 @@
  * Lsp_decw_reset -   set the previous LSP vectors
  *----------------------------------------------------------------------------
  */
-void Lsp_decw_reset(
+void WebRtcG729fix_Lsp_decw_reset(
   Decod_ld8a_state *st
 )
 {
@@ -39,7 +39,7 @@ void Lsp_decw_reset(
  * Lsp_iqua_cs -  LSP main quantization routine
  *----------------------------------------------------------------------------
  */
-void Lsp_iqua_cs(
+void WebRtcG729fix_Lsp_iqua_cs(
   Decod_ld8a_state *st,
   int16_t prm[],          /* (i)     : indexes of the selected LSP */
   int16_t lsp_q[],        /* (o) Q13 : Quantized LSP parameters    */
@@ -60,7 +60,7 @@ void Lsp_iqua_cs(
 
     /* compose quantized LSP (lsp_q) from indexes */
 
-    Lsp_get_quant(lspcb1, lspcb2, code0, code1, code2,
+    WebRtcG729fix_Lsp_get_quant(lspcb1, lspcb2, code0, code1, code2,
       fg[mode_index], st->freq_prev, lsp_q, fg_sum[mode_index]);
 
     /* save parameters to use in case of the frame erased situation */
@@ -75,9 +75,9 @@ void Lsp_iqua_cs(
 
     /* update freq_prev */
 
-    Lsp_prev_extract(st->prev_lsp, buf,
+    WebRtcG729fix_Lsp_prev_extract(st->prev_lsp, buf,
       fg[st->prev_ma], st->freq_prev, fg_sum_inv[st->prev_ma]);
-    Lsp_prev_update(buf, st->freq_prev);
+    WebRtcG729fix_Lsp_prev_update(buf, st->freq_prev);
   }
 
   return;
@@ -90,7 +90,7 @@ void Lsp_iqua_cs(
  *           ~~~~~~                                                  *
  *-------------------------------------------------------------------*/
 
-void D_lsp(
+void WebRtcG729fix_D_lsp(
   Decod_ld8a_state *st,
   int16_t prm[],          /* (i)     : indexes of the selected LSP */
   int16_t lsp_q[],        /* (o) Q15 : Quantized LSP parameters    */
@@ -100,11 +100,11 @@ void D_lsp(
   int16_t lsf_q[M];       /* domain 0.0<= lsf_q <PI in Q13 */
 
 
-  Lsp_iqua_cs(st, prm, lsf_q, erase);
+  WebRtcG729fix_Lsp_iqua_cs(st, prm, lsf_q, erase);
 
   /* Convert LSFs to LSPs */
 
-  Lsf_lsp2(lsf_q, lsp_q, M);
+  WebRtcG729fix_Lsf_lsp2(lsf_q, lsp_q, M);
 
   return;
 }

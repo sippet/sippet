@@ -104,9 +104,9 @@ int main(int argc, char *argv[] )
   for (i=0; i<M; i++) synth_buf[i] = 0;
   synth = synth_buf + M;
 
-  Init_Decod_ld8a(&state);
-  Init_Post_Filter(&post_filter_state);
-  Init_Post_Process(&post_proc_state);
+  WebRtcG729fix_Init_Decod_ld8a(&state);
+  WebRtcG729fix_Init_Post_Filter(&post_filter_state);
+  WebRtcG729fix_Init_Post_Process(&post_proc_state);
 
   /* for G.729b */
   Init_Dec_cng(&state);
@@ -120,18 +120,18 @@ int main(int argc, char *argv[] )
   {
     if (count_frame < stop_after) {
       printf("Frame = %d\r", count_frame++);
-      Decod_ld8a(&state, parm, synth, Az_dec, T2, &Vad, 0);
+      WebRtcG729fix_Decod_ld8a(&state, parm, synth, Az_dec, T2, &Vad, 0);
     }
     else
     {
       printf("Erased frame = %d\r", count_frame++);
       Set_zero(parm, PRM_SIZE+2);
       parm[0] = 1; /* frame erasure */
-      Decod_ld8a(&state, parm, synth, Az_dec, T2, &Vad, 0);
+      WebRtcG729fix_Decod_ld8a(&state, parm, synth, Az_dec, T2, &Vad, 0);
     }
 
-    Post_Filter(&post_filter_state, synth, Az_dec, T2, Vad); /* Post-filter */
-    Post_Process(&post_proc_state, synth, synth, L_FRAME);
+    WebRtcG729fix_Post_Filter(&post_filter_state, synth, Az_dec, T2, Vad); /* Post-filter */
+    WebRtcG729fix_Post_Process(&post_proc_state, synth, synth, L_FRAME);
 
     fwrite(synth, sizeof(short), L_FRAME, f_syn);
 

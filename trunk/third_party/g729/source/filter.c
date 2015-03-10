@@ -20,7 +20,7 @@
 #include "basic_op.h"
 #include "ld8a.h"
 
-void Convolve(
+void WebRtcG729fix_Convolve(
   int16_t x[],      /* (i)     : input vector                           */
   int16_t h[],      /* (i) Q12 : impulse response                       */
   int16_t y[],      /* (o)     : output vector                          */
@@ -50,7 +50,7 @@ void Convolve(
  *-----------------------------------------------------*/
 
 
-int Syn_filt(
+int WebRtcG729fix_Syn_filt(
   int16_t a[],     /* (i) Q12 : a[m+1] prediction coefficients   (m=10)  */
   int16_t x[],     /* (i)     : input signal                             */
   int16_t y[],     /* (o)     : output signal                            */
@@ -136,7 +136,7 @@ int Syn_filt(
  * Compute the LPC residual  by filtering the input speech through A(z)  *
  *-----------------------------------------------------------------------*/
 
-void Residu(
+void WebRtcG729fix_Residu(
   int16_t a[],    /* (i) Q12 : prediction coefficients                     */
   int16_t x[],    /* (i)     : speech (values x[-m..-1] are needed         */
   int16_t y[],    /* (o)     : residual signal                             */

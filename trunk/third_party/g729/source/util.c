@@ -15,7 +15,7 @@
 
 /* Random generator  */
 
-int16_t Random(int16_t *seed)
+int16_t WebRtcG729fix_Random(int16_t *seed)
 {
   /* seed = seed*31821 + 13849; */
   *seed = extract_l(L_add(L_shr(L_mult(*seed, 31821), 1), 13849L));

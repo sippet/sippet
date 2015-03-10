@@ -49,7 +49,7 @@ static int16_t   bin2int(int16_t no_of_bits, int16_t *bitstream);
  *          pitch and codebook gains   4+3 bit
  *----------------------------------------------------------------------------
  */
-void prm2bits_ld8k(
+void WebRtcG729fix_prm2bits_ld8k(
  int16_t   prm[],           /* input : encoded parameters  (PRM_SIZE parameters)  */
   int16_t bits[]           /* output: serial bits (SERIAL_SIZE ) bits[0] = bfi
                                     bits[1] = 80 */
@@ -135,7 +135,7 @@ static void int2bin(
  *  bits2prm_ld8k - converts serial received bits to  encoder parameter vector
  *----------------------------------------------------------------------------
  */
-void bits2prm_ld8k(
+void WebRtcG729fix_bits2prm_ld8k(
  int16_t bits[],          /* input : serial bits (80)                       */
  int16_t   prm[]          /* output: decoded parameters (11 parameters)     */
 )
@@ -215,7 +215,7 @@ int16_t read_frame(FILE *f_serial, int16_t *parm)
     return(0);
   }
 
-  bits2prm_ld8k(&serial[1], parm);
+  WebRtcG729fix_bits2prm_ld8k(&serial[1], parm);
 
   /* This part was modified for version V1.3 */
   /* for speech and SID frames, the hardware detects frame erasures
@@ -232,7 +232,7 @@ int16_t read_frame(FILE *f_serial, int16_t *parm)
 
   if(parm[1] == 1) {
     /* check parity and put 1 in parm[5] if parity error */
-    parm[5] = Check_Parity_Pitch(parm[4], parm[5]);
+    parm[5] = WebRtcG729fix_Check_Parity_Pitch(parm[4], parm[5]);
   }
 
   return(1);

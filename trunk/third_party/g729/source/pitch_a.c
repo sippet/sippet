@@ -34,7 +34,7 @@ static int16_t Compute_nrj_max(int16_t *scal_sig, int16_t L_frame, int32_t max)
   /* max1 = max/sqrt(energy)                  */
   /* This result will always be on 16 bits !! */
 
-  sum = Inv_sqrt(sum);            /* 1/sqrt(energy),    result in Q30 */
+  sum = WebRtcG729fix_Inv_sqrt(sum);    /* 1/sqrt(energy),    result in Q30 */
   //L_Extract(max, &max_h, &max_l);
   //L_Extract(sum, &ener_h, &ener_l);
   max_h = (int16_t) (max >> 16);
@@ -56,7 +56,7 @@ static int16_t Compute_nrj_max(int16_t *scal_sig, int16_t L_frame, int32_t max)
  *---------------------------------------------------------------------------*/
 
 
-int16_t Pitch_ol_fast(  /* output: open loop pitch lag                        */
+int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag                        */
    int16_t signal[],    /* input : signal used to compute the open loop pitch */
                        /*     signal[-pit_max] to signal[-1] should be known */
    int16_t   pit_max,   /* input : maximum pitch lag                          */
@@ -261,7 +261,7 @@ int32_t Dot_Product(      /* (o)   :Result of scalar product. */
  * Fast version of the pitch close loop.                                    *
  *--------------------------------------------------------------------------*/
 
-int16_t Pitch_fr3_fast(/* (o)     : pitch period.                          */
+int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
   int16_t exc[],       /* (i)     : excitation buffer                      */
   int16_t xn[],        /* (i)     : target vector                          */
   int16_t h[],         /* (i) Q12 : impulse response of filters.           */
@@ -281,7 +281,7 @@ int16_t Pitch_fr3_fast(/* (o)     : pitch period.                          */
   * Compute correlation of target vector with impulse response.     *
   *-----------------------------------------------------------------*/
 
-  Cor_h_X(h, xn, Dn);
+  WebRtcG729fix_Cor_h_X(h, xn, Dn);
 
  /*-----------------------------------------------------------------*
   * Find maximum integer delay.                                     *
@@ -303,7 +303,7 @@ int16_t Pitch_fr3_fast(/* (o)     : pitch period.                          */
 
   /* Fraction 0 */
 
-  Pred_lt_3(exc, t0, 0, L_subfr);
+  WebRtcG729fix_Pred_lt_3(exc, t0, 0, L_subfr);
   max = Dot_Product(Dn, exc, L_subfr);
   *pit_frac = 0;
 
@@ -316,7 +316,7 @@ int16_t Pitch_fr3_fast(/* (o)     : pitch period.                          */
 
   /* Fraction -1/3 */
 
-  Pred_lt_3(exc, t0, -1, L_subfr);
+  WebRtcG729fix_Pred_lt_3(exc, t0, -1, L_subfr);
   corr = Dot_Product(Dn, exc, L_subfr);
   L_temp = L_sub(corr, max);
   if(L_temp > 0) {
@@ -327,7 +327,7 @@ int16_t Pitch_fr3_fast(/* (o)     : pitch period.                          */
 
   /* Fraction +1/3 */
 
-  Pred_lt_3(exc, t0, 1, L_subfr);
+  WebRtcG729fix_Pred_lt_3(exc, t0, 1, L_subfr);
   corr = Dot_Product(Dn, exc, L_subfr);
   L_temp = L_sub(corr, max);
   if(L_temp > 0) {
@@ -351,7 +351,7 @@ int16_t Pitch_fr3_fast(/* (o)     : pitch period.                          */
  *---------------------------------------------------------------------*/
 
 
-int16_t G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
+int16_t WebRtcG729fix_G_pitch(/* (o) Q14: Gain of pitch lag saturated to 1.2*/
   int16_t xn[],       /* (i)     : Pitch target.                            */
   int16_t y1[],       /* (i)     : Filtered adaptive codebook.              */
   int16_t g_coeff[],  /* (i)     : Correlations need for gain quantization. */
@@ -491,7 +491,7 @@ int16_t G_pitch(      /* (o) Q14 : Gain of pitch lag saturated to 1.2       */
  *----------------------------------------------------------------------*/
 
 
-int16_t Enc_lag3(     /* output: Return index of encoding */
+int16_t WebRtcG729fix_Enc_lag3(/* output: Return index of encoding */
   int16_t T0,         /* input : Pitch delay              */
   int16_t T0_frac,    /* input : Fractional pitch delay   */
   int16_t *T0_min,    /* in/out: Minimum search delay     */

@@ -19,7 +19,7 @@
 #include "ld8a.h"
 #include "tab_ld8a.h"
 
-void Qua_lsp(
+void WebRtcG729fix_Qua_lsp(
   Coder_ld8a_state *st,
   int16_t lsp[],       /* (i) Q15 : Unquantized LSP            */
   int16_t lsp_q[],     /* (o) Q15 : Quantized LSP              */
@@ -29,17 +29,17 @@ void Qua_lsp(
   int16_t lsf[M], lsf_q[M];  /* domain 0.0<= lsf <PI in Q13 */
 
   /* Convert LSPs to LSFs */
-  Lsp_lsf2(lsp, lsf, M);
+  WebRtcG729fix_Lsp_lsf2(lsp, lsf, M);
 
-  Lsp_qua_cs(st, lsf, lsf_q, ana );
+  WebRtcG729fix_Lsp_qua_cs(st, lsf, lsf_q, ana );
 
   /* Convert LSFs to LSPs */
-  Lsf_lsp2(lsf_q, lsp_q, M);
+  WebRtcG729fix_Lsf_lsp2(lsf_q, lsp_q, M);
 
   return;
 }
 
-void Lsp_encw_reset(Coder_ld8a_state *st)
+void WebRtcG729fix_Lsp_encw_reset(Coder_ld8a_state *st)
 {
   int16_t i;
 
@@ -48,7 +48,7 @@ void Lsp_encw_reset(Coder_ld8a_state *st)
 }
 
 
-void Lsp_qua_cs(
+void WebRtcG729fix_Lsp_qua_cs(
   Coder_ld8a_state *st,
   int16_t flsp_in[M],    /* (i) Q13 : Original LSP parameters    */
   int16_t lspq_out[M],   /* (o) Q13 : Quantized LSP parameters   */
@@ -57,13 +57,13 @@ void Lsp_qua_cs(
 {
   int16_t wegt[M];       /* Q11->normalized : weighting coefficients */
 
-  Get_wegt( flsp_in, wegt );
+  WebRtcG729fix_Get_wegt( flsp_in, wegt );
 
-  Relspwed( flsp_in, wegt, lspq_out, lspcb1, lspcb2, fg,
+  WebRtcG729fix_Relspwed( flsp_in, wegt, lspq_out, lspcb1, lspcb2, fg,
     st->freq_prev, fg_sum, fg_sum_inv, code);
 }
 
-void Relspwed(
+void WebRtcG729fix_Relspwed(
   int16_t lsp[],                 /* (i) Q13 : unquantized LSP parameters */
   int16_t wegt[],                /* (i) norm: weighting coefficients     */
   int16_t lspq[],                /* (o) Q13 : quantized LSP parameters   */
@@ -85,40 +85,40 @@ void Relspwed(
   int16_t buf[M];                /* Q13 */
 
   for(mode = 0; mode<MODE; mode++) {
-    Lsp_prev_extract(lsp, rbuf, fg[mode], freq_prev, fg_sum_inv[mode]);
+    WebRtcG729fix_Lsp_prev_extract(lsp, rbuf, fg[mode], freq_prev, fg_sum_inv[mode]);
 
-    Lsp_pre_select(rbuf, lspcb1, &cand_cur );
+    WebRtcG729fix_Lsp_pre_select(rbuf, lspcb1, &cand_cur );
     cand[mode] = cand_cur;
 
-    Lsp_select_1(rbuf, lspcb1[cand_cur], wegt, lspcb2, &index);
+    WebRtcG729fix_Lsp_select_1(rbuf, lspcb1[cand_cur], wegt, lspcb2, &index);
 
     tindex1[mode] = index;
 
     for( j = 0 ; j < NC ; j++ )
       buf[j] = add( lspcb1[cand_cur][j], lspcb2[index][j] );
 
-    Lsp_expand_1(buf, GAP1);
+    WebRtcG729fix_Lsp_expand_1(buf, GAP1);
 
-    Lsp_select_2(rbuf, lspcb1[cand_cur], wegt, lspcb2, &index);
+    WebRtcG729fix_Lsp_select_2(rbuf, lspcb1[cand_cur], wegt, lspcb2, &index);
 
     tindex2[mode] = index;
 
     for( j = NC ; j < M ; j++ )
       buf[j] = add( lspcb1[cand_cur][j], lspcb2[index][j] );
 
-    Lsp_expand_2(buf, GAP1);
+    WebRtcG729fix_Lsp_expand_2(buf, GAP1);
 
-    Lsp_expand_1_2(buf, GAP2);
+    WebRtcG729fix_Lsp_expand_1_2(buf, GAP2);
 
-    Lsp_get_tdist(wegt, buf, &L_tdist[mode], rbuf, fg_sum[mode]);
+    WebRtcG729fix_Lsp_get_tdist(wegt, buf, &L_tdist[mode], rbuf, fg_sum[mode]);
   }
 
-  Lsp_last_select(L_tdist, &mode_index);
+  WebRtcG729fix_Lsp_last_select(L_tdist, &mode_index);
 
   code_ana[0] = shl( mode_index,NC0_B ) | cand[mode_index];
   code_ana[1] = shl( tindex1[mode_index],NC1_B ) | tindex2[mode_index];
 
-  Lsp_get_quant(lspcb1, lspcb2, cand[mode_index],
+  WebRtcG729fix_Lsp_get_quant(lspcb1, lspcb2, cand[mode_index],
       tindex1[mode_index], tindex2[mode_index],
       fg[mode_index], freq_prev, lspq, fg_sum[mode_index]) ;
 
@@ -126,7 +126,7 @@ void Relspwed(
 }
 
 
-void Lsp_pre_select(
+void WebRtcG729fix_Lsp_pre_select(
   int16_t rbuf[],              /* (i) Q13 : target vetor             */
   int16_t lspcb1[][M],         /* (i) Q13 : first stage LSP codebook */
   int16_t *cand                /* (o)     : selected code            */
@@ -160,7 +160,7 @@ void Lsp_pre_select(
 
 
 
-void Lsp_select_1(
+void WebRtcG729fix_Lsp_select_1(
   int16_t rbuf[],              /* (i) Q13 : target vector             */
   int16_t lspcb1[],            /* (i) Q13 : first stage lsp codebook  */
   int16_t wegt[],              /* (i) norm: weighting coefficients    */
@@ -200,7 +200,7 @@ void Lsp_select_1(
 
 
 
-void Lsp_select_2(
+void WebRtcG729fix_Lsp_select_2(
   int16_t rbuf[],              /* (i) Q13 : target vector             */
   int16_t lspcb1[],            /* (i) Q13 : first stage lsp codebook  */
   int16_t wegt[],              /* (i) norm: weighting coef.           */
@@ -240,7 +240,7 @@ void Lsp_select_2(
 
 
 
-void Lsp_get_tdist(
+void WebRtcG729fix_Lsp_get_tdist(
   int16_t wegt[],        /* (i) norm: weight coef.                */
   int16_t buf[],         /* (i) Q13 : candidate LSP vector        */
   int32_t *L_tdist,      /* (o) Q27 : distortion                  */
@@ -269,7 +269,7 @@ void Lsp_get_tdist(
 
 
 
-void Lsp_last_select(
+void WebRtcG729fix_Lsp_last_select(
   int32_t L_tdist[],     /* (i) Q27 : distortion         */
   int16_t *mode_index    /* (o)     : the selected mode  */
 )
@@ -283,7 +283,7 @@ void Lsp_last_select(
   return;
 }
 
-void Get_wegt(
+void WebRtcG729fix_Get_wegt(
   int16_t flsp[],    /* (i) Q13 : M LSP parameters  */
   int16_t wegt[]     /* (o) Q11->norm : M weighting coefficients */
 )

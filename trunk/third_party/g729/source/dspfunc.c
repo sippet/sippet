@@ -33,7 +33,7 @@
 */
 
 
-int32_t Pow2(        /* (o) Q0  : result       (range: 0<=val<=0x7fffffff) */
+int32_t WebRtcG729fix_Pow2(        /* (o) Q0  : result       (range: 0<=val<=0x7fffffff) */
   int16_t exponent,  /* (i) Q0  : Integer part.      (range: 0<=val<=30)   */
   int16_t fraction   /* (i) Q15 : Fractional part.   (range: 0.0<=val<1.0) */
 )
@@ -80,7 +80,7 @@ int32_t Pow2(        /* (o) Q0  : result       (range: 0<=val<=0x7fffffff) */
  |___________________________________________________________________________|
 */
 
-void Log2(
+void WebRtcG729fix_Log2(
   int32_t L_x,       /* (i) Q0 : input value                                 */
   int16_t *exponent, /* (o) Q0 : Integer part of Log2.   (range: 0<=val<=30) */
   int16_t *fraction  /* (o) Q15: Fractional  part of Log2. (range: 0<=val<1) */
@@ -142,7 +142,7 @@ void Log2(
 */
 
 
-int32_t Inv_sqrt(   /* (o) Q30 : output value   (range: 0<=val<1)           */
+int32_t WebRtcG729fix_Inv_sqrt( /* (o) Q30 : output value (range: 0<=val<1) */
   int32_t L_x       /* (i) Q0  : input value    (range: 0<=val<=7fffffff)   */
 )
 {

@@ -25,7 +25,7 @@
 
 static void Get_lsp_pol(int16_t *lsp, int32_t *f);
 
-void Lsp_Az(
+void WebRtcG729fix_Lsp_Az(
   int16_t lsp[],    /* (i) Q15 : line spectral frequencies            */
   int16_t a[]       /* (o) Q12 : predictor coefficients (order = 10)  */
 )
@@ -109,7 +109,7 @@ static void Get_lsp_pol(int16_t *lsp, int32_t *f)
 */
 
 
-void Lsf_lsp(
+void WebRtcG729fix_Lsf_lsp(
   int16_t lsf[],    /* (i) Q15 : lsf[m] normalized (range: 0.0<=val<=0.5) */
   int16_t lsp[],    /* (o) Q15 : lsp[m] (range: -1<=val<1)                */
   int16_t m         /* (i)     : LPC order                                */
@@ -131,7 +131,7 @@ void Lsf_lsp(
 }
 
 
-void Lsp_lsf(
+void WebRtcG729fix_Lsp_lsf(
   int16_t lsp[],    /* (i) Q15 : lsp[m] (range: -1<=val<1)                */
   int16_t lsf[],    /* (o) Q15 : lsf[m] normalized (range: 0.0<=val<=0.5) */
   int16_t m         /* (i)     : LPC order                                */
@@ -172,7 +172,7 @@ void Lsp_lsf(
  |___________________________________________________________________________|
 */
 
-void Lsf_lsp2(
+void WebRtcG729fix_Lsf_lsp2(
   int16_t lsf[],    /* (i) Q13 : lsf[m] (range: 0.0<=val<PI) */
   int16_t lsp[],    /* (o) Q15 : lsp[m] (range: -1<=val<1)   */
   int16_t m         /* (i)     : LPC order                   */
@@ -204,7 +204,7 @@ void Lsf_lsp2(
 
 
 
-void Lsp_lsf2(
+void WebRtcG729fix_Lsp_lsf2(
   int16_t lsp[],    /* (i) Q15 : lsp[m] (range: -1<=val<1)   */
   int16_t lsf[],    /* (o) Q13 : lsf[m] (range: 0.0<=val<PI) */
   int16_t m         /* (i)     : LPC order                   */
@@ -247,7 +247,7 @@ void Lsp_lsf2(
  *-------------------------------------------------------------*/
 
 
-void Weight_Az(
+void WebRtcG729fix_Weight_Az(
   int16_t a[],      /* (i) Q12 : a[m+1]  LPC coefficients             */
   int16_t gamma,    /* (i) Q15 : Spectral expansion factor.           */
   int16_t m,        /* (i)     : LPC order.                           */
@@ -274,7 +274,7 @@ void Weight_Az(
 
 /* Interpolation of the quantized LSP's */
 
-void Int_qlpc(
+void WebRtcG729fix_Int_qlpc(
  int16_t lsp_old[], /* input : LSP vector of past frame              */
  int16_t lsp_new[], /* input : LSP vector of present frame           */
  int16_t Az[]       /* output: interpolated Az() for the 2 subframes */
@@ -289,8 +289,8 @@ void Int_qlpc(
     lsp[i] = add(shr(lsp_new[i], 1), shr(lsp_old[i], 1));
   }
 
-  Lsp_Az(lsp, Az);              /* Subframe 1 */
+  WebRtcG729fix_Lsp_Az(lsp, Az);              /* Subframe 1 */
 
-  Lsp_Az(lsp_new, &Az[MP1]);    /* Subframe 2 */
+  WebRtcG729fix_Lsp_Az(lsp_new, &Az[MP1]);    /* Subframe 2 */
 }
 
