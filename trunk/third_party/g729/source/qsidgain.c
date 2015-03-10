@@ -52,7 +52,7 @@ void WebRtcG729fix_Qua_Sidgain(
     L_acc = L_deposit_l(*ener);
     L_acc = L_shl(L_acc, *sh_ener); /* >> if *sh_ener < 0 */
     WebRtcG729fix_L_Extract(L_acc, &hi, &lo);
-    L_x = WebRtcG729fix_Mpy_32_16(hi, lo, fact[0]);
+    L_x = WebRtcG729fix_Mpy_32_16(hi, lo, WebRtcG729fix_fact[0]);
     sh1 = 0;
   }
   else {
@@ -67,7 +67,7 @@ void WebRtcG729fix_Qua_Sidgain(
     for(i=1; i<nb_ener; i++) {
       if(sh_ener[i] < sh1) sh1 = sh_ener[i];
     }
-    sh1 = WebRtcSpl_AddSatW16(sh1, (16-marg[nb_ener]));
+    sh1 = WebRtcSpl_AddSatW16(sh1, (16-WebRtcG729fix_marg[nb_ener]));
     L_x = 0L;
     for(i=0; i<nb_ener; i++) {
       temp = WebRtcSpl_SubSatW16(sh1, sh_ener[i]);
@@ -76,7 +76,7 @@ void WebRtcG729fix_Qua_Sidgain(
       L_x = WebRtcSpl_AddSatW32(L_x, L_acc);
     }
     WebRtcG729fix_L_Extract(L_x, &hi, &lo);
-    L_x = WebRtcG729fix_Mpy_32_16(hi, lo, fact[i]);
+    L_x = WebRtcG729fix_Mpy_32_16(hi, lo, WebRtcG729fix_fact[i]);
   }
   
   *idx = Quant_Energy(L_x, sh1, enerq);

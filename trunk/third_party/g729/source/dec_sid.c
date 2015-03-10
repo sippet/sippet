@@ -40,7 +40,7 @@
 */
 void WebRtcG729fix_Init_Dec_cng(Decod_ld8a_state *st)
 {
-  st->sid_gain = tab_Sidgain[0];
+  st->sid_gain = WebRtcG729fix_tab_Sidgain[0];
   Copy(WebRtcG729fix_lspSid_reset, st->lspSid, M);
   WebRtcG729fix_Init_exc_err(st->L_exc_err);
   return;
@@ -79,7 +79,7 @@ void WebRtcG729fix_Dec_cng(
   /*************/
   if(parm[0] != 0) {
 
-    st->sid_gain = tab_Sidgain[(int)parm[4]];           
+    st->sid_gain = WebRtcG729fix_tab_Sidgain[(int)parm[4]];           
     
     /* Inverse quantization of the LSP */
     WebRtcG729fix_sid_lsfq_decode(st->noise_fg, &parm[1], st->lspSid, freq_prev);
@@ -94,7 +94,7 @@ void WebRtcG729fix_Dec_cng(
     /* energy estimate stored in sid_gain         */
     if(dif == 0) {
       WebRtcG729fix_Qua_Sidgain(&sid_sav, &sh_sid_sav, 0, &temp, &ind);
-      st->sid_gain = tab_Sidgain[(int)ind];
+      st->sid_gain = WebRtcG729fix_tab_Sidgain[(int)ind];
     }
     
   }
@@ -153,11 +153,15 @@ void WebRtcG729fix_sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
   int16_t i, j, k, lsfq[M], tmpbuf[M];
 
   /* get the lsf error vector */
-  Copy(WebRtcG729fix_lspcb1[PtrTab_1[index[1]]], tmpbuf, M);
-  for (i=0; i<M/2; i++)
-    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i], WebRtcG729fix_lspcb2[PtrTab_2[0][index[2]]][i]);
-  for (i=M/2; i<M; i++)
-    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i], WebRtcG729fix_lspcb2[PtrTab_2[1][index[2]]][i]);
+  Copy(WebRtcG729fix_lspcb1[WebRtcG729fix_PtrTab_1[index[1]]], tmpbuf, M);
+  for (i=0; i<M/2; i++) {
+    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i],
+        WebRtcG729fix_lspcb2[WebRtcG729fix_PtrTab_2[0][index[2]]][i]);
+  }
+  for (i=M/2; i<M; i++) {
+    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i],
+        WebRtcG729fix_lspcb2[WebRtcG729fix_PtrTab_2[1][index[2]]][i]);
+  }
 
   /* guarantee minimum distance of 0.0012 (~10 in Q13) between tmpbuf[j] 
      and tmpbuf[j+1] */
@@ -175,7 +179,7 @@ void WebRtcG729fix_sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
   
   /* compute the quantized lsf vector */
   WebRtcG729fix_Lsp_prev_compose(tmpbuf, lsfq, noise_fg[index[0]], freq_prev, 
-                   noise_fg_sum[index[0]]);
+                   WebRtcG729fix_noise_fg_sum[index[0]]);
   
   /* update the prediction memory */
   WebRtcG729fix_Lsp_prev_update(tmpbuf, freq_prev);
