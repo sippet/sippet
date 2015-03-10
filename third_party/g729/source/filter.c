@@ -84,7 +84,7 @@ int WebRtcG729fix_Syn_filt(
       s <<= 1;
     } else {
       Overflow = 1;
-      s = MAX_32;
+      s = WEBRTC_SPL_WORD32_MAX;
     }
     for (j = 1; j <= M; j++) {
       /* s = L_msu(s, a[j], yy[-j]); */
@@ -93,12 +93,12 @@ int WebRtcG729fix_Syn_filt(
         L_tmp <<= 1;
       } else {
         Overflow = 1;
-        L_tmp = MAX_32;
+        L_tmp = WEBRTC_SPL_WORD32_MAX;
       }
       L_tmp1 = s - L_tmp;
       if ((s ^ L_tmp) < 0) {
-        if ((L_tmp1 ^ s) & MIN_32) {
-          L_tmp1 = (s < 0L) ? MIN_32 : MAX_32;
+        if ((L_tmp1 ^ s) & WEBRTC_SPL_WORD32_MIN) {
+          L_tmp1 = (s < 0L) ? WEBRTC_SPL_WORD32_MIN : WEBRTC_SPL_WORD32_MAX;
           Overflow = 1;
         }
       }
@@ -108,7 +108,7 @@ int WebRtcG729fix_Syn_filt(
     /* s = L_shl(s, 3); */
     L_tmp = s << 3;
     if (L_tmp >> 3 != s)
-      L_tmp = (s & MIN_32 ? MIN_32 : MAX_32);
+      L_tmp = (s & WEBRTC_SPL_WORD32_MIN ? WEBRTC_SPL_WORD32_MIN : WEBRTC_SPL_WORD32_MAX);
     s = L_tmp;
 
     *yy++ = L_round(s);

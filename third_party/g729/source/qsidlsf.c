@@ -177,7 +177,7 @@ static void New_ML_search_1(int16_t *d_data,    /* (i) : error vector           
   int32_t acc0;
 
   for (q=0; q<K; q++)
-    min[q] = MAX_16;
+    min[q] = WEBRTC_SPL_WORD16_MAX;
 
   /* compute the errors */
   for (p=0; p<J; p++)
@@ -203,7 +203,7 @@ static void New_ML_search_1(int16_t *d_data,    /* (i) : error vector           
           min_indx_m[q] = m;
         }
     
-    sum[min_indx_p[q]*MQ+min_indx_m[q]] = MAX_16;
+    sum[min_indx_p[q]*MQ+min_indx_m[q]] = WEBRTC_SPL_WORD16_MAX;
   }
 
   /* compute the candidates */
@@ -235,7 +235,7 @@ static void New_ML_search_2(int16_t *d_data,    /* (i) : error vector           
   int32_t acc0;
 
   for (q=0; q<K; q++)
-    min[q] = MAX_16;
+    min[q] = WEBRTC_SPL_WORD16_MAX;
 
   /* compute the errors */
   for (p=0; p<J; p++)
@@ -274,7 +274,7 @@ static void New_ML_search_2(int16_t *d_data,    /* (i) : error vector           
           min_indx_m[q] = m;
         }
     
-    sum[min_indx_p[q]*MQ+min_indx_m[q]] = MAX_16;
+    sum[min_indx_p[q]*MQ+min_indx_m[q]] = WEBRTC_SPL_WORD16_MAX;
   }
 
   /* compute the candidates */

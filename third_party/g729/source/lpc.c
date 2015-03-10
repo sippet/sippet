@@ -54,7 +54,7 @@ void WebRtcG729fix_Autocorr(
       /* sum = L_mac(sum, y[i], y[i]); */
       sum += y[i] * y[i] << 1;
       if (sum < 0) {
-        sum = MAX_32;
+        sum = WEBRTC_SPL_WORD32_MAX;
         Overflow = 1;
         break;
       }

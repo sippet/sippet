@@ -86,7 +86,7 @@ int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag            
      sum += ((int32_t)signal[i] * (int32_t)signal[i]) << 1;
      if (sum < 0)  // overflow
      {
-       sum = MAX_32;
+       sum = WEBRTC_SPL_WORD32_MAX;
        break;
      }
    }
@@ -98,7 +98,7 @@ int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag            
    *   else if sum < 1^20 -> scal_sig[i] = signal[i]<<3     *
    *   else               -> scal_sig[i] = signal[i]        *
    *--------------------------------------------------------*/
-   if (sum == MAX_32)
+   if (sum == WEBRTC_SPL_WORD32_MAX)
    {
      for(i=-pit_max; i<L_frame; i++)
        scal_sig[i] = signal[i] >> 3;
@@ -129,7 +129,7 @@ int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag            
 
     /* First section */
 
-    max = MIN_32;
+    max = WEBRTC_SPL_WORD32_MIN;
     T1  = 20;    /* Only to remove warning from some compilers */
     for (i = 20; i < 40; i++) {
         p  = scal_sig;
@@ -146,7 +146,7 @@ int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag            
 
     /* Second section */
 
-    max = MIN_32;
+    max = WEBRTC_SPL_WORD32_MIN;
     T2  = 40;    /* Only to remove warning from some compilers */
     for (i = 40; i < 80; i++) {
         p  = scal_sig;
@@ -163,7 +163,7 @@ int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag            
 
     /* Third section */
 
-    max = MIN_32;
+    max = WEBRTC_SPL_WORD32_MIN;
     T3  = 80;    /* Only to remove warning from some compilers */
     for (i = 80; i < 143; i+=2) {
         p  = scal_sig;
@@ -287,7 +287,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
   * Find maximum integer delay.                                     *
   *-----------------------------------------------------------------*/
 
-  max = MIN_32;
+  max = WEBRTC_SPL_WORD32_MIN;
   t0 = t0_min; /* Only to remove warning from some compilers */
 
   for(t=t0_min; t<=t0_max; t++)

@@ -318,7 +318,7 @@ static int16_t Cmp_filt(int16_t *RCoeff, int16_t sh_RCoeff, int16_t *acf,
       temp3 *= 2;
     } else {
       Overflow = 1;
-      temp3 = MAX_32;
+      temp3 = WEBRTC_SPL_WORD32_MAX;
     }
     L_temp0 = L_shr(temp3,1);
     for(i=1; i <= M; i++) {

@@ -42,7 +42,7 @@ int main(int argc, char *argv[] )
   int32_t  count_frame;
   FILE   *f_syn, *f_serial;
 
-  int32_t stop_after = MAX_32;
+  int32_t stop_after = WEBRTC_SPL_WORD32_MAX;
 
   Decod_ld8a_state state;
   Post_Filter_state post_filter_state;

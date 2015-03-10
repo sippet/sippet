@@ -226,7 +226,7 @@ void WebRtcG729fix_pit_pst_filt(
  *---------------------------------------------------------------------------*/
 
   deb_sig = &scal_sig[-t0_min];
-  cor_max = MIN_32;
+  cor_max = WEBRTC_SPL_WORD32_MIN;
   t0 = t0_min;             /* Only to remove warning from some compilers */
   for (i=t0_min; i<=t0_max; i++)
   {
