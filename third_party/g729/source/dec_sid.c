@@ -41,7 +41,7 @@
 void WebRtcG729fix_Init_Dec_cng(Decod_ld8a_state *st)
 {
   st->sid_gain = tab_Sidgain[0];
-  Copy(lspSid_reset, st->lspSid, M);
+  Copy(WebRtcG729fix_lspSid_reset, st->lspSid, M);
   WebRtcG729fix_Init_exc_err(st->L_exc_err);
   return;
 }
@@ -132,12 +132,12 @@ void WebRtcG729fix_Init_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M])
 
   /* initialize the noise_fg */
   for (i=0; i<4; i++)
-    Copy(fg[0][i], noise_fg[0][i], M);
+    Copy(WebRtcG729fix_fg[0][i], noise_fg[0][i], M);
   
   for (i=0; i<4; i++)
     for (j=0; j<M; j++){
-      acc0 = L_mult(fg[0][i][j], 19660);
-      acc0 = L_mac(acc0, fg[1][i][j], 13107);
+      acc0 = L_mult(WebRtcG729fix_fg[0][i][j], 19660);
+      acc0 = L_mac(acc0, WebRtcG729fix_fg[1][i][j], 13107);
       noise_fg[1][i][j] = extract_h(acc0);
     }
 }
@@ -153,11 +153,11 @@ void WebRtcG729fix_sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
   int16_t i, j, k, lsfq[M], tmpbuf[M];
 
   /* get the lsf error vector */
-  Copy(lspcb1[PtrTab_1[index[1]]], tmpbuf, M);
+  Copy(WebRtcG729fix_lspcb1[PtrTab_1[index[1]]], tmpbuf, M);
   for (i=0; i<M/2; i++)
-    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i], lspcb2[PtrTab_2[0][index[2]]][i]);
+    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i], WebRtcG729fix_lspcb2[PtrTab_2[0][index[2]]][i]);
   for (i=M/2; i<M; i++)
-    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i], lspcb2[PtrTab_2[1][index[2]]][i]);
+    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i], WebRtcG729fix_lspcb2[PtrTab_2[1][index[2]]][i]);
 
   /* guarantee minimum distance of 0.0012 (~10 in Q13) between tmpbuf[j] 
      and tmpbuf[j+1] */

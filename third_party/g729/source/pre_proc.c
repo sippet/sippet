@@ -78,11 +78,11 @@ void WebRtcG729fix_Pre_Process(
      /*  y[i] = b[0]*x[i]/2 + b[1]*x[i-1]/2 + b140[2]*x[i-2]/2  */
      /*                     + a[1]*y[i-1] + a[2] * y[i-2];      */
 
-     L_tmp     = WebRtcG729fix_Mpy_32_16(yy1_hi, yy1_lo, a140[1]);
-     L_tmp     = WebRtcSpl_AddSatW32(L_tmp, WebRtcG729fix_Mpy_32_16(yy2_hi, yy2_lo, a140[2]));
-     L_tmp     = L_mac(L_tmp, xx0, b140[0]);
-     L_tmp     = L_mac(L_tmp, xx1, b140[1]);
-     L_tmp     = L_mac(L_tmp, x2, b140[2]);
+     L_tmp     = WebRtcG729fix_Mpy_32_16(yy1_hi, yy1_lo, WebRtcG729fix_a140[1]);
+     L_tmp     = WebRtcSpl_AddSatW32(L_tmp, WebRtcG729fix_Mpy_32_16(yy2_hi, yy2_lo, WebRtcG729fix_a140[2]));
+     L_tmp     = L_mac(L_tmp, xx0, WebRtcG729fix_b140[0]);
+     L_tmp     = L_mac(L_tmp, xx1, WebRtcG729fix_b140[1]);
+     L_tmp     = L_mac(L_tmp, x2, WebRtcG729fix_b140[2]);
      L_tmp     = L_shl(L_tmp, 3);      /* Q28 --> Q31 (Q12 --> Q15) */
      sigout[i] = L_round(L_tmp);
 

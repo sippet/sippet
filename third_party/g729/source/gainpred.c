@@ -71,7 +71,7 @@ void WebRtcG729fix_Gain_predict(
 
    L_tmp = L_shl(L_tmp, 10);                      /* From Q14 to Q24 */
    for(i=0; i<4; i++)
-     L_tmp = L_mac(L_tmp, pred[i], past_qua_en[i]); /* Q13*Q10 ->Q24 */
+     L_tmp = L_mac(L_tmp, WebRtcG729fix_pred[i], past_qua_en[i]); /* Q13*Q10 ->Q24 */
 
    *gcode0 = extract_h(L_tmp);                    /* From Q24 to Q8  */
 

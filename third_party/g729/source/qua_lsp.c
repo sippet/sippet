@@ -44,7 +44,7 @@ void WebRtcG729fix_Lsp_encw_reset(Coder_ld8a_state *st)
   int16_t i;
 
   for(i=0; i<MA_NP; i++)
-    Copy(&freq_prev_reset[0], &st->freq_prev[i][0], M);
+    Copy(&WebRtcG729fix_freq_prev_reset[0], &st->freq_prev[i][0], M);
 }
 
 
@@ -57,10 +57,11 @@ void WebRtcG729fix_Lsp_qua_cs(
 {
   int16_t wegt[M];       /* Q11->normalized : weighting coefficients */
 
-  WebRtcG729fix_Get_wegt( flsp_in, wegt );
+  WebRtcG729fix_Get_wegt(flsp_in, wegt);
 
-  WebRtcG729fix_Relspwed( flsp_in, wegt, lspq_out, lspcb1, lspcb2, fg,
-    st->freq_prev, fg_sum, fg_sum_inv, code);
+  WebRtcG729fix_Relspwed(flsp_in, wegt, lspq_out, WebRtcG729fix_lspcb1,
+    WebRtcG729fix_lspcb2, WebRtcG729fix_fg, st->freq_prev,
+    WebRtcG729fix_fg_sum, WebRtcG729fix_fg_sum_inv, code);
 }
 
 void WebRtcG729fix_Relspwed(

@@ -69,8 +69,8 @@ void WebRtcG729fix_prm2bits_ld8k(
   case 1 : {
     *bits++ = RATE_8000;
     for (i = 0; i < PRM_SIZE; i++) {
-      int2bin(prm[i+1], bitsno[i], bits);
-      bits += bitsno[i];
+      int2bin(prm[i+1], WebRtcG729fix_bitsno[i], bits);
+      bits += WebRtcG729fix_bitsno[i];
     }
     break;
   }
@@ -80,14 +80,14 @@ void WebRtcG729fix_prm2bits_ld8k(
 #ifndef OCTET_TX_MODE
     *bits++ = RATE_SID;
     for (i = 0; i < 4; i++) {
-      int2bin(prm[i+1], bitsno2[i], bits);
-      bits += bitsno2[i];
+      int2bin(prm[i+1], WebRtcG729fix_bitsno2[i], bits);
+      bits += WebRtcG729fix_bitsno2[i];
     }
 #else
     *bits++ = RATE_SID_OCTET;
     for (i = 0; i < 4; i++) {
-      int2bin(prm[i+1], bitsno2[i], bits);
-      bits += bitsno2[i];
+      int2bin(prm[i+1], WebRtcG729fix_bitsno2[i], bits);
+      bits += WebRtcG729fix_bitsno2[i];
     }
     *bits++ = BIT_0;
 #endif
@@ -148,8 +148,8 @@ void WebRtcG729fix_bits2prm_ld8k(
   if(nb_bits == RATE_8000) {
     prm[1] = 1;
     for (i = 0; i < PRM_SIZE; i++) {
-      prm[i+2] = bin2int(bitsno[i], bits);
-      bits  += bitsno[i];
+      prm[i+2] = bin2int(WebRtcG729fix_bitsno[i], bits);
+      bits  += WebRtcG729fix_bitsno[i];
     }
   }
   else
@@ -157,8 +157,8 @@ void WebRtcG729fix_bits2prm_ld8k(
     if(nb_bits == RATE_SID) {
       prm[1] = 2;
       for (i = 0; i < 4; i++) {
-        prm[i+2] = bin2int(bitsno2[i], bits);
-        bits += bitsno2[i];
+        prm[i+2] = bin2int(WebRtcG729fix_bitsno2[i], bits);
+        bits += WebRtcG729fix_bitsno2[i];
       }
     }
 #else
@@ -166,8 +166,8 @@ void WebRtcG729fix_bits2prm_ld8k(
   if(nb_bits == RATE_SID_OCTET) {
     prm[1] = 2;
     for (i = 0; i < 4; i++) {
-      prm[i+2] = bin2int(bitsno2[i], bits);
-      bits += bitsno2[i];
+      prm[i+2] = bin2int(WebRtcG729fix_bitsno2[i], bits);
+      bits += WebRtcG729fix_bitsno2[i];
     }
   }
 #endif
