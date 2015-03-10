@@ -1,3 +1,4 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
@@ -71,7 +72,7 @@ void L_Extract(int32_t L_32, int16_t *hi, int16_t *lo)
  |                                                                           |
  |   Return Value :                                                          |
  |                                                                           |
- |             32 bit long signed integer (int32_t) whose value falls in the  |
+ |             32 bit long signed integer (int32_t) whose value falls in the |
  |             range : 0x8000 0000 <= L_32 <= 0x7fff fff0.                   |
  |                                                                           |
  |___________________________________________________________________________|
@@ -108,57 +109,42 @@ int32_t L_Comp(int16_t hi, int16_t lo)
 int32_t Mpy_32(int16_t hi1, int16_t lo1, int16_t hi2, int16_t lo2)
 {
 #if G729_ARM
-	register int32_t product32;
-	register int32_t L_sum;
-	register int32_t L_product, result;
-	register int32_t ra = hi1;
-	register int32_t rb = lo1;
-	register int32_t rc = hi2;
-	register int32_t rd = lo2;
+register int32_t product32;
+register int32_t L_sum;
+register int32_t L_product, result;
+register int32_t ra = hi1;
+register int32_t rb = lo1;
+register int32_t rc = hi2;
+register int32_t rd = lo2;
 
-	asm volatile("smulbb %0, %1, %2"
-		: "=r"(L_product)
-		: "r"(ra), "r"(rc)
-		);
-	asm volatile("mov %0, #0"
-		: "=r"(result)
-		);
+  __asm__("smulbb %0, %1, %2"
+          : "=r"(L_product)
+          : "r"(ra), "r"(rc));
+  __asm__("mov %0, #0"
+          : "=r"(result));
+  __asm__("qdadd %0, %1, %2"
+          : "=r"(L_sum)
+          : "r"(result), "r"(L_product));
+  __asm__("smulbb %0, %1, %2"
+          : "=r"(product32)
+          : "r"(ra), "r"(rd));
+  __asm__("mov %0, %1, ASR #15"
+          : "=r"(ra)
+          : "r"(product32));
+  __asm__("qdadd %0, %1, %2"
+          : "=r"(L_product)
+          : "r"(L_sum), "r"(ra));
+  __asm__("smulbb %0, %1, %2"
+          : "=r"(product32)
+          : "r"(rb), "r"(rc));
+  __asm__("mov %0, %1, ASR #15"
+          : "=r"(rb)
+          : "r"(product32));
+  __asm__("qdadd %0, %1, %2"
+          : "=r"(L_sum)
+          : "r"(L_product), "r"(rb));
 
-	asm volatile("qdadd %0, %1, %2"
-		: "=r"(L_sum)
-		: "r"(result), "r"(L_product)
-		);
-
-	asm volatile("smulbb %0, %1, %2"
-		: "=r"(product32)
-		: "r"(ra), "r"(rd)
-		);
-
-	asm volatile("mov %0, %1, ASR #15"
-		: "=r"(ra)
-		: "r"(product32)
-		);
-	asm volatile("qdadd %0, %1, %2"
-		: "=r"(L_product)
-		: "r"(L_sum), "r"(ra)
-		);
-
-	asm volatile("smulbb %0, %1, %2"
-		: "=r"(product32)
-		: "r"(rb), "r"(rc)
-		);
-
-	asm volatile("mov %0, %1, ASR #15"
-		: "=r"(rb)
-		: "r"(product32)
-		);
-
-	asm volatile("qdadd %0, %1, %2"
-		: "=r"(L_sum)
-		: "r"(L_product), "r"(rb)
-		);
-
-	return (L_sum);
+  return (L_sum);
 #else
   int32_t L_32;
 
@@ -193,39 +179,30 @@ int32_t Mpy_32(int16_t hi1, int16_t lo1, int16_t hi2, int16_t lo2)
 int32_t Mpy_32_16(int16_t hi, int16_t lo, int16_t n)
 {
 #if G729_ARM
-	register int32_t ra = hi;
-    register int32_t rb = lo;
-    register int32_t rc = n;
-    int32_t result, L_product;
+  register int32_t ra = hi;
+  register int32_t rb = lo;
+  register int32_t rc = n;
+  int32_t result, L_product;
 
-    asm volatile("smulbb %0, %1, %2"
-         : "=r"(L_product)
-                         : "r"(ra), "r"(rc)
-                        );
-    asm volatile("mov %0, #0"
-         : "=r"(result)
-                );
+  __asm__("smulbb %0, %1, %2"
+          : "=r"(L_product)
+          : "r"(ra), "r"(rc));
+  __asm__("mov %0, #0"
+          : "=r"(result));
+  __asm__("qdadd %0, %1, %2"
+          : "=r"(L_product)
+          : "r"(result), "r"(L_product));
+  __asm__("smulbb %0, %1, %2"
+          : "=r"(result)
+          : "r"(rb), "r"(rc));
+  __asm__("mov %0, %1, ASR #15"
+          : "=r"(ra)
+          : "r"(result));
+  __asm__("qdadd %0, %1, %2"
+          : "=r"(result)
+          : "r"(L_product), "r"(ra));
 
-    asm volatile("qdadd %0, %1, %2"
-         : "=r"(L_product)
-                         : "r"(result), "r"(L_product)
-                        );
-
-    asm volatile("smulbb %0, %1, %2"
-         : "=r"(result)
-                         : "r"(rb), "r"(rc)
-                        );
-
-    asm volatile("mov %0, %1, ASR #15"
-         : "=r"(ra)
-                         : "r"(result)
-                        );
-    asm volatile("qdadd %0, %1, %2"
-         : "=r"(result)
-                         : "r"(L_product), "r"(ra)
-                        );
-
-    return (result);
+  return (result);
 #else
   int32_t L_32;
 
@@ -251,7 +228,7 @@ int32_t Mpy_32_16(int16_t hi, int16_t lo, int16_t n)
  |   Inputs :                                                                |
  |                                                                           |
  |    L_num                                                                  |
- |             32 bit long signed integer (int32_t) whose value falls in the  |
+ |             32 bit long signed integer (int32_t) whose value falls in the |
  |             range : 0x0000 0000 < L_num < L_denom                         |
  |                                                                           |
  |    L_denom = denom_hi<<16 + denom_lo<<1      (DPF)                        |
@@ -266,7 +243,7 @@ int32_t Mpy_32_16(int16_t hi, int16_t lo, int16_t n)
  |   Return Value :                                                          |
  |                                                                           |
  |    L_div                                                                  |
- |             32 bit long signed integer (int32_t) whose value falls in the  |
+ |             32 bit long signed integer (int32_t) whose value falls in the |
  |             range : 0x0000 0000 <= L_div <= 0x7fff ffff.                  |
  |             It's a Q31 value                                              |
  |                                                                           |

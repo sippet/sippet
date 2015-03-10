@@ -1,3 +1,4 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
@@ -96,7 +97,5 @@ void Post_Process(
   st->y1_lo = yy1_lo;
   st->y2_hi = yy2_hi;
   st->y2_lo = yy2_lo;
-
-  return;
 }
 

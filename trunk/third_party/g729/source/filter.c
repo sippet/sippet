@@ -1,3 +1,4 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder    ANSI-C Source Code
    Version 1.1    Last modified: September 1996
@@ -59,7 +60,7 @@ int Syn_filt(
 )
 {
   int16_t i, j;
-  int32_t s;
+  int32_t s, L_tmp, L_tmp1;
   int16_t tmp[100];     /* This is usually done by memory allocation (lg+M) */
   int16_t *yy;
   int Overflow = 0;
@@ -80,31 +81,36 @@ int Syn_filt(
     /* L_mult inline to catch overflow */
     s = x[i] * a[0];
     if (s != (int32_t)0x40000000L) {
-      s *= 2;
+      s <<= 1;
     } else {
       Overflow = 1;
       s = MAX_32;
     }
-    for (j = 1; j <= M; j++)
-      s = L_msu(s, a[j], yy[-j]);
+    for (j = 1; j <= M; j++) {
+      /* s = L_msu(s, a[j], yy[-j]); */
+      L_tmp = a[j] * yy[-j];
+      if (L_tmp != (int32_t)0x40000000L) {
+        L_tmp <<= 1;
+      } else {
+        Overflow = 1;
+        L_tmp = MAX_32;
+      }
+      L_tmp1 = s - L_tmp;
+      if ((s ^ L_tmp) < 0) {
+        if ((L_tmp1 ^ s) & MIN_32) {
+          L_tmp1 = (s < 0L) ? MIN_32 : MAX_32;
+          Overflow = 1;
+        }
+      }
+      s = L_tmp1;
+    }
 
     /* s = L_shl(s, 3); */
-    if (s <= 0) {
-      s = L_shr(s,-3);
-    } else {
-      for (j = 0; j < 3; j++) {
-        if (s > (int32_t) 0X3fffffffL) {
-          Overflow = 1;
-          s = MAX_32;
-          break;
-        } else if (s < (int32_t) 0xc0000000L) {
-          Overflow = 1;
-          s = MIN_32;
-          break;
-        }
-        s *= 2;
-      }
-    }
+    L_tmp = s << 3;
+    if (L_tmp >> 3 != s)
+      L_tmp = (s & MIN_32 ? MIN_32 : MAX_32);
+    s = L_tmp;
+
     *yy++ = L_round(s);
   }
 

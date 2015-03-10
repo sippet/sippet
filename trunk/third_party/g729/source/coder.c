@@ -1,6 +1,7 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Speech Coder with Annex B    ANSI-C Source Code
-   Version 1.4    Last modified: November 2000
+   Version 1.5    Last modified: October 2006
 
    Copyright (c) 1996,
    AT&T, France Telecom, NTT, Universite de Sherbrooke, Lucent Technologies,
@@ -47,7 +48,7 @@ int main(int argc, char *argv[] )
   printf("\n");
   printf("------------------- Fixed point C simulation -----------------\n");
   printf("\n");
-  printf("-------------------       Version 1.4        -----------------\n");
+  printf("------------ Version 1.5 (Release 2, November 2006) ----------\n");
   printf("\n");
 
 
@@ -117,7 +118,7 @@ int main(int argc, char *argv[] )
     if (frame == 32767) frame = 256;
     else frame++;
 
-    Pre_Process(&pre_process_state, state.new_speech, L_FRAME);
+    Pre_Process(&pre_process_state, state.new_speech, state.new_speech, L_FRAME);
     Coder_ld8a(&state, prm, frame, vad_enable);
     prm2bits_ld8k( prm, serial);
     nb_words = serial[1] +  (int16_t)2;

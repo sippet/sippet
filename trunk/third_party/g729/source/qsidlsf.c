@@ -1,6 +1,7 @@
+/* ITU-T G.729 Software Package Release 2 (November 2006) */
 /*
    ITU-T G.729A Annex B     ANSI-C Source Code
-   Version 1.3    Last modified: August 1997
+   Version 1.5    Last modified: October 2006
    Copyright (c) 1996, France Telecom, Rockwell International,
                        Universite de Sherbrooke.
    All rights reserved.
@@ -192,6 +193,8 @@ static void New_ML_search_1(int16_t *d_data,    /* (i) : error vector           
       
   /* select the candidates */
   for (q=0; q<K; q++){
+    min_indx_p[q] = 0;  /* G.729 maintenance */
+    min_indx_m[q] = 0;  /* G.729 maintenance */
     for (p=0; p<J; p++)
       for (m=0; m<MQ; m++)
         if (sum[p*MQ+m] < min[q]){
@@ -261,6 +264,8 @@ static void New_ML_search_2(int16_t *d_data,    /* (i) : error vector           
       
   /* select the candidates */
   for (q=0; q<K; q++){
+    min_indx_p[q] = 0;  /* G.729 maintenance */
+    min_indx_m[q] = 0;  /* G.729 maintenance */
     for (p=0; p<J; p++)
       for (m=0; m<MQ; m++)
         if (sum[p*MQ+m] < min[q]){
