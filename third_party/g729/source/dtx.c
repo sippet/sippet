@@ -182,7 +182,7 @@ void WebRtcG729fix_Cod_cng(
 
     st->prev_energy = energyq;
     ana[4] = cur_igain;
-    st->sid_gain = tab_Sidgain[cur_igain];
+    st->sid_gain = WebRtcG729fix_tab_Sidgain[cur_igain];
 
 
   } /* end of SID frame case */

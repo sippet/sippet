@@ -104,9 +104,9 @@ void WebRtcG729fix_vad(vad_state *st,
   /* compute the low band energy */
   acc0 = 0;
   for (i=1; i<=NP; i++)
-    acc0 = L_mac(acc0, r_h[i], lbf_corr[i]);
+    acc0 = L_mac(acc0, r_h[i], WebRtcG729fix_lbf_corr[i]);
   acc0 = L_shl(acc0, 1);
-  acc0 = L_mac(acc0, r_h[0], lbf_corr[0]);
+  acc0 = L_mac(acc0, r_h[0], WebRtcG729fix_lbf_corr[0]);
   WebRtcG729fix_Log2(acc0, &exp, &frac);
   acc0 = WebRtcG729fix_Mpy_32_16(exp, frac, 9864);
   i = WebRtcSpl_SubSatW16(exp_R0, 1);
@@ -197,17 +197,17 @@ void WebRtcG729fix_vad(vad_state *st,
 
   if (frm_count >= INIT_FRAME){
     if (frm_count == INIT_FRAME){
-      acc0 = L_mult(st->MeanE, factor_fx[st->less_count]);
-      acc0 = L_shl(acc0, shift_fx[st->less_count]);
+      acc0 = L_mult(st->MeanE, WebRtcG729fix_factor_fx[st->less_count]);
+      acc0 = L_shl(acc0, WebRtcG729fix_shift_fx[st->less_count]);
       st->MeanE = extract_h(acc0);
 
-      acc0 = L_mult(st->MeanSZC, factor_fx[st->less_count]);
-      acc0 = L_shl(acc0, shift_fx[st->less_count]);
+      acc0 = L_mult(st->MeanSZC, WebRtcG729fix_factor_fx[st->less_count]);
+      acc0 = L_shl(acc0, WebRtcG729fix_shift_fx[st->less_count]);
       st->MeanSZC = extract_h(acc0);
 
       for (i=0; i<M; i++){
-        acc0 = L_mult(st->MeanLSF[i], factor_fx[st->less_count]);
-        acc0 = L_shl(acc0, shift_fx[st->less_count]);
+        acc0 = L_mult(st->MeanLSF[i], WebRtcG729fix_factor_fx[st->less_count]);
+        acc0 = L_shl(acc0, WebRtcG729fix_shift_fx[st->less_count]);
         st->MeanLSF[i] = extract_h(acc0);
       }
 

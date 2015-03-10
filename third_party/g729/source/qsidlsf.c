@@ -100,7 +100,7 @@ void WebRtcG729fix_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
   /* get the prediction error vector */
   for (mode=0; mode<MODE; mode++) {
     WebRtcG729fix_Lsp_prev_extract(lsf, errlsf+mode*M, noise_fg[mode],
-        freq_prev, noise_fg_sum_inv[mode]);
+        freq_prev, WebRtcG729fix_noise_fg_sum_inv[mode]);
   }
 
   /* quantize the lsf and get the corresponding indices */
@@ -115,7 +115,7 @@ void WebRtcG729fix_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
 
   /* compute the quantized lsf vector */
   WebRtcG729fix_Lsp_prev_compose(tmpbuf, lsfq, noise_fg[mode], freq_prev, 
-                   noise_fg_sum[mode]);
+                   WebRtcG729fix_noise_fg_sum[mode]);
   
   /* update the prediction memory */
   WebRtcG729fix_Lsp_prev_update(tmpbuf, freq_prev);
@@ -142,9 +142,9 @@ static void Qnt_e(int16_t *errlsf,    /* (i)  : error lsf vector             */
   int16_t ptr_back[2][R_LSFQ], ptr, i;
 
   New_ML_search_1(errlsf, DIn, d_data[0], 4, best_indx[0], ptr_back[0], 
-                  PtrTab_1, MS[0]);
+                  WebRtcG729fix_PtrTab_1, MS[0]);
   New_ML_search_2(d_data[0], weight, 4, d_data[1], DOut, best_indx[1], 
-                  ptr_back[0], ptr_back[1], PtrTab_2, MS[1]);
+                  ptr_back[0], ptr_back[1], WebRtcG729fix_PtrTab_2, MS[1]);
   
   /* backward path for the indices */
   cluster[1] = best_indx[1][0];
@@ -155,14 +155,14 @@ static void Qnt_e(int16_t *errlsf,    /* (i)  : error lsf vector             */
   *Pptr = ptr_back[0][ptr];
   
   /* generating the quantized vector */
-  Copy(WebRtcG729fix_lspcb1[PtrTab_1[cluster[0]]], qlsf, M);
+  Copy(WebRtcG729fix_lspcb1[WebRtcG729fix_PtrTab_1[cluster[0]]], qlsf, M);
   for (i=0; i<M/2; i++) {
     qlsf[i] = WebRtcSpl_AddSatW16(qlsf[i],
-        WebRtcG729fix_lspcb2[PtrTab_2[0][cluster[1]]][i]);
+        WebRtcG729fix_lspcb2[WebRtcG729fix_PtrTab_2[0][cluster[1]]][i]);
   }
   for (i=M/2; i<M; i++) {
     qlsf[i] = WebRtcSpl_AddSatW16(qlsf[i],
-        WebRtcG729fix_lspcb2[PtrTab_2[1][cluster[1]]][i]);
+        WebRtcG729fix_lspcb2[WebRtcG729fix_PtrTab_2[1][cluster[1]]][i]);
   }
 }
 
@@ -193,7 +193,7 @@ static void New_ML_search_1(int16_t *d_data,    /* (i) : error vector           
         acc0 = L_mac(acc0, tmp, tmp);
       }
       sum[p*MQ+m] = extract_h(acc0);
-      sum[p*MQ+m] = mult(sum[p*MQ+m], Mp[p]);
+      sum[p*MQ+m] = mult(sum[p*MQ+m], WebRtcG729fix_Mp[p]);
     }
       
   /* select the candidates */
@@ -248,8 +248,8 @@ static void New_ML_search_2(int16_t *d_data,    /* (i) : error vector           
     for (m=0; m<MQ; m++){
       acc0 = 0;
       for (l=0; l<M/2; l++){
-        tmp1 = extract_h(L_shl(L_mult(noise_fg_sum[ptr_prd[p]][l], 
-                                      noise_fg_sum[ptr_prd[p]][l]), 2));
+        tmp1 = extract_h(L_shl(L_mult(WebRtcG729fix_noise_fg_sum[ptr_prd[p]][l],
+            WebRtcG729fix_noise_fg_sum[ptr_prd[p]][l]), 2));
         tmp1 = mult(tmp1, weight[l]);
         tmp2 = WebRtcSpl_SubSatW16(d_data[p*M+l],
             WebRtcG729fix_lspcb2[PtrTab[0][m]][l]);
@@ -258,8 +258,8 @@ static void New_ML_search_2(int16_t *d_data,    /* (i) : error vector           
       }
 
       for (l=M/2; l<M; l++){
-        tmp1 = extract_h(L_shl(L_mult(noise_fg_sum[ptr_prd[p]][l], 
-                                      noise_fg_sum[ptr_prd[p]][l]), 2));
+        tmp1 = extract_h(L_shl(L_mult(WebRtcG729fix_noise_fg_sum[ptr_prd[p]][l], 
+            WebRtcG729fix_noise_fg_sum[ptr_prd[p]][l]), 2));
         tmp1 = mult(tmp1, weight[l]);
         tmp2 = WebRtcSpl_SubSatW16(d_data[p*M+l],
             WebRtcG729fix_lspcb2[PtrTab[1][m]][l]);
