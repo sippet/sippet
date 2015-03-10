@@ -109,14 +109,14 @@ int main(int argc, char *argv[] )
   WebRtcG729fix_Init_Post_Process(&post_proc_state);
 
   /* for G.729b */
-  Init_Dec_cng(&state);
+  WebRtcG729fix_Init_Dec_cng(&state);
 
 /*-----------------------------------------------------------------*
  *            Loop for each "L_FRAME" speech data                  *
  *-----------------------------------------------------------------*/
 
   count_frame = 0L;
-  while(read_frame(f_serial, parm) != 0)
+  while(WebRtcG729fix_read_frame(f_serial, parm) != 0)
   {
     if (count_frame < stop_after) {
       printf("Frame = %d\r", count_frame++);

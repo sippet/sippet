@@ -74,7 +74,7 @@ void WebRtcG729fix_Init_Decod_ld8a(Decod_ld8a_state *st)
   st->seed = INIT_SEED;
   st->sid_sav = 0;
   st->sh_sid_sav = 1;
-  Init_lsfq_noise(st->noise_fg);
+  WebRtcG729fix_Init_lsfq_noise(st->noise_fg);
 
   /* Initialize Dec_gain */
   Copy(past_qua_en_reset, st->past_qua_en, 4);

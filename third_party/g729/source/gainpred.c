@@ -58,7 +58,7 @@ void WebRtcG729fix_Gain_predict(
    *-----------------------------------------------------------------*/
 
    WebRtcG729fix_Log2(L_tmp, &exp, &frac); /* Q27->Q0 ^Q0 ^Q15       */
-   L_tmp = Mpy_32_16(exp, frac, -24660);   /* Q0 Q15 Q13 -> ^Q14     */
+   L_tmp = WebRtcG729fix_Mpy_32_16(exp, frac, -24660);   /* Q0 Q15 Q13 -> ^Q14     */
                                            /* hi:Q0+Q13+1            */
                                            /* lo:Q15+Q13-15+1        */
                                            /* -24660[Q13]=-3.0103    */
@@ -83,7 +83,7 @@ void WebRtcG729fix_Gain_predict(
 
    L_tmp = L_mult(*gcode0, 5439);       /* *0.166 in Q15, result in Q24*/
    L_tmp = L_shr(L_tmp, 8);             /* From Q24 to Q16             */
-   L_Extract(L_tmp, &exp, &frac);       /* Extract exponent of gcode0  */
+   WebRtcG729fix_L_Extract(L_tmp, &exp, &frac);       /* Extract exponent of gcode0  */
 
    *gcode0 = extract_l(WebRtcG729fix_Pow2(14, frac));
                                         /* Put 14 as exponent so that  */
@@ -119,7 +119,7 @@ void WebRtcG729fix_Gain_update(
    *----------------------------------------------------------------------*/
 
    WebRtcG729fix_Log2( L_gbk12, &exp, &frac ); /* L_gbk12:Q13       */
-   L_acc = L_Comp(sub(exp,13), frac);          /* L_acc:Q16         */
+   L_acc = WebRtcG729fix_L_Comp(sub(exp,13), frac);          /* L_acc:Q16         */
    tmp = extract_h( L_shl( L_acc,13 ) );       /* tmp:Q13           */
    past_qua_en[0] = mult( tmp, 24660 );        /* past_qua_en[]:Q10 */
 }

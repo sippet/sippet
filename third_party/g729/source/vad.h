@@ -10,9 +10,9 @@
 #ifndef __VAD_H__
 #define __VAD_H__
 
-void vad_init(vad_state *st);
+void WebRtcG729fix_vad_init(vad_state *st);
 
-void vad(vad_state *st,
+void WebRtcG729fix_vad(vad_state *st,
          int16_t rc,
          int16_t *lsf, 
          int16_t *r_h,

@@ -82,8 +82,8 @@ static void Get_lsp_pol(int16_t *lsp, int32_t *f)
 
      for(j=1; j<i; j++, f--)
      {
-       L_Extract(f[-1] ,&hi, &lo);
-       t0 = Mpy_32_16(hi, lo, *lsp);         /* t0 = f[-1] * lsp    */
+       WebRtcG729fix_L_Extract(f[-1] ,&hi, &lo);
+       t0 = WebRtcG729fix_Mpy_32_16(hi, lo, *lsp);         /* t0 = f[-1] * lsp    */
        t0 = L_shl(t0, 1);
        *f = L_add(*f, f[-2]);                /* *f += f[-2]         */
        *f = L_sub(*f, t0);                   /* *f -= t0            */

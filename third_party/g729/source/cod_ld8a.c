@@ -125,8 +125,8 @@ void WebRtcG729fix_Init_Coder_ld8a(Coder_ld8a_state *st)
   st->pastVad = 1;
   st->ppastVad = 1;
   st->seed = INIT_SEED;
-  vad_init(&st->vad_state);
-  Init_lsfq_noise(st->noise_fg);
+  WebRtcG729fix_vad_init(&st->vad_state);
+  WebRtcG729fix_Init_lsfq_noise(st->noise_fg);
 
   /* Initialize Qua_gain */
   Copy(past_qua_en_reset, st->past_qua_en, 4);
@@ -216,15 +216,15 @@ void WebRtcG729fix_Coder_ld8a(
     /* LP analysis */
     WebRtcG729fix_Autocorr(st->p_window, NP, r_h, r_l, &exp_R0); /* Autocorrelations */
     Copy(r_h, rh_nbe, MP1);
-    Lag_window(NP, r_h, r_l);                      /* Lag windowing    */
+    WebRtcG729fix_Lag_window(NP, r_h, r_l);                      /* Lag windowing    */
     WebRtcG729fix_Levinson(st, r_h, r_l, Ap_t, rc, &temp);       /* Levinson Durbin  */
     WebRtcG729fix_Az_lsp(Ap_t, lsp_new, st->lsp_old);            /* From A(z) to lsp */
 
     /* For G.729B */
     /* ------ VAD ------- */
     WebRtcG729fix_Lsp_lsf(lsp_new, lsf_new, M);
-    vad(&st->vad_state, rc[1], lsf_new, r_h, r_l, exp_R0, st->p_window, frame, 
-        st->pastVad, st->ppastVad, &Vad);
+    WebRtcG729fix_vad(&st->vad_state, rc[1], lsf_new, r_h, r_l, exp_R0, st->p_window,
+        frame, st->pastVad, st->ppastVad, &Vad);
 
     WebRtcG729fix_Update_cng(st, rh_nbe, exp_R0, Vad);
     

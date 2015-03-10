@@ -38,7 +38,7 @@
 **
 **
 */
-void Init_Dec_cng(Decod_ld8a_state *st)
+void WebRtcG729fix_Init_Dec_cng(Decod_ld8a_state *st)
 {
   st->sid_gain = tab_Sidgain[0];
   Copy(lspSid_reset, st->lspSid, M);
@@ -56,7 +56,7 @@ void Init_Dec_cng(Decod_ld8a_state *st)
  *                     Computes current frame excitation     *
  *                     Computes current frame LSPs
  *-----------------------------------------------------------*/
-void Dec_cng(
+void WebRtcG729fix_Dec_cng(
   Decod_ld8a_state *st,
   int16_t past_ftyp,     /* (i)   : past frame type                      */
   int16_t sid_sav,       /* (i)   : energy to recover SID gain           */
@@ -82,7 +82,7 @@ void Dec_cng(
     st->sid_gain = tab_Sidgain[(int)parm[4]];           
     
     /* Inverse quantization of the LSP */
-    sid_lsfq_decode(st->noise_fg, &parm[1], st->lspSid, freq_prev);
+    WebRtcG729fix_sid_lsfq_decode(st->noise_fg, &parm[1], st->lspSid, freq_prev);
     
   }
 
@@ -125,7 +125,7 @@ void Dec_cng(
  * -> Initialization of variables for the lsf quantization in the SID        *
  *                                                                           *
  *---------------------------------------------------------------------------*/
-void Init_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M])
+void WebRtcG729fix_Init_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M])
 {
   int16_t i, j;
   int32_t acc0;
@@ -143,7 +143,7 @@ void Init_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M])
 }
 
 
-void sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
+void WebRtcG729fix_sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
                      int16_t *index,             /* (i) : quantized indices    */
                      int16_t *lspq,              /* (o) : quantized lsp vector */
                      int16_t freq_prev[MA_NP][M] /* (i) : memory of predictor  */

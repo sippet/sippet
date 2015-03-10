@@ -15,11 +15,11 @@
 #define         sqr(a)  ((a)*(a))
 #define         R_LSFQ 10
 
-void Init_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M]);
-void lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
+void WebRtcG729fix_Init_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M]);
+void WebRtcG729fix_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
                 int16_t *lsp_new, int16_t *lspq,
                 int16_t freq_prev[MA_NP][M], int16_t *idx);
-void sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
+void WebRtcG729fix_sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
                      int16_t *index, int16_t *lspq, 
                      int16_t freq_prev[MA_NP][M]); 
 

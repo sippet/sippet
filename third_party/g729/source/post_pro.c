@@ -76,8 +76,8 @@ void WebRtcG729fix_Post_Process(
      /*  y[i] = b[0]*x[i]   + b[1]*x[i-1]   + b[2]*x[i-2]    */
      /*                     + a[1]*y[i-1] + a[2] * y[i-2];      */
 
-     L_tmp     = Mpy_32_16(yy1_hi, yy1_lo, a100[1]);
-     L_tmp     = L_add(L_tmp, Mpy_32_16(yy2_hi, yy2_lo, a100[2]));
+     L_tmp     = WebRtcG729fix_Mpy_32_16(yy1_hi, yy1_lo, a100[1]);
+     L_tmp     = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(yy2_hi, yy2_lo, a100[2]));
      L_tmp     = L_mac(L_tmp, xx0, b100[0]);
      L_tmp     = L_mac(L_tmp, xx1, b100[1]);
      L_tmp     = L_mac(L_tmp, x2, b100[2]);
@@ -88,7 +88,7 @@ void WebRtcG729fix_Post_Process(
 
      yy2_hi = yy1_hi;
      yy2_lo = yy1_lo;
-     L_Extract(L_tmp, &yy1_hi, &yy1_lo);
+     WebRtcG729fix_L_Extract(L_tmp, &yy1_hi, &yy1_lo);
   }
 
   st->x1 = xx1;

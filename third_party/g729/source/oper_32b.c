@@ -50,7 +50,7 @@
  |___________________________________________________________________________|
 */
 
-void L_Extract(int32_t L_32, int16_t *hi, int16_t *lo)
+void WebRtcG729fix_L_Extract(int32_t L_32, int16_t *hi, int16_t *lo)
 {
   *hi  = extract_h(L_32);
   *lo  = extract_l( L_msu( L_shr(L_32, 1) , *hi, 16384));  /* lo = L_32>>1   */
@@ -78,7 +78,7 @@ void L_Extract(int32_t L_32, int16_t *hi, int16_t *lo)
  |___________________________________________________________________________|
 */
 
-int32_t L_Comp(int16_t hi, int16_t lo)
+int32_t WebRtcG729fix_L_Comp(int16_t hi, int16_t lo)
 {
   int32_t L_32;
 
@@ -106,7 +106,7 @@ int32_t L_Comp(int16_t hi, int16_t lo)
  |___________________________________________________________________________|
 */
 
-int32_t Mpy_32(int16_t hi1, int16_t lo1, int16_t hi2, int16_t lo2)
+int32_t WebRtcG729fix_Mpy_32(int16_t hi1, int16_t lo1, int16_t hi2, int16_t lo2)
 {
 #if G729_ARM
 register int32_t product32;
@@ -176,7 +176,7 @@ register int32_t rd = lo2;
  |___________________________________________________________________________|
 */
 
-int32_t Mpy_32_16(int16_t hi, int16_t lo, int16_t n)
+int32_t WebRtcG729fix_Mpy_32_16(int16_t hi, int16_t lo, int16_t n)
 {
 #if G729_ARM
   register int32_t ra = hi;
@@ -257,7 +257,7 @@ int32_t Mpy_32_16(int16_t hi, int16_t lo, int16_t n)
  |___________________________________________________________________________|
 */
 
-int32_t Div_32(int32_t L_num, int16_t denom_hi, int16_t denom_lo)
+int32_t WebRtcG729fix_Div_32(int32_t L_num, int16_t denom_hi, int16_t denom_lo)
 {
   int16_t approx, hi, lo, n_hi, n_lo;
   int32_t L_32;
@@ -270,20 +270,20 @@ int32_t Div_32(int32_t L_num, int16_t denom_hi, int16_t denom_lo)
 
   /* 1/L_denom = approx * (2.0 - L_denom * approx) */
 
-  L_32 = Mpy_32_16(denom_hi, denom_lo, approx); /* result in Q30 */
+  L_32 = WebRtcG729fix_Mpy_32_16(denom_hi, denom_lo, approx); /* result in Q30 */
 
 
   L_32 = L_sub( (int32_t)0x7fffffffL, L_32);      /* result in Q30 */
 
-  L_Extract(L_32, &hi, &lo);
+  WebRtcG729fix_L_Extract(L_32, &hi, &lo);
 
-  L_32 = Mpy_32_16(hi, lo, approx);             /* = 1/L_denom in Q29 */
+  L_32 = WebRtcG729fix_Mpy_32_16(hi, lo, approx);             /* = 1/L_denom in Q29 */
 
   /* L_num * (1/L_denom) */
 
-  L_Extract(L_32, &hi, &lo);
-  L_Extract(L_num, &n_hi, &n_lo);
-  L_32 = Mpy_32(n_hi, n_lo, hi, lo);            /* result in Q29   */
+  WebRtcG729fix_L_Extract(L_32, &hi, &lo);
+  WebRtcG729fix_L_Extract(L_num, &n_hi, &n_lo);
+  L_32 = WebRtcG729fix_Mpy_32(n_hi, n_lo, hi, lo);            /* result in Q29   */
   L_32 = L_shl(L_32, 2);                        /* From Q29 to Q31 */
 
   return( L_32 );

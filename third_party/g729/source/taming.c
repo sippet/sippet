@@ -91,16 +91,16 @@ void WebRtcG729fix_update_exc_err(
     n = sub(T0, L_SUBFR);
 
     if(n < 0) {
-        L_Extract(L_exc_err[0], &hi, &lo);
-        L_temp = Mpy_32_16(hi, lo, gain_pit);
+        WebRtcG729fix_L_Extract(L_exc_err[0], &hi, &lo);
+        L_temp = WebRtcG729fix_Mpy_32_16(hi, lo, gain_pit);
         L_temp = L_shl(L_temp, 1);
         L_temp = L_add(0x00004000L, L_temp);
         L_acc = L_sub(L_temp, L_worst);
         if(L_acc > 0L) {
                 L_worst = L_temp;
         }
-        L_Extract(L_temp, &hi, &lo);
-        L_temp = Mpy_32_16(hi, lo, gain_pit);
+        WebRtcG729fix_L_Extract(L_temp, &hi, &lo);
+        L_temp = WebRtcG729fix_Mpy_32_16(hi, lo, gain_pit);
         L_temp = L_shl(L_temp, 1);
         L_temp = L_add(0x00004000L, L_temp);
         L_acc = L_sub(L_temp, L_worst);
@@ -117,8 +117,8 @@ void WebRtcG729fix_update_exc_err(
         zone2 = tab_zone[i];
 
         for(i = zone1; i <= zone2; i++) {
-                L_Extract(L_exc_err[i], &hi, &lo);
-                L_temp = Mpy_32_16(hi, lo, gain_pit);
+                WebRtcG729fix_L_Extract(L_exc_err[i], &hi, &lo);
+                L_temp = WebRtcG729fix_Mpy_32_16(hi, lo, gain_pit);
                 L_temp = L_shl(L_temp, 1);
                 L_temp = L_add(0x00004000L, L_temp);
                 L_acc = L_sub(L_temp, L_worst);

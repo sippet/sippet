@@ -29,7 +29,7 @@ static int16_t Sqrt( int32_t Num);
  *   Computes comfort noise excitation                       *
  *   for SID and not-transmitted frames                      *
  *-----------------------------------------------------------*/
-void Calc_exc_rand(
+void WebRtcG729fix_Calc_exc_rand(
   int32_t L_exc_err[],
   int16_t cur_gain,      /* (i)   :   target sample gain                 */
   int16_t *exc,          /* (i/o) :   excitation array                   */
@@ -124,13 +124,13 @@ void Calc_exc_rand(
     alpha x sqrt(L_SUBFR)/2 = 1 + FRAC1
 */
     L_acc = WebRtcG729fix_Inv_sqrt(L_shr(L_acc,1));  /* Q30 */
-    L_Extract(L_acc, &hi, &lo);
+    WebRtcG729fix_L_Extract(L_acc, &hi, &lo);
     /* cur_gain = cur_gainR << 3 */
     temp1 = mult_r(cur_gain, FRAC1);
     temp1 = add(cur_gain, temp1);
     /* <=> alpha x cur_gainR x 2^2 x sqrt(L_SUBFR) */
 
-    L_acc = Mpy_32_16(hi, lo, temp1);   /* fact << 17 */
+    L_acc = WebRtcG729fix_Mpy_32_16(hi, lo, temp1);   /* fact << 17 */
     sh = norm_l(L_acc);
     temp1 = extract_h(L_shl(L_acc, sh));  /* fact << (sh+1) */
 
@@ -225,8 +225,8 @@ void Calc_exc_rand(
           inter_exc = add(inter_exc, temp1);
         }
       } /* inter_exc = b >> sh */
-      L_Extract(L_k, &hi, &lo);
-      L_acc = Mpy_32_16(hi, lo, K0); /* k x (1- alpha^2) << 2 */
+      WebRtcG729fix_L_Extract(L_k, &hi, &lo);
+      L_acc = WebRtcG729fix_Mpy_32_16(hi, lo, K0); /* k x (1- alpha^2) << 2 */
       temp1 = sub(shl(sh, 1), 1); /* temp1 > 0 */
       L_acc = L_shr(L_acc, temp1); /* 4k x (1 - alpha^2) << (-2sh+1) */
       L_acc = L_mac(L_acc, inter_exc, inter_exc); /* delta << (-2sh+1) */
