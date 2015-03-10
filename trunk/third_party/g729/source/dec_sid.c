@@ -65,7 +65,7 @@ void WebRtcG729fix_Dec_cng(
   int16_t *exc,          /* (i/o) : excitation array                     */
   int16_t *lsp_old,      /* (i/o) : previous lsp                         */
   int16_t *A_t,          /* (o)   : set of interpolated LPC coefficients */
-  int16_t *seed,         /* (i/o) : random generator seed                */
+  uint32_t *seed,        /* (i/o) : random generator seed                */
   int16_t freq_prev[MA_NP][M]
                         /* (i/o) : previous LPS for quantization        */
 )
