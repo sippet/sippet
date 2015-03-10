@@ -253,12 +253,12 @@ void WebRtcG729fix_Coder_ld8a(
         Ap = Ap_t + MP1;
         Ap[0] = 4096;
         for(i=1; i<=M; i++)    /* Ap[i] = Ap_t[i] - 0.7 * Ap_t[i-1]; */
-          Ap[i] = sub(Ap_t[i], mult(Ap_t[i-1], 22938));
+          Ap[i] = WebRtcSpl_SubSatW16(Ap_t[i], mult(Ap_t[i-1], 22938));
         WebRtcG729fix_Syn_filt(Ap, xn, &st->wsp[i_subfr], L_SUBFR, st->mem_w, 1);
         
         /* Compute mem_w0 */
         for(i=0; i<L_SUBFR; i++) {
-          xn[i] = sub(xn[i], st->exc[i_subfr+i]);  /* residu[] - exc[] */
+          xn[i] = WebRtcSpl_SubSatW16(xn[i], st->exc[i_subfr+i]);  /* residu[] - exc[] */
         }
         WebRtcG729fix_Syn_filt(Ap_t, xn, xn, L_SUBFR, st->mem_w0, 1);
                 
@@ -324,12 +324,12 @@ void WebRtcG729fix_Coder_ld8a(
     Ap = Ap_t;
     Ap1[0] = 4096;
     for(i=1; i<=M; i++)    /* Ap1[i] = Ap[i] - 0.7 * Ap[i-1]; */
-       Ap1[i] = sub(Ap[i], mult(Ap[i-1], 22938));
+       Ap1[i] = WebRtcSpl_SubSatW16(Ap[i], mult(Ap[i-1], 22938));
     WebRtcG729fix_Syn_filt(Ap1, &st->exc[0], &st->wsp[0], L_SUBFR, st->mem_w, 1);
 
     Ap += MP1;
     for(i=1; i<=M; i++)    /* Ap1[i] = Ap[i] - 0.7 * Ap[i-1]; */
-       Ap1[i] = sub(Ap[i], mult(Ap[i-1], 22938));
+       Ap1[i] = WebRtcSpl_SubSatW16(Ap[i], mult(Ap[i-1], 22938));
     WebRtcG729fix_Syn_filt(Ap1, &st->exc[L_SUBFR], &st->wsp[L_SUBFR], L_SUBFR, st->mem_w, 1);
   }
 
@@ -339,16 +339,16 @@ void WebRtcG729fix_Coder_ld8a(
 
   /* Range for closed loop pitch search in 1st subframe */
 
-  T0_min = sub(T_op, 3);
+  T0_min = WebRtcSpl_SubSatW16(T_op, 3);
   if (T0_min < PIT_MIN) {
     T0_min = PIT_MIN;
   }
 
-  T0_max = add(T0_min, 6);
+  T0_max = WebRtcSpl_AddSatW16(T0_min, 6);
   if (T0_max > PIT_MAX)
   {
      T0_max = PIT_MAX;
-     T0_min = sub(T0_max, 6);
+     T0_min = WebRtcSpl_SubSatW16(T0_max, 6);
   }
 
 
@@ -430,7 +430,7 @@ void WebRtcG729fix_Coder_ld8a(
     {
       L_temp = L_mult(y1[i], gain_pit);
       L_temp = L_shl(L_temp, 1);               /* gain_pit in Q14 */
-      xn2[i] = sub(xn[i], extract_h(L_temp));
+      xn2[i] = WebRtcSpl_SubSatW16(xn[i], extract_h(L_temp));
     }
 
 
@@ -451,7 +451,7 @@ void WebRtcG729fix_Coder_ld8a(
     g_coeff_cs[0]     = g_coeff[0];            /* <y1,y1> */
     exp_g_coeff_cs[0] = negate(g_coeff[1]);    /* Q-Format:XXX -> JPN */
     g_coeff_cs[1]     = negate(g_coeff[2]);    /* (xn,y1) -> -2<xn,y1> */
-    exp_g_coeff_cs[1] = negate(add(g_coeff[3], 1)); /* Q-Format:XXX -> JPN */
+    exp_g_coeff_cs[1] = negate(WebRtcSpl_AddSatW16(g_coeff[3], 1)); /* Q-Format:XXX -> JPN */
 
     WebRtcG729fix_Corr_xy2( xn, y1, y2, g_coeff_cs, exp_g_coeff_cs );  /* Q0 Q0 Q12 ^Qx ^Q0 */
                          /* g_coeff_cs[3]:exp_g_coeff_cs[3] = <y2,y2>   */
@@ -494,7 +494,7 @@ void WebRtcG729fix_Coder_ld8a(
     {
       temp          = extract_h(L_shl( L_mult(y1[i], gain_pit),  1) );
       k             = extract_h(L_shl( L_mult(y2[i], gain_code), 2) );
-      st->mem_w0[j] = sub(xn[i], add(temp, k));
+      st->mem_w0[j] = WebRtcSpl_SubSatW16(xn[i], WebRtcSpl_AddSatW16(temp, k));
     }
 
     Aq += MP1;           /* interpolated LPC parameters for next subframe */

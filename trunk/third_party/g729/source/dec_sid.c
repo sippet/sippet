@@ -73,7 +73,7 @@ void WebRtcG729fix_Dec_cng(
   int16_t temp, ind;
   int16_t dif;
 
-  dif = sub(past_ftyp, 1);
+  dif = WebRtcSpl_SubSatW16(past_ftyp, 1);
   
   /* SID Frame */
   /*************/
@@ -104,7 +104,7 @@ void WebRtcG729fix_Dec_cng(
   }
   else {
     st->cur_gain = mult_r(st->cur_gain, A_GAIN0);
-    st->cur_gain = add(st->cur_gain, mult_r(st->sid_gain, A_GAIN1));
+    st->cur_gain = WebRtcSpl_AddSatW16(st->cur_gain, mult_r(st->sid_gain, A_GAIN1));
   }
  
   WebRtcG729fix_Calc_exc_rand(st->L_exc_err, st->cur_gain, exc, seed, FLAG_DEC);
@@ -155,9 +155,9 @@ void WebRtcG729fix_sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
   /* get the lsf error vector */
   Copy(lspcb1[PtrTab_1[index[1]]], tmpbuf, M);
   for (i=0; i<M/2; i++)
-    tmpbuf[i] = add(tmpbuf[i], lspcb2[PtrTab_2[0][index[2]]][i]);
+    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i], lspcb2[PtrTab_2[0][index[2]]][i]);
   for (i=M/2; i<M; i++)
-    tmpbuf[i] = add(tmpbuf[i], lspcb2[PtrTab_2[1][index[2]]][i]);
+    tmpbuf[i] = WebRtcSpl_AddSatW16(tmpbuf[i], lspcb2[PtrTab_2[1][index[2]]][i]);
 
   /* guarantee minimum distance of 0.0012 (~10 in Q13) between tmpbuf[j] 
      and tmpbuf[j+1] */
@@ -168,8 +168,8 @@ void WebRtcG729fix_sid_lsfq_decode(int16_t noise_fg[MODE][MA_NP][M],
     k = extract_h(acc0);
 
     if (k > 0){
-      tmpbuf[j-1] = sub(tmpbuf[j-1], k);
-      tmpbuf[j] = add(tmpbuf[j], k);
+      tmpbuf[j-1] = WebRtcSpl_SubSatW16(tmpbuf[j-1], k);
+      tmpbuf[j] = WebRtcSpl_AddSatW16(tmpbuf[j], k);
     }
   }
   

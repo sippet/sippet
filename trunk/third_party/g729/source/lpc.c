@@ -68,7 +68,7 @@ void WebRtcG729fix_Autocorr(
       {
         y[i] = shr(y[i], 2);
       }
-      *exp_R0 = add((*exp_R0), 4);
+      *exp_R0 = WebRtcSpl_AddSatW16((*exp_R0), 4);
     }
   } while (Overflow != 0);
 
@@ -77,7 +77,7 @@ void WebRtcG729fix_Autocorr(
   norm = norm_l(sum);
   sum  = L_shl(sum, norm);
   WebRtcG729fix_L_Extract(sum, &r_h[0], &r_l[0]);     /* Put in DPF format (see oper_32b) */
-  *exp_R0 = sub(*exp_R0, norm);
+  *exp_R0 = WebRtcSpl_SubSatW16(*exp_R0, norm);
 
   /* r[1] to r[m] */
 
@@ -246,12 +246,12 @@ void WebRtcG729fix_Levinson(
 
     t0 = 0;
     for(j=1; j<i; j++)
-      t0 = L_add(t0, WebRtcG729fix_Mpy_32(Rh[j], Rl[j], Ah[i-j], Al[i-j]));
+      t0 = WebRtcSpl_AddSatW32(t0, WebRtcG729fix_Mpy_32(Rh[j], Rl[j], Ah[i-j], Al[i-j]));
 
     t0 = L_shl(t0,4);                  /* result in Q27 -> convert to Q31 */
                                        /* No overflow possible            */
     t1 = WebRtcG729fix_L_Comp(Rh[i],Rl[i]);
-    t0 = L_add(t0, t1);                /* add R[i] in Q31                 */
+    t0 = WebRtcSpl_AddSatW32(t0, t1);                /* add R[i] in Q31                 */
 
     /* K = -t0 / Alpha */
 
@@ -285,7 +285,7 @@ void WebRtcG729fix_Levinson(
     for(j=1; j<i; j++)
     {
       t0 = WebRtcG729fix_Mpy_32(Kh, Kl, Ah[i-j], Al[i-j]);
-      t0 = L_add(t0, WebRtcG729fix_L_Comp(Ah[j], Al[j]));
+      t0 = WebRtcSpl_AddSatW32(t0, WebRtcG729fix_L_Comp(Ah[j], Al[j]));
       WebRtcG729fix_L_Extract(t0, &Anh[j], &Anl[j]);
     }
     t2 = L_shr(t2, 4);                  /* t2 = K in Q31 ->convert to Q27  */
@@ -304,7 +304,7 @@ void WebRtcG729fix_Levinson(
     j = norm_l(t0);
     t0 = L_shl(t0, j);
     WebRtcG729fix_L_Extract(t0, &alp_h, &alp_l);         /* DPF format    */
-    alp_exp = add(alp_exp, j);             /* Add normalization to alp_exp */
+    alp_exp = WebRtcSpl_AddSatW16(alp_exp, j);             /* Add normalization to alp_exp */
 
     /* A[j] = An[j] */
 
@@ -446,7 +446,7 @@ void WebRtcG729fix_Az_lsp(
      /* divide 2 times the interval */
      for (i = 0; i < 2; i++)
      {
-       xmid = add( shr(xlow, 1) , shr(xhigh, 1)); /* xmid = (xlow + xhigh)/2 */
+       xmid = WebRtcSpl_AddSatW16( shr(xlow, 1) , shr(xhigh, 1)); /* xmid = (xlow + xhigh)/2 */
 
        ymid = (*pChebps)(xmid,coef,NC);
 
@@ -467,8 +467,8 @@ void WebRtcG729fix_Az_lsp(
      *    xint = xlow - ylow*(xhigh-xlow)/(yhigh-ylow);            *
      *-------------------------------------------------------------*/
 
-     x   = sub(xhigh, xlow);
-     y   = sub(yhigh, ylow);
+     x   = WebRtcSpl_SubSatW16(xhigh, xlow);
+     y   = WebRtcSpl_SubSatW16(yhigh, ylow);
 
      if(y == 0)
      {
@@ -482,14 +482,14 @@ void WebRtcG729fix_Az_lsp(
        y   = shl(y, exp);
        y   = div_s( (int16_t)16383, y);
        t0  = L_mult(x, y);
-       t0  = L_shr(t0, sub(20, exp) );
+       t0  = L_shr(t0, WebRtcSpl_SubSatW16(20, exp) );
        y   = extract_l(t0);            /* y= (xhigh-xlow)/(yhigh-ylow) in Q11 */
 
        if(sign < 0) y = negate(y);
 
        t0   = L_mult(ylow, y);                  /* result in Q26 */
        t0   = L_shr(t0, 11);                    /* result in Q15 */
-       xint = sub(xlow, extract_l(t0));         /* xint = xlow - ylow*y */
+       xint = WebRtcSpl_SubSatW16(xlow, extract_l(t0));         /* xint = xlow - ylow*y */
      }
 
      lsp[nf] = xint;

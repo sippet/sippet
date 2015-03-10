@@ -174,7 +174,7 @@ void WebRtcG729fix_Decod_ld8a(
 
     /* Decode the LSPs */
     
-    WebRtcG729fix_D_lsp(st, parm, lsp_new, add(bfi, bad_lsf));
+    WebRtcG729fix_D_lsp(st, parm, lsp_new, WebRtcSpl_AddSatW16(bfi, bad_lsf));
     parm += 2;
     
     /*
@@ -211,7 +211,7 @@ void WebRtcG729fix_Decod_ld8a(
         if(i_subfr == 0)
           {
             i = *parm++;        /* get parity check result */
-            bad_pitch = add(bfi, i);
+            bad_pitch = WebRtcSpl_AddSatW16(bfi, i);
             if( bad_pitch == 0)
               {
                 WebRtcG729fix_Dec_lag3(index, PIT_MIN, PIT_MAX, i_subfr, &T0, &T0_frac);
@@ -221,7 +221,7 @@ void WebRtcG729fix_Decod_ld8a(
               {
                 T0  = st->old_T0;
                 T0_frac = 0;
-                st->old_T0 = add(st->old_T0, 1);
+                st->old_T0 = WebRtcSpl_AddSatW16(st->old_T0, 1);
                 if(st->old_T0 > PIT_MAX) {
                   st->old_T0 = PIT_MAX;
                 }
@@ -238,7 +238,7 @@ void WebRtcG729fix_Decod_ld8a(
               {
                 T0 = st->old_T0;
                 T0_frac = 0;
-                st->old_T0 = add(st->old_T0, 1);
+                st->old_T0 = WebRtcSpl_AddSatW16(st->old_T0, 1);
                 if (st->old_T0 > PIT_MAX) {
                   st->old_T0 = PIT_MAX;
                 }
@@ -270,7 +270,7 @@ void WebRtcG729fix_Decod_ld8a(
         j = shl(st->sharp, 1);      /* From Q14 to Q15 */
         if(T0 < L_SUBFR) {
           for (i = T0; i < L_SUBFR; i++) {
-            code[i] = add(code[i], mult(code[i-T0], j));
+            code[i] = WebRtcSpl_AddSatW16(code[i], mult(code[i-T0], j));
           }
         }
 
@@ -335,7 +335,7 @@ void WebRtcG729fix_Decod_ld8a(
     } /* may overflow => last level of SID quantizer */
     st->sh_sid_sav = norm_l(L_temp);
     st->sid_sav = L_round(L_shl(L_temp, st->sh_sid_sav));
-    st->sh_sid_sav = sub(16, st->sh_sid_sav);
+    st->sh_sid_sav = WebRtcSpl_SubSatW16(16, st->sh_sid_sav);
   }
 
  /*--------------------------------------------------*

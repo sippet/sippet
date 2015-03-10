@@ -66,7 +66,7 @@ int16_t  WebRtcG729fix_ACELP_Code_A(/* (o):index of pulses positions        */
   sharp = shl(pitch_sharp, 1);          /* From Q14 to Q15 */
   if (T0 < L_SUBFR)
      for (i = T0; i < L_SUBFR; i++)     /* h[i] += pitch_sharp*h[i-T0] */
-       h[i] = add(h[i], mult(h[i-T0], sharp));
+       h[i] = WebRtcSpl_AddSatW16(h[i], mult(h[i-T0], sharp));
 
   Cor_h(h, rr);
 
@@ -89,7 +89,7 @@ int16_t  WebRtcG729fix_ACELP_Code_A(/* (o):index of pulses positions        */
 
   if(T0 < L_SUBFR)
      for (i = T0; i < L_SUBFR; i++)    /* code[i] += pitch_sharp*code[i-T0] */
-       code[i] = add(code[i], mult(code[i-T0], sharp));
+       code[i] = WebRtcSpl_AddSatW16(code[i], mult(code[i-T0], sharp));
 
   return index;
 }
@@ -597,7 +597,7 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
       for (i1=track; i1<L_SUBFR; i1+=STEP)
       {
-        ps2 = add(ps1, dn[i1]);       /* index increment = STEP */
+        ps2 = WebRtcSpl_AddSatW16(ps1, dn[i1]);       /* index increment = STEP */
 
         /* alp1 = alp0 + rr[i0][i1] + 1/2*rr[i1][i1]; */
         alp2 = L_mac(alp1, *p0++, _1_2);
@@ -657,7 +657,7 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
     for (i2=0; i2<L_SUBFR; i2+=STEP)
     {
-      ps1 = add(ps0, dn[i2]);         /* index increment = STEP */
+      ps1 = WebRtcSpl_AddSatW16(ps0, dn[i2]);         /* index increment = STEP */
 
       /* alp1 = alp0 + rr[i0][i2] + rr[i1][i2] + 1/2*rr[i2][i2]; */
       alp1 = L_mac(alp0, *p0, _1_8);       p0 += NB_POS;
@@ -670,7 +670,7 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
       for (i3=1; i3<L_SUBFR; i3+=STEP)
       {
-        ps2 = add(ps1, dn[i3]);       /* index increment = STEP */
+        ps2 = WebRtcSpl_AddSatW16(ps1, dn[i3]);       /* index increment = STEP */
 
         /* alp1 = alp0 + rr[i0][i3] + rr[i1][i3] + rr[i2][i3] + 1/2*rr[i3][i3]; */
         alp2 = L_mac(alp1, *p3++, _1_8);
@@ -743,7 +743,7 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
       for (i1=0; i1<L_SUBFR; i1+=STEP)
       {
-        ps2 = add(ps1, dn[i1]);       /* index increment = STEP */
+        ps2 = WebRtcSpl_AddSatW16(ps1, dn[i1]);       /* index increment = STEP */
 
         /* alp1 = alp0 + rr[i0][i1] + 1/2*rr[i1][i1]; */
         alp2 = L_mac(alp1, *p0, _1_2);       p0 += NB_POS;
@@ -803,7 +803,7 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
     for (i2=1; i2<L_SUBFR; i2+=STEP)
     {
-      ps1 = add(ps0, dn[i2]);         /* index increment = STEP */
+      ps1 = WebRtcSpl_AddSatW16(ps0, dn[i2]);         /* index increment = STEP */
 
       /* alp1 = alp0 + rr[i0][i2] + rr[i1][i2] + 1/2*rr[i2][i2]; */
       alp1 = L_mac(alp0, *p0, _1_8);       p0 += NB_POS;
@@ -816,7 +816,7 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
       for (i3=2; i3<L_SUBFR; i3+=STEP)
       {
-        ps2 = add(ps1, dn[i3]);       /* index increment = STEP */
+        ps2 = WebRtcSpl_AddSatW16(ps1, dn[i3]);       /* index increment = STEP */
 
         /* alp1 = alp0 + rr[i0][i3] + rr[i1][i3] + rr[i2][i3] + 1/2*rr[i3][i3]; */
         alp2 = L_mac(alp1, *p3++, _1_8);
@@ -885,40 +885,40 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
    for(i=ip0, j=0; i<L_SUBFR; i++, j++) y[i] = negate(h[j]);
 
  if(i1 > 0)
-   for(i=ip1, j=0; i<L_SUBFR; i++, j++) y[i] = add(y[i], h[j]);
+   for(i=ip1, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_AddSatW16(y[i], h[j]);
  else
-   for(i=ip1, j=0; i<L_SUBFR; i++, j++) y[i] = sub(y[i], h[j]);
+   for(i=ip1, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_SubSatW16(y[i], h[j]);
 
  if(i2 > 0)
-   for(i=ip2, j=0; i<L_SUBFR; i++, j++) y[i] = add(y[i], h[j]);
+   for(i=ip2, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_AddSatW16(y[i], h[j]);
  else
-   for(i=ip2, j=0; i<L_SUBFR; i++, j++) y[i] = sub(y[i], h[j]);
+   for(i=ip2, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_SubSatW16(y[i], h[j]);
 
  if(i3 > 0)
-   for(i=ip3, j=0; i<L_SUBFR; i++, j++) y[i] = add(y[i], h[j]);
+   for(i=ip3, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_AddSatW16(y[i], h[j]);
  else
-   for(i=ip3, j=0; i<L_SUBFR; i++, j++) y[i] = sub(y[i], h[j]);
+   for(i=ip3, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_SubSatW16(y[i], h[j]);
 
  /* find codebook index;  17-bit address */
 
  i = 0;
- if(i0 > 0) i = add(i, 1);
- if(i1 > 0) i = add(i, 2);
- if(i2 > 0) i = add(i, 4);
- if(i3 > 0) i = add(i, 8);
+ if(i0 > 0) i = WebRtcSpl_AddSatW16(i, 1);
+ if(i1 > 0) i = WebRtcSpl_AddSatW16(i, 2);
+ if(i2 > 0) i = WebRtcSpl_AddSatW16(i, 4);
+ if(i3 > 0) i = WebRtcSpl_AddSatW16(i, 8);
  *sign = i;
 
  ip0 = mult(ip0, 6554);         /* ip0/5 */
  ip1 = mult(ip1, 6554);         /* ip1/5 */
  ip2 = mult(ip2, 6554);         /* ip2/5 */
  i   = mult(ip3, 6554);         /* ip3/5 */
- j   = add(i, shl(i, 2));       /* j = i*5 */
- j   = sub(ip3, add(j, 3));     /* j= ip3%5 -3 */
- ip3 = add(shl(i, 1), j);
+ j   = WebRtcSpl_AddSatW16(i, shl(i, 2));       /* j = i*5 */
+ j   = WebRtcSpl_SubSatW16(ip3, WebRtcSpl_AddSatW16(j, 3));     /* j= ip3%5 -3 */
+ ip3 = WebRtcSpl_AddSatW16(shl(i, 1), j);
 
- i = add(ip0, shl(ip1, 3));
- i = add(i  , shl(ip2, 6));
- i = add(i  , shl(ip3, 9));
+ i = WebRtcSpl_AddSatW16(ip0, shl(ip1, 3));
+ i = WebRtcSpl_AddSatW16(i  , shl(ip2, 6));
+ i = WebRtcSpl_AddSatW16(i  , shl(ip3, 9));
 
  return i;
 }

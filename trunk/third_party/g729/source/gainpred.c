@@ -89,7 +89,7 @@ void WebRtcG729fix_Gain_predict(
                                         /* Put 14 as exponent so that  */
                                         /* output of Pow2() will be:   */
                                         /* 16768 < Pow2() <= 32767     */
-   *exp_gcode0 = sub(14,exp);
+   *exp_gcode0 = WebRtcSpl_SubSatW16(14,exp);
 }
 
 
@@ -119,7 +119,7 @@ void WebRtcG729fix_Gain_update(
    *----------------------------------------------------------------------*/
 
    WebRtcG729fix_Log2( L_gbk12, &exp, &frac ); /* L_gbk12:Q13       */
-   L_acc = WebRtcG729fix_L_Comp(sub(exp,13), frac);          /* L_acc:Q16         */
+   L_acc = WebRtcG729fix_L_Comp(WebRtcSpl_SubSatW16(exp,13), frac);          /* L_acc:Q16         */
    tmp = extract_h( L_shl( L_acc,13 ) );       /* tmp:Q13           */
    past_qua_en[0] = mult( tmp, 24660 );        /* past_qua_en[]:Q10 */
 }
@@ -145,9 +145,9 @@ void WebRtcG729fix_Gain_update_erasure(
 
    L_tmp = 0;                                                     /* Q10 */
    for(i=0; i<4; i++)
-      L_tmp = L_add( L_tmp, L_deposit_l( past_qua_en[i] ) );
+      L_tmp = WebRtcSpl_AddSatW32( L_tmp, L_deposit_l( past_qua_en[i] ) );
    av_pred_en = extract_l( L_shr( L_tmp, 2 ) );
-   av_pred_en = sub( av_pred_en, 4096 );                          /* Q10 */
+   av_pred_en = WebRtcSpl_SubSatW16( av_pred_en, 4096 );                          /* Q10 */
 
    if(av_pred_en < -14336){
       av_pred_en = -14336;                              /* 14336:14[Q10] */

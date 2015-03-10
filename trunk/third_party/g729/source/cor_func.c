@@ -51,7 +51,7 @@ void WebRtcG729fix_Corr_xy2(
 
       exp      = norm_l(L_acc);
       y2y2     = L_round( L_shl(L_acc, exp) );
-      exp_y2y2 = add(exp, 19-16);                          /* Q[19+exp-16] */
+      exp_y2y2 = WebRtcSpl_AddSatW16(exp, 19-16);                          /* Q[19+exp-16] */
 
       g_coeff[2]     = y2y2;
       exp_g_coeff[2] = exp_y2y2;
@@ -63,10 +63,10 @@ void WebRtcG729fix_Corr_xy2(
 
       exp      = norm_l(L_acc);
       xny2     = L_round( L_shl(L_acc, exp) );
-      exp_xny2 = add(exp, 10-16);                          /* Q[10+exp-16] */
+      exp_xny2 = WebRtcSpl_AddSatW16(exp, 10-16);                          /* Q[10+exp-16] */
 
       g_coeff[3]     = negate(xny2);
-      exp_g_coeff[3] = sub(exp_xny2,1);                   /* -2<xn,y2> */
+      exp_g_coeff[3] = WebRtcSpl_SubSatW16(exp_xny2,1);                   /* -2<xn,y2> */
 
       /* Compute scalar product <y1[],y2[]> */
       L_acc = 1;                       /* Avoid case of all zeros */
@@ -75,10 +75,10 @@ void WebRtcG729fix_Corr_xy2(
 
       exp      = norm_l(L_acc);
       y1y2     = L_round( L_shl(L_acc, exp) );
-      exp_y1y2 = add(exp, 10-16);                          /* Q[10+exp-16] */
+      exp_y1y2 = WebRtcSpl_AddSatW16(exp, 10-16);                          /* Q[10+exp-16] */
 
       g_coeff[4]     = y1y2;
-      exp_g_coeff[4] = sub(exp_y1y2,1);    ;                /* 2<y1,y2> */
+      exp_g_coeff[4] = WebRtcSpl_SubSatW16(exp_y1y2,1);    ;                /* 2<y1,y2> */
 }
 
 /*--------------------------------------------------------------------------*
@@ -125,7 +125,7 @@ void WebRtcG729fix_Cor_h_X(
     j = 16;
    }
 
-   j = sub(18, j);
+   j = WebRtcSpl_SubSatW16(18, j);
 
    for(i=0; i<L_SUBFR; i++) {
      D[i] = extract_l( L_shr(y32[i], j) );

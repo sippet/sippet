@@ -39,19 +39,19 @@ int16_t WebRtcG729fix_test_err(  /* (o) flag set to 1 if taming is necessary  */
     int32_t L_maxloc, L_acc;
 
     if(T0_frac > 0) {
-        t1 = add(T0, 1);
+        t1 = WebRtcSpl_AddSatW16(T0, 1);
     }
     else {
         t1 = T0;
     }
 
-    i = sub(t1, (L_SUBFR+L_INTER10));
+    i = WebRtcSpl_SubSatW16(t1, (L_SUBFR+L_INTER10));
     if(i < 0) {
         i = 0;
     }
     zone1 = tab_zone[i];
 
-    i = add(t1, (L_INTER10 - 2));
+    i = WebRtcSpl_AddSatW16(t1, (L_INTER10 - 2));
     zone2 = tab_zone[i];
 
     L_maxloc = -1L;
@@ -88,13 +88,13 @@ void WebRtcG729fix_update_exc_err(
     int16_t hi, lo;
 
     L_worst = -1L;
-    n = sub(T0, L_SUBFR);
+    n = WebRtcSpl_SubSatW16(T0, L_SUBFR);
 
     if(n < 0) {
         WebRtcG729fix_L_Extract(L_exc_err[0], &hi, &lo);
         L_temp = WebRtcG729fix_Mpy_32_16(hi, lo, gain_pit);
         L_temp = L_shl(L_temp, 1);
-        L_temp = L_add(0x00004000L, L_temp);
+        L_temp = WebRtcSpl_AddSatW32(0x00004000L, L_temp);
         L_acc = L_sub(L_temp, L_worst);
         if(L_acc > 0L) {
                 L_worst = L_temp;
@@ -102,7 +102,7 @@ void WebRtcG729fix_update_exc_err(
         WebRtcG729fix_L_Extract(L_temp, &hi, &lo);
         L_temp = WebRtcG729fix_Mpy_32_16(hi, lo, gain_pit);
         L_temp = L_shl(L_temp, 1);
-        L_temp = L_add(0x00004000L, L_temp);
+        L_temp = WebRtcSpl_AddSatW32(0x00004000L, L_temp);
         L_acc = L_sub(L_temp, L_worst);
         if(L_acc > 0L) {
                 L_worst = L_temp;
@@ -113,14 +113,14 @@ void WebRtcG729fix_update_exc_err(
 
         zone1 = tab_zone[n];
 
-        i = sub(T0, 1);
+        i = WebRtcSpl_SubSatW16(T0, 1);
         zone2 = tab_zone[i];
 
         for(i = zone1; i <= zone2; i++) {
                 WebRtcG729fix_L_Extract(L_exc_err[i], &hi, &lo);
                 L_temp = WebRtcG729fix_Mpy_32_16(hi, lo, gain_pit);
                 L_temp = L_shl(L_temp, 1);
-                L_temp = L_add(0x00004000L, L_temp);
+                L_temp = WebRtcSpl_AddSatW32(0x00004000L, L_temp);
                 L_acc = L_sub(L_temp, L_worst);
                 if(L_acc > 0L) L_worst = L_temp;
         }

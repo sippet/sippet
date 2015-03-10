@@ -56,7 +56,7 @@ void WebRtcG729fix_Calc_exc_rand(
       exc[i] = 0;
     }
     Gp = 0;
-    t0 = add(L_SUBFR,1);
+    t0 = WebRtcSpl_AddSatW16(L_SUBFR,1);
     for (i_subfr = 0;  i_subfr < L_FRAME; i_subfr += L_SUBFR) {
       if(flag_cod != FLAG_DEC) WebRtcG729fix_update_exc_err(L_exc_err, Gp, t0);
     }
@@ -75,33 +75,33 @@ void WebRtcG729fix_Calc_exc_rand(
     /* generate random adaptive codebook & fixed codebook parameters */
     /*****************************************************************/
     temp1 = WebRtcG729fix_Random(seed);
-    frac = sub((temp1 & (int16_t)0x0003), 1);
+    frac = WebRtcSpl_SubSatW16((temp1 & (int16_t)0x0003), 1);
     if(frac == 2) frac = 0;
     temp1 = shr(temp1, 2);
-    t0 = add((temp1 & (int16_t)0x003F), 40);
+    t0 = WebRtcSpl_AddSatW16((temp1 & (int16_t)0x003F), 40);
     temp1 = shr(temp1, 6);
     temp2 = temp1 & (int16_t)0x0007;
-    pos[0] = add(shl(temp2, 2), temp2); /* 5 * temp2 */
+    pos[0] = WebRtcSpl_AddSatW16(shl(temp2, 2), temp2); /* 5 * temp2 */
     temp1 = shr(temp1, 3);
     sign[0] = temp1 & (int16_t)0x0001;
     temp1 = shr(temp1, 1);
     temp2 = temp1 & (int16_t)0x0007;
-    temp2 = add(shl(temp2, 2), temp2);
-    pos[1] = add(temp2, 1);     /* 5 * x + 1 */
+    temp2 = WebRtcSpl_AddSatW16(shl(temp2, 2), temp2);
+    pos[1] = WebRtcSpl_AddSatW16(temp2, 1);     /* 5 * x + 1 */
     temp1 = shr(temp1, 3);
     sign[1] = temp1 & (int16_t)0x0001;
     temp1 = WebRtcG729fix_Random(seed);
     temp2 = temp1 & (int16_t)0x0007;
-    temp2 = add(shl(temp2, 2), temp2);
-    pos[2] = add(temp2, 2);     /* 5 * x + 2 */
+    temp2 = WebRtcSpl_AddSatW16(shl(temp2, 2), temp2);
+    pos[2] = WebRtcSpl_AddSatW16(temp2, 2);     /* 5 * x + 2 */
     temp1 = shr(temp1, 3);
     sign[2] = temp1 & (int16_t)0x0001;
     temp1 = shr(temp1, 1);
     temp2 = temp1 & (int16_t)0x000F;
-    pos[3] = add((temp2 & (int16_t)1), 3); /* j+3*/
+    pos[3] = WebRtcSpl_AddSatW16((temp2 & (int16_t)1), 3); /* j+3*/
     temp2 = (shr(temp2, 1)) & (int16_t)7;
-    temp2 = add(shl(temp2, 2), temp2); /* 5i */
-    pos[3] = add(pos[3], temp2);
+    temp2 = WebRtcSpl_AddSatW16(shl(temp2, 2), temp2); /* 5i */
+    pos[3] = WebRtcSpl_AddSatW16(pos[3], temp2);
     temp1 = shr(temp1, 4);
     sign[3] = temp1 & (int16_t)0x0001;
     Gp = WebRtcG729fix_Random(seed) & (int16_t)0x1FFF; /* < 0.5 Q14 */
@@ -127,14 +127,14 @@ void WebRtcG729fix_Calc_exc_rand(
     WebRtcG729fix_L_Extract(L_acc, &hi, &lo);
     /* cur_gain = cur_gainR << 3 */
     temp1 = mult_r(cur_gain, FRAC1);
-    temp1 = add(cur_gain, temp1);
+    temp1 = WebRtcSpl_AddSatW16(cur_gain, temp1);
     /* <=> alpha x cur_gainR x 2^2 x sqrt(L_SUBFR) */
 
     L_acc = WebRtcG729fix_Mpy_32_16(hi, lo, temp1);   /* fact << 17 */
     sh = norm_l(L_acc);
     temp1 = extract_h(L_shl(L_acc, sh));  /* fact << (sh+1) */
 
-    sh = sub(sh, 14);
+    sh = WebRtcSpl_SubSatW16(sh, 14);
     for(i=0; i<L_SUBFR; i++) {
       temp2 = mult_r(excg[i], temp1);
       temp2 = shr_r(temp2, sh);   /* shl if sh < 0 */
@@ -151,7 +151,7 @@ void WebRtcG729fix_Calc_exc_rand(
     max = 0;
     for(i=0; i<L_SUBFR; i++) {
       temp1 = mult_r(cur_exc[i], Gp2);
-      temp1 = add(temp1, excg[i]); /* may overflow */
+      temp1 = WebRtcSpl_AddSatW16(temp1, excg[i]); /* may overflow */
       cur_exc[i] = temp1;
       temp1 = abs_s(temp1);
       if(temp1 > max) max = temp1;
@@ -160,7 +160,7 @@ void WebRtcG729fix_Calc_exc_rand(
     /* rescale cur_exc -> excs */
     if(max == 0) sh = 0;
     else {
-      sh = sub(3, norm_s(max));
+      sh = WebRtcSpl_SubSatW16(3, norm_s(max));
       if(sh <= 0) sh = 0;
     }
     for(i=0; i<L_SUBFR; i++) {
@@ -184,10 +184,10 @@ void WebRtcG729fix_Calc_exc_rand(
     for(i=0; i<4; i++) {
       j = pos[i];
       if(sign[i] == 0) {
-        inter_exc = sub(inter_exc, excs[j]);
+        inter_exc = WebRtcSpl_SubSatW16(inter_exc, excs[j]);
       }
       else {
-        inter_exc = add(inter_exc, excs[j]);
+        inter_exc = WebRtcSpl_AddSatW16(inter_exc, excs[j]);
       }
     }
 
@@ -196,14 +196,14 @@ void WebRtcG729fix_Calc_exc_rand(
     L_acc = L_shr(L_acc, 6);
     temp1 = extract_l(L_acc);   /* cur_gainR x L_SUBFR x 2^(-2) */
     L_k   = L_mult(cur_gain, temp1); /* k << 2 */
-    temp1 = add(1, shl(sh,1));
+    temp1 = WebRtcSpl_AddSatW16(1, shl(sh,1));
     L_acc = L_shr(L_k, temp1);  /* k x 2^(-2sh+1) */
 
     /* Compute delta = b^2 - 4 c */
     L_acc = L_sub(L_acc, L_ener); /* - 4 c x 2^(-2sh-1) */
     inter_exc = shr(inter_exc, 1);
     L_acc = L_mac(L_acc, inter_exc, inter_exc); /* 2^(-2sh-1) */
-    sh = add(sh, 1);
+    sh = WebRtcSpl_AddSatW16(sh, 1);
     /* inter_exc = b x 2^(-sh) */
     /* L_acc = delta x 2^(-2sh+1) */
 
@@ -219,41 +219,41 @@ void WebRtcG729fix_Calc_exc_rand(
       for(i=0; i<4; i++) {
         temp1 = shr(excg[(int)pos[i]], sh);
         if(sign[i] == 0) {
-          inter_exc = sub(inter_exc, temp1);
+          inter_exc = WebRtcSpl_SubSatW16(inter_exc, temp1);
         }
         else {
-          inter_exc = add(inter_exc, temp1);
+          inter_exc = WebRtcSpl_AddSatW16(inter_exc, temp1);
         }
       } /* inter_exc = b >> sh */
       WebRtcG729fix_L_Extract(L_k, &hi, &lo);
       L_acc = WebRtcG729fix_Mpy_32_16(hi, lo, K0); /* k x (1- alpha^2) << 2 */
-      temp1 = sub(shl(sh, 1), 1); /* temp1 > 0 */
+      temp1 = WebRtcSpl_SubSatW16(shl(sh, 1), 1); /* temp1 > 0 */
       L_acc = L_shr(L_acc, temp1); /* 4k x (1 - alpha^2) << (-2sh+1) */
       L_acc = L_mac(L_acc, inter_exc, inter_exc); /* delta << (-2sh+1) */
       Gp = 0;
     }
 
     temp2 = Sqrt(L_acc);        /* >> sh */
-    x1 = sub(temp2, inter_exc);
-    x2 = negate(add(inter_exc, temp2)); /* x 2^(-sh+2) */
+    x1 = WebRtcSpl_SubSatW16(temp2, inter_exc);
+    x2 = negate(WebRtcSpl_AddSatW16(inter_exc, temp2)); /* x 2^(-sh+2) */
     if(abs_s(x2) < abs_s(x1)) x1 = x2;
-    temp1 = sub(2, sh);
+    temp1 = WebRtcSpl_SubSatW16(2, sh);
     g = shr_r(x1, temp1);       /* shl if temp1 < 0 */
     if(g >= 0) {
       if(g > G_MAX) g = G_MAX;
     }
     else {
-      if(add(g, G_MAX) < 0) g = negate(G_MAX);
+      if(WebRtcSpl_AddSatW16(g, G_MAX) < 0) g = negate(G_MAX);
     }
 
     /* Update cur_exc with ACELP excitation */
     for(i=0; i<4; i++) {
       j = pos[i];
       if(sign[i] != 0) {
-        cur_exc[j] = add(cur_exc[j], g);
+        cur_exc[j] = WebRtcSpl_AddSatW16(cur_exc[j], g);
       }
       else {
-        cur_exc[j] = sub(cur_exc[j], g);
+        cur_exc[j] = WebRtcSpl_SubSatW16(cur_exc[j], g);
       }
     }
 
@@ -287,7 +287,7 @@ static int16_t Gauss(int16_t *seed)
   
   L_acc = 0L;
   for(i=0; i<12; i++) {
-    L_acc = L_add(L_acc, L_deposit_l(WebRtcG729fix_Random(seed)));
+    L_acc = WebRtcSpl_AddSatW32(L_acc, L_deposit_l(WebRtcG729fix_Random(seed)));
   }
   L_acc = L_shr(L_acc, 7);
   temp = extract_l(L_acc);
@@ -306,9 +306,9 @@ static int16_t   Sqrt( int32_t Num )
   int32_t   Acc, L_temp;
   
   for ( i = 0 ; i < 14 ; i ++ ) {
-    Acc = L_mult(add(Rez, Exp), add(Rez, Exp) );
+    Acc = L_mult(WebRtcSpl_AddSatW16(Rez, Exp), WebRtcSpl_AddSatW16(Rez, Exp) );
     L_temp = L_sub(Num, Acc);
-    if(L_temp >= 0L) Rez = add( Rez, Exp);
+    if(L_temp >= 0L) Rez = WebRtcSpl_AddSatW16( Rez, Exp);
     Exp = shr( Exp, (int16_t) 1 ) ;
   }
   return Rez ;

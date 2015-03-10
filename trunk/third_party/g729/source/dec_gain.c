@@ -66,7 +66,7 @@ void WebRtcG729fix_Dec_gain(
 
    index1 = imap1[ shr(index,NCODE2_B) ] ;
    index2 = imap2[ index & (NCODE2-1) ] ;
-   *gain_pit = add( gbk1[index1][0], gbk2[index2][0] );
+   *gain_pit = WebRtcSpl_AddSatW16( gbk1[index1][0], gbk2[index2][0] );
 
    /*-------------- Decode codebook gain ---------------*/
 
@@ -84,11 +84,11 @@ void WebRtcG729fix_Dec_gain(
 
    L_acc = L_deposit_l( gbk1[index1][1] );
    L_accb = L_deposit_l( gbk2[index2][1] );
-   L_gbk12 = L_add( L_acc, L_accb );                       /* Q13 */
+   L_gbk12 = WebRtcSpl_AddSatW32( L_acc, L_accb );                       /* Q13 */
    tmp = extract_l( L_shr( L_gbk12,1 ) );                  /* Q12 */
    L_acc = L_mult(tmp, gcode0);             /* Q[exp_gcode0+12+1] */
 
-   L_acc = L_shl(L_acc, add( negate(exp_gcode0),(-12-1+1+16) ));
+   L_acc = L_shl(L_acc, WebRtcSpl_AddSatW16( negate(exp_gcode0),(-12-1+1+16) ));
    *gain_cod = extract_h( L_acc );                          /* Q1 */
 
   /*----------------------------------------------*

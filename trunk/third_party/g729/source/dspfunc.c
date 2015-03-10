@@ -48,10 +48,10 @@ int32_t WebRtcG729fix_Pow2(        /* (o) Q0  : result       (range: 0<=val<=0x7
   a   = a & (int16_t)0x7fff;
 
   L_x = L_deposit_h(tabpow[i]);         /* tabpow[i] << 16        */
-  tmp = sub(tabpow[i], tabpow[i+1]);    /* tabpow[i] - tabpow[i+1] */
+  tmp = WebRtcSpl_SubSatW16(tabpow[i], tabpow[i+1]);    /* tabpow[i] - tabpow[i+1] */
   L_x = L_msu(L_x, tmp, a);             /* L_x -= tmp*a*2        */
 
-  exp = sub(30, exponent);
+  exp = WebRtcSpl_SubSatW16(30, exponent);
   L_x = L_shr_r(L_x, exp);
 
   return(L_x);
@@ -99,7 +99,7 @@ void WebRtcG729fix_Log2(
   exp = norm_l(L_x);
   L_x = L_shl(L_x, exp );               /* L_x is normalized */
 
-  *exponent = sub(30, exp);
+  *exponent = WebRtcSpl_SubSatW16(30, exp);
 
   L_x = L_shr(L_x, 9);
   i   = extract_h(L_x);                 /* Extract b25-b31 */
@@ -107,10 +107,10 @@ void WebRtcG729fix_Log2(
   a   = extract_l(L_x);                 /* Extract b10-b24 of fraction */
   a   = a & (int16_t)0x7fff;
 
-  i   = sub(i, 32);
+  i   = WebRtcSpl_SubSatW16(i, 32);
 
   L_y = L_deposit_h(tablog[i]);         /* tablog[i] << 16        */
-  tmp = sub(tablog[i], tablog[i+1]);    /* tablog[i] - tablog[i+1] */
+  tmp = WebRtcSpl_SubSatW16(tablog[i], tablog[i+1]);    /* tablog[i] - tablog[i+1] */
   L_y = L_msu(L_y, tmp, a);             /* L_y -= tmp*a*2        */
 
   *fraction = extract_h( L_y);
@@ -154,12 +154,12 @@ int32_t WebRtcG729fix_Inv_sqrt( /* (o) Q30 : output value (range: 0<=val<1) */
   exp = norm_l(L_x);
   L_x = L_shl(L_x, exp );               /* L_x is normalize */
 
-  exp = sub(30, exp);
+  exp = WebRtcSpl_SubSatW16(30, exp);
   if( (exp & 1) == 0 )                  /* If exponent even -> shift right */
       L_x = L_shr(L_x, 1);
 
   exp = shr(exp, 1);
-  exp = add(exp, 1);
+  exp = WebRtcSpl_AddSatW16(exp, 1);
 
   L_x = L_shr(L_x, 9);
   i   = extract_h(L_x);                 /* Extract b25-b31 */
@@ -167,10 +167,10 @@ int32_t WebRtcG729fix_Inv_sqrt( /* (o) Q30 : output value (range: 0<=val<1) */
   a   = extract_l(L_x);                 /* Extract b10-b24 */
   a   = a & (int16_t)0x7fff;
 
-  i   = sub(i, 16);
+  i   = WebRtcSpl_SubSatW16(i, 16);
 
   L_y = L_deposit_h(tabsqr[i]);         /* tabsqr[i] << 16          */
-  tmp = sub(tabsqr[i], tabsqr[i+1]);    /* tabsqr[i] - tabsqr[i+1])  */
+  tmp = WebRtcSpl_SubSatW16(tabsqr[i], tabsqr[i+1]);    /* tabsqr[i] - tabsqr[i+1])  */
   L_y = L_msu(L_y, tmp, a);             /* L_y -=  tmp*a*2         */
 
   L_y = L_shr(L_y, exp);                /* denormalization */

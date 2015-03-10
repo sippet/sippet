@@ -28,7 +28,7 @@ int16_t WebRtcG729fix_Parity_Pitch(    /* output: parity bit (XOR of 6 MSB bits)
   for (i = 0; i <= 5; i++) {
     temp = shr(temp, 1);
     bit = temp & (int16_t)1;
-    sum = add(sum, bit);
+    sum = WebRtcSpl_AddSatW16(sum, bit);
   }
   sum = sum & (int16_t)1;
 
@@ -53,9 +53,9 @@ int16_t  WebRtcG729fix_Check_Parity_Pitch( /* output: 0 = no error, 1= error */
   for (i = 0; i <= 5; i++) {
     temp = shr(temp, 1);
     bit = temp & (int16_t)1;
-    sum = add(sum, bit);
+    sum = WebRtcSpl_AddSatW16(sum, bit);
   }
-  sum = add(sum, parity);
+  sum = WebRtcSpl_AddSatW16(sum, parity);
   sum = sum & (int16_t)1;
 
   return sum;

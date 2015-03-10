@@ -111,11 +111,11 @@ void WebRtcG729fix_Post_Filter(
     {
       /* Find pitch range t0_min - t0_max */
 
-      t0_min = sub(*T++, 3);
-      t0_max = add(t0_min, 6);
+      t0_min = WebRtcSpl_SubSatW16(*T++, 3);
+      t0_max = WebRtcSpl_AddSatW16(t0_min, 6);
       if (t0_max > PIT_MAX) {
         t0_max = PIT_MAX;
-        t0_min = sub(t0_max, 6);
+        t0_min = WebRtcSpl_SubSatW16(t0_max, 6);
       }
 
       /* Find weighted filter coefficients Ap3[] and ap[4] */
@@ -301,11 +301,11 @@ void WebRtcG729fix_pit_pst_filt(
   else {
     cmax = shr(mult(cmax, GAMMAP), 1);  /* cmax(Q14) = cmax(Q15) * GAMMAP */
     en = shr(en, 1);          /* Q14 */
-    i = add(cmax, en);
+    i = WebRtcSpl_AddSatW16(cmax, en);
     if(i > 0)
     {
       gain = div_s(cmax, i);    /* gain(Q15) = cor_max/(cor_max+ener)  */
-      g0 = sub(32767, gain);    /* g0(Q15) = 1 - gain */
+      g0 = WebRtcSpl_SubSatW16(32767, gain);    /* g0(Q15) = 1 - gain */
     }
     else
     {
@@ -319,7 +319,7 @@ void WebRtcG729fix_pit_pst_filt(
   {
     /* signal_pst[i] = g0*signal[i] + gain*signal[i-t0]; */
 
-    signal_pst[i] = add(mult(g0, signal[i]), mult(gain, signal[i-t0]));
+    signal_pst[i] = WebRtcSpl_AddSatW16(mult(g0, signal[i]), mult(gain, signal[i-t0]));
 
   }
 
@@ -347,10 +347,10 @@ void WebRtcG729fix_preemphasis(
 
   for (i = 0; i <= L-2; i++)
   {
-    p1[-i] = sub(p1[-i], mult(g, p2[-i]));
+    p1[-i] = WebRtcSpl_SubSatW16(p1[-i], mult(g, p2[-i]));
   }
 
-  p1[-i] = sub(p1[-i], mult(g, *mem_pre));
+  p1[-i] = WebRtcSpl_SubSatW16(p1[-i], mult(g, *mem_pre));
 
   *mem_pre = temp;
 
@@ -391,7 +391,7 @@ void WebRtcG729fix_agc(
     *past_gain = 0;
     return;
   }
-  exp = sub(norm_l(s), 1);
+  exp = WebRtcSpl_SubSatW16(norm_l(s), 1);
   gain_out = L_round(L_shl(s, exp));
 
   /* calculate gain_in with exponent */
@@ -409,7 +409,7 @@ void WebRtcG729fix_agc(
   else {
     i = norm_l(s);
     gain_in = L_round(L_shl(s, i));
-    exp = sub(exp, i);
+    exp = WebRtcSpl_SubSatW16(exp, i);
 
    /*---------------------------------------------------*
     *  g0(Q12) = (1-AGC_FAC) * sqrt(gain_in/gain_out);  *
@@ -433,7 +433,7 @@ void WebRtcG729fix_agc(
   gain = *past_gain;
   for(i=0; i<l_trm; i++) {
     gain = mult(gain, AGC_FAC);
-    gain = add(gain, g0);
+    gain = WebRtcSpl_AddSatW16(gain, g0);
     sig_out[i] = extract_h(L_shl(L_mult(sig_out[i], gain), 3));
   }
   *past_gain = gain;
