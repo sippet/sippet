@@ -30,7 +30,7 @@ static void Gbk_presel(
  * Inputs:                                                                   *
  *   code[]     :Innovative codebook.                                        *
  *   g_coeff[]  :Correlations compute for pitch.                             *
- *   WebRtcSpl_SubSatW32fr    :Subframe length.                                            *
+ *   L_subfr    :Subframe length.                                            *
  *                                                                           *
  * Outputs:                                                                  *
  *   gain_pit   :Quantized pitch gain.                                       *
@@ -46,7 +46,7 @@ int16_t WebRtcG729fix_Qua_gain(
    int16_t g_coeff[],    /* (i)     :Correlations <xn y1> -2<y1 y1> */
                         /*            <y2,y2>, -2<xn,y2>, 2<y1,y2> */
    int16_t exp_coeff[],  /* (i)     :Q-Format g_coeff[]             */
-   int16_t WebRtcSpl_SubSatW32fr,      /* (i)     :Subframe length.               */
+   int16_t L_subfr,      /* (i)     :Subframe length.               */
    int16_t *gain_pit,    /* (o) Q14 :Pitch gain.                    */
    int16_t *gain_cod,    /* (o) Q1  :Code gain.                     */
    int16_t tameflag      /* (i)     : set to 1 if taming is needed  */
@@ -70,7 +70,7 @@ int16_t WebRtcG729fix_Qua_gain(
    *-  predicted codebook gain => gcode0[exp_gcode0]  -*
    *---------------------------------------------------*/
 
-   WebRtcG729fix_Gain_predict(st->past_qua_en, code, WebRtcSpl_SubSatW32fr, &gcode0, &exp_gcode0);
+   WebRtcG729fix_Gain_predict(st->past_qua_en, code, L_subfr, &gcode0, &exp_gcode0);
 
   /*-----------------------------------------------------------------*
    *  pre-selection                                                  *
