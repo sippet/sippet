@@ -66,7 +66,7 @@ static void New_ML_search_2(int16_t *d_data,    /* (i) : error vector           
  *   ana[]         : indices                                       *
  *                                                                 *
  *-----------------------------------------------------------------*/
-void lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
+void WebRtcG729fix_lsfq_noise(int16_t noise_fg[MODE][MA_NP][M],
                 int16_t *lsp,
                 int16_t *lspq,
                 int16_t freq_prev[MA_NP][M],

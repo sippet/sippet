@@ -104,7 +104,7 @@ int main(int argc, char *argv[] )
   Set_zero(prm, PRM_SIZE+1);
 
   /* for G.729B */
-  Init_Cod_cng(&state);
+  WebRtcG729fix_Init_Cod_cng(&state);
 
 
   /* Loop for each "L_FRAME" speech data. */

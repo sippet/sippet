@@ -344,7 +344,7 @@ void WebRtcG729fix_Get_wegt(
 }
 
 
-void Get_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M])
+void WebRtcG729fix_Get_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M])
 {
   int16_t i;
 
@@ -352,7 +352,7 @@ void Get_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M])
     Copy(&st->freq_prev[i][0], &x[i][0], M);
 }
   
-void Update_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M])
+void WebRtcG729fix_Update_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M])
 {
   int16_t i;
 

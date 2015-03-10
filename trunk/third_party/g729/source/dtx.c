@@ -178,7 +178,7 @@ void WebRtcG729fix_Cod_cng(
     WebRtcG729fix_Az_lsp(lpcCoeff, lsp_new, lsp_old_q); /* From A(z) to lsp */
 
     /* LSP quantization */
-    lsfq_noise(st->noise_fg, lsp_new, st->lspSid_q, freq_prev, &ana[1]);
+    WebRtcG729fix_lsfq_noise(st->noise_fg, lsp_new, st->lspSid_q, freq_prev, &ana[1]);
 
     st->prev_energy = energyq;
     ana[4] = cur_igain;

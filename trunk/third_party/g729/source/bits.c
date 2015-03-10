@@ -201,7 +201,7 @@ static int16_t bin2int(            /* output: decimal value of bit pattern */
    return(value);
 }
 
-int16_t read_frame(FILE *f_serial, int16_t *parm)
+int16_t WebRtcG729fix_read_frame(FILE *f_serial, int16_t *parm)
 {
   int16_t  i;
   int16_t  serial[SERIAL_SIZE];          /* Serial stream               */

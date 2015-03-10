@@ -32,7 +32,7 @@ static int16_t MakeDec(
  * -> Initialization of variables for voice activity detection               *
  *                                                                           *
  *---------------------------------------------------------------------------*/
-void vad_init(vad_state *st)
+void WebRtcG729fix_vad_init(vad_state *st)
 {
   /* Static vectors to zero */
   Set_zero(st->MeanLSF, M);
@@ -72,7 +72,7 @@ void vad_init(vad_state *st)
  *   marker        : VAD decision of the current frame             *
  *                                                                 *
  *-----------------------------------------------------------------*/
-void vad(vad_state *st,
+void WebRtcG729fix_vad(vad_state *st,
          int16_t rc,
          int16_t *lsf,
          int16_t *r_h,
@@ -91,9 +91,9 @@ void vad(vad_state *st,
   int16_t COEF, C_COEF, COEFZC, C_COEFZC, COEFSD, C_COEFSD;
 
   /* compute the frame energy */
-  acc0 = L_Comp(r_h[0], r_l[0]);
+  acc0 = WebRtcG729fix_L_Comp(r_h[0], r_l[0]);
   WebRtcG729fix_Log2(acc0, &exp, &frac);
-  acc0 = Mpy_32_16(exp, frac, 9864);
+  acc0 = WebRtcG729fix_Mpy_32_16(exp, frac, 9864);
   i = sub(exp_R0, 1);
   i = sub(i, 1);
   acc0 = L_mac(acc0, 9864, i);
@@ -108,7 +108,7 @@ void vad(vad_state *st,
   acc0 = L_shl(acc0, 1);
   acc0 = L_mac(acc0, r_h[0], lbf_corr[0]);
   WebRtcG729fix_Log2(acc0, &exp, &frac);
-  acc0 = Mpy_32_16(exp, frac, 9864);
+  acc0 = WebRtcG729fix_Mpy_32_16(exp, frac, 9864);
   i = sub(exp_R0, 1);
   i = sub(i, 1);
   acc0 = L_mac(acc0, 9864, i);

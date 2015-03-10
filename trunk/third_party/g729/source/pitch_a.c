@@ -239,7 +239,7 @@ int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag            
  *  ~~~~~~~~~~~~~~~~~~~~~~                                                  *
  *--------------------------------------------------------------------------*/
 
-int32_t Dot_Product(      /* (o)   :Result of scalar product. */
+static int32_t Dot_Product(/* (o)   :Result of scalar product. */
        int16_t   x[],     /* (i)   :First vector.             */
        int16_t   y[],     /* (i)   :Second vector.            */
        int16_t   lg       /* (i)   :Number of point.          */

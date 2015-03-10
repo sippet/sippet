@@ -233,7 +233,7 @@ int16_t WebRtcG729fix_Qua_gain(
      j = sub( exp_min[i], e_min );
      L_tmp = L_deposit_h( g_coeff[i] );
      L_tmp = L_shr( L_tmp, j );          /* L_tmp:Q[exp_g_coeff[i]+16-j] */
-     L_Extract( L_tmp, &coeff[i], &coeff_lsf[i] );          /* DPF */
+     WebRtcG729fix_L_Extract( L_tmp, &coeff[i], &coeff_lsf[i] );          /* DPF */
    }
 
    /* Codebook search */
@@ -259,11 +259,11 @@ if(tameflag == 1){
          g2_code  = mult(g_code,  g_code);       /* Q[2*exp_gcode0-6-15] */
          g_pit_cod= mult(g_code,  g_pitch);      /* Q[exp_gcode0-3+14-15] */
 
-         L_tmp = Mpy_32_16(coeff[0], coeff_lsf[0], g2_pitch);
-         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch) );
-         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[2], coeff_lsf[2], g2_code) );
-         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
-         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
+         L_tmp = WebRtcG729fix_Mpy_32_16(coeff[0], coeff_lsf[0], g2_pitch);
+         L_tmp = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch) );
+         L_tmp = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[2], coeff_lsf[2], g2_code) );
+         L_tmp = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
+         L_tmp = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
 
          L_temp = L_sub(L_tmp, L_dist_min);
 
@@ -291,11 +291,11 @@ else{
          g2_code  = mult(g_code,  g_code);       /* Q[2*exp_gcode0-6-15] */
          g_pit_cod= mult(g_code,  g_pitch);      /* Q[exp_gcode0-3+14-15] */
 
-         L_tmp = Mpy_32_16(coeff[0], coeff_lsf[0], g2_pitch);
-         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch) );
-         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[2], coeff_lsf[2], g2_code) );
-         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
-         L_tmp = L_add(L_tmp, Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
+         L_tmp = WebRtcG729fix_Mpy_32_16(coeff[0], coeff_lsf[0], g2_pitch);
+         L_tmp = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[1], coeff_lsf[1], g_pitch) );
+         L_tmp = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[2], coeff_lsf[2], g2_code) );
+         L_tmp = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[3], coeff_lsf[3], g_code) );
+         L_tmp = L_add(L_tmp, WebRtcG729fix_Mpy_32_16(coeff[4], coeff_lsf[4], g_pit_cod) );
 
          L_temp = L_sub(L_tmp, L_dist_min);
 

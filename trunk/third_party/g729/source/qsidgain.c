@@ -32,7 +32,7 @@ static int16_t Quant_Energy(
  * Function  Qua_Sidgain                                             *
  *           ~~~~~~~~~~~                                             *
  *-------------------------------------------------------------------*/
-void Qua_Sidgain(
+void WebRtcG729fix_Qua_Sidgain(
   int16_t *ener,     /* (i)   array of energies                   */
   int16_t *sh_ener,  /* (i)   corresponding scaling factors       */
   int16_t nb_ener,   /* (i)   number of energies or               */
@@ -51,8 +51,8 @@ void Qua_Sidgain(
     /* L_x = average_ener                                          */
     L_acc = L_deposit_l(*ener);
     L_acc = L_shl(L_acc, *sh_ener); /* >> if *sh_ener < 0 */
-    L_Extract(L_acc, &hi, &lo);
-    L_x = Mpy_32_16(hi, lo, fact[0]);
+    WebRtcG729fix_L_Extract(L_acc, &hi, &lo);
+    L_x = WebRtcG729fix_Mpy_32_16(hi, lo, fact[0]);
     sh1 = 0;
   }
   else {
@@ -75,8 +75,8 @@ void Qua_Sidgain(
       L_acc = L_shl(L_acc, temp);
       L_x = L_add(L_x, L_acc);
     }
-    L_Extract(L_x, &hi, &lo);
-    L_x = Mpy_32_16(hi, lo, fact[i]);
+    WebRtcG729fix_L_Extract(L_x, &hi, &lo);
+    L_x = WebRtcG729fix_Mpy_32_16(hi, lo, fact[i]);
   }
   
   *idx = Quant_Energy(L_x, sh1, enerq);

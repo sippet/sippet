@@ -386,7 +386,7 @@ void WebRtcG729fix_Autocorr(
   int16_t *exp_R0
 );
 
-void Lag_window(
+void WebRtcG729fix_Lag_window(
   int16_t m,         /* (i)     : LPC order                        */
   int16_t r_h[],     /* (i/o)   : Autocorrelations  (msb)          */
   int16_t r_l[]      /* (i/o)   : Autocorrelations  (lsb)          */
