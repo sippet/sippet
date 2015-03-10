@@ -81,7 +81,6 @@
             'source/tab_ld8a.c',
             'source/tab_ld8a.h',
             'source/taming.c',
-            'source/util.c',
             'source/vad.c',
             'source/vad.h',
           ],

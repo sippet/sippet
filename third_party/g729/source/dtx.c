@@ -73,7 +73,7 @@ void WebRtcG729fix_Cod_cng(
   int16_t *ana,          /* (o)   : coded SID parameters                 */
   int16_t freq_prev[MA_NP][M],
                         /* (i/o) : previous LPS for quantization        */
-  int16_t *seed          /* (i/o) : random generator seed                */
+  uint32_t *seed        /* (i/o) : random generator seed                */
 )
 {
 
