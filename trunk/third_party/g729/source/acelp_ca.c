@@ -472,13 +472,13 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
    {
      if (dn[i] >= 0)
      {
-       sign_dn[i] = MAX_16;
-       sign_dn_inv[i] = MIN_16;
+       sign_dn[i] = WEBRTC_SPL_WORD16_MAX;
+       sign_dn_inv[i] = WEBRTC_SPL_WORD16_MIN;
      }
      else
      {
-       sign_dn[i] = MIN_16;
-       sign_dn_inv[i] = MAX_16;
+       sign_dn[i] = WEBRTC_SPL_WORD16_MIN;
+       sign_dn_inv[i] = WEBRTC_SPL_WORD16_MAX;
        dn[i] = negate(dn[i]);
      }
    }

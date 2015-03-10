@@ -141,7 +141,7 @@ void WebRtcG729fix_Lsp_pre_select(
   /* avoid the worst case. (all over flow) */
 
   *cand = 0;
-  L_dmin = MAX_32;
+  L_dmin = WEBRTC_SPL_WORD32_MAX;
   for ( i = 0 ; i < NC0 ; i++ ) {
     L_tmp = 0;
     for ( j = 0 ; j < M ; j++ ) {
@@ -180,7 +180,7 @@ void WebRtcG729fix_Lsp_select_1(
 
                    /* avoid the worst case. (all over flow) */
   *index = 0;
-  L_dmin = MAX_32;
+  L_dmin = WEBRTC_SPL_WORD32_MAX;
   for ( k1 = 0 ; k1 < NC1 ; k1++ ) {
     L_dist = 0;
     for ( j = 0 ; j < NC ; j++ ) {
@@ -220,7 +220,7 @@ void WebRtcG729fix_Lsp_select_2(
 
                             /* avoid the worst case. (all over flow) */
   *index = 0;
-  L_dmin = MAX_32;
+  L_dmin = WEBRTC_SPL_WORD32_MAX;
   for ( k1 = 0 ; k1 < NC1 ; k1++ ) {
     L_dist = 0;
     for ( j = NC ; j < M ; j++ ) {

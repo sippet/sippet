@@ -13,6 +13,9 @@
     {
       'target_name': 'g729',
       'type': 'static_library',
+      'dependencies': [
+        '<(DEPTH)/third_party/webrtc/common_audio/common_audio.gyp:common_audio',
+      ],
       'variables': {
         'clang_warning_flags': [
           # The code has constructs like:
@@ -24,6 +27,8 @@
       'direct_dependent_settings': {
         'include_dirs': [
           './source',
+          '<(DEPTH)/third_party',
+          '<(DEPTH)/third_party/webrtc/common_audio/signal_processing/include',
         ],
       },
       'conditions': [

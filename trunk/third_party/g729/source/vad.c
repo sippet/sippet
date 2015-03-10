@@ -47,7 +47,7 @@ void WebRtcG729fix_vad_init(vad_state *st)
   st->count_ext = 0;
   st->less_count = 0;
   st->flag = 1;
-  st->Min = MAX_16;
+  st->Min = WEBRTC_SPL_WORD16_MAX;
 
   Set_zero(st->Min_buffer, 16);
 }
@@ -140,7 +140,7 @@ void WebRtcG729fix_vad(vad_state *st,
     if ((frm_count & 0x0007) == 0) {
       i = sub(shr(frm_count,3),1);
       st->Min_buffer[i] = st->Min;
-      st->Min = MAX_16;
+      st->Min = WEBRTC_SPL_WORD16_MAX;
     }
   }
 
@@ -155,7 +155,7 @@ void WebRtcG729fix_vad(vad_state *st,
   if (frm_count >= 129){
     if (((frm_count & 0x0007) ^ (0x0001)) == 0){
       st->Min = st->Prev_Min;
-      st->Next_Min = MAX_16;
+      st->Next_Min = WEBRTC_SPL_WORD16_MAX;
     }
     if (ENERGY < st->Min)
       st->Min = ENERGY;

@@ -181,7 +181,7 @@ int16_t WebRtcG729fix_Qua_gain(
  *                                                                           *
  * Find the best quantizer.                                                  *
  *                                                                           *
- *  dist_min = MAX_32;                                                       *
+ *  dist_min = WEBRTC_SPL_WORD32_MAX;                                                       *
  *  for ( i=0 ; i<NCAN1 ; i++ ){                                             *
  *    for ( j=0 ; j<NCAN2 ; j++ ){                                           *
  *      g_pitch = gbk1[cand1+i][0] + gbk2[cand2+j][0];                       *
@@ -238,7 +238,7 @@ int16_t WebRtcG729fix_Qua_gain(
 
    /* Codebook search */
 
-   L_dist_min = MAX_32;
+   L_dist_min = WEBRTC_SPL_WORD32_MAX;
 
    /* initialization used only to suppress Microsoft Visual C++  warnings */
    index1 = cand1;

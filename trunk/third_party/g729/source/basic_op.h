@@ -12,6 +12,8 @@
 #ifndef __BASIC_OP_H__
 #define __BASIC_OP_H__
 
+#include "signal_processing_library.h"
+
 #ifndef G729_INLINE
 # if defined(__GNUC__) && !defined(__GNUC_STDC_G729_INLINE__)
 #  define G729_INLINE static inline
@@ -27,11 +29,6 @@
  |   Constants and Globals                                                   |
  |___________________________________________________________________________|
 */
-#define MAX_32 (int32_t)0x7fffffffL
-#define MIN_32 (int32_t)0x80000000L
-
-#define MAX_16 (int16_t)0x7fff
-#define MIN_16 (int16_t)0x8000
 
 G729_INLINE int16_t sature(int32_t L_var1);             /* Limit to 16 bits,    1 */
 G729_INLINE int16_t add(int16_t var1, int16_t var2);    /* Short add,           1 */
@@ -97,9 +94,9 @@ G729_INLINE int16_t sature(int32_t L_var1)
 {
   int16_t var_out;
   if (L_var1 > 0x00007fffL) {
-    var_out = MAX_16;
+    var_out = WEBRTC_SPL_WORD16_MAX;
   } else if (L_var1 < (int32_t)0xffff8000L) {
-    var_out = MIN_16;
+    var_out = WEBRTC_SPL_WORD16_MIN;
   } else {
     var_out = extract_l(L_var1);
   }
@@ -260,7 +257,7 @@ G729_INLINE int16_t abs_s(int16_t var1)
   int16_t var_out;
 
   if (var1 == (int16_t)0x8000) {
-    var_out = MAX_16;
+    var_out = WEBRTC_SPL_WORD16_MAX;
   } else {
     if (var1 < 0) {
       var_out = -var1;
@@ -315,7 +312,7 @@ G729_INLINE int16_t shl(int16_t var1,int16_t var2)
   } else {
     var_out = var1 << var2;
     if (var_out >> var2 != var1) {
-      var_out = (var1 & MIN_16) ? MIN_16 : MAX_16;
+      var_out = (var1 & WEBRTC_SPL_WORD16_MIN) ? WEBRTC_SPL_WORD16_MIN : WEBRTC_SPL_WORD16_MAX;
     }
   }
 
@@ -409,7 +406,7 @@ G729_INLINE int16_t mult(int16_t var1, int16_t var2)
 {
 #ifdef ARCH_ARM
   register int32_t L_var_out;
-  register int32_t temp = MAX_16;
+  register int32_t temp = WEBRTC_SPL_WORD16_MAX;
   register int32_t ra = (int32_t)var1;
   register int32_t rb = (int32_t)var2;
 
@@ -434,7 +431,7 @@ G729_INLINE int16_t mult(int16_t var1, int16_t var2)
   /* that saturation occurs. */
 
   if (L_var_out > (int32_t)0x00007fffL) {
-    L_var_out = (int32_t)MAX_16;
+    L_var_out = (int32_t)WEBRTC_SPL_WORD16_MAX;
   }
 
   return (int16_t)L_var_out;
@@ -496,7 +493,7 @@ G729_INLINE int32_t L_mult(int16_t var1,int16_t var2)
   if (L_var_out != (int32_t)0x40000000L) {
     L_var_out <<= 1; /* Multiply by 2 */
   } else {
-    L_var_out = MAX_32;
+    L_var_out = WEBRTC_SPL_WORD32_MAX;
   }
 
   return L_var_out;
@@ -533,7 +530,7 @@ G729_INLINE int32_t L_mult(int16_t var1,int16_t var2)
 */
 G729_INLINE int16_t negate(int16_t var1)
 {
-  return (var1 == MIN_16) ? MAX_16 : -var1;
+  return (var1 == WEBRTC_SPL_WORD16_MIN) ? WEBRTC_SPL_WORD16_MAX : -var1;
 }
 
 /*___________________________________________________________________________
@@ -662,11 +659,11 @@ G729_INLINE int32_t L_mac(int32_t L_var3, int16_t var1, int16_t var2)
     /* Check if L_var_out and L_var_3 share the same sign */
     if ((L_var3 ^ L_var_out) > 0) {
       if ((L_var_out ^ L_var3) < 0) {
-        L_var_out = (L_var3 < 0) ? MIN_32 : MAX_32;
+        L_var_out = (L_var3 < 0) ? WEBRTC_SPL_WORD32_MIN : WEBRTC_SPL_WORD32_MAX;
       }
     }
   } else {
-    L_var_out = MAX_32;
+    L_var_out = WEBRTC_SPL_WORD32_MAX;
   }
 
   return L_var_out;
@@ -778,7 +775,7 @@ G729_INLINE int32_t L_add(int32_t L_var1, int32_t L_var2)
   L_var_out = L_var1 + L_var2;
   if ((L_var1 ^ L_var2) >= 0) {
     if ((L_var_out ^ L_var1) < 0) {
-      L_var_out = (L_var1 < 0) ? MIN_32 : MAX_32;
+      L_var_out = (L_var1 < 0) ? WEBRTC_SPL_WORD32_MIN : WEBRTC_SPL_WORD32_MAX;
     }
   }
 
@@ -835,8 +832,8 @@ G729_INLINE int32_t L_sub(int32_t L_var1, int32_t L_var2)
 
   L_var_out = L_var1 - L_var2;
   if ((L_var1 ^ L_var2) < 0) {
-    if ((L_var_out ^ L_var1) & MIN_32) {
-      L_var_out = (L_var1 < 0L) ? MIN_32 : MAX_32;
+    if ((L_var_out ^ L_var1) & WEBRTC_SPL_WORD32_MIN) {
+      L_var_out = (L_var1 < 0L) ? WEBRTC_SPL_WORD32_MIN : WEBRTC_SPL_WORD32_MAX;
     }
   }
 
@@ -873,7 +870,7 @@ G729_INLINE int32_t L_sub(int32_t L_var1, int32_t L_var2)
 */
 G729_INLINE int32_t L_negate(int32_t L_var1)
 {
-  return (L_var1 == MIN_32) ? MAX_32 : -L_var1;
+  return (L_var1 == WEBRTC_SPL_WORD32_MIN) ? WEBRTC_SPL_WORD32_MAX : -L_var1;
 }
 
 /*___________________________________________________________________________
@@ -968,7 +965,7 @@ G729_INLINE int32_t L_shl(int32_t L_var1, int16_t var2)
 
   tmp = L_var1 << var2;
   if (tmp >> var2 != L_var1)
-    return (L_var1 & MIN_32 ? MIN_32 : MAX_32);
+    return (L_var1 & WEBRTC_SPL_WORD32_MIN ? WEBRTC_SPL_WORD32_MIN : WEBRTC_SPL_WORD32_MAX);
 
   return (tmp);
 }
@@ -1269,8 +1266,8 @@ G729_INLINE int32_t L_abs(int32_t L_var1)
 {
  int32_t L_var_out;
 
-  if (L_var1 == MIN_32) {
-    L_var_out = MAX_32;
+  if (L_var1 == WEBRTC_SPL_WORD32_MIN) {
+    L_var_out = WEBRTC_SPL_WORD32_MAX;
   } else {
     L_var_out = (L_var1 < 0 ? -L_var1 : L_var1);
   }
@@ -1390,7 +1387,7 @@ G729_INLINE int16_t div_s(int16_t var1, int16_t var2)
 
   if (var1) {
     if (var1 == var2)
-      var_out = MAX_16;
+      var_out = WEBRTC_SPL_WORD16_MAX;
     else {
       L_num = (int32_t) var1;
       L_denom = (int32_t) var2;
