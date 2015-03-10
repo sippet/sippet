@@ -252,7 +252,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
   int16_t exc[],       /* (i)     : excitation buffer                      */
   int16_t xn[],        /* (i)     : target vector                          */
   int16_t h[],         /* (i) Q12 : impulse response of filters.           */
-  int16_t WebRtcSpl_SubSatW32fr,     /* (i)     : Length of subframe                     */
+  int16_t L_subfr,     /* (i)     : Length of subframe                     */
   int16_t t0_min,      /* (i)     : minimum value in the searched range.   */
   int16_t t0_max,      /* (i)     : maximum value in the searched range.   */
   int16_t i_subfr,     /* (i)     : indicator for first subframe.          */
@@ -279,7 +279,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
 
   for(t=t0_min; t<=t0_max; t++)
   {
-    corr = Dot_Product(Dn, &exc[-t], WebRtcSpl_SubSatW32fr);
+    corr = Dot_Product(Dn, &exc[-t], L_subfr);
     L_temp = WebRtcSpl_SubSatW32(corr, max);
     if(L_temp > 0) {max = corr; t0 = t;  }
   }
@@ -290,8 +290,8 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
 
   /* Fraction 0 */
 
-  WebRtcG729fix_Pred_lt_3(exc, t0, 0, WebRtcSpl_SubSatW32fr);
-  max = Dot_Product(Dn, exc, WebRtcSpl_SubSatW32fr);
+  WebRtcG729fix_Pred_lt_3(exc, t0, 0, L_subfr);
+  max = Dot_Product(Dn, exc, L_subfr);
   *pit_frac = 0;
 
   /* If first subframe and lag > 84 do not search fractional pitch */
@@ -299,30 +299,30 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
   if( (i_subfr == 0) && (WebRtcSpl_SubSatW16(t0, 84) > 0) )
     return t0;
 
-  Copy(exc, exc_tmp, WebRtcSpl_SubSatW32fr);
+  Copy(exc, exc_tmp, L_subfr);
 
   /* Fraction -1/3 */
 
-  WebRtcG729fix_Pred_lt_3(exc, t0, -1, WebRtcSpl_SubSatW32fr);
-  corr = Dot_Product(Dn, exc, WebRtcSpl_SubSatW32fr);
+  WebRtcG729fix_Pred_lt_3(exc, t0, -1, L_subfr);
+  corr = Dot_Product(Dn, exc, L_subfr);
   L_temp = WebRtcSpl_SubSatW32(corr, max);
   if(L_temp > 0) {
      max = corr;
      *pit_frac = -1;
-     Copy(exc, exc_tmp, WebRtcSpl_SubSatW32fr);
+     Copy(exc, exc_tmp, L_subfr);
   }
 
   /* Fraction +1/3 */
 
-  WebRtcG729fix_Pred_lt_3(exc, t0, 1, WebRtcSpl_SubSatW32fr);
-  corr = Dot_Product(Dn, exc, WebRtcSpl_SubSatW32fr);
+  WebRtcG729fix_Pred_lt_3(exc, t0, 1, L_subfr);
+  corr = Dot_Product(Dn, exc, L_subfr);
   L_temp = WebRtcSpl_SubSatW32(corr, max);
   if(L_temp > 0) {
      max = corr;
      *pit_frac =  1;
   }
   else
-    Copy(exc_tmp, exc, WebRtcSpl_SubSatW32fr);
+    Copy(exc_tmp, exc, L_subfr);
 
   return t0;
 }
@@ -342,7 +342,7 @@ int16_t WebRtcG729fix_G_pitch(/* (o) Q14: Gain of pitch lag saturated to 1.2*/
   int16_t xn[],       /* (i)     : Pitch target.                            */
   int16_t y1[],       /* (i)     : Filtered adaptive codebook.              */
   int16_t g_coeff[],  /* (i)     : Correlations need for gain quantization. */
-  int16_t WebRtcSpl_SubSatW32fr     /* (i)     : Length of subframe.                      */
+  int16_t L_subfr     /* (i)     : Length of subframe.                      */
 )
 {
    int16_t i;
@@ -353,7 +353,7 @@ int16_t WebRtcG729fix_G_pitch(/* (o) Q14: Gain of pitch lag saturated to 1.2*/
    int16_t scaled_y1;
 
    s = 1; /* Avoid case of all zeros */
-   for(i=0; i<WebRtcSpl_SubSatW32fr; i++)
+   for(i=0; i<L_subfr; i++)
    {
      /* divide "y1[]" by 4 to avoid overflow */
      //scaled_y1[i] = y1[i] >> 2;
@@ -363,17 +363,17 @@ int16_t WebRtcG729fix_G_pitch(/* (o) Q14: Gain of pitch lag saturated to 1.2*/
        break;
    }
 
-   if (i == WebRtcSpl_SubSatW32fr) {
+   if (i == L_subfr) {
      exp_yy = WebRtcSpl_NormW32(s);
      yy     = L_round( L_shl(s, exp_yy) );
    }
    else {
-     //for(; i<WebRtcSpl_SubSatW32fr; i++)
+     //for(; i<L_subfr; i++)
        /* divide "y1[]" by 4 to avoid overflow */
        //scaled_y1[i] = y1[i] >> 2;
 
      s = 0;
-     for(i=0; i<WebRtcSpl_SubSatW32fr; i++)
+     for(i=0; i<L_subfr; i++)
      {
        /* divide "y1[]" by 4 to avoid overflow */
        scaled_y1 = y1[i] >> 2;
@@ -390,7 +390,7 @@ int16_t WebRtcG729fix_G_pitch(/* (o) Q14: Gain of pitch lag saturated to 1.2*/
 
    /* Compute scalar product <xn[],y1[]> */
    s = 0;
-   for(i=0; i<WebRtcSpl_SubSatW32fr; i++)
+   for(i=0; i<L_subfr; i++)
    {
      L_temp = xn[i] * y1[i];
      if (L_temp == 0x40000000)
@@ -403,13 +403,13 @@ int16_t WebRtcG729fix_G_pitch(/* (o) Q14: Gain of pitch lag saturated to 1.2*/
      //s = L_mac(s, xn[i], y1[i]);
    }
 
-   if (i == WebRtcSpl_SubSatW32fr) {
+   if (i == L_subfr) {
      exp_xy = WebRtcSpl_NormW32(s);
      xy     = L_round( L_shl(s, exp_xy) );
    }
    else {
      s = 0;
-     for(i=0; i<WebRtcSpl_SubSatW32fr; i++)
+     for(i=0; i<L_subfr; i++)
        //s += xn[i] * scaled_y1[i];
        s += xn[i] * (y1[i] >> 2);
      s <<= 1;
