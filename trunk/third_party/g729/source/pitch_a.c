@@ -200,26 +200,26 @@ int16_t WebRtcG729fix_Pitch_ol_fast(  /* output: open loop pitch lag            
     /* if( abs(T2*2 - T3) < 5)  */
     /*    max2 += max3 * 0.25;  */
     i = T2*2 - T3;
-    if (WEBRTC_SPL_ABS_W16(i) < 5)
+    if (abs_s(i) < 5)
       max2 += max3 >> 2;
 
     /* if( abs(T2*3 - T3) < 7)  */
     /*    max2 += max3 * 0.25;  */
     i += T2;
-    if (WEBRTC_SPL_ABS_W16(i) < 7)
+    if (abs_s(i) < 7)
       max2 += max3 >> 2;
 
     /* if( abs(T1*2 - T2) < 5)  */
     /*    max1 += max2 * 0.20;  */
     i = T1 * 2 - T2;
-    if (WEBRTC_SPL_ABS_W16(i) < 5)
+    if (abs_s(i) < 5)
       max1 += mult(max2, 6554);
 
     /* if( abs(T1*3 - T2) < 7)  */
     /*    max1 += max2 * 0.20;  */
 
     i += T1;
-    if (WEBRTC_SPL_ABS_W16(i) < 7)
+    if (abs_s(i) < 7)
       max1 += mult(max2, 6554);
 
    /*--------------------------------------------------------------------*
@@ -299,7 +299,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
   if( (i_subfr == 0) && (WebRtcSpl_SubSatW16(t0, 84) > 0) )
     return t0;
 
-  Copy(exc, exc_tmp, L_subfr);
+  Move(exc, exc_tmp, L_subfr);
 
   /* Fraction -1/3 */
 
@@ -309,7 +309,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
   if(L_temp > 0) {
      max = corr;
      *pit_frac = -1;
-     Copy(exc, exc_tmp, L_subfr);
+     Move(exc, exc_tmp, L_subfr);
   }
 
   /* Fraction +1/3 */
@@ -322,7 +322,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
      *pit_frac =  1;
   }
   else
-    Copy(exc_tmp, exc, L_subfr);
+    Move(exc_tmp, exc, L_subfr);
 
   return t0;
 }

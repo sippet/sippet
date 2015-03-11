@@ -153,7 +153,7 @@ void WebRtcG729fix_Calc_exc_rand(
       temp1 = mult_r(cur_exc[i], Gp2);
       temp1 = WebRtcSpl_AddSatW16(temp1, excg[i]); /* may overflow */
       cur_exc[i] = temp1;
-      temp1 = WEBRTC_SPL_ABS_W16(temp1);
+      temp1 = abs_s(temp1);
       if(temp1 > max) max = temp1;
     }
 
@@ -210,9 +210,9 @@ void WebRtcG729fix_Calc_exc_rand(
     if(L_acc < 0) {
 
       /* adaptive excitation = 0 */
-      Copy(excg, cur_exc, L_SUBFR);
-      temp1 = WEBRTC_SPL_ABS_W16(excg[(int)pos[0]]) | WEBRTC_SPL_ABS_W16(excg[(int)pos[1]]);
-      temp2 = WEBRTC_SPL_ABS_W16(excg[(int)pos[2]]) | WEBRTC_SPL_ABS_W16(excg[(int)pos[3]]);
+      Move(excg, cur_exc, L_SUBFR);
+      temp1 = abs_s(excg[(int)pos[0]]) | abs_s(excg[(int)pos[1]]);
+      temp2 = abs_s(excg[(int)pos[2]]) | abs_s(excg[(int)pos[3]]);
       temp1 = temp1 | temp2;
       sh = ((temp1 & (int16_t)0x4000) == 0) ? (int16_t)1 : (int16_t)2;
       inter_exc = 0;
@@ -236,7 +236,7 @@ void WebRtcG729fix_Calc_exc_rand(
     temp2 = Sqrt(L_acc);        /* >> sh */
     x1 = WebRtcSpl_SubSatW16(temp2, inter_exc);
     x2 = negate(WebRtcSpl_AddSatW16(inter_exc, temp2)); /* x 2^(-sh+2) */
-    if(WEBRTC_SPL_ABS_W16(x2) < WEBRTC_SPL_ABS_W16(x1)) x1 = x2;
+    if(abs_s(x2) < abs_s(x1)) x1 = x2;
     temp1 = WebRtcSpl_SubSatW16(2, sh);
     g = shr_r(x1, temp1);       /* shl if temp1 < 0 */
     if(g >= 0) {

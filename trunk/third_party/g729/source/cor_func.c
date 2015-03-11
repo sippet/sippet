@@ -110,9 +110,9 @@ void WebRtcG729fix_Cor_h_X(
 
      y32[i] = s;
 
-     s = WEBRTC_SPL_ABS_W32(s);
-     L_temp =WebRtcSpl_SubSatW32(s,max);
-     if(L_temp>0L) {
+     s = L_abs(s);
+     L_temp = WebRtcSpl_SubSatW32(s,max);
+     if (L_temp > 0L) {
         max = s;
      }
    }
@@ -121,14 +121,14 @@ void WebRtcG729fix_Cor_h_X(
    /* so that maximum is on 13 bits                   */
 
    j = WebRtcSpl_NormW32(max);
-   if(j > 16) {
-    j = 16;
+   if (j > 16) {
+     j = 16;
    }
 
    j = WebRtcSpl_SubSatW16(18, j);
 
-   for(i=0; i<L_SUBFR; i++) {
-     D[i] = extract_l( L_shr(y32[i], j) );
+   for (i=0; i < L_SUBFR; i++) {
+     D[i] = extract_l(L_shr(y32[i], j));
    }
 }
 

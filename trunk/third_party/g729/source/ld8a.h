@@ -877,9 +877,8 @@ int16_t WebRtcG729fix_test_err(int32_t L_exc_err[], int16_t t0, int16_t t0_frac)
  * Prototypes for auxiliary functions.                                      *
  *--------------------------------------------------------------------------*/
 
-#include <string.h>
+#define Move(x,y,L)    WEBRTC_SPL_MEMCPY_W16(y,x,L)
 #define Copy(x,y,L)    memmove((y), (x), (L)*sizeof(int16_t))
-#define Set_zero(x, L) memset((x), 0, (L)*sizeof(int16_t))
 
 #endif /* __LD8A_H__ */
 

@@ -101,7 +101,7 @@ void WebRtcG729fix_Cod_cng(
     st->ener[0] = 0;                /* should not happen */
   }
   else {
-    Set_zero(zero, MP1);
+    WebRtcSpl_ZerosArrayW16(zero, MP1);
     WebRtcG729fix_Levinson(st, curAcf, zero, curCoeff, bid, &st->ener[0]);
   }
 
@@ -125,7 +125,7 @@ void WebRtcG729fix_Cod_cng(
     }
       
     /* compare energy difference between current frame and last frame */
-    temp = WEBRTC_SPL_ABS_W16(WebRtcSpl_SubSatW16(st->prev_energy, energyq));
+    temp = abs_s(WebRtcSpl_SubSatW16(st->prev_energy, energyq));
     temp = WebRtcSpl_SubSatW16(temp, 2);
     if (temp > 0) st->flag_chang = 1;
       
@@ -365,7 +365,7 @@ static void Calc_pastfilt(Coder_ld8a_state *st, int16_t *Coeff)
     return;
   }
 
-  Set_zero(zero, MP1);
+  WebRtcSpl_ZerosArrayW16(zero, MP1);
   WebRtcG729fix_Levinson(st, s_sumAcf, zero, Coeff, bid, &temp);
   return;
 }

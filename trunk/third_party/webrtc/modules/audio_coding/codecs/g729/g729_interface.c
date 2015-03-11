@@ -22,6 +22,8 @@
 #include "g729_interface.h"
 #include "g729_inst.h"
 
+#include "signal_processing_library.h"
+
 
 size_t prm2bits_rtp(const int16_t prm[PRM_SIZE+1], uint8_t *bits) {
   if (prm[0] == 1) {
@@ -205,7 +207,7 @@ int16_t WebRtcG729_DecoderInit(G729DecInst* decInst) {
   if (decInst == NULL)
     return -1;
 
-  Set_zero(decInst->synth_buf, M);
+  WebRtcSpl_ZerosArrayW16(decInst->synth_buf, M);
   decInst->synth = decInst->synth_buf + M;
 
   WebRtcG729fix_Init_Decod_ld8a(&decInst->state);
@@ -275,7 +277,7 @@ int16_t WebRtcG729_DecodePlc(G729DecInst* decInst, int16_t* decoded,
   int16_t i;
   int16_t Vad = 0;
 
-  Set_zero(decInst->parm, PRM_SIZE+2);
+  WebRtcSpl_ZerosArrayW16(decInst->parm, PRM_SIZE+2);
   decInst->parm[0] = 1; // frame erasure
 
   for (i = 0; i < noOfLostFrames; ++i) {

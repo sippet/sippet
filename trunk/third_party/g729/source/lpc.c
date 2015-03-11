@@ -213,18 +213,18 @@ void WebRtcG729fix_Levinson(
 /* K = A[1] = -R[1] / R[0] */
 
   t1  = WebRtcG729fix_L_Comp(Rh[1], Rl[1]);           /* R[1] in Q31      */
-  t2  = WEBRTC_SPL_ABS_W32(t1);                      /* abs R[1]         */
+  t2  = L_abs(t1);                                    /* abs R[1]         */
   t0  = WebRtcG729fix_Div_32(t2, Rh[0], Rl[0]);       /* R[1]/R[0] in Q31 */
-  if(t1 > 0) t0= L_negate(t0);          /* -R[1]/R[0]       */
+  if(t1 > 0) t0= L_negate(t0);                        /* -R[1]/R[0]       */
   WebRtcG729fix_L_Extract(t0, &Kh, &Kl);              /* K in DPF         */
   rc[0] = Kh;
-  t0 = L_shr(t0,4);                     /* A[1] in Q27      */
+  t0 = L_shr(t0,4);                                   /* A[1] in Q27      */
   WebRtcG729fix_L_Extract(t0, &Ah[1], &Al[1]);        /* A[1] in DPF      */
 
 /*  Alpha = R[0] * (1-K**2) */
 
   t0 = WebRtcG729fix_Mpy_32(Kh ,Kl, Kh, Kl);          /* K*K      in Q31 */
-  t0 = WEBRTC_SPL_ABS_W32(t0);                       /* Some case <0 !! */
+  t0 = L_abs(t0);                                     /* Some case <0 !! */
   t0 = WebRtcSpl_SubSatW32( (int32_t)0x7fffffffL, t0 ); /* 1 - K*K  in Q31 */
   WebRtcG729fix_L_Extract(t0, &hi, &lo);              /* DPF format      */
   t0 = WebRtcG729fix_Mpy_32(Rh[0] ,Rl[0], hi, lo);    /* Alpha in Q31    */
@@ -255,7 +255,7 @@ void WebRtcG729fix_Levinson(
 
     /* K = -t0 / Alpha */
 
-    t1 = WEBRTC_SPL_ABS_W32(t0);
+    t1 = L_abs(t0);
     t2 = WebRtcG729fix_Div_32(t1, alp_h, alp_l);     /* abs(t0)/Alpha                   */
     if(t0 > 0) t2= L_negate(t2);       /* K =-t0/Alpha                    */
     t2 = L_shl(t2, alp_exp);           /* denormalize; compare to Alpha   */
@@ -264,7 +264,7 @@ void WebRtcG729fix_Levinson(
 
     /* Test for unstable filter. If unstable keep old A(z) */
 
-    if (WEBRTC_SPL_ABS_W16(Kh) > 32750)
+    if (abs_s(Kh) > 32750)
     {
       for(j=0; j<=M; j++)
       {
@@ -294,7 +294,7 @@ void WebRtcG729fix_Levinson(
     /*  Alpha = Alpha * (1-K**2) */
 
     t0 = WebRtcG729fix_Mpy_32(Kh ,Kl, Kh, Kl);          /* K*K      in Q31 */
-    t0 = WEBRTC_SPL_ABS_W32(t0);                       /* Some case <0 !! */
+    t0 = L_abs(t0);                                     /* Some case <0 !! */
     t0 = WebRtcSpl_SubSatW32( (int32_t)0x7fffffffL, t0 ); /* 1 - K*K  in Q31 */
     WebRtcG729fix_L_Extract(t0, &hi, &lo);              /* DPF format      */
     t0 = WebRtcG729fix_Mpy_32(alp_h , alp_l, hi, lo);   /* Alpha in Q31    */
@@ -308,8 +308,8 @@ void WebRtcG729fix_Levinson(
 
     /* A[j] = An[j] */
 
-    Copy(&Anh[1], &Ah[1], i);
-    Copy(&Anl[1], &Al[1], i);
+    Move(&Anh[1], &Ah[1], i);
+    Move(&Anl[1], &Al[1], i);
   }
 
   *Err = shr(alp_h, alp_exp);
@@ -477,7 +477,7 @@ void WebRtcG729fix_Az_lsp(
      else
      {
        sign= y;
-       y   = WEBRTC_SPL_ABS_W16(y);
+       y   = abs_s(y);
        exp = WebRtcSpl_NormW16(y);
        y   = shl(y, exp);
        y   = div_s( (int16_t)16383, y);
@@ -515,7 +515,7 @@ void WebRtcG729fix_Az_lsp(
 
  if (nf < M)
  {
-   Copy(old_lsp, lsp, M);
+   Move(old_lsp, lsp, M);
  /* printf("\n !!Not 10 roots found in Az_lsp()!!!\n"); */
  }
 }

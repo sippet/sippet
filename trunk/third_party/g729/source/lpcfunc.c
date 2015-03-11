@@ -185,7 +185,7 @@ void WebRtcG729fix_Lsf_lsp2(
 
   for(i=0; i<m; i++)
   {
-/*    freq = WEBRTC_SPL_ABS_W16(freq);*/
+/*    freq = abs_s(freq);*/
     freq = mult(lsf[i], 20861);          /* 20861: 1.0/(2.0*PI) in Q17 */
     ind    = shr(freq, 8);               /* ind    = b8-b15 of freq */
     offset = freq & (int16_t)0x00ff;      /* offset = b0-b7  of freq */

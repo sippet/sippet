@@ -125,7 +125,7 @@ int main(int argc, char *argv[] )
     else
     {
       printf("Erased frame = %d\r", count_frame++);
-      Set_zero(parm, PRM_SIZE+2);
+      WebRtcSpl_ZerosArrayW16(parm, PRM_SIZE+2);
       parm[0] = 1; /* frame erasure */
       WebRtcG729fix_Decod_ld8a(&state, parm, synth, Az_dec, T2, &Vad, 0);
     }

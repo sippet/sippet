@@ -35,7 +35,7 @@ static int16_t MakeDec(
 void WebRtcG729fix_vad_init(vad_state *st)
 {
   /* Static vectors to zero */
-  Set_zero(st->MeanLSF, M);
+  WebRtcSpl_ZerosArrayW16(st->MeanLSF, M);
 
   /* Initialize VAD parameters */
   st->MeanSE = 0;
@@ -49,7 +49,7 @@ void WebRtcG729fix_vad_init(vad_state *st)
   st->flag = 1;
   st->Min = WEBRTC_SPL_WORD16_MAX;
 
-  Set_zero(st->Min_buffer, 16);
+  WebRtcSpl_ZerosArrayW16(st->Min_buffer, 16);
 }
 
 
@@ -237,7 +237,7 @@ void WebRtcG729fix_vad(vad_state *st,
       if((pprev_marker == VOICE) &&
          (prev_marker == VOICE) &&
          (*marker == NOISE) &&
-         (WebRtcSpl_SubSatW16(WEBRTC_SPL_ABS_W16(WebRtcSpl_SubSatW16(st->prev_energy,ENERGY)), 614) <= 0)){
+         (WebRtcSpl_SubSatW16(abs_s(WebRtcSpl_SubSatW16(st->prev_energy,ENERGY)), 614) <= 0)){
         st->count_ext++;
         *marker = VOICE;
         st->v_flag = 1;
