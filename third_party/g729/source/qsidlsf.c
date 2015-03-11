@@ -155,7 +155,7 @@ static void Qnt_e(int16_t *errlsf,    /* (i)  : error lsf vector             */
   *Pptr = ptr_back[0][ptr];
   
   /* generating the quantized vector */
-  Move(WebRtcG729fix_lspcb1[WebRtcG729fix_PtrTab_1[cluster[0]]], qlsf, M);
+  WEBRTC_SPL_MEMCPY_W16(qlsf, WebRtcG729fix_lspcb1[WebRtcG729fix_PtrTab_1[cluster[0]]], M);
   for (i=0; i<M/2; i++) {
     qlsf[i] = WebRtcSpl_AddSatW16(qlsf[i],
         WebRtcG729fix_lspcb2[WebRtcG729fix_PtrTab_2[0][cluster[1]]][i]);

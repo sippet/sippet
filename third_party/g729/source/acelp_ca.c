@@ -880,7 +880,7 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
  WebRtcSpl_ZerosArrayW16(y, ip0);
 
  if (i0 > 0)
-   Move(h, &y[ip0], L_SUBFR - ip0);
+   WEBRTC_SPL_MEMCPY_W16(&y[ip0], h, L_SUBFR - ip0);
  else
    for(i=ip0, j=0; i<L_SUBFR; i++, j++) y[i] = negate(h[j]);
 

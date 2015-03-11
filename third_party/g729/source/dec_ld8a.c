@@ -50,7 +50,7 @@ void WebRtcG729fix_Init_Decod_ld8a(Decod_ld8a_state *st)
 {
   /* Initialize lsp_old[] */
 
-  Move(WebRtcG729fix_lsp_old_reset, st->lsp_old, M);
+  WEBRTC_SPL_MEMCPY_W16(st->lsp_old, WebRtcG729fix_lsp_old_reset, M);
 
   /* Initialize static pointer */
 
@@ -77,7 +77,7 @@ void WebRtcG729fix_Init_Decod_ld8a(Decod_ld8a_state *st)
   WebRtcG729fix_Init_lsfq_noise(st->noise_fg);
 
   /* Initialize Dec_gain */
-  Move(WebRtcG729fix_past_qua_en_reset, st->past_qua_en, 4);
+  WEBRTC_SPL_MEMCPY_W16(st->past_qua_en, WebRtcG729fix_past_qua_en_reset, 4);
 
   return;
 }
@@ -157,7 +157,7 @@ void WebRtcG729fix_Decod_ld8a(
         WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
       }
       else
-        Move(&synth[i_subfr+L_SUBFR-M], st->mem_syn, M);
+        WEBRTC_SPL_MEMCPY_W16(st->mem_syn, &synth[i_subfr+L_SUBFR-M], M);
       
       Az += MP1;
 
@@ -188,7 +188,7 @@ void WebRtcG729fix_Decod_ld8a(
     
     /* update the LSFs for the next frame */
     
-    Move(lsp_new, st->lsp_old, M);
+    WEBRTC_SPL_MEMCPY_W16(st->lsp_old, lsp_new, M);
     
     /*------------------------------------------------------------------------*
      *          Loop for every subframe in the analysis frame                 *
@@ -319,7 +319,7 @@ void WebRtcG729fix_Decod_ld8a(
             WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
           }
         else
-          Move(&synth[i_subfr+L_SUBFR-M], st->mem_syn, M);
+          WEBRTC_SPL_MEMCPY_W16(st->mem_syn, &synth[i_subfr+L_SUBFR-M], M);
 
         Az += MP1;              /* interpolated LPC parameters for next subframe */
       }

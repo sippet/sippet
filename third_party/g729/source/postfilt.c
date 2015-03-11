@@ -145,7 +145,7 @@ void WebRtcG729fix_Post_Filter(
 
       /* impulse response of A(z/GAMMA2_PST)/A(z/GAMMA1_PST) */
 
-      Move(Ap3, h, M+1);
+      WEBRTC_SPL_MEMCPY_W16(h, Ap3, M+1);
       WebRtcSpl_ZerosArrayW16(&h[M+1], L_H-M-1);
       WebRtcG729fix_Syn_filt(Ap4, h, h, L_H, &h[M+1], 0);
 
@@ -179,19 +179,19 @@ void WebRtcG729fix_Post_Filter(
 
       /* update res2[] buffer;  shift by L_SUBFR */
 
-      Move(&st->res2[L_SUBFR-PIT_MAX], &st->res2[-PIT_MAX], PIT_MAX);
-      Move(&st->scal_res2[L_SUBFR-PIT_MAX], &st->scal_res2[-PIT_MAX], PIT_MAX);
+      WEBRTC_SPL_MEMCPY_W16(&st->res2[-PIT_MAX], &st->res2[L_SUBFR-PIT_MAX], PIT_MAX);
+      WEBRTC_SPL_MEMCPY_W16(&st->scal_res2[-PIT_MAX], &st->scal_res2[L_SUBFR-PIT_MAX], PIT_MAX);
 
       Az += MP1;
     }
 
     /* update syn[] buffer */
 
-    Move(&syn[L_FRAME-M], &syn[-M], M);
+    WEBRTC_SPL_MEMCPY_W16(&syn[-M], &syn[L_FRAME-M], M);
 
     /* overwrite synthesis speech by postfiltered synthesis speech */
 
-    Move(syn_pst, syn, L_FRAME);
+    WEBRTC_SPL_MEMCPY_W16(syn, syn_pst, L_FRAME);
 
     return;
 }
