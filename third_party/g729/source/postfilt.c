@@ -48,9 +48,9 @@ void WebRtcG729fix_Init_Post_Filter(Post_Filter_state *st)
   st->res2 = st->res2_buf + PIT_MAX;
   st->scal_res2 = st->scal_res2_buf + PIT_MAX;
 
-  Set_zero(st->mem_syn_pst, M);
-  Set_zero(st->res2_buf, PIT_MAX+L_SUBFR);
-  Set_zero(st->scal_res2_buf, PIT_MAX+L_SUBFR);
+  WebRtcSpl_ZerosArrayW16(st->mem_syn_pst, M);
+  WebRtcSpl_ZerosArrayW16(st->res2_buf, PIT_MAX+L_SUBFR);
+  WebRtcSpl_ZerosArrayW16(st->scal_res2_buf, PIT_MAX+L_SUBFR);
 
   st->mem_pre = 0;
   st->past_gain = 4096; /* past_gain = 1.0 (Q12) */
@@ -145,8 +145,8 @@ void WebRtcG729fix_Post_Filter(
 
       /* impulse response of A(z/GAMMA2_PST)/A(z/GAMMA1_PST) */
 
-      Copy(Ap3, h, M+1);
-      Set_zero(&h[M+1], L_H-M-1);
+      Move(Ap3, h, M+1);
+      WebRtcSpl_ZerosArrayW16(&h[M+1], L_H-M-1);
       WebRtcG729fix_Syn_filt(Ap4, h, h, L_H, &h[M+1], 0);
 
       /* 1st correlation of h[] */
@@ -179,19 +179,19 @@ void WebRtcG729fix_Post_Filter(
 
       /* update res2[] buffer;  shift by L_SUBFR */
 
-      Copy(&st->res2[L_SUBFR-PIT_MAX], &st->res2[-PIT_MAX], PIT_MAX);
-      Copy(&st->scal_res2[L_SUBFR-PIT_MAX], &st->scal_res2[-PIT_MAX], PIT_MAX);
+      Move(&st->res2[L_SUBFR-PIT_MAX], &st->res2[-PIT_MAX], PIT_MAX);
+      Move(&st->scal_res2[L_SUBFR-PIT_MAX], &st->scal_res2[-PIT_MAX], PIT_MAX);
 
       Az += MP1;
     }
 
     /* update syn[] buffer */
 
-    Copy(&syn[L_FRAME-M], &syn[-M], M);
+    Move(&syn[L_FRAME-M], &syn[-M], M);
 
     /* overwrite synthesis speech by postfiltered synthesis speech */
 
-    Copy(syn_pst, syn, L_FRAME);
+    Move(syn_pst, syn, L_FRAME);
 
     return;
 }

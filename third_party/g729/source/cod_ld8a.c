@@ -102,21 +102,21 @@ void WebRtcG729fix_Init_Coder_ld8a(Coder_ld8a_state *st)
 
   /* Static vectors to zero */
 
-  Set_zero(st->old_speech, L_TOTAL);
-  Set_zero(st->old_exc, L_FRAME+PIT_MAX+L_INTERPOL);
-  Set_zero(st->old_wsp, PIT_MAX);
-  Set_zero(st->mem_w, M);
-  Set_zero(st->mem_w0, M);
-  Set_zero(st->mem_zero, M);
+  WebRtcSpl_ZerosArrayW16(st->old_speech, L_TOTAL);
+  WebRtcSpl_ZerosArrayW16(st->old_exc, L_FRAME+PIT_MAX+L_INTERPOL);
+  WebRtcSpl_ZerosArrayW16(st->old_wsp, PIT_MAX);
+  WebRtcSpl_ZerosArrayW16(st->mem_w, M);
+  WebRtcSpl_ZerosArrayW16(st->mem_w0, M);
+  WebRtcSpl_ZerosArrayW16(st->mem_zero, M);
   st->sharp = SHARPMIN;
 
   /* Initialize lsp_old[] */
 
-  Copy(WebRtcG729fix_lsp_old_reset, st->lsp_old, M);
+  Move(WebRtcG729fix_lsp_old_reset, st->lsp_old, M);
 
   /* Initialize lsp_old_q[] */
 
-  Copy(st->lsp_old, st->lsp_old_q, M);
+  Move(st->lsp_old, st->lsp_old_q, M);
   WebRtcG729fix_Lsp_encw_reset(st);
   WebRtcG729fix_Init_exc_err(st->L_exc_err);
 
@@ -129,11 +129,11 @@ void WebRtcG729fix_Init_Coder_ld8a(Coder_ld8a_state *st)
   WebRtcG729fix_Init_lsfq_noise(st->noise_fg);
 
   /* Initialize Qua_gain */
-  Copy(WebRtcG729fix_past_qua_en_reset, st->past_qua_en, 4);
+  Move(WebRtcG729fix_past_qua_en_reset, st->past_qua_en, 4);
 
   /* Initialize Levinson */
-  Copy(WebRtcG729fix_old_A_reset, st->old_A, M+1);
-  Set_zero(st->old_rc, 2);
+  Move(WebRtcG729fix_old_A_reset, st->old_A, M+1);
+  WebRtcSpl_ZerosArrayW16(st->old_rc, 2);
 }
 
 /*-----------------------------------------------------------------*
@@ -215,7 +215,7 @@ void WebRtcG729fix_Coder_ld8a(
 
     /* LP analysis */
     WebRtcG729fix_Autocorr(st->p_window, NP, r_h, r_l, &exp_R0); /* Autocorrelations */
-    Copy(r_h, rh_nbe, MP1);
+    Move(r_h, rh_nbe, MP1);
     WebRtcG729fix_Lag_window(NP, r_h, r_l);                      /* Lag windowing    */
     WebRtcG729fix_Levinson(st, r_h, r_l, Ap_t, rc, &temp);       /* Levinson Durbin  */
     WebRtcG729fix_Az_lsp(Ap_t, lsp_new, st->lsp_old);            /* From A(z) to lsp */
@@ -306,8 +306,8 @@ void WebRtcG729fix_Coder_ld8a(
 
     /* update the LSPs for the next frame */
 
-    Copy(lsp_new,   st->lsp_old,   M);
-    Copy(lsp_new_q, st->lsp_old_q, M);
+    Move(lsp_new,   st->lsp_old,   M);
+    Move(lsp_new_q, st->lsp_old_q, M);
   }
 
  /*----------------------------------------------------------------------*
@@ -380,7 +380,7 @@ void WebRtcG729fix_Coder_ld8a(
      *---------------------------------------------------------------*/
 
     h1[0] = 4096;
-    Set_zero(&h1[1], L_SUBFR-1);
+    WebRtcSpl_ZerosArrayW16(&h1[1], L_SUBFR-1);
     WebRtcG729fix_Syn_filt(Ap, h1, h1, L_SUBFR, &h1[1], 0);
 
    /*----------------------------------------------------------------------*

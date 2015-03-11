@@ -101,7 +101,7 @@ int main(int argc, char *argv[] )
 
   WebRtcG729fix_Init_Pre_Process(&pre_process_state);
   WebRtcG729fix_Init_Coder_ld8a(&state);
-  Set_zero(prm, PRM_SIZE+1);
+  WebRtcSpl_ZerosArrayW16(prm, PRM_SIZE+1);
 
   /* for G.729B */
   WebRtcG729fix_Init_Cod_cng(&state);

@@ -868,7 +868,7 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
  /* Find the codeword corresponding to the selected positions */
 
- Set_zero(cod, L_SUBFR);
+ WebRtcSpl_ZerosArrayW16(cod, L_SUBFR);
 
  cod[ip0] = shr(i0, 2);         /* From Q15 to Q13 */
  cod[ip1] = shr(i1, 2);
@@ -877,7 +877,7 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
  /* find the filtered codeword */
 
- Set_zero(y, ip0);
+ WebRtcSpl_ZerosArrayW16(y, ip0);
 
  if(i0 > 0)
    for(i=ip0, j=0; i<L_SUBFR; i++, j++) y[i] = h[j];

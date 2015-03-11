@@ -183,9 +183,9 @@ void WebRtcG729fix_Lsp_prev_update(
   int16_t k;
 
   for ( k = MA_NP-1 ; k > 0 ; k-- )
-    Copy(freq_prev[k-1], freq_prev[k], M);
+    Move(freq_prev[k-1], freq_prev[k], M);
 
-  Copy(lsp_ele, freq_prev[0], M);
+  Move(lsp_ele, freq_prev[0], M);
   return;
 }
 

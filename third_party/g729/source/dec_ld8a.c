@@ -50,7 +50,7 @@ void WebRtcG729fix_Init_Decod_ld8a(Decod_ld8a_state *st)
 {
   /* Initialize lsp_old[] */
 
-  Copy(WebRtcG729fix_lsp_old_reset, st->lsp_old, M);
+  Move(WebRtcG729fix_lsp_old_reset, st->lsp_old, M);
 
   /* Initialize static pointer */
 
@@ -58,8 +58,8 @@ void WebRtcG729fix_Init_Decod_ld8a(Decod_ld8a_state *st)
 
   /* Static vectors to zero */
 
-  Set_zero(st->old_exc, PIT_MAX+L_INTERPOL);
-  Set_zero(st->mem_syn, M);
+  WebRtcSpl_ZerosArrayW16(st->old_exc, PIT_MAX+L_INTERPOL);
+  WebRtcSpl_ZerosArrayW16(st->mem_syn, M);
 
   st->sharp  = SHARPMIN;
   st->old_T0 = 60;
@@ -77,7 +77,7 @@ void WebRtcG729fix_Init_Decod_ld8a(Decod_ld8a_state *st)
   WebRtcG729fix_Init_lsfq_noise(st->noise_fg);
 
   /* Initialize Dec_gain */
-  Copy(WebRtcG729fix_past_qua_en_reset, st->past_qua_en, 4);
+  Move(WebRtcG729fix_past_qua_en_reset, st->past_qua_en, 4);
 
   return;
 }
@@ -157,7 +157,7 @@ void WebRtcG729fix_Decod_ld8a(
         WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
       }
       else
-        Copy(&synth[i_subfr+L_SUBFR-M], st->mem_syn, M);
+        Move(&synth[i_subfr+L_SUBFR-M], st->mem_syn, M);
       
       Az += MP1;
 
@@ -188,7 +188,7 @@ void WebRtcG729fix_Decod_ld8a(
     
     /* update the LSFs for the next frame */
     
-    Copy(lsp_new, st->lsp_old, M);
+    Move(lsp_new, st->lsp_old, M);
     
     /*------------------------------------------------------------------------*
      *          Loop for every subframe in the analysis frame                 *
@@ -319,7 +319,7 @@ void WebRtcG729fix_Decod_ld8a(
             WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
           }
         else
-          Copy(&synth[i_subfr+L_SUBFR-M], st->mem_syn, M);
+          Move(&synth[i_subfr+L_SUBFR-M], st->mem_syn, M);
 
         Az += MP1;              /* interpolated LPC parameters for next subframe */
       }

@@ -44,7 +44,7 @@ void WebRtcG729fix_Lsp_encw_reset(Coder_ld8a_state *st)
   int16_t i;
 
   for(i=0; i<MA_NP; i++)
-    Copy(&WebRtcG729fix_freq_prev_reset[0], &st->freq_prev[i][0], M);
+    Move(&WebRtcG729fix_freq_prev_reset[0], &st->freq_prev[i][0], M);
 }
 
 
@@ -350,7 +350,7 @@ void WebRtcG729fix_Get_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M])
   int16_t i;
 
   for (i=0; i<MA_NP; i++)
-    Copy(&st->freq_prev[i][0], &x[i][0], M);
+    Move(&st->freq_prev[i][0], &x[i][0], M);
 }
   
 void WebRtcG729fix_Update_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M])
@@ -358,7 +358,7 @@ void WebRtcG729fix_Update_freq_prev(Coder_ld8a_state *st, int16_t x[MA_NP][M])
   int16_t i;
 
   for (i=0; i<MA_NP; i++)
-    Copy(&x[i][0], &st->freq_prev[i][0], M);
+    Move(&x[i][0], &st->freq_prev[i][0], M);
 }
   
 
