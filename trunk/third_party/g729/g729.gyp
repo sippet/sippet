@@ -83,6 +83,7 @@
             'source/taming.c',
             'source/vad.c',
             'source/vad.h',
+            'source/util.c',
           ],
         }],
         ['OS=="android" or OS=="ios"', {
@@ -134,5 +135,18 @@
         'source/decoder.c',
       ],
     },  # target g729_decoder
+    {
+      'target_name': 'autocorr',
+      'type': 'executable',
+      'include_dirs': [
+        '<(DEPTH)',
+      ],
+      'dependencies': [
+        'g729',
+      ],
+      'sources': [
+        'source/comp_pcm.c',
+      ],
+    },  # target autocorr
   ],
 }
