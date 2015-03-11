@@ -145,7 +145,7 @@
         'g729',
       ],
       'sources': [
-        'source/comp_pcm.c',
+        'source/autocorr.c',
       ],
     },  # target autocorr
   ],
