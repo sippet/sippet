@@ -41,12 +41,12 @@ void WebRtcG729fix_Corr_xy2(
       /*------------------------------------------------------------------*
        * Scale down y2[] from Q12 to Q9 to avoid overflow                 *
        *------------------------------------------------------------------*/
-      for(i=0; i<L_SUBFR; i++) {
-         scaled_y2[i] = shr(y2[i], 3);        }
+      for (i = 0; i < L_SUBFR; i++)
+         scaled_y2[i] = shr(y2[i], 3);
 
       /* Compute scalar product <y2[],y2[]> */
       L_acc = 1;                       /* Avoid case of all zeros */
-      for(i=0; i<L_SUBFR; i++)
+      for (i = 0; i < L_SUBFR; i++)
          L_acc = L_mac(L_acc, scaled_y2[i], scaled_y2[i]);    /* L_acc:Q19 */
 
       exp      = WebRtcSpl_NormW32(L_acc);
@@ -58,7 +58,7 @@ void WebRtcG729fix_Corr_xy2(
 
       /* Compute scalar product <xn[],y2[]> */
       L_acc = 1;                       /* Avoid case of all zeros */
-      for(i=0; i<L_SUBFR; i++)
+      for (i = 0; i < L_SUBFR; i++)
          L_acc = L_mac(L_acc, xn[i], scaled_y2[i]);           /* L_acc:Q10 */
 
       exp      = WebRtcSpl_NormW32(L_acc);
@@ -70,7 +70,7 @@ void WebRtcG729fix_Corr_xy2(
 
       /* Compute scalar product <y1[],y2[]> */
       L_acc = 1;                       /* Avoid case of all zeros */
-      for(i=0; i<L_SUBFR; i++)
+      for (i = 0; i < L_SUBFR; i++)
          L_acc = L_mac(L_acc, y1[i], scaled_y2[i]);           /* L_acc:Q10 */
 
       exp      = WebRtcSpl_NormW32(L_acc);
@@ -127,8 +127,7 @@ void WebRtcG729fix_Cor_h_X(
 
    j = WebRtcSpl_SubSatW16(18, j);
 
-   for (i=0; i < L_SUBFR; i++) {
+   for (i = 0; i < L_SUBFR; i++)
      D[i] = extract_l(L_shr(y32[i], j));
-   }
 }
 

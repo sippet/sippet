@@ -50,21 +50,16 @@ void WebRtcG729fix_Calc_exc_rand(
   int16_t sh;
   int16_t x1, x2;
   
-  if(cur_gain == 0) {
-
-    for(i=0; i<L_FRAME; i++) {
-      exc[i] = 0;
-    }
+  if (cur_gain == 0) {
+    WebRtcSpl_ZerosArrayW16(exc, L_FRAME);
     Gp = 0;
     t0 = WebRtcSpl_AddSatW16(L_SUBFR,1);
     for (i_subfr = 0;  i_subfr < L_FRAME; i_subfr += L_SUBFR) {
-      if(flag_cod != FLAG_DEC) WebRtcG729fix_update_exc_err(L_exc_err, Gp, t0);
+      if (flag_cod != FLAG_DEC)
+        WebRtcG729fix_update_exc_err(L_exc_err, Gp, t0);
     }
-
     return;
   }
-
-  
   
   /* Loop on subframes */
   
@@ -135,7 +130,7 @@ void WebRtcG729fix_Calc_exc_rand(
     temp1 = extract_h(L_shl(L_acc, sh));  /* fact << (sh+1) */
 
     sh = WebRtcSpl_SubSatW16(sh, 14);
-    for(i=0; i<L_SUBFR; i++) {
+    for (i = 0; i < L_SUBFR; i++) {
       temp2 = mult_r(excg[i], temp1);
       temp2 = shr_r(temp2, sh);   /* shl if sh < 0 */
       excg[i] = temp2;
@@ -149,21 +144,24 @@ void WebRtcG729fix_Calc_exc_rand(
     /* compute adaptive + gaussian exc -> cur_exc */
     /**********************************************/
     max = 0;
-    for(i=0; i<L_SUBFR; i++) {
+    for(i = 0; i < L_SUBFR; i++) {
       temp1 = mult_r(cur_exc[i], Gp2);
       temp1 = WebRtcSpl_AddSatW16(temp1, excg[i]); /* may overflow */
       cur_exc[i] = temp1;
       temp1 = abs_s(temp1);
-      if(temp1 > max) max = temp1;
+      if (temp1 > max)
+        max = temp1;
     }
 
     /* rescale cur_exc -> excs */
-    if(max == 0) sh = 0;
+    if (max == 0)
+      sh = 0;
     else {
       sh = WebRtcSpl_SubSatW16(3, WebRtcSpl_NormW16(max));
-      if(sh <= 0) sh = 0;
+      if (sh <= 0)
+        sh = 0;
     }
-    for(i=0; i<L_SUBFR; i++) {
+    for (i = 0; i < L_SUBFR; i++) {
       excs[i] = shr(cur_exc[i], sh);
     }
 
@@ -175,15 +173,15 @@ void WebRtcG729fix_Calc_exc_rand(
     /**********************************************************/
 
     L_ener = 0L;
-    for(i=0; i<L_SUBFR; i++) {
+    for (i = 0; i < L_SUBFR; i++) {
       L_ener = L_mac(L_ener, excs[i], excs[i]);
     } /* ener x 2^(-2sh + 1) */
 
     /* inter_exc = b >> sh */
     inter_exc = 0;
-    for(i=0; i<4; i++) {
+    for (i = 0; i < 4; i++) {
       j = pos[i];
-      if(sign[i] == 0) {
+      if (sign[i] == 0) {
         inter_exc = WebRtcSpl_SubSatW16(inter_exc, excs[j]);
       }
       else {
@@ -207,7 +205,7 @@ void WebRtcG729fix_Calc_exc_rand(
     /* inter_exc = b x 2^(-sh) */
     /* L_acc = delta x 2^(-2sh+1) */
 
-    if(L_acc < 0) {
+    if (L_acc < 0) {
 
       /* adaptive excitation = 0 */
       Move(excg, cur_exc, L_SUBFR);
@@ -239,17 +237,19 @@ void WebRtcG729fix_Calc_exc_rand(
     if(abs_s(x2) < abs_s(x1)) x1 = x2;
     temp1 = WebRtcSpl_SubSatW16(2, sh);
     g = shr_r(x1, temp1);       /* shl if temp1 < 0 */
-    if(g >= 0) {
-      if(g > G_MAX) g = G_MAX;
+    if (g >= 0) {
+      if (g > G_MAX)
+        g = G_MAX;
     }
     else {
-      if(WebRtcSpl_AddSatW16(g, G_MAX) < 0) g = negate(G_MAX);
+      if (WebRtcSpl_AddSatW16(g, G_MAX) < 0)
+        g = negate(G_MAX);
     }
 
     /* Update cur_exc with ACELP excitation */
-    for(i=0; i<4; i++) {
+    for (i = 0; i < 4; i++) {
       j = pos[i];
-      if(sign[i] != 0) {
+      if (sign[i] != 0) {
         cur_exc[j] = WebRtcSpl_AddSatW16(cur_exc[j], g);
       }
       else {
@@ -257,11 +257,10 @@ void WebRtcG729fix_Calc_exc_rand(
       }
     }
 
-    if(flag_cod != FLAG_DEC) WebRtcG729fix_update_exc_err(L_exc_err, Gp, t0);
+    if (flag_cod != FLAG_DEC)
+      WebRtcG729fix_update_exc_err(L_exc_err, Gp, t0);
 
     cur_exc += L_SUBFR;
-
-
   } /* end of loop on subframes */
   
   return;
@@ -286,8 +285,9 @@ static int16_t Gauss(uint32_t *seed)
   int32_t L_acc;
   
   L_acc = 0L;
-  for(i=0; i<12; i++) {
-    L_acc = WebRtcSpl_AddSatW32(L_acc, L_deposit_l(WebRtcSpl_RandU(seed)));
+  for (i = 0; i < 12; i++) {
+    L_acc = WebRtcSpl_AddSatW32(L_acc,
+        L_deposit_l(WebRtcSpl_RandU(seed)));
   }
   L_acc = L_shr(L_acc, 7);
   temp = extract_l(L_acc);
@@ -296,32 +296,22 @@ static int16_t Gauss(uint32_t *seed)
 
 /* Square root function : returns sqrt(Num/2) */
 /**********************************************/
-static int16_t   Sqrt( int32_t Num )
+static int16_t Sqrt(int32_t Num)
 {
-  int16_t   i  ;
+  int16_t i;
+  int16_t Rez = (int16_t)0;
+  int16_t Exp = (int16_t)0x4000;
+  int32_t Acc, L_temp;
   
-  int16_t   Rez = (int16_t) 0 ;
-  int16_t   Exp = (int16_t) 0x4000 ;
-  
-  int32_t   Acc, L_temp;
-  
-  for ( i = 0 ; i < 14 ; i ++ ) {
-    Acc = L_mult(WebRtcSpl_AddSatW16(Rez, Exp), WebRtcSpl_AddSatW16(Rez, Exp) );
+  for (i = 0; i < 14 ; i++) {
+    Acc = L_mult(WebRtcSpl_AddSatW16(Rez, Exp),
+        WebRtcSpl_AddSatW16(Rez, Exp));
     L_temp = WebRtcSpl_SubSatW32(Num, Acc);
-    if(L_temp >= 0L) Rez = WebRtcSpl_AddSatW16( Rez, Exp);
-    Exp = shr( Exp, (int16_t) 1 ) ;
+    if (L_temp >= 0L)
+      Rez = WebRtcSpl_AddSatW16(Rez, Exp);
+    Exp = shr(Exp, (int16_t)1);
   }
-  return Rez ;
+
+  return Rez;
 }
-
-
-
-
-
- 
-    
-
-
-
-
 

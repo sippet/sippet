@@ -53,16 +53,12 @@ void WebRtcG729fix_Decod_ACELP(
 
   /* decode the signs  and build the codeword */
 
-  for (i=0; i<L_SUBFR; i++) {
-    cod[i] = 0;
-  }
+  WebRtcSpl_ZerosArrayW16(cod, L_SUBFR);
 
-  for (j=0; j<4; j++)
+  for (j = 0; j < 4; j++)
   {
-
     i = sign & (int16_t)1;
     sign = shr(sign, 1);
-
     if (i != 0) {
       cod[pos[j]] = 8191;      /* Q13 +1.0 */
     }
