@@ -26,11 +26,11 @@ void WebRtcG729fix_Lsp_decw_reset(
   int16_t i;
 
   for(i=0; i<MA_NP; i++)
-    Move(&WebRtcG729fix_freq_prev_reset[0], &st->freq_prev[i][0], M);
+    WEBRTC_SPL_MEMCPY_W16(&st->freq_prev[i][0], &WebRtcG729fix_freq_prev_reset[0], M);
 
   st->prev_ma = 0;
 
-  Move(WebRtcG729fix_freq_prev_reset, st->prev_lsp, M);
+  WEBRTC_SPL_MEMCPY_W16(st->prev_lsp, WebRtcG729fix_freq_prev_reset, M);
 }
 
 
@@ -66,13 +66,13 @@ void WebRtcG729fix_Lsp_iqua_cs(
 
     /* save parameters to use in case of the frame erased situation */
 
-    Move(lsp_q, st->prev_lsp, M);
+    WEBRTC_SPL_MEMCPY_W16(st->prev_lsp, lsp_q, M);
     st->prev_ma = mode_index;
   }
   else {           /* Frame erased */
     /* use revious LSP */
 
-    Move(st->prev_lsp, lsp_q, M);
+    WEBRTC_SPL_MEMCPY_W16(lsp_q, st->prev_lsp, M);
 
     /* update freq_prev */
 
@@ -116,7 +116,7 @@ void WebRtcG729fix_Get_decfreq_prev(Decod_ld8a_state *st, int16_t x[MA_NP][M])
   int16_t i;
 
   for (i=0; i<MA_NP; i++)
-    Move(&st->freq_prev[i][0], &x[i][0], M);
+    WEBRTC_SPL_MEMCPY_W16(&x[i][0], &st->freq_prev[i][0], M);
 }
   
 void WebRtcG729fix_Update_decfreq_prev(Decod_ld8a_state *st, int16_t x[MA_NP][M])
@@ -124,7 +124,7 @@ void WebRtcG729fix_Update_decfreq_prev(Decod_ld8a_state *st, int16_t x[MA_NP][M]
   int16_t i;
 
   for (i=0; i<MA_NP; i++)
-    Move(&x[i][0], &st->freq_prev[i][0], M);
+    WEBRTC_SPL_MEMCPY_W16(&st->freq_prev[i][0], &x[i][0], M);
 }
 
 

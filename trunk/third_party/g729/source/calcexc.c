@@ -208,7 +208,7 @@ void WebRtcG729fix_Calc_exc_rand(
     if (L_acc < 0) {
 
       /* adaptive excitation = 0 */
-      Move(excg, cur_exc, L_SUBFR);
+      WEBRTC_SPL_MEMCPY_W16(cur_exc, excg, L_SUBFR);
       temp1 = abs_s(excg[(int)pos[0]]) | abs_s(excg[(int)pos[1]]);
       temp2 = abs_s(excg[(int)pos[2]]) | abs_s(excg[(int)pos[3]]);
       temp1 = temp1 | temp2;

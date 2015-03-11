@@ -308,8 +308,8 @@ void WebRtcG729fix_Levinson(
 
     /* A[j] = An[j] */
 
-    Move(&Anh[1], &Ah[1], i);
-    Move(&Anl[1], &Al[1], i);
+    WEBRTC_SPL_MEMCPY_W16(&Ah[1], &Anh[1], i);
+    WEBRTC_SPL_MEMCPY_W16(&Al[1], &Anl[1], i);
   }
 
   *Err = shr(alp_h, alp_exp);
@@ -515,7 +515,7 @@ void WebRtcG729fix_Az_lsp(
 
  if (nf < M)
  {
-   Move(old_lsp, lsp, M);
+   WEBRTC_SPL_MEMCPY_W16(lsp, old_lsp, M);
  /* printf("\n !!Not 10 roots found in Az_lsp()!!!\n"); */
  }
 }

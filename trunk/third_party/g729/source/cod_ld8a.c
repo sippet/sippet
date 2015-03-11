@@ -112,11 +112,11 @@ void WebRtcG729fix_Init_Coder_ld8a(Coder_ld8a_state *st)
 
   /* Initialize lsp_old[] */
 
-  Move(WebRtcG729fix_lsp_old_reset, st->lsp_old, M);
+  WEBRTC_SPL_MEMCPY_W16(st->lsp_old, WebRtcG729fix_lsp_old_reset, M);
 
   /* Initialize lsp_old_q[] */
 
-  Move(st->lsp_old, st->lsp_old_q, M);
+  WEBRTC_SPL_MEMCPY_W16(st->lsp_old_q, st->lsp_old, M);
   WebRtcG729fix_Lsp_encw_reset(st);
   WebRtcG729fix_Init_exc_err(st->L_exc_err);
 
@@ -129,10 +129,10 @@ void WebRtcG729fix_Init_Coder_ld8a(Coder_ld8a_state *st)
   WebRtcG729fix_Init_lsfq_noise(st->noise_fg);
 
   /* Initialize Qua_gain */
-  Move(WebRtcG729fix_past_qua_en_reset, st->past_qua_en, 4);
+  WEBRTC_SPL_MEMCPY_W16(st->past_qua_en, WebRtcG729fix_past_qua_en_reset, 4);
 
   /* Initialize Levinson */
-  Move(WebRtcG729fix_old_A_reset, st->old_A, M+1);
+  WEBRTC_SPL_MEMCPY_W16(st->old_A, WebRtcG729fix_old_A_reset, M+1);
   WebRtcSpl_ZerosArrayW16(st->old_rc, 2);
 }
 
@@ -215,7 +215,7 @@ void WebRtcG729fix_Coder_ld8a(
 
     /* LP analysis */
     WebRtcG729fix_Autocorr(st->p_window, NP, r_h, r_l, &exp_R0); /* Autocorrelations */
-    Move(r_h, rh_nbe, MP1);
+    WEBRTC_SPL_MEMCPY_W16(rh_nbe, r_h, MP1);
     WebRtcG729fix_Lag_window(NP, r_h, r_l);                      /* Lag windowing    */
     WebRtcG729fix_Levinson(st, r_h, r_l, Ap_t, rc, &temp);       /* Levinson Durbin  */
     WebRtcG729fix_Az_lsp(Ap_t, lsp_new, st->lsp_old);            /* From A(z) to lsp */
@@ -305,8 +305,8 @@ void WebRtcG729fix_Coder_ld8a(
 
     /* update the LSPs for the next frame */
 
-    Move(lsp_new,   st->lsp_old,   M);
-    Move(lsp_new_q, st->lsp_old_q, M);
+    WEBRTC_SPL_MEMCPY_W16(st->lsp_old, lsp_new, M);
+    WEBRTC_SPL_MEMCPY_W16(st->lsp_old_q, lsp_new_q, M);
   }
 
  /*----------------------------------------------------------------------*

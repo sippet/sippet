@@ -197,7 +197,7 @@ void WebRtcG729fix_Cod_cng(
   WebRtcG729fix_Calc_exc_rand(st->L_exc_err, st->cur_gain, st->exc, seed, FLAG_COD);
 
   WebRtcG729fix_Int_qlpc(lsp_old_q, st->lspSid_q, Aq);
-  Move(st->lspSid_q, lsp_old_q, M);
+  WEBRTC_SPL_MEMCPY_W16(lsp_old_q, st->lspSid_q, M);
 
   /* Update sumAcf if fr_cur = 0 */
   if(st->fr_cur == 0) {
@@ -236,7 +236,7 @@ void WebRtcG729fix_Update_cng(
 
   /* Save current Acf */
   st->sh_Acf[0] = negate(WebRtcSpl_AddSatW16(16, exp_r));
-  Move(r_h, st->Acf, MP1);
+  WEBRTC_SPL_MEMCPY_W16(st->Acf, r_h, MP1);
 
   st->fr_cur = WebRtcSpl_AddSatW16(st->fr_cur, 1);
   if (st->fr_cur == NB_CURACF) {

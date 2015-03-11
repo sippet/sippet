@@ -183,9 +183,9 @@ void WebRtcG729fix_Lsp_prev_update(
   int16_t k;
 
   for ( k = MA_NP-1 ; k > 0 ; k-- )
-    Move(freq_prev[k-1], freq_prev[k], M);
+    WEBRTC_SPL_MEMCPY_W16(freq_prev[k], freq_prev[k-1], M);
 
-  Move(lsp_ele, freq_prev[0], M);
+  WEBRTC_SPL_MEMCPY_W16(freq_prev[0], lsp_ele, M);
   return;
 }
 

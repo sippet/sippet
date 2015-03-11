@@ -299,7 +299,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
   if( (i_subfr == 0) && (WebRtcSpl_SubSatW16(t0, 84) > 0) )
     return t0;
 
-  Move(exc, exc_tmp, L_subfr);
+  WEBRTC_SPL_MEMCPY_W16(exc_tmp, exc, L_subfr);
 
   /* Fraction -1/3 */
 
@@ -309,7 +309,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
   if(L_temp > 0) {
      max = corr;
      *pit_frac = -1;
-     Move(exc, exc_tmp, L_subfr);
+     WEBRTC_SPL_MEMCPY_W16(exc_tmp, exc, L_subfr);
   }
 
   /* Fraction +1/3 */
@@ -322,7 +322,7 @@ int16_t WebRtcG729fix_Pitch_fr3_fast(/* (o)     : pitch period.            */
      *pit_frac =  1;
   }
   else
-    Move(exc_tmp, exc, L_subfr);
+    WEBRTC_SPL_MEMCPY_W16(exc, exc_tmp, L_subfr);
 
   return t0;
 }
