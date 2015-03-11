@@ -242,7 +242,7 @@ void WebRtcG729fix_Coder_ld8a(
 
       /* Update wsp, mem_w and mem_w0 */
       Aq = Aq_t;
-      for(i_subfr=0; i_subfr < L_FRAME; i_subfr += L_SUBFR) {
+      for (i_subfr = 0; i_subfr < L_FRAME; i_subfr += L_SUBFR) {
         
         /* Residual signal in xn */
         WebRtcG729fix_Residu(Aq, &st->speech[i_subfr], xn, L_SUBFR);
@@ -252,14 +252,13 @@ void WebRtcG729fix_Coder_ld8a(
         /* Compute wsp and mem_w */
         Ap = Ap_t + MP1;
         Ap[0] = 4096;
-        for(i=1; i<=M; i++)    /* Ap[i] = Ap_t[i] - 0.7 * Ap_t[i-1]; */
+        for (i = 1; i <= M; i++)    /* Ap[i] = Ap_t[i] - 0.7 * Ap_t[i-1]; */
           Ap[i] = WebRtcSpl_SubSatW16(Ap_t[i], mult(Ap_t[i-1], 22938));
         WebRtcG729fix_Syn_filt(Ap, xn, &st->wsp[i_subfr], L_SUBFR, st->mem_w, 1);
         
         /* Compute mem_w0 */
-        for(i=0; i<L_SUBFR; i++) {
+        for (i = 0; i < L_SUBFR; i++)
           xn[i] = WebRtcSpl_SubSatW16(xn[i], st->exc[i_subfr+i]);  /* residu[] - exc[] */
-        }
         WebRtcG729fix_Syn_filt(Ap_t, xn, xn, L_SUBFR, st->mem_w0, 1);
                 
         Aq += MP1;
@@ -323,13 +322,13 @@ void WebRtcG729fix_Coder_ld8a(
 
     Ap = Ap_t;
     Ap1[0] = 4096;
-    for(i=1; i<=M; i++)    /* Ap1[i] = Ap[i] - 0.7 * Ap[i-1]; */
-       Ap1[i] = WebRtcSpl_SubSatW16(Ap[i], mult(Ap[i-1], 22938));
+    for (i = 1; i <= M; i++)    /* Ap1[i] = Ap[i] - 0.7 * Ap[i-1]; */
+      Ap1[i] = WebRtcSpl_SubSatW16(Ap[i], mult(Ap[i-1], 22938));
     WebRtcG729fix_Syn_filt(Ap1, &st->exc[0], &st->wsp[0], L_SUBFR, st->mem_w, 1);
 
     Ap += MP1;
-    for(i=1; i<=M; i++)    /* Ap1[i] = Ap[i] - 0.7 * Ap[i-1]; */
-       Ap1[i] = WebRtcSpl_SubSatW16(Ap[i], mult(Ap[i-1], 22938));
+    for (i = 1; i <= M; i++)    /* Ap1[i] = Ap[i] - 0.7 * Ap[i-1]; */
+      Ap1[i] = WebRtcSpl_SubSatW16(Ap[i], mult(Ap[i-1], 22938));
     WebRtcG729fix_Syn_filt(Ap1, &st->exc[L_SUBFR], &st->wsp[L_SUBFR], L_SUBFR, st->mem_w, 1);
   }
 
@@ -372,7 +371,7 @@ void WebRtcG729fix_Coder_ld8a(
   Aq = Aq_t;    /* pointer to interpolated quantized LPC parameters */
   Ap = Ap_t;    /* pointer to weighted LPC coefficients             */
 
-  for (i_subfr = 0;  i_subfr < L_FRAME; i_subfr += L_SUBFR)
+  for (i_subfr = 0; i_subfr < L_FRAME; i_subfr += L_SUBFR)
   {
 
     /*---------------------------------------------------------------*
@@ -476,7 +475,7 @@ void WebRtcG729fix_Coder_ld8a(
     *   vector in the next subframe                        *
     *------------------------------------------------------*/
 
-    for (i = 0; i < L_SUBFR;  i++)
+    for (i = 0; i < L_SUBFR; i++)
     {
       /* exc[i] = gain_pit*exc[i] + gain_code*code[i]; */
       /* exc[i]  in Q0   gain_pit in Q14               */
@@ -499,7 +498,6 @@ void WebRtcG729fix_Coder_ld8a(
 
     Aq += MP1;           /* interpolated LPC parameters for next subframe */
     Ap += MP1;
-
   }
 
  /*--------------------------------------------------*

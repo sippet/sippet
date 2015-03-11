@@ -151,7 +151,7 @@ void WebRtcG729fix_Decod_ld8a(
         /* In case of overflow in the synthesis          */
         /* -> Scale down vector exc[] and redo synthesis */
         
-        for(i=0; i<PIT_MAX+L_INTERPOL+L_FRAME; i++)
+        for (i = 0; i < PIT_MAX + L_INTERPOL + L_FRAME; i++)
           st->old_exc[i] = shr(st->old_exc[i], 2);
         
         WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
@@ -313,7 +313,7 @@ void WebRtcG729fix_Decod_ld8a(
             /* In case of overflow in the synthesis          */
             /* -> Scale down vector exc[] and redo synthesis */
 
-            for(i=0; i<PIT_MAX+L_INTERPOL+L_FRAME; i++)
+            for (i = 0; i < PIT_MAX + L_INTERPOL + L_FRAME; i++)
               st->old_exc[i] = shr(st->old_exc[i], 2);
 
             WebRtcG729fix_Syn_filt(Az, &st->exc[i_subfr], &synth[i_subfr], L_SUBFR, st->mem_syn, 1);
@@ -330,7 +330,7 @@ void WebRtcG729fix_Decod_ld8a(
    *-----------*/
   if(bfi == 0) {
     L_temp = 0L;
-    for(i=0; i<L_FRAME; i++) {
+    for (i = 0; i < L_FRAME; i++) {
       L_temp = L_mac(L_temp, st->exc[i], st->exc[i]);
     } /* may overflow => last level of SID quantizer */
     st->sh_sid_sav = WebRtcSpl_NormW32(L_temp);
@@ -350,9 +350,4 @@ void WebRtcG729fix_Decod_ld8a(
 
   return;
 }
-
-
-
-
-
 

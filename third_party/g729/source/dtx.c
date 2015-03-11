@@ -38,16 +38,14 @@ static void Update_sumAcf(Coder_ld8a_state *st);
  *-----------------------------------------------------------*/
 void WebRtcG729fix_Init_Cod_cng(Coder_ld8a_state *st)
 {
-  int16_t i;
+  WebRtcSpl_ZerosArrayW16(st->sumAcf, SIZ_SUMACF);
+  WebRtcSpl_MemSetW16(st->sh_sumAcf, 40, NB_SUMACF);
 
-  for(i=0; i<SIZ_SUMACF; i++) st->sumAcf[i] = 0;
-  for(i=0; i<NB_SUMACF; i++) st->sh_sumAcf[i] = 40;
+  WebRtcSpl_ZerosArrayW16(st->Acf, SIZ_ACF);
+  WebRtcSpl_MemSetW16(st->sh_Acf, 40, NB_CURACF);
 
-  for(i=0; i<SIZ_ACF; i++) st->Acf[i] = 0;
-  for(i=0; i<NB_CURACF; i++) st->sh_Acf[i] = 40;
-
-  for(i=0; i<NB_GAIN; i++) st->sh_ener[i] = 40;
-  for(i=0; i<NB_GAIN; i++) st->ener[i] = 0;
+  WebRtcSpl_MemSetW16(st->sh_ener, 40, NB_GAIN);
+  WebRtcSpl_ZerosArrayW16(st->ener, NB_GAIN);
 
   st->cur_gain = 0;
   st->fr_cur = 0;
@@ -88,7 +86,7 @@ void WebRtcG729fix_Cod_cng(
   int16_t energyq, temp;
 
   /* Update Ener and sh_ener */
-  for(i = NB_GAIN-1; i>=1; i--) {
+  for (i = NB_GAIN-1; i >= 1; i--) {
     st->ener[i] = st->ener[i-1];
     st->sh_ener[i] = st->sh_ener[i-1];
   }
@@ -199,9 +197,7 @@ void WebRtcG729fix_Cod_cng(
   WebRtcG729fix_Calc_exc_rand(st->L_exc_err, st->cur_gain, st->exc, seed, FLAG_COD);
 
   WebRtcG729fix_Int_qlpc(lsp_old_q, st->lspSid_q, Aq);
-  for(i=0; i<M; i++) {
-    lsp_old_q[i]   = st->lspSid_q[i];
-  }
+  Move(st->lspSid_q, lsp_old_q, M);
 
   /* Update sumAcf if fr_cur = 0 */
   if(st->fr_cur == 0) {
@@ -231,23 +227,21 @@ void WebRtcG729fix_Update_cng(
   /* Update Acf and shAcf */
   ptr1 = st->Acf + SIZ_ACF - 1;
   ptr2 = ptr1 - MP1;
-  for(i=0; i<(SIZ_ACF-MP1); i++) {
+  for (i = 0; i < (SIZ_ACF-MP1); i++) {
     *ptr1-- = *ptr2--;
   }
-  for(i=NB_CURACF-1; i>=1; i--) {
+  for (i = NB_CURACF - 1; i >= 1; i--) {
     st->sh_Acf[i] = st->sh_Acf[i-1];
   }
 
   /* Save current Acf */
   st->sh_Acf[0] = negate(WebRtcSpl_AddSatW16(16, exp_r));
-  for(i=0; i<MP1; i++) {
-    st->Acf[i] = r_h[i];
-  }
+  Move(r_h, st->Acf, MP1);
 
   st->fr_cur = WebRtcSpl_AddSatW16(st->fr_cur, 1);
-  if(st->fr_cur == NB_CURACF) {
+  if (st->fr_cur == NB_CURACF) {
     st->fr_cur = 0;
-    if(Vad != 0) {
+    if (Vad != 0) {
       Update_sumAcf(st);
     }
   }
@@ -271,7 +265,7 @@ static void Calc_RCoeff(int16_t *Coeff, int16_t *RCoeff, int16_t *sh_RCoeff)
   
   /* RCoeff[0] = SUM(j=0->M) Coeff[j] ** 2 */
   L_acc = 0L;
-  for(j=0; j <= M; j++) {
+  for (j = 0; j <= M; j++) {
     L_acc = L_mac(L_acc, Coeff[j], Coeff[j]);
   }
   
@@ -281,9 +275,9 @@ static void Calc_RCoeff(int16_t *Coeff, int16_t *RCoeff, int16_t *sh_RCoeff)
   RCoeff[0] = L_round(L_acc);
   
   /* RCoeff[i] = SUM(j=0->M-i) Coeff[j] * Coeff[j+i] */
-  for(i=1; i<=M; i++) {
+  for (i = 1; i <= M; i++) {
     L_acc = 0L;
-    for(j=0; j<=M-i; j++) {
+    for (j = 0; j <= M - i; j++) {
       L_acc = L_mac(L_acc, Coeff[j], Coeff[j+i]);
     }
     L_acc = L_shl(L_acc, sh1);
@@ -321,18 +315,17 @@ static int16_t Cmp_filt(int16_t *RCoeff, int16_t sh_RCoeff, int16_t *acf,
       temp3 = WEBRTC_SPL_WORD32_MAX;
     }
     L_temp0 = L_shr(temp3,1);
-    for(i=1; i <= M; i++) {
+    for (i = 1; i <= M; i++) {
       temp1 = shr(RCoeff[i], sh[0]);
       temp2 = shr(acf[i], sh[1]);
       L_temp0 = L_mac(L_temp0, temp1, temp2);
     }
-    if(Overflow != 0) {
+    if (Overflow != 0) {
       sh[(int)ind] = WebRtcSpl_AddSatW16(sh[(int)ind], 1);
       ind = WebRtcSpl_SubSatW16(1, ind);
     }
     else flag = 1;
   } while (flag == 0);
-  
   
   temp1 = mult_r(alpha, FracThresh);
   L_temp1 = WebRtcSpl_AddSatW32(L_deposit_l(temp1), L_deposit_l(alpha));
@@ -342,17 +335,16 @@ static int16_t Cmp_filt(int16_t *RCoeff, int16_t sh_RCoeff, int16_t *acf,
   L_temp1 = L_shl(L_temp1, temp1);
   
   L_temp0 = WebRtcSpl_SubSatW32(L_temp0, L_temp1);
-  if(L_temp0 > 0L) diff = 1;
+  if (L_temp0 > 0L) diff = 1;
   else diff = 0;
 
-  return(diff);
+  return diff;
 }
 
 /* Compute past average filter */
 /*******************************/
 static void Calc_pastfilt(Coder_ld8a_state *st, int16_t *Coeff)
 {
-  int16_t i;
   int16_t s_sumAcf[MP1];
   int16_t bid[M], zero[MP1];
   int16_t temp;
@@ -360,8 +352,8 @@ static void Calc_pastfilt(Coder_ld8a_state *st, int16_t *Coeff)
   Calc_sum_acf(st->sumAcf, st->sh_sumAcf, s_sumAcf, &temp, NB_SUMACF);
   
   if(s_sumAcf[0] == 0L) {
+    WebRtcSpl_ZerosArrayW16(Coeff, M);
     Coeff[0] = 4096;
-    for(i=1; i<=M; i++) Coeff[i] = 0;
     return;
   }
 
@@ -380,10 +372,10 @@ static void Update_sumAcf(Coder_ld8a_state *st)
   /*** Move sumAcf ***/
   ptr1 = st->sumAcf + SIZ_SUMACF - 1;
   ptr2 = ptr1 - MP1;
-  for(i=0; i<(SIZ_SUMACF-MP1); i++) {
+  for (i = 0; i < (SIZ_SUMACF - MP1); i++) {
     *ptr1-- = *ptr2--;
   }
-  for(i=NB_SUMACF-1; i>=1; i--) {
+  for (i = NB_SUMACF - 1; i >= 1; i--) {
     st->sh_sumAcf[i] = st->sh_sumAcf[i-1];
   }
 
@@ -405,29 +397,25 @@ static void Calc_sum_acf(int16_t *acf, int16_t *sh_acf,
   
   /* Compute sum = sum of nb acfs */
   /* Find sh_acf minimum */
-  sh0 = sh_acf[0];
-  for(i=1; i<nb; i++) {
-    if(sh_acf[i] < sh0) sh0 = sh_acf[i];
-  }
+  sh0 = WebRtcSpl_MinValueW16(sh_acf, nb);
   sh0 = WebRtcSpl_AddSatW16(sh0, 14);           /* 2 bits of margin */
 
-  for(j=0; j<MP1; j++) {
-    L_tab[j] = 0L;
-  }
+  WebRtcSpl_ZerosArrayW32(L_tab, MP1);
   ptr1 = acf;
-  for(i=0; i<nb; i++) {
+  for (i = 0; i < nb; i++) {
     temp = WebRtcSpl_SubSatW16(sh0, sh_acf[i]);
-    for(j=0; j<MP1; j++) {
+    for (j = 0; j < MP1; j++) {
       L_temp = L_deposit_l(*ptr1++);
       L_temp = L_shl(L_temp, temp); /* shift right if temp<0 */
       L_tab[j] = WebRtcSpl_AddSatW32(L_tab[j], L_temp);
     }
   } 
   temp = WebRtcSpl_NormW32(L_tab[0]);
-  for(i=0; i<=M; i++) {
+  for (i = 0; i <= M; i++) {
     sum[i] = extract_h(L_shl(L_tab[i], temp));
   }
   temp = WebRtcSpl_SubSatW16(temp, 16);
   *sh_sum = WebRtcSpl_AddSatW16(sh0, temp);
   return;
 }
+

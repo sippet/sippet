@@ -101,7 +101,7 @@ int main(int argc, char *argv[] )
  *           Initialization of decoder                             *
  *-----------------------------------------------------------------*/
 
-  for (i=0; i<M; i++) synth_buf[i] = 0;
+  WebRtcSpl_ZerosArrayW16(synth_buf, M);
   synth = synth_buf + M;
 
   WebRtcG729fix_Init_Decod_ld8a(&state);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[] )
  *-----------------------------------------------------------------*/
 
   count_frame = 0L;
-  while(WebRtcG729fix_read_frame(f_serial, parm) != 0)
+  while (WebRtcG729fix_read_frame(f_serial, parm) != 0)
   {
     if (count_frame < stop_after) {
       printf("Frame = %d\r", count_frame++);

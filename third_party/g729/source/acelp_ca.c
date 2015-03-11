@@ -879,22 +879,22 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
 
  WebRtcSpl_ZerosArrayW16(y, ip0);
 
- if(i0 > 0)
-   for(i=ip0, j=0; i<L_SUBFR; i++, j++) y[i] = h[j];
+ if (i0 > 0)
+   Move(h, &y[ip0], L_SUBFR - ip0);
  else
    for(i=ip0, j=0; i<L_SUBFR; i++, j++) y[i] = negate(h[j]);
 
- if(i1 > 0)
+ if (i1 > 0)
    for(i=ip1, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_AddSatW16(y[i], h[j]);
  else
    for(i=ip1, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_SubSatW16(y[i], h[j]);
 
- if(i2 > 0)
+ if (i2 > 0)
    for(i=ip2, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_AddSatW16(y[i], h[j]);
  else
    for(i=ip2, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_SubSatW16(y[i], h[j]);
 
- if(i3 > 0)
+ if (i3 > 0)
    for(i=ip3, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_AddSatW16(y[i], h[j]);
  else
    for(i=ip3, j=0; i<L_SUBFR; i++, j++) y[i] = WebRtcSpl_SubSatW16(y[i], h[j]);
@@ -902,10 +902,10 @@ static int16_t D4i40_17_fast(/*(o) : Index of pulses positions.               */
  /* find codebook index;  17-bit address */
 
  i = 0;
- if(i0 > 0) i = WebRtcSpl_AddSatW16(i, 1);
- if(i1 > 0) i = WebRtcSpl_AddSatW16(i, 2);
- if(i2 > 0) i = WebRtcSpl_AddSatW16(i, 4);
- if(i3 > 0) i = WebRtcSpl_AddSatW16(i, 8);
+ if (i0 > 0) i = WebRtcSpl_AddSatW16(i, 1);
+ if (i1 > 0) i = WebRtcSpl_AddSatW16(i, 2);
+ if (i2 > 0) i = WebRtcSpl_AddSatW16(i, 4);
+ if (i3 > 0) i = WebRtcSpl_AddSatW16(i, 8);
  *sign = i;
 
  ip0 = mult(ip0, 6554);         /* ip0/5 */
