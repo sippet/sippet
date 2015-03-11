@@ -352,7 +352,7 @@ static void Calc_pastfilt(Coder_ld8a_state *st, int16_t *Coeff)
   Calc_sum_acf(st->sumAcf, st->sh_sumAcf, s_sumAcf, &temp, NB_SUMACF);
   
   if(s_sumAcf[0] == 0L) {
-    WebRtcSpl_ZerosArrayW16(Coeff, M);
+    WebRtcSpl_ZerosArrayW16(&Coeff[1], M);
     Coeff[0] = 4096;
     return;
   }

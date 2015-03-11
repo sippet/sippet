@@ -95,6 +95,8 @@ int main(int argc, char *argv[] )
   printf(" OCTET TRANSMISSION MODE is disabled\n");
 #endif
 
+  WebRtcSpl_Init();
+
 /*--------------------------------------------------------------------------*
  * Initialization of the coder.                                             *
  *--------------------------------------------------------------------------*/

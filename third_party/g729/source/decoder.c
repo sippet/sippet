@@ -97,6 +97,8 @@ int main(int argc, char *argv[] )
     stop_after = atoi(argv[3]);
   }
 
+  WebRtcSpl_Init();
+
 /*-----------------------------------------------------------------*
  *           Initialization of decoder                             *
  *-----------------------------------------------------------------*/

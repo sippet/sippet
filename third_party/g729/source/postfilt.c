@@ -179,8 +179,8 @@ void WebRtcG729fix_Post_Filter(
 
       /* update res2[] buffer;  shift by L_SUBFR */
 
-      WEBRTC_SPL_MEMCPY_W16(&st->res2[-PIT_MAX], &st->res2[L_SUBFR-PIT_MAX], PIT_MAX);
-      WEBRTC_SPL_MEMCPY_W16(&st->scal_res2[-PIT_MAX], &st->scal_res2[L_SUBFR-PIT_MAX], PIT_MAX);
+      Copy(&st->res2[L_SUBFR-PIT_MAX], &st->res2[-PIT_MAX], PIT_MAX);
+      Copy(&st->scal_res2[L_SUBFR-PIT_MAX], &st->scal_res2[-PIT_MAX], PIT_MAX);
 
       Az += MP1;
     }
