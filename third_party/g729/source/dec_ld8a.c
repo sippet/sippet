@@ -260,8 +260,8 @@ void WebRtcG729fix_Decod_ld8a(
         if(bfi != 0)            /* Bad frame */
           {
 
-            parm[0] = WebRtcSpl_RandU(&st->seed_fer) & (int16_t)0x1fff; /* 13 bits random */
-            parm[1] = WebRtcSpl_RandU(&st->seed_fer) & (int16_t)0x000f; /*  4 bits random */
+            parm[0] = WebRtcG729fix_Random(&st->seed_fer) & (int16_t)0x1fff; /* 13 bits random */
+            parm[1] = WebRtcG729fix_Random(&st->seed_fer) & (int16_t)0x000f; /*  4 bits random */
           }
 
         WebRtcG729fix_Decod_ACELP(parm[1], parm[0], code);

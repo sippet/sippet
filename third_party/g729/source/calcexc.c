@@ -20,7 +20,7 @@
 
 
 /* Local functions */
-static int16_t Gauss(uint32_t *seed);
+static int16_t Gauss(int16_t *seed);
 static int16_t Sqrt( int32_t Num);
 
 /*-----------------------------------------------------------*
@@ -33,8 +33,8 @@ void WebRtcG729fix_Calc_exc_rand(
   int32_t L_exc_err[],
   int16_t cur_gain,      /* (i)   :   target sample gain                 */
   int16_t *exc,          /* (i/o) :   excitation array                   */
-  uint32_t *seed,        /* (i)   :   current Vad decision               */
-  int flag_cod         /* (i)   :   encoder/decoder flag               */
+  int16_t *seed,         /* (i)   :   current Vad decision               */
+  int flag_cod           /* (i)   :   encoder/decoder flag               */
 )
 {
   int16_t i, j, i_subfr;
@@ -69,7 +69,7 @@ void WebRtcG729fix_Calc_exc_rand(
 
     /* generate random adaptive codebook & fixed codebook parameters */
     /*****************************************************************/
-    temp1 = WebRtcSpl_RandU(seed);
+    temp1 = WebRtcG729fix_Random(seed);
     frac = WebRtcSpl_SubSatW16((temp1 & (int16_t)0x0003), 1);
     if(frac == 2) frac = 0;
     temp1 = shr(temp1, 2);
@@ -85,7 +85,7 @@ void WebRtcG729fix_Calc_exc_rand(
     pos[1] = WebRtcSpl_AddSatW16(temp2, 1);     /* 5 * x + 1 */
     temp1 = shr(temp1, 3);
     sign[1] = temp1 & (int16_t)0x0001;
-    temp1 = WebRtcSpl_RandU(seed);
+    temp1 = WebRtcG729fix_Random(seed);
     temp2 = temp1 & (int16_t)0x0007;
     temp2 = WebRtcSpl_AddSatW16(shl(temp2, 2), temp2);
     pos[2] = WebRtcSpl_AddSatW16(temp2, 2);     /* 5 * x + 2 */
@@ -99,7 +99,7 @@ void WebRtcG729fix_Calc_exc_rand(
     pos[3] = WebRtcSpl_AddSatW16(pos[3], temp2);
     temp1 = shr(temp1, 4);
     sign[3] = temp1 & (int16_t)0x0001;
-    Gp = WebRtcSpl_RandU(seed) & (int16_t)0x1FFF; /* < 0.5 Q14 */
+    Gp = WebRtcG729fix_Random(seed) & (int16_t)0x1FFF; /* < 0.5 Q14 */
     Gp2 = shl(Gp, 1);           /* Q15 */
 
 
@@ -273,7 +273,7 @@ void WebRtcG729fix_Calc_exc_rand(
 
 /* Gaussian generation */
 /***********************/
-static int16_t Gauss(uint32_t *seed)
+static int16_t Gauss(int16_t *seed)
 {
 
 /****  Xi = uniform v.a. in [-32768, 32767]       ****/
@@ -287,7 +287,7 @@ static int16_t Gauss(uint32_t *seed)
   L_acc = 0L;
   for (i = 0; i < 12; i++) {
     L_acc = WebRtcSpl_AddSatW32(L_acc,
-        L_deposit_l(WebRtcSpl_RandU(seed)));
+        L_deposit_l(WebRtcG729fix_Random(seed)));
   }
   L_acc = L_shr(L_acc, 7);
   temp = extract_l(L_acc);
