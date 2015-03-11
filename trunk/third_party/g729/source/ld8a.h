@@ -160,7 +160,7 @@ typedef struct Coder_ld8a_state {
   /* DTX variables */
   int16_t pastVad;
   int16_t ppastVad;
-  uint32_t seed;
+  int16_t seed;
 
   /* Used in dtx.c */
   int16_t lspSid_q[M];
@@ -214,10 +214,10 @@ typedef struct Decod_ld8a_state {
   int16_t gain_pitch;      /* Pitch gain                         */
 
   /* for G.729B */
-  uint32_t seed_fer;
+  int16_t seed_fer;
   /* CNG variables */
   int16_t past_ftyp;
-  uint32_t seed;
+  int16_t seed;
   int16_t sid_sav, sh_sid_sav;
 
   /* Used in lspdec.c */
@@ -878,6 +878,8 @@ int16_t WebRtcG729fix_test_err(int32_t L_exc_err[], int16_t t0, int16_t t0_frac)
  *--------------------------------------------------------------------------*/
 
 #define Copy(x,y,L)    memmove((y), (x), (L)*sizeof(int16_t))
+
+int16_t WebRtcG729fix_Random(int16_t *seed);
 
 #endif /* __LD8A_H__ */
 

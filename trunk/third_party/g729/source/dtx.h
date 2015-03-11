@@ -25,7 +25,7 @@ void WebRtcG729fix_Cod_cng(
   int16_t *ana,          /* (o)   : coded SID parameters                 */
   int16_t freq_prev[MA_NP][M],
                          /* (i/o) : previous LPS for quantization        */
-  uint32_t *seed         /* (i/o) : random generator seed                */
+  int16_t *seed          /* (i/o) : random generator seed                */
 );
 void WebRtcG729fix_Update_cng(
   Coder_ld8a_state *st,
@@ -48,8 +48,8 @@ void WebRtcG729fix_Calc_exc_rand(
   int32_t L_exc_err[],
   int16_t cur_gain,      /* (i)   :   target sample gain                 */
   int16_t *exc,          /* (i/o) :   excitation array                   */
-  uint32_t *seed,        /* (i/o) : random generator seed                */
-  int flag_cod         /* (i)   :   encoder/decoder flag               */
+  int16_t *seed,         /* (i/o) : random generator seed                */
+  int flag_cod           /* (i)   :   encoder/decoder flag               */
 );
 
 /* SID LSP Quantization */
@@ -69,9 +69,9 @@ void WebRtcG729fix_Dec_cng(
   int16_t *exc,          /* (i/o) : excitation array                     */
   int16_t *lsp_old,      /* (i/o) : previous lsp                         */
   int16_t *A_t,          /* (o)   : set of interpolated LPC coefficients */
-  uint32_t *seed,        /* (i/o) : random generator seed                */
+  int16_t *seed,         /* (i/o) : random generator seed                */
   int16_t freq_prev[MA_NP][M]
-                        /* (i/o) : previous LPS for quantization        */
+                         /* (i/o) : previous LPS for quantization        */
 );
 int16_t WebRtcG729fix_read_frame(FILE *f_serial, int16_t *parm);
 
