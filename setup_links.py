@@ -93,8 +93,6 @@ DIRECTORIES = [
 
   # --- Compatibility mode:
   # We've changed some parts of libjingle
-  'third_party/libjingle/overrides/allocator_shim',
-  'third_party/libjingle/source',
   'jingle/glue',
   'jingle/notifier',
 ]
@@ -134,15 +132,6 @@ FILES = {
 
   # --- Compatibility mode:
   # We've changed some parts of libjingle
-  'third_party/libjingle/overrides/init_webrtc.h': None,
-  'third_party/libjingle/overrides/init_webrtc.cc': None,
-  'third_party/libjingle/overrides/initialize_module.cc': None,
-  'third_party/libjingle/overrides/talk/media/webrtc/webrtcexport.h': None,
-  'third_party/libjingle/BUILD.gn': None,
-  'third_party/libjingle/libjingle_common.gypi': None,
-  'third_party/libjingle/libjingle_nacl.gyp': None,
-  'third_party/libjingle/OWNERS': None,
-  'third_party/libjingle/README.chromium': None,
   'jingle/BUILD.gn': None,
   'jingle/DEPS': None,
   'jingle/OWNERS': None,

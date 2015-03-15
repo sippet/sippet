@@ -81,6 +81,7 @@
 /third_party/jsoncpp
 /third_party/jsr-305
 /third_party/libevent
+/third_party/libjingle/source
 /third_party/libjpeg
 /third_party/libjpeg_turbo
 /third_party/libsrtp
