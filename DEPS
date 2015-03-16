@@ -10,7 +10,7 @@ vars = {
 
   'sippet_git': 'https://github.com/sippet',
   'webrtc_revision': 'dfc3d3d712e8424d2bb1000fe7df9d974ab18ead',
-  'talk_revision': '419aa31fb0755376324a150605bea2771c7a5a77',
+  'talk_revision': '7347cb83dd690484343f27940dee408a583deee9',
 
   # PJSIP is used for testing purposes
   'pjsip_trunk': 'http://svn.pjsip.org/repos/pjproject/trunk',
