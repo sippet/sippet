@@ -47,7 +47,9 @@ void ConsoleLoop(Runner* runner, base::MessageLoop* parent_message_loop) {
         base::Bind(&ConsoleLoop, runner, parent_message_loop));
   } else {
     std::cerr << std::endl;
-    parent_message_loop->Quit();
+    parent_message_loop->PostTask(FROM_HERE,
+        base::Bind(&base::MessageLoop::Quit,
+                   base::Unretained(parent_message_loop)));
   }
 }
 
