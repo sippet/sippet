@@ -8,6 +8,10 @@ vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   'chromium_revision': '9070a8059b513108b09d30f96576b5ce11d0857a',
 
+  'sippet_git': 'https://github.com/sippet',
+  'webrtc_revision': 'dfc3d3d712e8424d2bb1000fe7df9d974ab18ead',
+  'talk_revision': '7347cb83dd690484343f27940dee408a583deee9',
+
   # PJSIP is used for testing purposes
   'pjsip_trunk': 'http://svn.pjsip.org/repos/pjproject/trunk',
   'pjsip_revision': '4796',  # Corresponds to version 2.2.1
@@ -30,6 +34,12 @@ deps = {
 
   'src/third_party/gflags/src':
     Var('chromium_git') + '/external/gflags/src@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
+
+  'src/third_party/libjingle/source/talk':
+    Var('sippet_git') + '/talk.git@' + Var('talk_revision'),
+
+  'src/third_party/webrtc':
+    Var('sippet_git') + '/webrtc.git@' + Var('webrtc_revision'),
 
   'src/resources/g729a':
     Var('siphon_trunk') + '/g729a/Data@' + Var('siphon_revision'),
