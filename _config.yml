@@ -11,7 +11,7 @@ title:            Sippet
 tagline:          'A Jekyll theme'
 description:      'C++ SIP stack based on Chrome source code.'
 url:              http://hyde.getpoole.com
-source:          /
+baseurl:          ../
 
 author:
   name:           'David Sippet'
