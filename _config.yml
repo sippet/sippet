@@ -1,0 +1,26 @@
+# Dependencies
+markdown:         redcarpet
+highlighter:      pygments
+
+# Permalinks
+permalink:        pretty
+relative_permalinks: true
+
+# Setup
+title:            Sippet
+tagline:          'A Jekyll theme'
+description:      'C++ SIP stack based on Chrome source code.'
+url:              http://hyde.getpoole.com
+source:          /
+
+author:
+  name:           'David Sippet'
+  url:            https://twitter.com/mdo
+
+paginate:         5
+
+# Custom vars
+version:          2.1.0
+
+github:
+  repo:           https://github.com/sippet/sippet
