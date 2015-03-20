@@ -1,6 +1,7 @@
 ---
 layout: page
 title: Compile for desktop platforms
+description: Build the Sippet library for desktop platforms
 ---
 
 This documentation was based on the same Chrome instructions:

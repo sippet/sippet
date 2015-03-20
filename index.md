@@ -1,6 +1,7 @@
 ---
 layout: default
 title: Home
+description: C++ SIP stack based on Chrome source code
 ---
 
 # Sippet

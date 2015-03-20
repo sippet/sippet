@@ -1,6 +1,7 @@
 ---
 layout: page
 title: Android build instructions
+description: Build the Sippet library for Android
 ---
 
 **NOTE:** this guide is closely related to the original [Android Build

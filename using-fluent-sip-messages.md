@@ -1,6 +1,7 @@
 ---
 layout: page
 title: Using fluent SIP Messages
+description: Discover how the fluent Sippet messages work
 ---
 
 Sippet messages are a set of classes that gives the high-level application
