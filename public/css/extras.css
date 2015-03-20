@@ -28,21 +28,21 @@
 /* Clear (arrow) */
 .arrow {
   float: right;
-  margin-top: 325px;
+  margin-top: 275px; /*325px*/
 }
 @media (min-width: 33.2em) {
   .arrow {
-    margin-top: 295px;
+    margin-top: 245px; /*295px*/
   }
 }
 @media (min-width: 38em) {
   .arrow {
-    margin-top: 450px;
+    margin-top: 400px; /*450px*/
   }
 }
 @media (min-width: 40.15em) {
   .arrow {
-    margin-top: 415px;
+    margin-top: 365px; /*415px*/
   }
 }
 @media (min-width: 48em) {
