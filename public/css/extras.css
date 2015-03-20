@@ -1,0 +1,56 @@
+/* Logo */
+.logo {
+  margin-left: auto;
+  margin-right: auto;
+  width: 75px;
+  height: 75px;
+}
+@media (min-width: 38em) {
+  .logo {
+    width: 95px;
+    height: 95px;
+  }
+}
+@media (min-width: 48em) {
+  .logo {
+    margin-left: 10px;
+    width: 100px;
+    height: 100px;
+  }
+}
+@media (min-width: 58em) {
+  .logo {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+/* Clear (arrow) */
+.arrow {
+  float: right;
+  margin-top: 325px;
+}
+@media (min-width: 33.2em) {
+  .arrow {
+    margin-top: 295px;
+  }
+}
+@media (min-width: 38em) {
+  .arrow {
+    margin-top: 450px;
+  }
+}
+@media (min-width: 40.15em) {
+  .arrow {
+    margin-top: 415px;
+  }
+}
+@media (min-width: 48em) {
+  .arrow {
+    float: none;
+    margin-top: 0;
+    width: 0;
+    height: 0;
+    visibility: hidden;
+  }
+}
