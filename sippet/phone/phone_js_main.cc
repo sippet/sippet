@@ -7,6 +7,7 @@
 #include "base/at_exit.h"
 #include "base/bind.h"
 #include "base/command_line.h"
+#include "base/threading/thread.h"
 #include "base/files/file_util.h"
 #include "base/i18n/icu_util.h"
 #include "base/message_loop/message_loop.h"
@@ -35,6 +36,23 @@ void Run(base::WeakPtr<Runner> runner, const base::FilePath& path) {
   runner->Run(Load(path), path.AsUTF8Unsafe());
 }
 
+void ConsoleLoop(Runner* runner, base::MessageLoop* parent_message_loop) {
+  std::cerr << "> ";
+  std::string line;
+  if (std::getline(std::cin, line)
+      && !base::StringPiece(line).starts_with("quit()")) {
+    parent_message_loop->PostTask(FROM_HERE,
+        base::Bind(&Runner::Run, base::Unretained(runner), line, "(shell)"));
+    base::MessageLoop::current()->PostTask(FROM_HERE,
+        base::Bind(&ConsoleLoop, runner, parent_message_loop));
+  } else {
+    std::cerr << std::endl;
+    parent_message_loop->PostTask(FROM_HERE,
+        base::Bind(&base::MessageLoop::Quit,
+                   base::Unretained(parent_message_loop)));
+  }
+}
+
 void OnRunShell(base::WeakPtr<Runner> runner, Arguments args) {
   v8::Isolate *isolate = runner->GetContextHolder()->isolate();
 
@@ -51,17 +69,12 @@ void OnRunShell(base::WeakPtr<Runner> runner, Arguments args) {
   runner->GetContextHolder()->context()->Global()
       ->Set(StringToV8(isolate, "console"), console);
 
-  while (true) {
-    std::cerr << "> ";
-    std::string line;
-    if (!std::getline(std::cin, line))
-      break;
-    if (base::StringPiece(line).starts_with("quit()"))
-      break;
-    runner->Run(line, "(shell)");
-  }
-  
-  std::cerr << std::endl;
+  base::Thread console_thread("Console");
+  console_thread.Start();
+  console_thread.message_loop()->PostTask(FROM_HERE,
+      base::Bind(&ConsoleLoop, runner.get(), base::MessageLoop::current()));
+
+  base::MessageLoop::current()->Run();
 }
 
 void RunShell(base::WeakPtr<Runner> runner) {
@@ -145,15 +158,14 @@ int main(int argc, char** argv) {
   base::CommandLine::StringVector args =
       base::CommandLine::ForCurrentProcess()->GetArgs();
   if (args.size() == 0) {
-    base::MessageLoop::current()->PostTask(FROM_HERE, base::Bind(
-        gin::RunShell, runner.GetWeakPtr()));
+    gin::RunShell(runner.GetWeakPtr());
   } else {
     for (base::CommandLine::StringVector::const_iterator it = args.begin();
       it != args.end(); ++it) {
       base::MessageLoop::current()->PostTask(FROM_HERE, base::Bind(
           gin::Run, runner.GetWeakPtr(), base::FilePath(*it)));
     }
+    message_loop.RunUntilIdle();
   }
-  message_loop.RunUntilIdle();
   return 0;
 }

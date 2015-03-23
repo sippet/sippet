@@ -224,6 +224,7 @@ gin::ObjectTemplateBuilder PhoneJsWrapper::GetObjectTemplateBuilder(
   builder.SetMethod("hangupAll", &PhoneJsWrapper::HangUpAll);
   builder.SetMethod("logout", &PhoneJsWrapper::Logout);
   builder.SetMethod("makeCall", &PhoneJsWrapper::MakeCall);
+  builder.SetMethod("on", &PhoneJsWrapper::On);
   return builder;
 }
 
@@ -232,13 +233,13 @@ Phone::State PhoneJsWrapper::state() const {
 }
 
 bool PhoneJsWrapper::Init(gin::Arguments args) {
-  sippet::phone::Settings settings;
-  if (args.Length() > 1)
+  if (args.Length() != 1)
     return false;
-  else if (args.Length() == 1) {
-    if (!args.GetNext(&settings))
-      return false;
-  }
+
+  sippet::phone::Settings settings;
+  if (!args.GetNext(&settings))
+    return false;
+
   return phone_->Init(settings);
 }
 
@@ -258,6 +259,34 @@ void PhoneJsWrapper::HangUpAll() {
 
 void PhoneJsWrapper::Logout() {
   phone_->Logout();
+}
+
+void PhoneJsWrapper::On(const std::string& key,
+                        v8::Handle<v8::Function> function) {
+  struct {
+    const char *key;
+    FunctionCall &function_call;
+  } pairs[] = {
+    { "networkError", on_network_error_ },
+    { "loginCompleted", on_login_completed_ },
+    { "incomingCall", on_incoming_call_ },
+    { "callError", on_call_error_ },
+    { "callRinging", on_call_ringing_ },
+    { "callEstablished", on_call_established_ },
+    { "callHungUp", on_call_hungup_ },
+  };
+
+  for (int i = 0; i < arraysize(pairs); i++) {
+    if (pairs[i].key == key) {
+      base::WeakPtr<gin::Runner> runner = gin::PerContextData::From(
+          isolate_->GetCurrentContext())->runner()->GetWeakPtr();
+      GetWrapper(runner->GetContextHolder()->isolate())->SetHiddenValue(
+          gin::StringToSymbol(isolate_, pairs[i].function_call.hidden_name()),
+          function);
+      pairs[i].function_call.set_runner(runner);
+      break;
+    }
+  }
 }
 
 void PhoneJsWrapper::OnNetworkError(int error_code) {

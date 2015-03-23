@@ -38,6 +38,9 @@ class PhoneJsWrapper :
   gin::Handle<CallJsWrapper> MakeCall(const std::string& destination);
   void HangUpAll();
   void Logout();
+  
+  // Set the callbacks
+  void On(const std::string& key, v8::Handle<v8::Function> function);
 
   // PhoneObserver implementation
   void OnNetworkError(int error_code) override;
@@ -78,6 +81,7 @@ class PhoneJsWrapper :
     ~FunctionCall();
     
     void set_runner(const base::WeakPtr<gin::Runner>& runner);
+    const char *hidden_name() const { return hidden_name_; };
     void Run(int argc, v8::Handle<v8::Value> *argv);
 
    private:
