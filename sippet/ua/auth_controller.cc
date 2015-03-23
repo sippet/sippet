@@ -59,7 +59,8 @@ int AuthController::HandleAuthChallenge(
   if (net::HttpAuth::AUTH_NONE == target) {
     // We found no challenge on the response -- let the transaction continue
     // so the app ends up displaying an error message.
-    InvalidateCurrentHandler(INVALIDATE_HANDLER_AND_CACHED_CREDENTIALS);
+    if (handler_.get())
+      InvalidateCurrentHandler(INVALIDATE_HANDLER_AND_CACHED_CREDENTIALS);
     return net::OK;
   }
 
