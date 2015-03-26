@@ -7,7 +7,7 @@ description: Use the Javascript Shell (v8) to test the phone library
 # Prerequisites
 
 After building Sippet for your platform, you will find an executable named
-'sippet_phone_v8_shell' in the output directory.
+`sippet_phone_v8_shell` in the output directory.
 
 When you run it without parameters, you might get a shell line the following:
 
