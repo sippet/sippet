@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "sippet/phone/phone.h"
 #include "sippet/phone/call_impl.h"
 #include "sippet/phone/phone_impl.h"
 
 #include "base/callback.h"
 #include "net/base/net_errors.h"
 #include "re2/re2.h"
-#include "sippet/phone/phone.h"
 #include "sippet/message/status_code.h"
 
 namespace {
@@ -178,11 +178,19 @@ void CallImpl::SendDtmf(const std::string& digits) {
 }
 
 bool CallImpl::InitializePeerConnection(
-      webrtc::PeerConnectionFactoryInterface *peer_connection_factory) {
+    webrtc::PeerConnectionFactoryInterface *peer_connection_factory,
+    const Settings::IceServers& ice_servers) {
   webrtc::PeerConnectionInterface::RTCConfiguration config;
-  //webrtc::PeerConnectionInterface::IceServer server;
-  //server.uri = "stun:stun.l.google.com:19302";
-  //config.servers.push_back(server);
+  if (ice_servers.size() > 0) {
+    for (Settings::IceServers::const_iterator i = ice_servers.begin(),
+         ie = ice_servers.end(); i != ie; i++) {
+      webrtc::PeerConnectionInterface::IceServer server;
+      server.uri = i->uri();
+      server.username = i->username();
+      server.password = i->password();
+      config.servers.push_back(server);
+    }
+  }
 
   peer_connection_ = peer_connection_factory->CreatePeerConnection(config,
     nullptr, nullptr, nullptr, this);
@@ -213,8 +221,9 @@ void CallImpl::DeletePeerConnection() {
 }
 
 void CallImpl::OnMakeCall(
-  webrtc::PeerConnectionFactoryInterface *peer_connection_factory) {
-  InitializePeerConnection(peer_connection_factory);
+    webrtc::PeerConnectionFactoryInterface *peer_connection_factory,
+    const Settings::IceServers& ice_servers) {
+  InitializePeerConnection(peer_connection_factory, ice_servers);
   // TODO: handle errors
 
   CreateOffer();
@@ -238,14 +247,14 @@ void CallImpl::OnIceComplete() {
 
   static std::pair<const char*, const char*> replacements[] {
     std::make_pair("a=group:[^\r\n]*\r?\n", ""),
-      std::make_pair("a=msid-[^\r\n]*\r?\n", ""),
-      std::make_pair("RTP/AVPF", "RTP/AVP"),
-      std::make_pair("a=ice-[^\r\n]*\r?\n", ""),
-      std::make_pair("a=mid:[^\r\n]*\r?\n", ""),
-      std::make_pair("a=rtcp-mux[^\r\n]*\r?\n", ""),
-      std::make_pair("a=extmap:[^\r\n]*\r?\n", ""),
-      std::make_pair("a=ssrc:[^\r\n]*\r?\n", ""),
-      std::make_pair("a=candidate:[^\r\n]*\r?\n", ""),
+    std::make_pair("a=msid-[^\r\n]*\r?\n", ""),
+    std::make_pair("RTP/AVPF", "RTP/AVP"),
+    std::make_pair("a=ice-[^\r\n]*\r?\n", ""),
+    std::make_pair("a=mid:[^\r\n]*\r?\n", ""),
+    std::make_pair("a=rtcp-mux[^\r\n]*\r?\n", ""),
+    std::make_pair("a=extmap:[^\r\n]*\r?\n", ""),
+    std::make_pair("a=ssrc:[^\r\n]*\r?\n", ""),
+    std::make_pair("a=candidate:[^\r\n]*\r?\n", ""),
   };
 
   for (int i = 0; i < arraysize(replacements); ++i) {

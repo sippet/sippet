@@ -8,7 +8,8 @@ namespace sippet {
 namespace phone {
 
 Settings::Settings() :
-  disable_encryption_(false) {
+  disable_encryption_(false),
+  disable_sctp_data_channels_(false) {
 }
 
 Settings::~Settings() {

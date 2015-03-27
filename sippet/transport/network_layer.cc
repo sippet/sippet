@@ -127,6 +127,7 @@ int NetworkLayer::GetOriginOf(const EndPoint& destination, EndPoint *origin) {
 int NetworkLayer::Send(const scoped_refptr<Message> &message,
                        const net::CompletionCallback& callback) {
   DCHECK(thread_checker_.CalledOnValidThread());
+  LOG(INFO) << message->ToString();
   if (Message::Outgoing != message->direction()) {
     DVLOG(1) << "Trying to send an incoming message";
     return net::ERR_UNEXPECTED;

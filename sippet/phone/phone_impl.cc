@@ -152,7 +152,7 @@ bool PhoneImpl::Init(const Settings& settings) {
     return false;
   }
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&PhoneImpl::OnInit, base::Unretained(this))
+    base::Bind(&PhoneImpl::OnInit, base::Unretained(this), settings)
   );
   return true;
 }
@@ -191,12 +191,21 @@ scoped_refptr<Call> PhoneImpl::MakeCall(const std::string& destination) {
     return nullptr;
   }
   base::AutoLock lock(lock_);
-  scoped_refptr<CallImpl> call(new CallImpl(
-      SipURI(scheme_ + ":" + destination + "@" + host_), this));
+  SipURI destination_uri;
+  if (destination.find('@') == std::string::npos) {
+    destination_uri = SipURI(scheme_ + ":" + destination + "@" + host_);
+  } else {
+    destination_uri = SipURI(destination);
+  }
+  if (!destination_uri.is_valid()) {
+    DVLOG(1) << "Invalid destination";
+    return nullptr;
+  }
+  scoped_refptr<CallImpl> call(new CallImpl(destination_uri, this));
   calls_.push_back(call);
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnMakeCall, base::Unretained(call.get()),
-      base::Unretained(peer_connection_factory_.get()))
+      base::Unretained(peer_connection_factory_.get()), ice_servers_)
   );
   return call;
 }
@@ -225,7 +234,7 @@ void PhoneImpl::RemoveCall(const scoped_refptr<Call>& call) {
     calls_.erase(i);
 }
 
-bool PhoneImpl::InitializePeerConnectionFactory() {
+bool PhoneImpl::InitializePeerConnectionFactory(const Settings& settings) {
   DCHECK(peer_connection_factory_.get() == nullptr);
 
   // To allow sending to the signaling/worker threads.
@@ -239,8 +248,8 @@ bool PhoneImpl::InitializePeerConnectionFactory() {
   }
 
   webrtc::PeerConnectionFactoryInterface::Options options;
-  options.disable_encryption = true;
-  options.disable_sctp_data_channels = true;
+  options.disable_encryption = settings.disable_encryption();
+  options.disable_sctp_data_channels = settings.disable_sctp_data_channels();
   peer_connection_factory_->SetOptions(options);
   return true;
 }
@@ -249,7 +258,7 @@ void PhoneImpl::DeletePeerConnectionFactory() {
   peer_connection_factory_ = nullptr;
 }
 
-void PhoneImpl::OnInit() {
+void PhoneImpl::OnInit(const Settings& settings) {
   base::MessageLoop *message_loop = signalling_thread_.message_loop();
   refresh_timer_.reset(new base::OneShotTimer<PhoneImpl>);
 
@@ -286,10 +295,25 @@ void PhoneImpl::OnInit() {
   user_agent_->SetNetworkLayer(network_layer_.get());
   user_agent_->AppendHandler(this);
 
-  InitializePeerConnectionFactory();
+  InitializePeerConnectionFactory(settings);
+
+  // Initialize the route-set, if available
+  if (settings.route_set().size() > 0) {
+    user_agent_->set_route_set(settings.route_set());
+  }
+
+  // Save the ICE server list for later, while initializing
+  // a PeerConnection instance.
+  ice_servers_ = settings.ice_servers();
 }
 
 void PhoneImpl::OnDestroy() {
+  for (CallsVector::iterator i = calls_.begin(), ie = calls_.end();
+       i != ie; i++) {
+    (*i)->OnDestroy();
+  }
+  calls_.clear();
+
   channel_factory_.reset();
   auth_handler_factory_.reset();
   host_resolver_.reset();

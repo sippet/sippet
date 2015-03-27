@@ -13,8 +13,6 @@ namespace sippet {
 
 namespace {
 
-const net::SSLConfig kDefaultSSLConfig;
-
 bool ParseHostPortPair(const net::HostPortPair &destination,
                        net::AddressList *addrlist) {
   std::string host;
@@ -578,8 +576,9 @@ void TLSChannelAdapter::OnConnected(int result) {
     scoped_ptr<net::ClientSocketHandle> connection(new net::ClientSocketHandle);
     connection->SetSocket(tcp_socket_.Pass());
 
+    net::SSLConfig config;
     ssl_socket_ = socket_factory_->CreateSSLClientSocket(
-      connection.Pass(), host_and_port, kDefaultSSLConfig, context_);
+      connection.Pass(), host_and_port, config, context_);
     if (!ssl_socket_.get()) {
       LOG(WARNING) << "Failed to create socket.";
     }

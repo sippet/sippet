@@ -62,7 +62,8 @@ class CallImpl :
   ~CallImpl() override;
 
   bool InitializePeerConnection(
-        webrtc::PeerConnectionFactoryInterface *peer_connection_factory);
+        webrtc::PeerConnectionFactoryInterface *peer_connection_factory,
+        const Settings::IceServers& ice_servers);
   void DeletePeerConnection();
   void CreateOffer();
   void OnCreateOfferCompleted(const std::string& offer);
@@ -106,7 +107,8 @@ class CallImpl :
   // Signalling thread callbacks
   //
   void OnMakeCall(
-        webrtc::PeerConnectionFactoryInterface *peer_connection_factory);
+        webrtc::PeerConnectionFactoryInterface *peer_connection_factory,
+        const Settings::IceServers& ice_servers);
   void OnAnswer(int code);
   void OnHangup();
   void OnSendDtmf(const std::string& digits);

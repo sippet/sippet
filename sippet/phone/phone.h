@@ -55,6 +55,7 @@ class IceServer {
 class Settings {
  public:
   typedef std::vector<IceServer> IceServers;
+  typedef std::vector<GURL> RouteSet;
 
   Settings();
   ~Settings();
@@ -62,6 +63,14 @@ class Settings {
   // Enable/disable streaming encryption
   void set_disable_encryption(bool value) { disable_encryption_ = value; }
   bool disable_encryption() const { return disable_encryption_; }
+
+  // Enable/disable SCTP data channels
+  void set_disable_sctp_data_channels(bool value) {
+    disable_sctp_data_channels_ = value;
+  }
+  bool disable_sctp_data_channels() const {
+    return disable_sctp_data_channels_;
+  }
 
   // ICE servers list
   IceServers &ice_servers() {
@@ -71,9 +80,19 @@ class Settings {
     return ice_servers_;
   }
 
+  // Route-set
+  RouteSet &route_set() {
+    return route_set_;
+  }
+  const RouteSet &route_set() const {
+    return route_set_;
+  }
+
  private:
-  std::vector<IceServer> ice_servers_;
+  IceServers ice_servers_;
   bool disable_encryption_;
+  bool disable_sctp_data_channels_;
+  RouteSet route_set_;
 };
 
 // This class stores account data used for logging into the server.

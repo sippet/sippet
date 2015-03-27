@@ -70,6 +70,10 @@ TEST(SipURI, Parser) {
     {"sip:user;par=u%40example.net@example.com", true,
      "example.com", -1, 5060, true, "user;par=u@example.net", false,
      "", "", ""},
+    // lr parameter
+    {"sip:example.com;lr", true,
+     "example.com", -1, 5060, false, "", false,
+     "", ";lr", ""},
   };
 
   for (int i = 0; i < arraysize(tests); ++i) {
@@ -123,6 +127,16 @@ TEST(SipURI, OnlyHeaders) {
     uri.header("To");
   EXPECT_TRUE(h2.first);
   EXPECT_EQ("sip:alice@atlanta.com", h2.second);
+}
+
+TEST(SipURI, LooseRoutingParameter) {
+  SipURI uri("sip:192.168.0.1;lr");
+  ASSERT_TRUE(uri.is_valid());
+  
+  std::pair<bool, std::string> p =
+    uri.parameter("lr");
+  EXPECT_TRUE(p.first);
+  EXPECT_EQ("", p.second);
 }
 
 TEST(TelURI, Parser) {

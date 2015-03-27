@@ -112,6 +112,33 @@ scoped_refptr<Request> UserAgent::CreateRequest(
     contact->front().param_set("reg-id", "1");
   }
   request->push_back(contact.Pass());
+
+  // Adds the Route-Set, case it exists
+  if (route_set_.size() > 0) {
+    SipURI first_uri(route_set_.front().spec());
+    if (first_uri.is_valid()) {
+      scoped_ptr<Route> route(new Route);
+      if (first_uri.parameter("lr").first) {
+        for (UrlListType::iterator i = route_set_.begin(),
+             ie = route_set_.end(); i != ie; i++) {
+          route->push_back(RouteParam(*i));
+        }
+      } else {
+        if (route_set_.size() > 1) {
+          for (UrlListType::iterator i = route_set_.begin() + 1,
+               ie = route_set_.end(); i != ie; i++) {
+            route->push_back(RouteParam(*i));
+          }
+        }
+        route->push_back(RouteParam(request->request_uri()));
+        // Removed some invalid parameters
+        request->set_request_uri(
+          GURL(first_uri.GetWithEmptyHeaders().spec()));
+      }
+      request->push_back(route.Pass());
+    }
+  }
+
   return request;
 }
 

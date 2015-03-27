@@ -60,8 +60,7 @@ class has_parameters {
     param_iterator it = param_find(key);
     if (it == param_end()) {
       params_.push_back(std::make_pair(key, value));
-    }
-    else {
+    } else {
       (*it).second = value;
     }
   }

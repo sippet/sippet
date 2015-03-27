@@ -50,7 +50,7 @@ class PhoneImpl :
   PhoneImpl(PhoneObserver *phone_observer);
   ~PhoneImpl() override;
 
-  bool InitializePeerConnectionFactory();
+  bool InitializePeerConnectionFactory(const Settings& settings);
   void DeletePeerConnectionFactory();
 
   State state_;
@@ -101,6 +101,7 @@ class PhoneImpl :
   scoped_ptr<NetworkLayer> network_layer_;
   scoped_ptr<ChromeChannelFactory> channel_factory_;
   scoped_ptr<base::OneShotTimer<PhoneImpl>> refresh_timer_;
+  Settings::IceServers ice_servers_;
 
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
     peer_connection_factory_;
@@ -122,7 +123,7 @@ class PhoneImpl :
   //
   // Signalling thread callbacks
   //
-  void OnInit();
+  void OnInit(const Settings& settings);
   void OnDestroy();
   void OnLogin(const Account &account);
   void OnLogout();

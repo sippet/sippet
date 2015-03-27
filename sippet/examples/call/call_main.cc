@@ -10,6 +10,7 @@
 #include "base/timer/timer.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/strings/stringprintf.h"
+#include "base/strings/string_split.h"
 #include "base/i18n/icu_util.h"
 #include "base/message_loop/message_loop.h"
 #include "base/threading/thread_checker.h"
@@ -31,6 +32,7 @@ static void PrintUsage() {
             << " --username=user"
             << " --password=pass"
             << " --dial=phone-number"
+            << " --route=route-addresses"
             << " \\" << std::endl
             << "    [--tcp|--udp|--tls|--ws|--wss]\n";
 }
@@ -319,6 +321,11 @@ int main(int argc, char **argv) {
     server = command_line->GetSwitchValueASCII("server");
   }
 
+  std::string route_set;
+  if (command_line->HasSwitch("route")) {
+    route_set = command_line->GetSwitchValueASCII("route");
+  }
+
   struct {
     const char *cmd_switch_;
     const char *registrar_uri_;
@@ -349,6 +356,15 @@ int main(int argc, char **argv) {
 
   Settings settings;
   settings.set_disable_encryption(true);
+  settings.set_disable_sctp_data_channels(true);
+  if (route_set.size() > 0) {
+    std::vector<std::string> set;
+    base::SplitString(route_set, ',', &set);
+    for (std::vector<std::string>::iterator i = set.begin(), ie = set.end();
+         i != ie; i++) {
+      settings.route_set().push_back(GURL(*i));
+    }
+  }
 
   Conductor conductor(settings, account, destination, message_loop);
   if (!conductor.Start())
