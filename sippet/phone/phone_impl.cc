@@ -507,7 +507,8 @@ unsigned int PhoneImpl::GetContactExpiration(
   GURL local_uri = request_contact->front().address();
   ContactInfo *local_contact = nullptr;
   for (Message::iterator i = incoming_response->find_first<Contact>(),
-    ie = incoming_response->end(); i != ie; ++i) {
+       ie = incoming_response->end(); i != ie;
+       i = incoming_response->find_next<Contact>(i)) {
     Contact *contact = dyn_cast<Contact>(i);
     for (Contact::iterator j = contact->begin(), je = contact->end();
       j != je; ++j) {
