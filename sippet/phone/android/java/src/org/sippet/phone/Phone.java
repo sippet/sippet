@@ -15,7 +15,19 @@ public class Phone extends RunOnUIThread<Delegate> {
     public enum State {
         OFFLINE,
         CONNECTING,
-        ONLINE,
+        ONLINE;
+
+        public static State fromInteger(int i) {
+            switch (i) {
+                case 0:
+                    return OFFLINE;
+                case 1:
+                    return CONNECTING;
+                case 2:
+                    return ONLINE;
+            }
+            return null;
+        }
     };
 
     /**
@@ -63,7 +75,7 @@ public class Phone extends RunOnUIThread<Delegate> {
      * Get the |Phone| state.
      */
     public State getState() {
-        return State.values()[nativeGetState(instance)];
+        return State.fromInteger(nativeGetState(instance));
     }
 
     /**
@@ -139,7 +151,7 @@ public class Phone extends RunOnUIThread<Delegate> {
     private static native void nativeInitialize();
     private native long nativeCreate();
     private native boolean nativeInit(long nativeJavaPhone, Settings settings);
-    private native long nativeGetState(long nativeJavaPhone);
+    private native int nativeGetState(long nativeJavaPhone);
     private native void nativeRegister(long nativeJavaPhone);
     private native void nativeUnregister(long nativeJavaPhone);
     private native long nativeMakeCall(long nativeJavaPhone, String target);

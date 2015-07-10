@@ -21,6 +21,14 @@
           },
           'includes': [ '../build/jni_generator.gypi' ],
         },
+        {
+          'target_name': 'sippet_phone_java',
+          'type': 'none',
+          'variables': {
+            'java_in_dir': '../sippet/phone/android/java',
+          },
+          'includes': [ '../build/java.gypi' ],
+        },
       ],
     }],
   ],

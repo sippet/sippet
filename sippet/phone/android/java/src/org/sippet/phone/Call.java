@@ -7,6 +7,8 @@ package org.sippet.phone;
 import org.chromium.base.JNINamespace;
 import org.chromium.base.CalledByNative;
 
+import java.util.Date;
+
 /**
  * Base Phone class.
  */
@@ -16,19 +18,45 @@ public class Call extends RunOnUIThread<Delegate> {
      * Call direction: incoming or outgoing.
      */
     enum Direction {
-        INCOMING = 0,
-        OUTGOING = 1
+        INCOMING,
+        OUTGOING;
+
+        public static Direction fromInteger(int i) {
+            switch (i) {
+                case 0:
+                    return INCOMING;
+                case 1:
+                    return OUTGOING;
+            }
+            return null;
+        }
     };
 
     /**
      * Call state: corresponds to the |Call| lifecycle.
      */
     enum State {
-        CALLING = 0,
-        RINGING = 1,
-        ESTABLISHED = 2,
-        HUNGUP = 3,
-        ERROR = 4
+        CALLING,
+        RINGING,
+        ESTABLISHED,
+        HUNGUP,
+        ERROR;
+
+        public static State fromInteger(int i) {
+            switch (i) {
+                case 0:
+                    return CALLING;
+                case 1:
+                    return RINGING;
+                case 2:
+                    return ESTABLISHED;
+                case 3:
+                    return HUNGUP;
+                case 4:
+                    return ERROR;
+            }
+            return null;
+        }
     };
 
     /**
@@ -67,14 +95,14 @@ public class Call extends RunOnUIThread<Delegate> {
      * Gets the current |Call| direction.
      */
     public Direction getDirection() {
-        return Direction.values()[nativeGetDirection(instance)];
+        return Direction.fromInteger(nativeGetDirection(instance));
     }
 
     /**
      * Get the current |Call| state.
      */
     public State getState() {
-        return State.values()[nativeGetState(instance)];
+        return State.fromInteger(nativeGetState(instance));
     }
 
     /**
@@ -205,8 +233,8 @@ public class Call extends RunOnUIThread<Delegate> {
         });
     }
 
-    private native long nativeGetDirection(long nativeJavaCall);
-    private native long nativeGetState(long nativeJavaCall);
+    private native int nativeGetDirection(long nativeJavaCall);
+    private native int nativeGetState(long nativeJavaCall);
     private native String nativeGetUri(long nativeJavaCall);
     private native String nativeGetName(long nativeJavaCall);
     private native long nativeGetCreationTime(long nativeJavaCall);
