@@ -11,7 +11,7 @@ import org.chromium.base.AccessedByNative;
  * Base Phone class.
  */
 @JNINamespace("sippet::phone")
-public class Call {
+public class Call extends RunOnUIThread<Delegate> {
     /**
      * Call direction: incoming or outgoing.
      */
@@ -59,16 +59,9 @@ public class Call {
     /**
      * Create a |Call| instance.
      */
-    protected Call(long instance) {
+    Call(long instance) {
         this.instance = instance;
     };
-
-    /**
-     * Sets the |Delegate| instance that will receive the callbacks.
-     */
-    public void setDelegate(Delegate delegate) {
-        this.delegate = delegate;
-    }
 
     /**
      * Gets the current |Call| direction.
@@ -106,7 +99,7 @@ public class Call {
     }
  
     /**
-     * Get the when the |Call| has started (established).
+     * Get the time when the |Call| has started (established).
      */
     public Date getStartTime() {
         return new Date(nativeCallGetStartTime(instance));
@@ -175,12 +168,11 @@ public class Call {
     }
 
     private long instance;
-    private Delegate delegate;
 
     @AccessedByNative
     private void runOnError(int statusCode, String statusText) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            public void run() {
+        post(new Runnable<Delegate>() {
+            public void run(Delegate delegate) {
                 delegate.onError(statusCode, statusText);
             }
         });
@@ -188,8 +180,8 @@ public class Call {
 
     @AccessedByNative
     private void runOnRinging() {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            public void run() {
+        post(new Runnable<Delegate>() {
+            public void run(Delegate delegate) {
                 delegate.onRinging();
             }
         });
@@ -197,8 +189,8 @@ public class Call {
 
     @AccessedByNative
     private void runOnEstablished() {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            public void run() {
+        post(new Runnable<Delegate>() {
+            public void run(Delegate delegate) {
                 delegate.onEstablished();
             }
         });
@@ -206,8 +198,8 @@ public class Call {
 
     @AccessedByNative
     private void runOnHungUp() {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            public void run() {
+        post(new Runnable<Delegate>() {
+            public void run(Delegate delegate) {
                 delegate.onHungUp();
             }
         });

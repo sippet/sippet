@@ -11,7 +11,7 @@ import org.chromium.base.AccessedByNative;
  * Base Phone class.
  */
 @JNINamespace("sippet::phone")
-public class Phone {
+public class Phone extends RunOnUIThread<Delegate> {
     public enum State {
         OFFLINE,
         CONNECTING,
@@ -48,8 +48,7 @@ public class Phone {
     /**
      * Create a |Phone| instance.
      */
-    public Phone(Delegate delegate) {
-        this.delegate = delegate;
+    public Phone() {
         this.instance = nativePhoneCreate();
     }
 
@@ -61,14 +60,14 @@ public class Phone {
     }
 
     /**
-     * Get the current phone state.
+     * Get the |Phone| state.
      */
     public State getState() {
         return State.values()[nativePhoneGetState(instance)];
     }
 
     /**
-     * Registers the Phone to receive incoming requests.
+     * Registers the |Phone| to receive incoming requests.
      * Upon successful registration, the Phone will emit a registered event.
      */
     public void register() {
@@ -76,14 +75,14 @@ public class Phone {
     }
 
     /**
-     * Unregisters the UA.
+     * Unregisters the |Phone|.
      */
     public void unregister() {
         nativePhoneUnregister(instance);
     }
 
     /**
-     * Starts a call to the given destination.
+     * Starts a |Call| to the given destination.
      *
      * @param target   Destination of the call. String representing a
      *                 destination, username, or a complete SIP URI.
@@ -109,12 +108,11 @@ public class Phone {
     }
 
     private long instance;
-    private Delegate delegate;
 
     @AccessedByNative
     private void runOnNetworkError(int errorCode) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            public void run() {
+        post(new Runnable<Delegate>() {
+            public void run(Delegate delegate) {
                 delegate.onNetworkError(errorCode);
             }
         });
@@ -122,8 +120,8 @@ public class Phone {
 
     @AccessedByNative
     private void runOnRegisterCompleted(int statusCode, String statusText) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            public void run() {
+        post(new Runnable<Delegate>() {
+            public void run(Delegate delegate) {
                 delegate.onRegisterCompleted(statusCode, statusText);
             }
         });
@@ -131,8 +129,8 @@ public class Phone {
 
     @AccessedByNative
     private void runOnIncomingCall(long instance) {
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            public void run() {
+        post(new Runnable<Delegate>() {
+            public void run(Delegate delegate) {
                 delegate.onIncomingCall(new Call(instance));
             }
         });
