@@ -6,6 +6,24 @@
   'includes': [
     '../build/win_precompile.gypi',
   ],
+  'conditions': [
+    ['OS == "android"', {
+      'targets': [
+        {
+          'target_name': 'sippet_phone_jni_headers',
+          'type': 'none',
+          'sources': [
+            'phone/android/java/src/org/sippet/phone/Phone.java',
+            'phone/android/java/src/org/sippet/phone/Call.java',
+          ],
+          'variables': {
+            'jni_gen_package': 'sippet',
+          },
+          'includes': [ '../build/jni_generator.gypi' ],
+        },
+      ],
+    }],
+  ],
   'targets': [
     {
       'target_name': 'sippet_phone',

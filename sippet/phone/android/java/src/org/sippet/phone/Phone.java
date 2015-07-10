@@ -5,12 +5,12 @@
 package org.sippet.phone;
 
 import org.chromium.base.JNINamespace;
-import org.chromium.base.AccessedByNative;
+import org.chromium.base.CalledByNative;
 
 /**
  * Base Phone class.
  */
-@JNINamespace("sippet::phone")
+@JNINamespace("sippet::phone::android")
 public class Phone extends RunOnUIThread<Delegate> {
     public enum State {
         OFFLINE,
@@ -42,28 +42,28 @@ public class Phone extends RunOnUIThread<Delegate> {
      * Initialize the |Phone| system.
      */
     public static void initialize() {
-        nativePhoneInitialize();
+        nativeInitialize();
     }
 
     /**
      * Create a |Phone| instance.
      */
     public Phone() {
-        this.instance = nativePhoneCreate();
+        this.instance = nativeCreate();
     }
 
     /**
      * Initializes the |Phone| instance.
      */
     boolean init(Settings settings) {
-        nativePhoneInit(instance, settings);
+        nativeInit(instance, settings);
     }
 
     /**
      * Get the |Phone| state.
      */
     public State getState() {
-        return State.values()[nativePhoneGetState(instance)];
+        return State.values()[nativeGetState(instance)];
     }
 
     /**
@@ -71,14 +71,14 @@ public class Phone extends RunOnUIThread<Delegate> {
      * Upon successful registration, the Phone will emit a registered event.
      */
     public void register() {
-        nativePhoneRegister(instance);
+        nativeRegister(instance);
     }
 
     /**
      * Unregisters the |Phone|.
      */
     public void unregister() {
-        nativePhoneUnregister(instance);
+        nativeUnregister(instance);
     }
 
     /**
@@ -89,27 +89,27 @@ public class Phone extends RunOnUIThread<Delegate> {
      * @return         A call object.
      */
     public Call makeCall(String target) {
-        return new Call(nativePhoneMakeCall(instance, target));
+        return new Call(nativeMakeCall(instance, target));
     }
 
     /**
      * Hangs up all active calls.
      */
     public void hangUpAll() {
-        nativePhoneHangUpAll(instance);
+        nativeHangUpAll(instance);
     }
 
     /**
      * Disposes the |Phone| inner instance.
      */
     protected void finalize() throws Throwable {
-        nativePhoneFinalize(instance);
+        nativeFinalize(instance);
         super.finalize();
     }
 
     private long instance;
 
-    @AccessedByNative
+    @CalledByNative
     private void runOnNetworkError(int errorCode) {
         post(new Runnable<Delegate>() {
             public void run(Delegate delegate) {
@@ -118,7 +118,7 @@ public class Phone extends RunOnUIThread<Delegate> {
         });
     }
 
-    @AccessedByNative
+    @CalledByNative
     private void runOnRegisterCompleted(int statusCode, String statusText) {
         post(new Runnable<Delegate>() {
             public void run(Delegate delegate) {
@@ -127,7 +127,7 @@ public class Phone extends RunOnUIThread<Delegate> {
         });
     }
 
-    @AccessedByNative
+    @CalledByNative
     private void runOnIncomingCall(long instance) {
         post(new Runnable<Delegate>() {
             public void run(Delegate delegate) {
@@ -136,13 +136,13 @@ public class Phone extends RunOnUIThread<Delegate> {
         });
     }
 
-    private static native void nativePhoneInitialize();
-    private native long nativePhoneCreate();
-    private native boolean nativePhoneInit(long instance, Settings settings);
-    private native long nativePhoneGetState(long instance);
-    private native void nativePhoneRegister(long instance);
-    private native void nativePhoneUnregister(long instance);
-    private native long nativePhoneMakeCall(long instance, String target);
-    private native void nativePhoneHangUpAll(long instance);
-    private native void nativePhoneFinalize(long instance);
+    private static native void nativeInitialize();
+    private native long nativeCreate();
+    private native boolean nativeInit(long nativeJavaPhone, Settings settings);
+    private native long nativeGetState(long nativeJavaPhone);
+    private native void nativeRegister(long nativeJavaPhone);
+    private native void nativeUnregister(long nativeJavaPhone);
+    private native long nativeMakeCall(long nativeJavaPhone, String target);
+    private native void nativeHangUpAll(long nativeJavaPhone);
+    private native void nativeFinalize(long nativeJavaPhone);
 }
