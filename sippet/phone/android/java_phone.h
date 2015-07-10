@@ -7,7 +7,7 @@
 
 #include <jni.h>
 
-#include "sippet/phone/phone_impl.h"
+#include "sippet/phone/phone.h"
 
 namespace sippet {
 namespace phone {
@@ -16,33 +16,24 @@ namespace android {
 // A Java Phone implementation.
 class JavaPhone {
  public:
-  JavaPhone();
+  JavaPhone(scoped_refptr<Phone> phone_instance);
   virtual ~JavaPhone();
 
   // Called from java.
-  static void Initialize(JNIEnv* env, jclass jcaller);
-  static jlong Create(JNIEnv* env, jobject jcaller);
   jboolean Init(JNIEnv* env, jobject jcaller,
-                jlong instance,
                 jobject settings);
-  jlong GetState(JNIEnv* env, jobject jcaller,
-                 jlong instance);
-  void Register(JNIEnv* env, jobject jcaller,
-                jlong instance);
-  void Unregister(JNIEnv* env, jobject jcaller,
-                  jlong instance);
+  jlong GetState(JNIEnv* env, jobject jcaller);
+  void Register(JNIEnv* env, jobject jcaller);
+  void Unregister(JNIEnv* env, jobject jcaller);
   jlong MakeCall(JNIEnv* env, jobject jcaller,
-                 jlong instance,
                  jstring target);
-  void HangUpAll(JNIEnv* env, jobject jcaller,
-                 jlong instance);
-  void Finalize(JNIEnv* env, jobject jcaller,
-                jlong instance);
+  void HangUpAll(JNIEnv* env, jobject jcaller);
+  void Finalize(JNIEnv* env, jobject jcaller);
 
   static bool RegisterBindings(JNIEnv* env);
 
  private:
-  scoped_ref_ptr<sippet::phone::Phone> phone_instance_;
+  scoped_refptr<Phone> phone_instance_;
 };
 
 }  // namespace android
