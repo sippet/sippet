@@ -22,13 +22,13 @@ class Phone;
 class Call :
   public base::RefCountedThreadSafe<Call> {
  public:
-  // Where the call is from
-  enum Type {
-    kTypeIncoming,
-    kTypeOutgoing
+  // Call direction: incoming or outgoing.
+  enum Direction {
+    kDirectionIncoming,
+    kDirectionOutgoing
   };
 
-  // Call state: the life cycle of the call
+  // Call state: corresponds to the |Call| lifecycle.
   enum State {
     kStateCalling,
     kStateRinging,
@@ -37,34 +37,63 @@ class Call :
     kStateError
   };
 
-  // Gets the current call type.
-  virtual Type type() const = 0;
+  // Call delegate.
+  class Delegate {
+   public:
+    // Called to inform a |Call| error.
+    virtual void OnError(int status_code,
+           const std::string& status_text) = 0;
 
-  // Gets the current call state.
+    // Called when callee phone starts ringing.
+    virtual void OnRinging() = 0;
+
+    // Called when callee picks up the phone.
+    virtual void OnEstablished() = 0;
+
+    // Called when callee hangs up.
+    virtual void OnHungUp() = 0;
+
+   protected:
+    // Dtor protected as objects shouldn't be deleted via this interface.
+    ~Delegate() {}
+  };
+
+  // Get the current |Call| direction.
+  virtual Direction direction() const = 0;
+
+  // Get the current |Call| state.
   virtual State state() const = 0;
 
-  // Gets the call URI
+  // Set the |Call| delegate.
+  virtual void set_delegate(Delegate *delegate) = 0;
+
+  // Get the |Call| URI
   virtual GURL uri() const = 0;
 
-  // Gets the caller username or number.
+  // Gets the callee username or number.
   virtual std::string name() const = 0;
 
-  // Get the time when the call was created
+  // Get the time when the |Call| was created
   virtual base::Time creation_time() const = 0;
 
-  // Get the when the call was started (established)
+  // Get the time when the |Call| has started (established)
   virtual base::Time start_time() const = 0;
 
-  // Get the time when the call was hung up
+  // Get the time when the |Call| was hung up
   virtual base::Time end_time() const = 0;
 
-  // Get the duration of the call
+  // Get the duration of the |Call|
   virtual base::TimeDelta duration() const = 0;
 
-  // Answers the call (only for incoming calls).
-  virtual bool Answer(int code = 200) = 0;
+  // Pick up the call (only for incoming calls). No effect if not in
+  // |kStateRinging| state.
+  virtual bool PickUp() = 0;
 
-  // Hangs up the call
+  // Reject the call (only for incoming calls). No effect if not in
+  // |kStateRinging| state.
+  virtual bool Reject() = 0;
+
+  // Hang up the call. No effect if not in |kStateEstablished| state.
   virtual bool HangUp() = 0;
 
   // Send DTMF digits

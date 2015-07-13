@@ -25,15 +25,17 @@ class CallImpl :
  private:
   DISALLOW_COPY_AND_ASSIGN(CallImpl);
  public:
-  Type type() const override;
+  Direction direction() const override;
   State state() const override;
+  void set_delegate(Delegate *delegate) override;
   GURL uri() const override;
   std::string name() const override;
   base::Time creation_time() const override;
   base::Time start_time() const override;
   base::Time end_time() const override;
   base::TimeDelta duration() const override;
-  bool Answer(int code = 200) override;
+  bool PickUp() override;
+  bool Reject() override;
   bool HangUp() override;
   void SendDtmf(const std::string& digits) override;
 
@@ -41,8 +43,9 @@ class CallImpl :
   friend class PhoneImpl;
   friend class base::RefCountedThreadSafe<Call>;
 
-  Type type_;
+  Direction direction_;
   State state_;
+  Delegate *delegate_;
   SipURI uri_;
   PhoneImpl *phone_;
   scoped_refptr<Request> last_request_;
@@ -109,7 +112,8 @@ class CallImpl :
   void OnMakeCall(
         webrtc::PeerConnectionFactoryInterface *peer_connection_factory,
         const Settings::IceServers& ice_servers);
-  void OnAnswer(int code);
+  void OnPickUp();
+  void OnReject();
   void OnHangup();
   void OnSendDtmf(const std::string& digits);
   void OnDestroy();

@@ -74,7 +74,8 @@ class UserAgent :
         const scoped_refptr<Request> &request,
         const scoped_refptr<Dialog> &dialog) = 0;
 
-    // While sending the request, a network error happened.
+    // While sending the request or receiving a response, a network error
+    // happened.
     virtual void OnTransportError(
         const scoped_refptr<Request> &request, int error,
         const scoped_refptr<Dialog> &dialog) = 0;

@@ -59,6 +59,8 @@
         ],
       },
       'sources': [
+        'phone/settings.h',
+        'phone/ice_server.h',
         'phone/phone.h',
         'phone/phone.cc',
         'phone/phone_impl.h',

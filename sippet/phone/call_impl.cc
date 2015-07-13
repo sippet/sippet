@@ -84,24 +84,29 @@ namespace sippet {
 namespace phone {
 
 CallImpl::CallImpl(const SipURI& uri, PhoneImpl* phone) :
-  type_(kTypeOutgoing), state_(kStateCalling), uri_(uri), phone_(phone) {
+  direction_(kDirectionOutgoing), state_(kStateCalling), uri_(uri),
+  phone_(phone), delegate_(nullptr) {
 }
 
 CallImpl::CallImpl(const scoped_refptr<Request> &invite,
                    PhoneImpl* phone) :
-  type_(kTypeIncoming), state_(kStateRinging), uri_(invite->request_uri()),
-  last_request_(invite), phone_(phone) {
+  direction_(kDirectionIncoming), state_(kStateRinging), uri_(invite->request_uri()),
+  last_request_(invite), phone_(phone), delegate_(nullptr) {
 }
 
 CallImpl::~CallImpl() {
 }
 
-CallImpl::Type CallImpl::type() const {
-  return type_;
+Call::Direction CallImpl::direction() const {
+  return direction_;
 }
 
 CallImpl::State CallImpl::state() const {
   return state_;
+}
+
+void CallImpl::set_delegate(Delegate *delegate) {
+  delegate_ = delegate;
 }
 
 GURL CallImpl::uri() const {
@@ -128,17 +133,31 @@ base::TimeDelta CallImpl::duration() const {
   return end_time_ - start_time_;
 }
 
-bool CallImpl::Answer(int code) {
+bool CallImpl::PickUp() {
   if (!last_request_ || Request::Incoming != last_request_->direction()) {
-    DVLOG(1) << "Impossible to answer an outgoing call";
+    DVLOG(1) << "Impossible to pick up an outgoing call";
     return false;
   }
   if (kStateRinging != state_) {
-    DVLOG(1) << "Invalid state to answer call";
+    DVLOG(1) << "Invalid state to pick up call";
     return false;
   }
   phone_->signalling_message_loop()->PostTask(FROM_HERE,
-    base::Bind(&CallImpl::OnAnswer, base::Unretained(this), code));
+    base::Bind(&CallImpl::OnPickUp, base::Unretained(this)));
+  return true;
+}
+
+bool CallImpl::Reject() {
+  if (!last_request_ || Request::Incoming != last_request_->direction()) {
+    DVLOG(1) << "Impossible to reject an outgoing call";
+    return false;
+  }
+  if (kStateRinging != state_) {
+    DVLOG(1) << "Invalid state to reject call";
+    return false;
+  }
+  phone_->signalling_message_loop()->PostTask(FROM_HERE,
+    base::Bind(&CallImpl::OnReject, base::Unretained(this)));
   return true;
 }
 
@@ -316,7 +335,7 @@ void CallImpl::OnCreateOfferCompleted(const std::string& offer) {
   int rv = phone_->user_agent()->Send(last_request_,
     base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    phone_->phone_observer()->OnNetworkError(rv);
+    phone_->delegate()->OnNetworkError(rv);
     return;
   }
 
@@ -349,7 +368,7 @@ void CallImpl::SendAck(const scoped_refptr<Response> &incoming_response) {
   int rv = phone_->user_agent()->Send(ack, base::Bind(
     &PhoneImpl::OnRequestSent, phone_));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    phone_->phone_observer()->OnNetworkError(rv);
+    phone_->delegate()->OnNetworkError(rv);
     return;
   }
 
@@ -368,7 +387,7 @@ void CallImpl::SendCancel() {
     int rv = phone_->user_agent()->Send(cancel,
       base::Bind(&PhoneImpl::OnRequestSent, phone_));
     if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-      phone_->phone_observer()->OnNetworkError(rv);
+      phone_->delegate()->OnNetworkError(rv);
       return;
     }
 
@@ -381,7 +400,7 @@ void CallImpl::SendBye() {
   int rv = phone_->user_agent()->Send(last_request_,
     base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    phone_->phone_observer()->OnNetworkError(rv);
+    phone_->delegate()->OnNetworkError(rv);
     return;
   }
 
@@ -423,12 +442,11 @@ void CallImpl::HandleCallingOrRingingResponse(
   // Now change state and process post changed state conditions
   state_ = next_state;
   if (kStateRinging == state_) {
-    phone_->phone_observer()->OnCallRinging(this);
+    delegate_->OnRinging();
   } else if (kStateEstablished == state_) {
-    phone_->phone_observer()->OnCallEstablished(this);
+    delegate_->OnEstablished();
   } else if (kStateError == state_) {
-    phone_->phone_observer()->OnCallError(response_code,
-      incoming_response->reason_phrase(), this);
+    delegate_->OnError(response_code, incoming_response->reason_phrase());
     phone_->RemoveCall(this);
   }
 }
@@ -460,7 +478,11 @@ void CallImpl::OnDestroy() {
   active_streams_.clear();
 }
 
-void CallImpl::OnAnswer(int code) {
+void CallImpl::OnPickUp() {
+  // TODO
+}
+
+void CallImpl::OnReject() {
   // TODO
 }
 
@@ -502,7 +524,7 @@ void CallImpl::OnIncomingRequest(
     phone_->user_agent()->Send(response,
       base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
     state_ = kStateHungUp;
-    phone_->phone_observer()->OnCallHungUp(this);
+    delegate_->OnHungUp();
     phone_->RemoveCall(this);
   }
 }
@@ -525,8 +547,8 @@ void CallImpl::OnTimedOut(
   if (kStateCalling == state_
       || kStateRinging == state_) {
     state_ = kStateError;
-    phone_->phone_observer()->OnCallError(SIP_REQUEST_TIMEOUT,
-      GetReasonPhrase(SIP_REQUEST_TIMEOUT), this);
+    delegate_->OnError(SIP_REQUEST_TIMEOUT,
+      GetReasonPhrase(SIP_REQUEST_TIMEOUT));
     phone_->RemoveCall(this);
   }
 }
@@ -537,8 +559,8 @@ void CallImpl::OnTransportError(
   if (kStateCalling == state_
       || kStateRinging == state_) {
     state_ = kStateError;
-    phone_->phone_observer()->OnCallError(SIP_SERVICE_UNAVAILABLE,
-      GetReasonPhrase(SIP_SERVICE_UNAVAILABLE), this);
+    delegate_->OnError(SIP_SERVICE_UNAVAILABLE,
+      GetReasonPhrase(SIP_SERVICE_UNAVAILABLE));
     phone_->RemoveCall(this);
   }
 }

@@ -18,10 +18,8 @@
 #include "sippet/phone/phone.h"
 
 using sippet::phone::Settings;
-using sippet::phone::Account;
 using sippet::phone::Phone;
 using sippet::phone::Call;
-using sippet::phone::PhoneObserver;
 
 #if defined(OSX)
 #include "base/mac/scoped_nsautorelease_pool.h"
@@ -37,12 +35,13 @@ static void PrintUsage() {
             << "    [--tcp|--udp|--tls|--ws|--wss]\n";
 }
 
-class Conductor
-  : public PhoneObserver {
+class Conductor :
+    public Phone::Delegate,
+    public Call::Delegate {
 public:
-  Conductor(const Settings& settings, const Account& account,
-    const std::string& destination, base::MessageLoop& message_loop) :
-    settings_(settings), account_(account), destination_(destination),
+  Conductor(const Settings& settings, const std::string& destination,
+    base::MessageLoop& message_loop) :
+    settings_(settings), destination_(destination),
     phone_(Phone::Create(this)), message_loop_(message_loop) {
   }
   virtual ~Conductor() {
@@ -62,7 +61,6 @@ public:
 
 private:
   Settings settings_;
-  Account account_;
   std::string destination_;
   scoped_refptr<Phone> phone_;
   base::MessageLoop &message_loop_;
@@ -78,44 +76,41 @@ private:
             base::Unretained(this)));
   }
 
-  void OnLoginCompleted(int status_code,
-    const std::string& status_text) override {
+  void OnRegisterCompleted(int status_code,
+      const std::string& status_text) override {
     message_loop_.PostTask(FROM_HERE,
         base::Bind(&Conductor::OnIOComplete,
             base::Unretained(this), net::OK));
   }
 
   void OnIncomingCall(const scoped_refptr<Call>& call) override {
-    LOG(ERROR) << "Not expected to receive call this time";
+    LOG(ERROR) << "Unexpected incoming call";
     message_loop_.PostTask(FROM_HERE,
         base::Bind(&Conductor::OnAbort,
             base::Unretained(this)));
   }
 
-  void OnCallError(int status_code,
-    const std::string& status_text,
-    const scoped_refptr<Call>& call) override {
+  void OnError(int status_code,
+      const std::string& status_text) override {
     LOG(ERROR) << "Call error: " << status_code << " " << status_text;
     message_loop_.PostTask(FROM_HERE,
-        base::Bind(&Conductor::OnAbort,
-            base::Unretained(this)));
+        base::Bind(&Conductor::OnIOComplete,
+            base::Unretained(this), net::ERR_UNEXPECTED));
   }
 
-  void OnCallRinging(const scoped_refptr<Call>& call) override {
+  void OnRinging() override {
     LOG(INFO) << "Ringing...";
   }
 
-  void OnCallEstablished(const scoped_refptr<Call>& call) override {
+  void OnEstablished() override {
     LOG(INFO) << "Established...";
-
-    //call->SendDtmf("00345");
   }
 
-  void OnCallHungUp(const scoped_refptr<Call>& call) override {
-    LOG(ERROR) << "Not expected hang up";
+  void OnHungUp() override {
+    LOG(ERROR) << "Hung up call";
     message_loop_.PostTask(FROM_HERE,
-        base::Bind(&Conductor::OnAbort,
-            base::Unretained(this)));
+        base::Bind(&Conductor::OnIOComplete,
+            base::Unretained(this), net::ERR_UNEXPECTED));
   }
 
   enum State {
@@ -169,8 +164,7 @@ private:
         rv = DoCallTimer();
         break;
       case STATE_CALL_TIMER_COMPLETE:
-        DCHECK_EQ(net::OK, rv);
-        rv = DoCallTimerComplete();
+        rv = DoCallTimerComplete(rv);
         break;
       case STATE_HANGUP:
         DCHECK_EQ(net::OK, rv);
@@ -197,7 +191,7 @@ private:
 
   int DoLogin() {
     next_state_ = STATE_LOGIN_COMPLETE;
-    if (!phone_->Login(account_))
+    if (!phone_->Register())
       return net::ERR_ABORTED;
     return net::ERR_IO_PENDING;
   }
@@ -214,8 +208,11 @@ private:
   }
 
   int DoMakeCallComplete(int result) {
-    next_state_ = STATE_CALL_TIMER;
-    return result;
+    if (result == net::OK)
+      next_state_ = STATE_CALL_TIMER;
+    else
+      next_state_ = STATE_LOGOUT;
+    return net::OK;
   }
 
   int DoCallTimer() {
@@ -227,8 +224,13 @@ private:
     return net::ERR_IO_PENDING;
   }
 
-  int DoCallTimerComplete() {
-    next_state_ = STATE_HANGUP;
+  int DoCallTimerComplete(int result) {
+    if (result == net::OK)
+      next_state_ = STATE_HANGUP;
+    else {
+      next_state_ = STATE_LOGOUT;
+      call_timeout_.Stop();
+    }
     return net::OK;
   }
 
@@ -245,7 +247,7 @@ private:
 
   int DoLogout() {
     next_state_ = STATE_LOGOUT_COMPLETE;
-    phone_->Logout();
+    phone_->Unregister();
     return net::OK;
   }
 
@@ -330,33 +332,33 @@ int main(int argc, char **argv) {
     const char *cmd_switch_;
     const char *registrar_uri_;
   } args[] = {
-    { "udp", "sip:%s" },
-    { "tcp", "sip:%s;transport=tcp" },
-    { "tls", "sips:%s" },
-    { "ws", "sip:%s;transport=ws" },
-    { "wss", "sips:%s;transport=ws" },
+    { "udp", "sip:%s@%s" },
+    { "tcp", "sip:%s@%s;transport=tcp" },
+    { "tls", "sips:%s@%s" },
+    { "ws", "sip:%s@%s;transport=ws" },
+    { "wss", "sips:%s@%s;transport=ws" },
   };
 
-  std::string host;
+  std::string uri;
   for (int i = 0; i < arraysize(args); i++) {
     if (command_line->HasSwitch(args[i].cmd_switch_)) {
-      host = base::StringPrintf(args[i].registrar_uri_,
-          server.c_str());
+      uri = base::StringPrintf(args[i].registrar_uri_,
+          username.c_str(), server.c_str());
       break;
     }
   }
-  if (host.empty()) {
-    host = base::StringPrintf(args[0].registrar_uri_,
-      server.c_str()); // Defaults to UDP
+  if (uri.empty()) {
+    uri = base::StringPrintf(args[0].registrar_uri_,
+      username.c_str(), server.c_str()); // Defaults to UDP
   }
 
   base::MessageLoopForIO message_loop;
 
-  Account account(username, password, host);
-
   Settings settings;
   settings.set_disable_encryption(true);
   settings.set_disable_sctp_data_channels(true);
+  settings.set_uri(GURL(uri));
+  settings.set_password(password);
   if (route_set.size() > 0) {
     std::vector<std::string> set;
     base::SplitString(route_set, ',', &set);
@@ -366,7 +368,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  Conductor conductor(settings, account, destination, message_loop);
+  Conductor conductor(settings, destination, message_loop);
   if (!conductor.Start())
     return -1;
 

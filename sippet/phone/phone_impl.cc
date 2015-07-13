@@ -79,59 +79,56 @@ class URLRequestContextGetter : public net::URLRequestContextGetter {
 namespace phone {
 
 //
-// Phone::AccountPasswordHandler::Factory implementation
+// Phone::PasswordHandler::Factory implementation
 //
-PhoneImpl::AccountPasswordHandler::Factory::Factory() {
+PhoneImpl::PasswordHandler::Factory::Factory(Settings *settings) :
+  settings_(settings) {
 }
 
-PhoneImpl::AccountPasswordHandler::Factory::~Factory() {
-}
-
-const Account &PhoneImpl::AccountPasswordHandler::Factory::account() const {
-  return account_;
-}
-
-void PhoneImpl::AccountPasswordHandler::Factory::set_account(const Account &account) {
-  account_ = account;
+PhoneImpl::PasswordHandler::Factory::~Factory() {
 }
 
 scoped_ptr<PasswordHandler>
-      PhoneImpl::AccountPasswordHandler::Factory::CreatePasswordHandler() {
+      PhoneImpl::PasswordHandler::Factory::CreatePasswordHandler() {
   scoped_ptr<PasswordHandler> password_handler(
-    new AccountPasswordHandler(this));
+    new PasswordHandler(this));
   return password_handler.Pass();
 }
 
 //
-// Phone::AccountPasswordHandler implementation
+// Phone::PasswordHandler implementation
 //
-PhoneImpl::AccountPasswordHandler::AccountPasswordHandler(Factory *factory) :
+PhoneImpl::PasswordHandler::PasswordHandler(Factory *factory) :
   factory_(factory) {
 }
 
-PhoneImpl::AccountPasswordHandler::~AccountPasswordHandler() {
+PhoneImpl::PasswordHandler::~PasswordHandler() {
 }
 
-int PhoneImpl::AccountPasswordHandler::GetCredentials(
+int PhoneImpl::PasswordHandler::GetCredentials(
       const net::AuthChallengeInfo* auth_info,
       base::string16 *username,
       base::string16 *password,
       const net::CompletionCallback& callback) {
-  *username = base::UTF8ToUTF16(factory_->account().username());
-  *password = base::UTF8ToUTF16(factory_->account().password());
+  std::string authorization_user;
+  if (factory_->settings()->authorization_user().empty())
+    authorization_user = factory_->settings()->uri().username();
+  else
+    authorization_user = factory_->settings()->authorization_user();
+  *username = base::UTF8ToUTF16(authorization_user);
+  *password = base::UTF8ToUTF16(factory_->settings()->password());
   return net::OK;
 }
 
 //
 // Phone implementation
 //
-PhoneImpl::PhoneImpl(PhoneObserver *phone_observer)
+PhoneImpl::PhoneImpl(Phone::Delegate *delegate)
   : state_(kStateOffline),
-    phone_observer_(phone_observer),
+    delegate_(delegate),
     signalling_thread_("PhoneSignalling"),
-    signalling_thread_event_(false, false),
-    password_handler_factory_(new AccountPasswordHandler::Factory) {
-  DCHECK(phone_observer);
+    signalling_thread_event_(false, false) {
+  DCHECK(delegate);
 }
 
 PhoneImpl::~PhoneImpl() {
@@ -147,6 +144,8 @@ PhoneImpl::State PhoneImpl::state() const {
 
 bool PhoneImpl::Init(const Settings& settings) {
   base::Thread::Options options;
+  settings_ = settings;
+  password_handler_factory_.reset(new PasswordHandler::Factory(&settings_));
   options.message_loop_type = base::MessageLoop::TYPE_IO;
   if (!signalling_thread_.StartWithOptions(options)) {
     return false;
@@ -157,26 +156,25 @@ bool PhoneImpl::Init(const Settings& settings) {
   return true;
 }
 
-bool PhoneImpl::Login(const Account &account) {
+bool PhoneImpl::Register() {
   // Evaluate the account host attribute first
-  GURL url(account.host());
+  GURL url(settings_.uri());
   if (!url.SchemeIs("sip")
       && !url.SchemeIs("sips")) {
     DVLOG(1) << "Unknown scheme '" << url.scheme()
              << "' in account host attribute";
     return false;
   }
-  SipURI uri(url.spec());
+  SipURI uri(settings_.uri().spec());
   scheme_ = uri.scheme();
   host_ = uri.host();
   if (uri.has_port())
     host_ += ":" + uri.port();
   if (uri.has_parameters())
     host_ += uri.parameters();
-  username_ = account.username();
-  password_handler_factory_->set_account(account);
+  username_ = uri.username();
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&PhoneImpl::OnLogin, base::Unretained(this), account)
+    base::Bind(&PhoneImpl::OnRegister, base::Unretained(this))
   );
   return true;
 }
@@ -217,9 +215,9 @@ void PhoneImpl::HangUpAll() {
   }
 }
 
-void PhoneImpl::Logout() {
+void PhoneImpl::Unregister() {
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&PhoneImpl::OnLogout, base::Unretained(this))
+    base::Bind(&PhoneImpl::OnUnregister, base::Unretained(this))
   );
 }
 
@@ -327,7 +325,7 @@ void PhoneImpl::OnDestroy() {
   signalling_thread_event_.Signal();
 }
 
-void PhoneImpl::OnLogin(const Account &account) {
+void PhoneImpl::OnRegister() {
   std::string registrar_uri("sip:" + host_);
   std::string from("sip:" + username_ + "@" + host_);
   std::string to("sip:" + username_ + "@" + host_);
@@ -343,14 +341,14 @@ void PhoneImpl::OnLogin(const Account &account) {
   int rv = user_agent_->Send(last_request_,
       base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    phone_observer_->OnNetworkError(rv);
+    delegate_->OnNetworkError(rv);
     return;
   }
 
   // Wait for SIP response now
 }
 
-void PhoneImpl::OnLogout() {
+void PhoneImpl::OnUnregister() {
   std::string registrar_uri("sip:" + host_);
   std::string from("sip:" + username_ + "@" + host_);
   std::string to("sip:" + username_ + "@" + host_);
@@ -371,7 +369,7 @@ void PhoneImpl::OnLogout() {
   int rv = user_agent_->Send(last_request_,
       base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    phone_observer_->OnNetworkError(rv);
+    delegate_->OnNetworkError(rv);
     return;
   }
 
@@ -380,13 +378,13 @@ void PhoneImpl::OnLogout() {
 
 void PhoneImpl::OnRequestSent(int rv) {
   if (net::OK != rv) {
-    phone_observer_->OnNetworkError(rv);
+    delegate_->OnNetworkError(rv);
   }
 }
 
 void PhoneImpl::OnChannelConnected(const EndPoint &destination, int err) {
   if (net::OK != err) {
-    phone_observer_->OnNetworkError(err);
+    delegate_->OnNetworkError(err);
   }
 }
 
@@ -403,7 +401,7 @@ void PhoneImpl::OnIncomingRequest(
       base::AutoLock lock(lock_);
       calls_.push_back(call);
     }
-    phone_observer_->OnIncomingCall(call);
+    delegate_->OnIncomingCall(call);
   } else {
     scoped_refptr<CallImpl> call = RouteToCall(dialog);
     if (call)
@@ -434,7 +432,7 @@ void PhoneImpl::OnIncomingResponse(
       }
 
       // Notify completion
-      phone_observer_->OnLoginCompleted(incoming_response->response_code(),
+      delegate_->OnRegisterCompleted(incoming_response->response_code(),
         incoming_response->reason_phrase());
     }
   } else if (Method::INVITE == incoming_response->refer_to()->method()
@@ -533,8 +531,8 @@ void Phone::Initialize() {
   rtc::InitializeSSL();
 }
 
-scoped_refptr<Phone> Phone::Create(PhoneObserver *phone_observer) {
-  return new PhoneImpl(phone_observer);
+scoped_refptr<Phone> Phone::Create(Delegate *delegate) {
+  return new PhoneImpl(delegate);
 }
 
 } // namespace sippet

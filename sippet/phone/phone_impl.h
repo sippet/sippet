@@ -35,10 +35,10 @@ class PhoneImpl :
  public:
   State state() const override;
   bool Init(const Settings& settings) override;
-  bool Login(const Account &account) override;
+  bool Register() override;
+  void Unregister() override;
   scoped_refptr<Call> MakeCall(const std::string& destination) override;
   void HangUpAll() override;
-  void Logout() override;
 
  private:
   friend class Phone;
@@ -47,7 +47,7 @@ class PhoneImpl :
   typedef std::vector<scoped_refptr<CallImpl>> CallsVector;
 
   // Construct a |Phone|.
-  PhoneImpl(PhoneObserver *phone_observer);
+  PhoneImpl(Phone::Delegate *delegate);
   ~PhoneImpl() override;
 
   bool InitializePeerConnectionFactory(const Settings& settings);
@@ -59,29 +59,29 @@ class PhoneImpl :
   std::string username_;
   std::string scheme_;
   std::string host_;
-  PhoneObserver *phone_observer_;
+  Phone::Delegate *delegate_;
+  Settings settings_;
 
   base::Thread signalling_thread_;
   base::WaitableEvent signalling_thread_event_;
 
-  class AccountPasswordHandler : public PasswordHandler {
+  class PasswordHandler : public sippet::PasswordHandler {
    public:
-    class Factory : public PasswordHandler::Factory {
+    class Factory : public sippet::PasswordHandler::Factory {
      public:
-      Factory();
+      Factory(Settings *settings);
       ~Factory() override;
 
-      const Account &account() const;
-      void set_account(const Account &account);
+      const Settings *settings() const { return settings_;  }
 
       scoped_ptr<sippet::PasswordHandler> CreatePasswordHandler() override;
 
     private:
-      Account account_;
+      Settings *settings_;
     };
 
-    AccountPasswordHandler(Factory *factory);
-    ~AccountPasswordHandler() override;
+    PasswordHandler(Factory *factory);
+    ~PasswordHandler() override;
     int GetCredentials(
         const net::AuthChallengeInfo* auth_info,
         base::string16 *username,
@@ -96,7 +96,7 @@ class PhoneImpl :
   scoped_ptr<net::HostResolver> host_resolver_;
   scoped_ptr<AuthHandlerFactory> auth_handler_factory_;
   net::BoundNetLog net_log_;
-  scoped_ptr<AccountPasswordHandler::Factory> password_handler_factory_;
+  scoped_ptr<PasswordHandler::Factory> password_handler_factory_;
   scoped_ptr<ua::UserAgent> user_agent_;
   scoped_ptr<NetworkLayer> network_layer_;
   scoped_ptr<ChromeChannelFactory> channel_factory_;
@@ -113,7 +113,7 @@ class PhoneImpl :
   //
   const std::string &username() { return username_; }
   const std::string &host() { return host_; }
-  PhoneObserver *phone_observer() { return phone_observer_; }
+  Phone::Delegate *delegate() { return delegate_; }
   ua::UserAgent *user_agent() { return user_agent_.get(); }
   base::MessageLoop *signalling_message_loop() {
     return signalling_thread_.message_loop();
@@ -125,8 +125,8 @@ class PhoneImpl :
   //
   void OnInit(const Settings& settings);
   void OnDestroy();
-  void OnLogin(const Account &account);
-  void OnLogout();
+  void OnRegister();
+  void OnUnregister();
 
   //
   // UserAgent callbacks
