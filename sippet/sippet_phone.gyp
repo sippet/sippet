@@ -24,6 +24,10 @@
         {
           'target_name': 'sippet_phone_java',
           'type': 'none',
+          'dependencies': [
+            '../base/base.gyp:base_java',
+            'sippet_phone_jni_headers',
+          ],
           'variables': {
             'java_in_dir': '../sippet/phone/android/java',
           },

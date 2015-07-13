@@ -11,7 +11,7 @@ import org.chromium.base.CalledByNative;
  * Base Phone class.
  */
 @JNINamespace("sippet::phone::android")
-public class Phone extends RunOnUIThread<Delegate> {
+public class Phone extends RunOnUIThread<Phone.Delegate> {
     public enum State {
         OFFLINE,
         CONNECTING,
@@ -68,7 +68,7 @@ public class Phone extends RunOnUIThread<Delegate> {
      * Initializes the |Phone| instance.
      */
     boolean init(Settings settings) {
-        nativeInit(instance, settings);
+        return nativeInit(instance, settings);
     }
 
     /**
@@ -122,7 +122,7 @@ public class Phone extends RunOnUIThread<Delegate> {
     private long instance;
 
     @CalledByNative
-    private void runOnNetworkError(int errorCode) {
+    private void runOnNetworkError(final int errorCode) {
         post(new Runnable<Delegate>() {
             public void run(Delegate delegate) {
                 delegate.onNetworkError(errorCode);
@@ -131,7 +131,8 @@ public class Phone extends RunOnUIThread<Delegate> {
     }
 
     @CalledByNative
-    private void runOnRegisterCompleted(int statusCode, String statusText) {
+    private void runOnRegisterCompleted(final int statusCode,
+                                        final String statusText) {
         post(new Runnable<Delegate>() {
             public void run(Delegate delegate) {
                 delegate.onRegisterCompleted(statusCode, statusText);
@@ -140,7 +141,7 @@ public class Phone extends RunOnUIThread<Delegate> {
     }
 
     @CalledByNative
-    private void runOnIncomingCall(long instance) {
+    private void runOnIncomingCall(final long instance) {
         post(new Runnable<Delegate>() {
             public void run(Delegate delegate) {
                 delegate.onIncomingCall(new Call(instance));

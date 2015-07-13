@@ -13,7 +13,7 @@ import java.util.Date;
  * Base Phone class.
  */
 @JNINamespace("sippet::phone::android")
-public class Call extends RunOnUIThread<Delegate> {
+public class Call extends RunOnUIThread<Call.Delegate> {
     /**
      * Call direction: incoming or outgoing.
      */
@@ -198,7 +198,7 @@ public class Call extends RunOnUIThread<Delegate> {
     private long instance;
 
     @CalledByNative
-    private void runOnError(int statusCode, String statusText) {
+    private void runOnError(final int statusCode, final String statusText) {
         post(new Runnable<Delegate>() {
             public void run(Delegate delegate) {
                 delegate.onError(statusCode, statusText);

@@ -28,8 +28,8 @@ abstract class RunOnUIThread<Delegate> {
     /**
      * Use this function to delegate the |Runnable| execution to the UI thread.
      */
-    protected void post(Runnable<Delegate> runnable) {
-        new Handler(Looper.getMainLooper()).post(new android.os.Runnable() {
+    protected void post(final Runnable<Delegate> runnable) {
+        new Handler(Looper.getMainLooper()).post(new java.lang.Runnable() {
             public void run() {
                 Delegate delegate = getDelegate();
                 if (delegate != null)
