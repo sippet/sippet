@@ -5,9 +5,27 @@
 #include "sippet/phone/phone_js_wrapper.h"
 #include "sippet/phone/call_js_wrapper.h"
 
-#include "gin/per_context_data.h"
-
 namespace gin {
+
+// Extend Converter to type GURL
+template<>
+struct Converter<GURL> {
+  static v8::Handle<v8::Value> ToV8(v8::Isolate* isolate,
+      const GURL &val) {
+    v8::Handle<v8::String> result(
+        v8::String::NewFromUtf8(isolate, val.spec().c_str()));
+    return result;
+  }
+
+  static bool FromV8(v8::Isolate* isolate,
+      v8::Handle<v8::Value> val,
+      GURL* out) {
+    if (!val->IsString())
+      return false;
+    *out = GURL(gin::V8ToString(val));
+    return true;
+  }
+};
 
 // Extend Converter to our type Phone::State
 template<>
@@ -81,14 +99,54 @@ template<>
 struct Converter<sippet::phone::Settings> {
   static const char kDisableEncryption[];
   static const char kIceServers[];
+  static const char kRouteSet[];
+  static const char kUri[];
+  static const char kUserAgent[];
+  static const char kAuthorizationUser[];
+  static const char kDisplayName[];
+  static const char kPassword[];
+  static const char kRegisterExpires[];
+  static const char kRegistrarServer[];
 
   static v8::Handle<v8::Value> ToV8(v8::Isolate* isolate,
       const sippet::phone::Settings &val) {
     v8::Handle<v8::Object> result(v8::Object::New(isolate));
     result->Set(v8::String::NewFromUtf8(isolate, kDisableEncryption),
         ConvertToV8(isolate, val.disable_encryption()));
-    result->Set(v8::String::NewFromUtf8(isolate, kIceServers),
-        ConvertToV8(isolate, val.ice_servers()));
+    if (!val.ice_servers().empty()) {
+      result->Set(v8::String::NewFromUtf8(isolate, kIceServers),
+          ConvertToV8(isolate, val.ice_servers()));
+    }
+    if (!val.route_set().empty()) {
+      result->Set(v8::String::NewFromUtf8(isolate, kRouteSet),
+          ConvertToV8(isolate, val.route_set()));
+    }
+    if (!val.uri().is_empty()) {
+      result->Set(v8::String::NewFromUtf8(isolate, kUri),
+          ConvertToV8(isolate, val.uri()));
+    }
+    if (!val.user_agent().empty()) {
+      result->Set(v8::String::NewFromUtf8(isolate, kUserAgent),
+          ConvertToV8(isolate, val.user_agent()));
+    }
+    if (!val.authorization_user().empty()) {
+      result->Set(v8::String::NewFromUtf8(isolate, kAuthorizationUser),
+          ConvertToV8(isolate, val.authorization_user()));
+    }
+    if (!val.display_name().empty()) {
+      result->Set(v8::String::NewFromUtf8(isolate, kDisplayName),
+          ConvertToV8(isolate, val.display_name()));
+    }
+    if (!val.password().empty()) {
+      result->Set(v8::String::NewFromUtf8(isolate, kPassword),
+          ConvertToV8(isolate, val.password()));
+    }
+    result->Set(v8::String::NewFromUtf8(isolate, kRegisterExpires),
+        ConvertToV8(isolate, val.register_expires()));
+    if (!val.registrar_server().is_empty()) {
+      result->Set(v8::String::NewFromUtf8(isolate, kRegistrarServer),
+          ConvertToV8(isolate, val.registrar_server()));
+    }
     return result;
   }
 
@@ -113,6 +171,62 @@ struct Converter<sippet::phone::Settings> {
         &ice_servers);
       settings.ice_servers().swap(ice_servers);
     }
+    if (input->Has(v8::String::NewFromUtf8(isolate, kRouteSet))) {
+      sippet::phone::Settings::RouteSet route_set;
+      ConvertFromV8(isolate,
+        input->Get(v8::String::NewFromUtf8(isolate, kRouteSet)),
+        &route_set);
+      settings.route_set().swap(route_set);
+    }
+    if (input->Has(v8::String::NewFromUtf8(isolate, kUri))) {
+      GURL uri;
+      ConvertFromV8(isolate,
+        input->Get(v8::String::NewFromUtf8(isolate, kUri)),
+        &uri);
+      settings.set_uri(uri);
+    }
+    if (input->Has(v8::String::NewFromUtf8(isolate, kUserAgent))) {
+      std::string user_agent;
+      ConvertFromV8(isolate,
+        input->Get(v8::String::NewFromUtf8(isolate, kUserAgent)),
+        &user_agent);
+      settings.set_user_agent(user_agent);
+    }
+    if (input->Has(v8::String::NewFromUtf8(isolate, kAuthorizationUser))) {
+      std::string authorization_user;
+      ConvertFromV8(isolate,
+        input->Get(v8::String::NewFromUtf8(isolate, kAuthorizationUser)),
+        &authorization_user);
+      settings.set_authorization_user(authorization_user);
+    }
+    if (input->Has(v8::String::NewFromUtf8(isolate, kDisplayName))) {
+      std::string display_name;
+      ConvertFromV8(isolate,
+        input->Get(v8::String::NewFromUtf8(isolate, kDisplayName)),
+        &display_name);
+      settings.set_display_name(display_name);
+    }
+    if (input->Has(v8::String::NewFromUtf8(isolate, kPassword))) {
+      std::string password;
+      ConvertFromV8(isolate,
+        input->Get(v8::String::NewFromUtf8(isolate, kPassword)),
+        &password);
+      settings.set_password(password);
+    }
+    if (input->Has(v8::String::NewFromUtf8(isolate, kRegisterExpires))) {
+      unsigned register_expires;
+      ConvertFromV8(isolate,
+        input->Get(v8::String::NewFromUtf8(isolate, kRegisterExpires)),
+        &register_expires);
+      settings.set_register_expires(register_expires);
+    }
+    if (input->Has(v8::String::NewFromUtf8(isolate, kRegistrarServer))) {
+      GURL registrar_server;
+      ConvertFromV8(isolate,
+        input->Get(v8::String::NewFromUtf8(isolate, kRegistrarServer)),
+        &registrar_server);
+      settings.set_registrar_server(registrar_server);
+    }
     *out = settings;
     return true;
   }
@@ -122,53 +236,22 @@ const char Converter<sippet::phone::Settings>::kDisableEncryption[] =
     "disable_encryption";
 const char Converter<sippet::phone::Settings>::kIceServers[] =
     "ice_servers";
-
-// Extend Converter to our type Account
-template<>
-struct Converter<sippet::phone::Account> {
-  static const char kUsername[];
-  static const char kPassword[];
-  static const char kHost[];
-
-  static v8::Handle<v8::Value> ToV8(v8::Isolate* isolate,
-      const sippet::phone::Account &val) {
-    v8::Handle<v8::Object> result(v8::Object::New(isolate));
-    result->Set(v8::String::NewFromUtf8(isolate, kUsername),
-        ConvertToV8(isolate, val.username()));
-    result->Set(v8::String::NewFromUtf8(isolate, kPassword),
-        ConvertToV8(isolate, val.password()));
-    result->Set(v8::String::NewFromUtf8(isolate, kHost),
-        ConvertToV8(isolate, val.host()));
-    return result;
-  }
-
-  static bool FromV8(v8::Isolate* isolate,
-      v8::Handle<v8::Value> val,
-      sippet::phone::Account* out) {
-    if (!val->IsObject())
-      return false;
-    v8::Handle<v8::Object> input(v8::Handle<v8::Object>::Cast(val));
-    if (!input->Has(v8::String::NewFromUtf8(isolate, kUsername))
-        || !input->Has(v8::String::NewFromUtf8(isolate, kPassword))
-        || !input->Has(v8::String::NewFromUtf8(isolate, kHost))) {
-      return false;
-    }
-    out->set_username(
-        V8ToString(input->Get(v8::String::NewFromUtf8(isolate, kUsername))));
-    out->set_password(
-        V8ToString(input->Get(v8::String::NewFromUtf8(isolate, kPassword))));
-    out->set_host(
-        V8ToString(input->Get(v8::String::NewFromUtf8(isolate, kHost))));
-    return true;
-  }
-};
-
-const char Converter<sippet::phone::Account>::kUsername[] =
-    "username";
-const char Converter<sippet::phone::Account>::kPassword[] =
+const char Converter<sippet::phone::Settings>::kRouteSet[] =
+    "route_set";
+const char Converter<sippet::phone::Settings>::kUserAgent[] =
+    "user_agent";
+const char Converter<sippet::phone::Settings>::kUri[] =
+    "uri";
+const char Converter<sippet::phone::Settings>::kAuthorizationUser[] =
+    "authorization_user";
+const char Converter<sippet::phone::Settings>::kDisplayName[] =
+    "display_name";
+const char Converter<sippet::phone::Settings>::kPassword[] =
     "password";
-const char Converter<sippet::phone::Account>::kHost[] =
-    "host";
+const char Converter<sippet::phone::Settings>::kRegisterExpires[] =
+    "register_expires";
+const char Converter<sippet::phone::Settings>::kRegistrarServer[] =
+    "registrar_server";
 
 } // namespace gin
 
@@ -180,10 +263,6 @@ namespace {
 const char kOnNetworkError[] = "::sippet::phone::OnNetworkError";
 const char kOnLoginCompleted[] = "::sippet::phone::OnLoginCompleted";
 const char kOnIncomingCall[] = "::sippet::phone::OnIncomingCall";
-const char kOnCallError[] = "::sippet::phone::OnCallError";
-const char kOnCallRinging[] = "::sippet::phone::OnCallRinging";
-const char kOnCallEstablished[] = "::sippet::phone::OnCallEstablished";
-const char kOnCallHungUp[] = "::sippet::phone::OnCallHungUp";
 
 }  // namespace
 
@@ -197,11 +276,7 @@ PhoneJsWrapper::PhoneJsWrapper(
   message_loop_(base::MessageLoop::current()),
   on_network_error_(this, kOnNetworkError),
   on_login_completed_(this, kOnLoginCompleted),
-  on_incoming_call_(this, kOnIncomingCall),
-  on_call_error_(this, kOnCallError),
-  on_call_ringing_(this, kOnCallRinging),
-  on_call_established_(this, kOnCallEstablished),
-  on_call_hungup_(this, kOnCallHungUp) {
+  on_incoming_call_(this, kOnIncomingCall) {
 }
 
 PhoneJsWrapper::~PhoneJsWrapper() {
@@ -220,9 +295,9 @@ gin::ObjectTemplateBuilder PhoneJsWrapper::GetObjectTemplateBuilder(
       Wrappable<PhoneJsWrapper>::GetObjectTemplateBuilder(isolate));
   builder.SetProperty("state", &PhoneJsWrapper::state);
   builder.SetMethod("init", &PhoneJsWrapper::Init);
-  builder.SetMethod("login", &PhoneJsWrapper::Login);
+  builder.SetMethod("register", &PhoneJsWrapper::Register);
+  builder.SetMethod("unregister", &PhoneJsWrapper::Unregister);
   builder.SetMethod("hangupAll", &PhoneJsWrapper::HangUpAll);
-  builder.SetMethod("logout", &PhoneJsWrapper::Logout);
   builder.SetMethod("makeCall", &PhoneJsWrapper::MakeCall);
   builder.SetMethod("on", &PhoneJsWrapper::On);
   return builder;
@@ -243,8 +318,12 @@ bool PhoneJsWrapper::Init(gin::Arguments args) {
   return phone_->Init(settings);
 }
 
-bool PhoneJsWrapper::Login(const Account &account) {
-  return phone_->Login(account);
+bool PhoneJsWrapper::Register() {
+  return phone_->Register();
+}
+
+void PhoneJsWrapper::Unregister() {
+  phone_->Unregister();
 }
 
 gin::Handle<CallJsWrapper> PhoneJsWrapper::MakeCall(
@@ -257,33 +336,20 @@ void PhoneJsWrapper::HangUpAll() {
   phone_->HangUpAll();
 }
 
-void PhoneJsWrapper::Logout() {
-  phone_->Logout();
-}
-
 void PhoneJsWrapper::On(const std::string& key,
                         v8::Handle<v8::Function> function) {
   struct {
     const char *key;
-    FunctionCall &function_call;
+    JsFunctionCall<PhoneJsWrapper> &function_call;
   } pairs[] = {
     { "networkError", on_network_error_ },
     { "loginCompleted", on_login_completed_ },
     { "incomingCall", on_incoming_call_ },
-    { "callError", on_call_error_ },
-    { "callRinging", on_call_ringing_ },
-    { "callEstablished", on_call_established_ },
-    { "callHungUp", on_call_hungup_ },
   };
 
   for (int i = 0; i < arraysize(pairs); i++) {
     if (pairs[i].key == key) {
-      base::WeakPtr<gin::Runner> runner = gin::PerContextData::From(
-          isolate_->GetCurrentContext())->runner()->GetWeakPtr();
-      GetWrapper(runner->GetContextHolder()->isolate())->SetHiddenValue(
-          gin::StringToSymbol(isolate_, pairs[i].function_call.hidden_name()),
-          function);
-      pairs[i].function_call.set_runner(runner);
+      pairs[i].function_call.SetFunction(isolate_, function);
       break;
     }
   }
@@ -295,7 +361,7 @@ void PhoneJsWrapper::OnNetworkError(int error_code) {
           error_code));
 }
 
-void PhoneJsWrapper::OnLoginCompleted(int status_code,
+void PhoneJsWrapper::OnRegisterCompleted(int status_code,
     const std::string& status_text) {
   message_loop_->PostTask(FROM_HERE,
       base::Bind(&PhoneJsWrapper::RunLoginCompleted, base::Unretained(this),
@@ -305,32 +371,6 @@ void PhoneJsWrapper::OnLoginCompleted(int status_code,
 void PhoneJsWrapper::OnIncomingCall(const scoped_refptr<Call>& call) {
   message_loop_->PostTask(FROM_HERE,
       base::Bind(&PhoneJsWrapper::RunIncomingCall, base::Unretained(this),
-          call));
-}
-
-void PhoneJsWrapper::OnCallError(int status_code,
-    const std::string& status_text,
-    const scoped_refptr<Call>& call) {
-  message_loop_->PostTask(FROM_HERE,
-      base::Bind(&PhoneJsWrapper::RunCallError, base::Unretained(this),
-          status_code, status_text, call));
-}
-
-void PhoneJsWrapper::OnCallRinging(const scoped_refptr<Call>& call) {
-  message_loop_->PostTask(FROM_HERE,
-      base::Bind(&PhoneJsWrapper::RunCallRinging, base::Unretained(this),
-          call));
-}
-
-void PhoneJsWrapper::OnCallEstablished(const scoped_refptr<Call>& call) {
-  message_loop_->PostTask(FROM_HERE,
-      base::Bind(&PhoneJsWrapper::RunCallEstablished, base::Unretained(this),
-          call));
-}
-
-void PhoneJsWrapper::OnCallHungUp(const scoped_refptr<Call>& call) {
-  message_loop_->PostTask(FROM_HERE,
-      base::Bind(&PhoneJsWrapper::RunCallHungUp, base::Unretained(this),
           call));
 }
 
@@ -355,69 +395,6 @@ void PhoneJsWrapper::RunIncomingCall(const scoped_refptr<Call>& call) {
     CallJsWrapper::Create(isolate_, call).ToV8(),
   };
   on_incoming_call_.Run(sizeof(args) / sizeof(args[0]), args);
-}
-
-void PhoneJsWrapper::RunCallError(int status_code,
-    const std::string& status_text,
-    const scoped_refptr<Call>& call) {
-  v8::Handle<v8::Value> args[] = {
-    gin::ConvertToV8(isolate_, status_code),
-    gin::ConvertToV8(isolate_, status_text),
-    CallJsWrapper::Create(isolate_, call).ToV8(),
-  };
-  on_call_error_.Run(sizeof(args) / sizeof(args[0]), args);
-}
-
-void PhoneJsWrapper::RunCallRinging(const scoped_refptr<Call>& call) {
-  v8::Handle<v8::Value> args[] = {
-    CallJsWrapper::Create(isolate_, call).ToV8(),
-  };
-  on_call_ringing_.Run(sizeof(args) / sizeof(args[0]), args);
-}
-
-void PhoneJsWrapper::RunCallEstablished(const scoped_refptr<Call>& call) {
-  v8::Handle<v8::Value> args[] = {
-    CallJsWrapper::Create(isolate_, call).ToV8(),
-  };
-  on_call_established_.Run(sizeof(args) / sizeof(args[0]), args);
-}
-
-void PhoneJsWrapper::RunCallHungUp(const scoped_refptr<Call>& call) {
-  v8::Handle<v8::Value> args[] = {
-    CallJsWrapper::Create(isolate_, call).ToV8(),
-  };
-  on_call_hungup_.Run(sizeof(args) / sizeof(args[0]), args);
-}
-
-PhoneJsWrapper::FunctionCall::FunctionCall(
-    PhoneJsWrapper* outer, const char *hidden_name) :
-  outer_(outer),
-  hidden_name_(hidden_name) {
-}
-
-PhoneJsWrapper::FunctionCall::~FunctionCall() {
-}
-
-void PhoneJsWrapper::FunctionCall::set_runner(
-    const base::WeakPtr<gin::Runner>& runner) {
-  runner_ = runner;
-}
-
-void PhoneJsWrapper::FunctionCall::Run(
-    int argc, v8::Handle<v8::Value> *argv) {
-  // This can happen in spite of the weak callback because it is possible for
-  // a gin::Handle<> to keep this object alive past when the isolate it is part
-  // of is destroyed.
-  if (!runner_.get()) {
-    return;
-  }
-
-  gin::Runner::Scope scope(runner_.get());
-  v8::Isolate* isolate = runner_->GetContextHolder()->isolate();
-  v8::Handle<v8::Function> function = v8::Handle<v8::Function>::Cast(
-      outer_->GetWrapper(isolate)->GetHiddenValue(
-          gin::StringToSymbol(isolate, hidden_name_)));
-  runner_->Call(function, v8::Undefined(isolate), argc, argv);
 }
 
 // PhoneJsModule =============================================================

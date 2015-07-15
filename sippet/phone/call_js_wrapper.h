@@ -6,7 +6,9 @@
 #define SIPPET_PHONE_CALL_JS_WRAPPER_H_
 
 #include "sippet/phone/call.h"
+#include "sippet/phone/js_function_call.h"
 
+#include "base/message_loop/message_loop.h"
 #include "gin/handle.h"
 #include "gin/object_template_builder.h"
 #include "gin/wrappable.h"
@@ -15,7 +17,8 @@ namespace sippet {
 namespace phone {
 
 class CallJsWrapper
-  : public gin::Wrappable<CallJsWrapper> {
+  : public gin::Wrappable<CallJsWrapper>,
+    public Call::Delegate {
 public:
   static gin::WrapperInfo kWrapperInfo;
   ~CallJsWrapper() override;
@@ -28,7 +31,7 @@ public:
       v8::Isolate* isolate) override;
 
   // JS interface implementation.
-  Call::Type type() const;
+  Call::Direction direction() const;
   Call::State state() const;
   std::string uri() const;
   std::string name() const;
@@ -36,15 +39,41 @@ public:
   base::Time start_time() const;
   base::Time end_time() const;
   base::TimeDelta duration() const;
-  bool Answer(int code);
+  bool PickUp();
+  bool Reject();
   bool HangUp();
   void SendDtmf(const std::string& digits);
 
+  // Set the callbacks
+  void On(const std::string& key, v8::Handle<v8::Function> function);
+
+  // Call::Delegate implementation
+  void OnError(int status_code,
+      const std::string& status_text) override;
+  void OnRinging() override;
+  void OnEstablished() override;
+  void OnHungUp() override;
+
+  // Dispatched to message loop
+  void RunError(int status_code,
+      const std::string& status_text);
+  void RunRinging();
+  void RunEstablished();
+  void RunHungUp();
+
 private:
   explicit CallJsWrapper(
+      v8::Isolate* isolate,
       const scoped_refptr<Call>& call);
 
+  v8::Isolate* isolate_;
   scoped_refptr<Call> call_;
+  base::MessageLoop* message_loop_;
+
+  JsFunctionCall<CallJsWrapper> on_error_;
+  JsFunctionCall<CallJsWrapper> on_ringing_;
+  JsFunctionCall<CallJsWrapper> on_established_;
+  JsFunctionCall<CallJsWrapper> on_hungup_;
 
   DISALLOW_COPY_AND_ASSIGN(CallJsWrapper);
 };
