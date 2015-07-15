@@ -24,6 +24,8 @@ class Settings {
   Settings();
   ~Settings();
 
+  bool is_valid() const;
+
   // Enable/disable streaming encryption
   void set_disable_encryption(bool value) { disable_encryption_ = value; }
   bool disable_encryption() const { return disable_encryption_; }

@@ -143,6 +143,19 @@ PhoneImpl::State PhoneImpl::state() const {
 }
 
 bool PhoneImpl::Init(const Settings& settings) {
+  if (!settings.uri().SchemeIs("sip")
+      && !settings.uri().SchemeIs("sips")) {
+    DVLOG(1) << "Unknown scheme '" << settings.uri().scheme()
+             << "' in uri attribute";
+    return false;
+  }
+  if (!settings.registrar_server().is_empty()
+      && !settings.registrar_server().SchemeIs("sip")
+      && !settings.registrar_server().SchemeIs("sips")) {
+    DVLOG(1) << "Unknown scheme '" << settings.registrar_server().scheme()
+             << "' in registrar_server attribute";
+    return false;
+  }
   base::Thread::Options options;
   settings_ = settings;
   password_handler_factory_.reset(new PasswordHandler::Factory(&settings_));
@@ -157,24 +170,34 @@ bool PhoneImpl::Init(const Settings& settings) {
 }
 
 bool PhoneImpl::Register() {
-  // Evaluate the account host attribute first
-  GURL url(settings_.uri());
-  if (!url.SchemeIs("sip")
-      && !url.SchemeIs("sips")) {
-    DVLOG(1) << "Unknown scheme '" << url.scheme()
-             << "' in account host attribute";
+  if (settings_.is_valid()) {
+    DVLOG(1) << "Not initialized";
     return false;
   }
-  SipURI uri(settings_.uri().spec());
-  scheme_ = uri.scheme();
-  host_ = uri.host();
-  if (uri.has_port())
-    host_ += ":" + uri.port();
-  if (uri.has_parameters())
-    host_ += uri.parameters();
-  username_ = uri.username();
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnRegister, base::Unretained(this))
+  );
+  return true;
+}
+
+bool PhoneImpl::Unregister() {
+  if (settings_.is_valid()) {
+    DVLOG(1) << "Not initialized";
+    return false;
+  }
+  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+    base::Bind(&PhoneImpl::OnUnregister, base::Unretained(this))
+  );
+  return true;
+}
+
+bool PhoneImpl::UnregisterAll() {
+  if (settings_.is_valid()) {
+    DVLOG(1) << "Not initialized";
+    return false;
+  }
+  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+    base::Bind(&PhoneImpl::OnUnregisterAll, base::Unretained(this))
   );
   return true;
 }
@@ -189,12 +212,7 @@ scoped_refptr<Call> PhoneImpl::MakeCall(const std::string& destination) {
     return nullptr;
   }
   base::AutoLock lock(lock_);
-  SipURI destination_uri;
-  if (destination.find('@') == std::string::npos) {
-    destination_uri = SipURI(scheme_ + ":" + destination + "@" + host_);
-  } else {
-    destination_uri = SipURI(destination);
-  }
+  SipURI destination_uri(GetToUri(destination));
   if (!destination_uri.is_valid()) {
     DVLOG(1) << "Invalid destination";
     return nullptr;
@@ -213,12 +231,6 @@ void PhoneImpl::HangUpAll() {
   for (CallsVector::iterator i = calls_.begin(); i != calls_.end(); ++i) {
     i->get()->HangUp();
   }
-}
-
-void PhoneImpl::Unregister() {
-  signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&PhoneImpl::OnUnregister, base::Unretained(this))
-  );
 }
 
 void PhoneImpl::RemoveCall(const scoped_refptr<Call>& call) {
@@ -326,16 +338,19 @@ void PhoneImpl::OnDestroy() {
 }
 
 void PhoneImpl::OnRegister() {
-  std::string registrar_uri("sip:" + host_);
-  std::string from("sip:" + username_ + "@" + host_);
-  std::string to("sip:" + username_ + "@" + host_);
+  std::string registrar_uri(GetRegistrarUri());
+  std::string address_of_record(GetFromUri());
 
   last_request_ =
     user_agent_->CreateRequest(
         Method::REGISTER,
         GURL(registrar_uri),
-        GURL(from),
-        GURL(to));
+        GURL(address_of_record),
+        GURL(address_of_record));
+
+  // Indicate the desired expiration for the address-of-record binding
+  scoped_ptr<Expires> expires(new Expires(settings_.register_expires()));
+  last_request_->push_back(expires.Pass());
 
   state_ = kStateConnecting;
   int rv = user_agent_->Send(last_request_,
@@ -349,21 +364,50 @@ void PhoneImpl::OnRegister() {
 }
 
 void PhoneImpl::OnUnregister() {
-  std::string registrar_uri("sip:" + host_);
-  std::string from("sip:" + username_ + "@" + host_);
-  std::string to("sip:" + username_ + "@" + host_);
+  std::string registrar_uri(GetRegistrarUri());
+  std::string address_of_record(GetFromUri());
 
   last_request_ =
     user_agent_->CreateRequest(
         Method::REGISTER,
         GURL(registrar_uri),
-        GURL(from),
-        GURL(to));
+        GURL(address_of_record),
+        GURL(address_of_record));
 
   // Modifies the Contact header to include an expires=0 at the end
   // of existing parameters
   Contact* contact = last_request_->get<Contact>();
   contact->front().set_expires(0);
+
+  state_ = kStateOffline;
+  int rv = user_agent_->Send(last_request_,
+      base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
+  if (net::OK != rv && net::ERR_IO_PENDING != rv) {
+    delegate_->OnNetworkError(rv);
+    return;
+  }
+
+  // Wait for SIP response now
+}
+
+void PhoneImpl::OnUnregisterAll() {
+  std::string registrar_uri(GetRegistrarUri());
+  std::string address_of_record(GetFromUri());
+
+  last_request_ =
+    user_agent_->CreateRequest(
+        Method::REGISTER,
+        GURL(registrar_uri),
+        GURL(address_of_record),
+        GURL(address_of_record));
+
+  // Uses a "*" as the contact header
+  Contact* contact = last_request_->get<Contact>();
+  contact->set_all(true);
+
+  // Set expiration to 0 for all contacts
+  scoped_ptr<Expires> expires(new Expires(0));
+  last_request_->push_back(expires.Pass());
 
   state_ = kStateOffline;
   int rv = user_agent_->Send(last_request_,
@@ -524,6 +568,42 @@ unsigned int PhoneImpl::GetContactExpiration(
   }
   LOG(WARNING) << "Response doesn't contain a Contact for our local URI";
   return 3600;
+}
+
+std::string PhoneImpl::GetRegistrarUri() const {
+  if (!settings_.registrar_server().is_empty())
+    return settings_.registrar_server().spec();
+  else {
+    SipURI uri(SipURI(settings_.uri().spec()));
+    std::string result(uri.scheme() + ":" + uri.host());
+    if (uri.has_port())
+      result += ":" + uri.port();
+    if (uri.has_parameters())
+      result += uri.parameters();
+    return result;
+  }
+}
+
+std::string PhoneImpl::GetFromUri() const {
+  return settings_.uri().spec();
+}
+
+SipURI PhoneImpl::GetToUri(const std::string& destination) const {
+  SipURI destination_uri;
+  if (destination.find('@') == std::string::npos) {
+    SipURI uri(GetRegistrarUri());
+    if (uri.is_valid()) {
+      std::string result(uri.scheme() + ":" + uri.host());
+      if (uri.has_port())
+        result += ":" + uri.port();
+      if (uri.has_parameters())
+        result += uri.parameters();
+      destination_uri = SipURI(result);
+    }
+  } else {
+    destination_uri = SipURI(destination);
+  }
+  return destination_uri;
 }
 
 void Phone::Initialize() {

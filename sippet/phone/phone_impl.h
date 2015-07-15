@@ -36,7 +36,8 @@ class PhoneImpl :
   State state() const override;
   bool Init(const Settings& settings) override;
   bool Register() override;
-  void Unregister() override;
+  bool Unregister() override;
+  bool UnregisterAll() override;
   scoped_refptr<Call> MakeCall(const std::string& destination) override;
   void HangUpAll() override;
 
@@ -127,6 +128,7 @@ class PhoneImpl :
   void OnDestroy();
   void OnRegister();
   void OnUnregister();
+  void OnUnregisterAll();
 
   //
   // UserAgent callbacks
@@ -159,6 +161,10 @@ class PhoneImpl :
   CallImpl *RouteToCall(const scoped_refptr<Request>& request);
   CallImpl *RouteToCall(const scoped_refptr<Dialog>& dialog);
   unsigned int GetContactExpiration(const scoped_refptr<Response>& response);
+
+  std::string GetRegistrarUri() const;
+  std::string GetFromUri() const;
+  SipURI GetToUri(const std::string& destination) const;
 };
 
 } // namespace sippet

@@ -36,7 +36,8 @@ class PhoneJsWrapper :
   Phone::State state() const;
   bool Init(gin::Arguments args);
   bool Register();
-  void Unregister();
+  bool Unregister();
+  bool UnregisterAll();
   gin::Handle<CallJsWrapper> MakeCall(const std::string& destination);
   void HangUpAll();
   

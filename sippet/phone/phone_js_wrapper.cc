@@ -297,6 +297,7 @@ gin::ObjectTemplateBuilder PhoneJsWrapper::GetObjectTemplateBuilder(
   builder.SetMethod("init", &PhoneJsWrapper::Init);
   builder.SetMethod("register", &PhoneJsWrapper::Register);
   builder.SetMethod("unregister", &PhoneJsWrapper::Unregister);
+  builder.SetMethod("unregisterAll", &PhoneJsWrapper::UnregisterAll);
   builder.SetMethod("hangupAll", &PhoneJsWrapper::HangUpAll);
   builder.SetMethod("makeCall", &PhoneJsWrapper::MakeCall);
   builder.SetMethod("on", &PhoneJsWrapper::On);
@@ -322,8 +323,12 @@ bool PhoneJsWrapper::Register() {
   return phone_->Register();
 }
 
-void PhoneJsWrapper::Unregister() {
-  phone_->Unregister();
+bool PhoneJsWrapper::Unregister() {
+  return phone_->Unregister();
+}
+
+bool PhoneJsWrapper::UnregisterAll() {
+  return phone_->UnregisterAll();
 }
 
 gin::Handle<CallJsWrapper> PhoneJsWrapper::MakeCall(
@@ -378,7 +383,7 @@ void PhoneJsWrapper::RunNetworkError(int error_code) {
   v8::Handle<v8::Value> args[] = {
     gin::ConvertToV8(isolate_, error_code),
   };
-  on_network_error_.Run(sizeof(args)/sizeof(args[0]), args);
+  on_network_error_.Run(arraysize(args), args);
 }
 
 void PhoneJsWrapper::RunLoginCompleted(int status_code,
@@ -387,14 +392,14 @@ void PhoneJsWrapper::RunLoginCompleted(int status_code,
     gin::ConvertToV8(isolate_, status_code),
     gin::ConvertToV8(isolate_, status_text),
   };
-  on_login_completed_.Run(sizeof(args) / sizeof(args[0]), args);
+  on_login_completed_.Run(arraysize(args), args);
 }
 
 void PhoneJsWrapper::RunIncomingCall(const scoped_refptr<Call>& call) {
   v8::Handle<v8::Value> args[] = {
     CallJsWrapper::Create(isolate_, call).ToV8(),
   };
-  on_incoming_call_.Run(sizeof(args) / sizeof(args[0]), args);
+  on_incoming_call_.Run(arraysize(args), args);
 }
 
 // PhoneJsModule =============================================================

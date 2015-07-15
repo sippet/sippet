@@ -12,20 +12,13 @@ namespace phone {
 
 class IceServer {
  public:
-  IceServer() {}
-  ~IceServer() {}
+  IceServer();
+  ~IceServer();
 
-  explicit IceServer(const std::string& uri) :
-    uri_(uri) {
-  }
-  
+  explicit IceServer(const std::string& uri);
   explicit IceServer(const std::string& uri,
                      const std::string& username,
-                     const std::string& password) :
-    uri_(uri),
-    username_(username),
-    password_(password) {
-  }
+                     const std::string& password);
 
   // URI example: stun:stun.l.google.com:19302
   const std::string& uri() const { return uri_; }

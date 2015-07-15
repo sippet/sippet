@@ -62,7 +62,10 @@ class Phone :
   virtual bool Register() = 0;
 
   // Unregister current account.
-  virtual void Unregister() = 0;
+  virtual bool Unregister() = 0;
+
+  // Unregister all contacts associated with the account.
+  virtual bool UnregisterAll() = 0;
 
   // Start a call to the given destination.
   virtual scoped_refptr<Call> MakeCall(const std::string& destination) = 0;
