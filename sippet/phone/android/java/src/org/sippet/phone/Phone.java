@@ -82,15 +82,22 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
      * Registers the |Phone| to receive incoming requests.
      * Upon successful registration, the Phone will emit a registered event.
      */
-    public void register() {
-        nativeRegister(instance);
+    public boolean register() {
+        return nativeRegister(instance);
     }
 
     /**
      * Unregisters the |Phone|.
      */
-    public void unregister() {
-        nativeUnregister(instance);
+    public boolean unregister() {
+        return nativeUnregister(instance);
+    }
+
+    /**
+     * Unregisters all instances that registered in registrar.
+     */
+    public boolean unregisterAll() {
+        return nativeUnregisterAll(instance);
     }
 
     /**
@@ -107,8 +114,8 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     /**
      * Hangs up all active calls.
      */
-    public void hangUpAll() {
-        nativeHangUpAll(instance);
+    public boolean hangUpAll() {
+        return nativeHangUpAll(instance);
     }
 
     /**
@@ -153,9 +160,10 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     private native long nativeCreate();
     private native boolean nativeInit(long nativeJavaPhone, Settings settings);
     private native int nativeGetState(long nativeJavaPhone);
-    private native void nativeRegister(long nativeJavaPhone);
-    private native void nativeUnregister(long nativeJavaPhone);
+    private native boolean nativeRegister(long nativeJavaPhone);
+    private native boolean nativeUnregister(long nativeJavaPhone);
+    private native boolean nativeUnregisterAll(long nativeJavaPhone);
     private native long nativeMakeCall(long nativeJavaPhone, String target);
-    private native void nativeHangUpAll(long nativeJavaPhone);
+    private native boolean nativeHangUpAll(long nativeJavaPhone);
     private native void nativeFinalize(long nativeJavaPhone);
 }

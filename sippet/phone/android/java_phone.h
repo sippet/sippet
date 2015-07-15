@@ -23,11 +23,12 @@ class JavaPhone {
   jboolean Init(JNIEnv* env, jobject jcaller,
                 jobject settings);
   jlong GetState(JNIEnv* env, jobject jcaller);
-  void Register(JNIEnv* env, jobject jcaller);
-  void Unregister(JNIEnv* env, jobject jcaller);
+  jboolean Register(JNIEnv* env, jobject jcaller);
+  jboolean Unregister(JNIEnv* env, jobject jcaller);
+  jboolean UnregisterAll(JNIEnv* env, jobject jcaller);
   jlong MakeCall(JNIEnv* env, jobject jcaller,
                  jstring target);
-  void HangUpAll(JNIEnv* env, jobject jcaller);
+  jboolean HangUpAll(JNIEnv* env, jobject jcaller);
   void Finalize(JNIEnv* env, jobject jcaller);
 
   static bool RegisterBindings(JNIEnv* env);

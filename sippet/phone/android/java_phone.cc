@@ -44,12 +44,14 @@ jlong JavaPhone::GetState(JNIEnv* env, jobject jcaller) {
   return static_cast<jlong>(phone_instance_->GetState());
 }
 
-void JavaPhone::Register(JNIEnv* env, jobject jcaller) {
-  phone_instance_->Register();
+jboolean JavaPhone::Register(JNIEnv* env, jobject jcaller) {
+  return phone_instance_->Register()
+    ? JNI_TRUE : JNI_FALSE;
 }
 
-void JavaPhone::Unregister(JNIEnv* env, jobject jcaller) {
-  phone_instance_->Unregister();
+jboolean JavaPhone::Unregister(JNIEnv* env, jobject jcaller) {
+  return phone_instance_->Unregister()
+    ? JNI_TRUE : JNI_FALSE;
 }
 
 jlong JavaPhone::MakeCall(JNIEnv* env, jobject jcaller,
@@ -61,8 +63,9 @@ jlong JavaPhone::MakeCall(JNIEnv* env, jobject jcaller,
       new JavaCall(phone_instance_, call_instance)));
 }
 
-void JavaPhone::HangUpAll(JNIEnv* env, jobject jcaller) {
-  phone_instance_->HangUpAll();
+jboolean JavaPhone::HangUpAll(JNIEnv* env, jobject jcaller) {
+  return phone_instance_->HangUpAll()
+    ? JNI_TRUE : JNI_FALSE;
 }
 
 void JavaPhone::Finalize(JNIEnv* env, jobject jcaller) {
