@@ -33,7 +33,7 @@ class PhoneJsWrapper :
       v8::Isolate* isolate) override;
 
   // JS interface implementation.
-  Phone::State state() const;
+  PhoneState state() const;
   bool Init(gin::Arguments args);
   bool Register();
   bool Unregister();
@@ -48,11 +48,19 @@ class PhoneJsWrapper :
   void OnNetworkError(int error_code) override;
   void OnRegisterCompleted(int status_code,
       const std::string& status_text) override;
+  void OnRefreshError(int status_code,
+      const std::string& status_text) override;
+  void OnUnregisterCompleted(int status_code,
+      const std::string& status_text) override;
   void OnIncomingCall(const scoped_refptr<Call>& call) override;
 
   // Dispatched to message loop
   void RunNetworkError(int error_code);
-  void RunLoginCompleted(int status_code,
+  void RunRegisterCompleted(int status_code,
+      const std::string& status_text);
+  void RunRefreshError(int status_code,
+      const std::string& status_text);
+  void RunUnregisterCompleted(int status_code,
       const std::string& status_text);
   void RunIncomingCall(const scoped_refptr<Call>& call);
 
@@ -65,7 +73,9 @@ class PhoneJsWrapper :
   base::MessageLoop* message_loop_;
 
   JsFunctionCall<PhoneJsWrapper> on_network_error_;
-  JsFunctionCall<PhoneJsWrapper> on_login_completed_;
+  JsFunctionCall<PhoneJsWrapper> on_register_completed_;
+  JsFunctionCall<PhoneJsWrapper> on_refresh_error_;
+  JsFunctionCall<PhoneJsWrapper> on_unregister_completed_;
   JsFunctionCall<PhoneJsWrapper> on_incoming_call_;
 
   DISALLOW_COPY_AND_ASSIGN(PhoneJsWrapper);

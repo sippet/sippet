@@ -13,6 +13,7 @@
 
 #include "sippet/phone/settings.h"
 #include "sippet/phone/call.h"
+#include "sippet/phone/phone_state.h"
 
 namespace sippet {
 namespace phone {
@@ -21,13 +22,6 @@ namespace phone {
 class Phone :
   public base::RefCountedThreadSafe<Phone> {
  public:
-  // Phone state: the life cycle of the phone
-  enum State {
-    kStateOffline = 0,
-    kStateConnecting = 1,
-    kStateOnline = 2,
-  };
-
   // Phone delegate
   class Delegate {
    public:
@@ -36,6 +30,14 @@ class Phone :
 
     // Called to inform completion of the last registration attempt.
     virtual void OnRegisterCompleted(int status_code,
+             const std::string& status_text) = 0;
+
+    // Called to inform a refresh registration error.
+    virtual void OnRefreshError(int status_code,
+             const std::string& status_text) = 0;
+
+    // Called to inform completion of the last unregistration attempt.
+    virtual void OnUnregisterCompleted(int status_code,
              const std::string& status_text) = 0;
 
     // Called on incoming calls.
@@ -53,7 +55,7 @@ class Phone :
   static scoped_refptr<Phone> Create(Delegate *delegate);
 
   // Get the |Phone| state.
-  virtual State state() const = 0;
+  virtual PhoneState state() const = 0;
 
   // Initialize a |Phone| instance.
   virtual bool Init(const Settings& settings) = 0;

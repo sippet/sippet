@@ -17,7 +17,7 @@
             'phone/android/java/src/org/sippet/phone/Call.java',
           ],
           'variables': {
-            'jni_gen_package': 'sippet',
+            'jni_gen_package': 'sippet_phone',
           },
           'includes': [ '../build/jni_generator.gypi' ],
         },
@@ -27,11 +27,20 @@
           'dependencies': [
             '../base/base.gyp:base_java',
             'sippet_phone_jni_headers',
+            'sippet_phone_java_phone_state',
           ],
           'variables': {
             'java_in_dir': '../sippet/phone/android/java',
           },
           'includes': [ '../build/java.gypi' ],
+        },
+        {
+          'target_name': 'sippet_phone_java_phone_state',
+          'type': 'none',
+          'variables': {
+            'source_file': 'phone/phone_state.h',
+          },
+          'includes': [ '../build/android/java_cpp_enum.gypi' ],
         },
       ],
     }],

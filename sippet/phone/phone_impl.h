@@ -33,7 +33,7 @@ class PhoneImpl :
  private:
   DISALLOW_COPY_AND_ASSIGN(PhoneImpl);
  public:
-  State state() const override;
+  PhoneState state() const override;
   bool Init(const Settings& settings) override;
   bool Register() override;
   bool Unregister() override;
@@ -54,7 +54,8 @@ class PhoneImpl :
   bool InitializePeerConnectionFactory(const Settings& settings);
   void DeletePeerConnectionFactory();
 
-  State state_;
+  PhoneState state_;
+  PhoneState last_state_;
   base::Lock lock_;
   CallsVector calls_;
   std::string username_;

@@ -124,7 +124,8 @@ int PhoneImpl::PasswordHandler::GetCredentials(
 // Phone implementation
 //
 PhoneImpl::PhoneImpl(Phone::Delegate *delegate)
-  : state_(kStateOffline),
+  : state_(PHONE_STATE_OFFLINE),
+    last_state_(PHONE_STATE_OFFLINE),
     delegate_(delegate),
     signalling_thread_("PhoneSignalling"),
     signalling_thread_event_(false, false) {
@@ -138,11 +139,15 @@ PhoneImpl::~PhoneImpl() {
   signalling_thread_event_.Wait();
 }
 
-PhoneImpl::State PhoneImpl::state() const {
+PhoneState PhoneImpl::state() const {
   return state_;
 }
 
 bool PhoneImpl::Init(const Settings& settings) {
+  if (settings_.is_valid()) {
+    DVLOG(1) << "Already initialized";
+    return false;
+  }
   if (!settings.uri().SchemeIs("sip")
       && !settings.uri().SchemeIs("sips")) {
     DVLOG(1) << "Unknown scheme '" << settings.uri().scheme()
@@ -163,6 +168,7 @@ bool PhoneImpl::Init(const Settings& settings) {
   if (!signalling_thread_.StartWithOptions(options)) {
     return false;
   }
+  state_ = PHONE_STATE_READY;
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnInit, base::Unretained(this), settings)
   );
@@ -170,10 +176,12 @@ bool PhoneImpl::Init(const Settings& settings) {
 }
 
 bool PhoneImpl::Register() {
-  if (settings_.is_valid()) {
-    DVLOG(1) << "Not initialized";
-    return false;
+  if (PHONE_STATE_READY != state_) {
+    DVLOG(1) << "Not ready";
+    return nullptr;
   }
+  base::AutoLock lock(lock_);
+  state_ = PHONE_STATE_REGISTERING;
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnRegister, base::Unretained(this))
   );
@@ -181,10 +189,13 @@ bool PhoneImpl::Register() {
 }
 
 bool PhoneImpl::Unregister() {
-  if (settings_.is_valid()) {
-    DVLOG(1) << "Not initialized";
-    return false;
+  if (PHONE_STATE_REGISTERED != state_) {
+    DVLOG(1) << "Not ready";
+    return nullptr;
   }
+  base::AutoLock lock(lock_);
+  last_state_ = state_;
+  state_ = PHONE_STATE_UNREGISTERING;
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnUnregister, base::Unretained(this))
   );
@@ -192,10 +203,14 @@ bool PhoneImpl::Unregister() {
 }
 
 bool PhoneImpl::UnregisterAll() {
-  if (settings_.is_valid()) {
-    DVLOG(1) << "Not initialized";
-    return false;
+  if (PHONE_STATE_READY != state_
+      && PHONE_STATE_REGISTERED != state_) {
+    DVLOG(1) << "Not ready";
+    return nullptr;
   }
+  base::AutoLock lock(lock_);
+  last_state_ = state_;
+  state_ = PHONE_STATE_UNREGISTERING;
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnUnregisterAll, base::Unretained(this))
   );
@@ -203,12 +218,13 @@ bool PhoneImpl::UnregisterAll() {
 }
 
 scoped_refptr<Call> PhoneImpl::MakeCall(const std::string& destination) {
-  if (kStateOnline != state_) {
-    DVLOG(1) << "Not logged in";
-    return nullptr;
-  }
   if (destination.empty()) {
     DVLOG(1) << "Empty destination";
+    return nullptr;
+  }
+  if (PHONE_STATE_READY != state_
+      && PHONE_STATE_REGISTERED != state_) {
+    DVLOG(1) << "Not ready";
     return nullptr;
   }
   base::AutoLock lock(lock_);
@@ -352,7 +368,6 @@ void PhoneImpl::OnRegister() {
   scoped_ptr<Expires> expires(new Expires(settings_.register_expires()));
   last_request_->push_back(expires.Pass());
 
-  state_ = kStateConnecting;
   int rv = user_agent_->Send(last_request_,
       base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
@@ -379,7 +394,6 @@ void PhoneImpl::OnUnregister() {
   Contact* contact = last_request_->get<Contact>();
   contact->front().set_expires(0);
 
-  state_ = kStateOffline;
   int rv = user_agent_->Send(last_request_,
       base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
@@ -409,7 +423,6 @@ void PhoneImpl::OnUnregisterAll() {
   scoped_ptr<Expires> expires(new Expires(0));
   last_request_->push_back(expires.Pass());
 
-  state_ = kStateOffline;
   int rv = user_agent_->Send(last_request_,
       base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
@@ -458,9 +471,9 @@ void PhoneImpl::OnIncomingResponse(
     const scoped_refptr<Dialog> &dialog) {
   if (Method::REGISTER == incoming_response->refer_to()->method()) {
     if (last_request_->id() != incoming_response->refer_to()->id()) {
-      // Discard, as it was related to current REGISTER request
+      // Discard, as it was unrelated to current REGISTER request
       return;
-    } else if (kStateConnecting == state_) {
+    } else if (PHONE_STATE_REGISTERING == state_) { // result of Register
       int response_code = incoming_response->response_code();
       if (response_code / 100 == 1) {
         // Do nothing, wait for a final response
@@ -470,13 +483,49 @@ void PhoneImpl::OnIncomingResponse(
         unsigned int expiration = GetContactExpiration(incoming_response);
         refresh_timer_->Start(FROM_HERE, base::TimeDelta::FromSeconds(expiration),
           base::Bind(&PhoneImpl::OnRefreshLogin, base::Unretained(this)));
-        state_ = kStateOnline;
+        base::AutoLock lock(lock_);
+        state_ = PHONE_STATE_REGISTERED;
       } else {
-        state_ = kStateOffline;
+        base::AutoLock lock(lock_);
+        state_ = PHONE_STATE_READY;
       }
-
       // Notify completion
       delegate_->OnRegisterCompleted(incoming_response->response_code(),
+        incoming_response->reason_phrase());
+    } else if (PHONE_STATE_REGISTERED == state_) { // after refresh register
+      int response_code = incoming_response->response_code();
+      if (response_code / 100 == 1) {
+        // Do nothing, wait for a final response
+        return;
+      } else if (response_code / 100 == 2) {
+        // Start the timer to refresh login again
+        unsigned int expiration = GetContactExpiration(incoming_response);
+        refresh_timer_->Start(FROM_HERE, base::TimeDelta::FromSeconds(expiration),
+          base::Bind(&PhoneImpl::OnRefreshLogin, base::Unretained(this)));
+      } else {
+        {
+          base::AutoLock lock(lock_);
+          state_ = PHONE_STATE_READY;
+        }
+        // Notify the problem upwards
+        delegate_->OnRefreshError(incoming_response->response_code(),
+          incoming_response->reason_phrase());
+      }
+    } else if (PHONE_STATE_UNREGISTERING == state_) { // result of Unregister
+      int response_code = incoming_response->response_code();
+      if (response_code / 100 == 1) {
+        // Do nothing, wait for a final response
+        return;
+      } else if (response_code / 100 == 2) {
+        base::AutoLock lock(lock_);
+        state_ = PHONE_STATE_READY;
+      } else {
+        // If registration fails, recall last state
+        base::AutoLock lock(lock_);
+        state_ = last_state_;
+      }
+      // Notify completion
+      delegate_->OnUnregisterCompleted(incoming_response->response_code(),
         incoming_response->reason_phrase());
     }
   } else if (Method::INVITE == incoming_response->refer_to()->method()
@@ -510,7 +559,8 @@ void PhoneImpl::OnTransportError(
 }
 
 void PhoneImpl::OnRefreshLogin() {
-  // TODO
+  // Just send another REGISTER
+  OnRegister(); 
 }
 
 CallImpl *PhoneImpl::RouteToCall(const scoped_refptr<Request>& request) {
