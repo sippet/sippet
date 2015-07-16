@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_PHONE_CALL_JS_WRAPPER_H_
-#define SIPPET_PHONE_CALL_JS_WRAPPER_H_
+#ifndef SIPPET_PHONE_V8_CALL_JS_WRAPPER_H_
+#define SIPPET_PHONE_V8_CALL_JS_WRAPPER_H_
 
 #include "sippet/phone/call.h"
-#include "sippet/phone/js_function_call.h"
+#include "sippet/phone/v8/js_function_call.h"
 
 #include "base/message_loop/message_loop.h"
 #include "gin/handle.h"
@@ -81,4 +81,4 @@ private:
 } // namespace phone
 } // namespace sippet
 
-#endif // SIPPET_PHONE_CALL_JS_WRAPPER_H_
+#endif // SIPPET_PHONE_V8_CALL_JS_WRAPPER_H_

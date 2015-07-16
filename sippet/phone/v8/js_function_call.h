@@ -8,6 +8,7 @@
 #include "gin/runner.h"
 #include "gin/converter.h"
 #include "gin/per_context_data.h"
+#include "gin/wrappable.h"
 
 namespace sippet {
 namespace phone {
@@ -15,7 +16,7 @@ namespace phone {
 template<typename Outer>
 class JsFunctionCall {
  public:
-  JsFunctionCall(Outer* outer,
+  JsFunctionCall(gin::Wrappable<Outer>* outer,
                  const char *hidden_name) :
     outer_(outer),
     hidden_name_(hidden_name) {
@@ -23,13 +24,12 @@ class JsFunctionCall {
 
   ~JsFunctionCall() {
   }
-  
+
   void SetFunction(v8::Isolate* isolate, v8::Handle<v8::Function> function) {
     base::WeakPtr<gin::Runner> runner = gin::PerContextData::From(
         isolate->GetCurrentContext())->runner()->GetWeakPtr();
     outer_->GetWrapper(runner->GetContextHolder()->isolate())->SetHiddenValue(
-        gin::StringToSymbol(isolate, hidden_name_),
-        function);
+        gin::StringToSymbol(isolate, hidden_name_), function);
     runner_ = runner;
   }
 
@@ -50,7 +50,7 @@ class JsFunctionCall {
   }
 
  private:
-  Outer* outer_;
+  gin::Wrappable<Outer>* outer_;
   const char *hidden_name_;
   base::WeakPtr<gin::Runner> runner_;
 };

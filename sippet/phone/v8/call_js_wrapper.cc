@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/phone/call_js_wrapper.h"
+#include "sippet/phone/v8/call_js_wrapper.h"
 
 #include "gin/per_context_data.h"
 

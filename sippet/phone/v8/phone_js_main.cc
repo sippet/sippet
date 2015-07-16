@@ -17,7 +17,7 @@
 #include "gin/modules/module_runner_delegate.h"
 #include "gin/public/isolate_holder.h"
 #include "gin/try_catch.h"
-#include "sippet/phone/phone_js_wrapper.h"
+#include "sippet/phone/v8/phone_js_wrapper.h"
 
 namespace gin {
 namespace {

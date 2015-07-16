@@ -84,10 +84,11 @@
         '<(DEPTH)/third_party',
       ],
       'sources': [
-        'phone/phone_js_wrapper.h',
-        'phone/phone_js_wrapper.cc',
-        'phone/call_js_wrapper.h',
-        'phone/call_js_wrapper.cc',
+        'phone/v8/js_function_call.h',
+        'phone/v8/phone_js_wrapper.h',
+        'phone/v8/phone_js_wrapper.cc',
+        'phone/v8/call_js_wrapper.h',
+        'phone/v8/call_js_wrapper.cc',
       ],
     },  # target sippet_phone_v8
     {
@@ -103,7 +104,7 @@
         '<(DEPTH)/third_party',
       ],
       'sources': [
-        'phone/phone_js_main.cc',
+        'phone/v8/phone_js_main.cc',
       ],
     },  # target sippet_phone_v8
   ],
