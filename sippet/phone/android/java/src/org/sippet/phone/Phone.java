@@ -12,24 +12,6 @@ import org.chromium.base.CalledByNative;
  */
 @JNINamespace("sippet::phone::android")
 public class Phone extends RunOnUIThread<Phone.Delegate> {
-    public enum State {
-        OFFLINE,
-        CONNECTING,
-        ONLINE;
-
-        public static State fromInteger(int i) {
-            switch (i) {
-                case 0:
-                    return OFFLINE;
-                case 1:
-                    return CONNECTING;
-                case 2:
-                    return ONLINE;
-            }
-            return null;
-        }
-    };
-
     /**
      * Phone delegate.
      */
@@ -43,6 +25,16 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
        * Called to inform completion of the last registration attempt.
        */
       void onRegisterCompleted(int statusCode, String statusText);
+
+      /**
+       * Called when the internal refresh registration fails.
+       */
+      void onRefreshError(int statusCode, String statusText);
+
+      /**
+       * Called to inform completion of the last unregistration attempt.
+       */
+      void onUnregisterCompleted(int statusCode, String statusText);
 
       /**
        * Called on incoming calls.
@@ -74,8 +66,8 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     /**
      * Get the |Phone| state.
      */
-    public State getState() {
-        return State.fromInteger(nativeGetState(instance));
+    public int getState() {
+        return nativeGetState(instance);
     }
 
     /**
@@ -114,8 +106,8 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     /**
      * Hangs up all active calls.
      */
-    public boolean hangUpAll() {
-        return nativeHangUpAll(instance);
+    public void hangUpAll() {
+        nativeHangUpAll(instance);
     }
 
     /**
@@ -148,6 +140,26 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     }
 
     @CalledByNative
+    private void runOnRefreshError(final int statusCode,
+                                   final String statusText) {
+        post(new Runnable<Delegate>() {
+            public void run(Delegate delegate) {
+                delegate.onRefreshError(statusCode, statusText);
+            }
+        });
+    }
+
+    @CalledByNative
+    private void runOnUnregisterCompleted(final int statusCode,
+                                          final String statusText) {
+        post(new Runnable<Delegate>() {
+            public void run(Delegate delegate) {
+                delegate.onUnregisterCompleted(statusCode, statusText);
+            }
+        });
+    }
+
+    @CalledByNative
     private void runOnIncomingCall(final long instance) {
         post(new Runnable<Delegate>() {
             public void run(Delegate delegate) {
@@ -164,6 +176,6 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     private native boolean nativeUnregister(long nativeJavaPhone);
     private native boolean nativeUnregisterAll(long nativeJavaPhone);
     private native long nativeMakeCall(long nativeJavaPhone, String target);
-    private native boolean nativeHangUpAll(long nativeJavaPhone);
+    private native void nativeHangUpAll(long nativeJavaPhone);
     private native void nativeFinalize(long nativeJavaPhone);
 }

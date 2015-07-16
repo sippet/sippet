@@ -26,7 +26,7 @@
           'type': 'none',
           'dependencies': [
             '../base/base.gyp:base_java',
-            'sippet_phone_jni_headers',
+            'sippet_phone_jni',
             'sippet_phone_java_phone_state',
           ],
           'variables': {
@@ -41,6 +41,23 @@
             'source_file': 'phone/phone_state.h',
           },
           'includes': [ '../build/android/java_cpp_enum.gypi' ],
+        },
+        {
+          'target_name': 'sippet_phone_jni',
+          'type': 'static_library',
+          'sources': [
+            'phone/android/java_phone.h',
+            'phone/android/java_phone.cc',
+            'phone/android/java_call.h',
+            'phone/android/java_call.cc',
+          ],
+          'dependencies': [
+            'sippet_phone_jni_headers',
+          ],
+          'include_dirs': [
+            '<(DEPTH)',
+            '<(SHARED_INTERMEDIATE_DIR)'
+          ],
         },
       ],
     }],

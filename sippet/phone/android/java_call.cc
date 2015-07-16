@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/phone/android/java_call.h"
+#include "sippet/phone/android/java_phone.h"
 
 #include <jni.h>
 
@@ -14,7 +15,9 @@ namespace sippet {
 namespace phone {
 namespace android {
 
-JavaCall::JavaCall(scoped_refptr<Call> call_instance) :
+JavaCall::JavaCall(const scoped_refptr<Phone>& phone_instance,
+                   const scoped_refptr<Call>& call_instance) :
+  phone_instance_(phone_instance),
   call_instance_(call_instance) {
 }
 
@@ -22,21 +25,21 @@ JavaCall::~JavaCall() {
 }
 
 jlong JavaCall::GetDirection(JNIEnv* env, jobject jcaller) {
-  return static_cast<jlong>(call_instance_->GetDirection());
+  return static_cast<jlong>(call_instance_->direction());
 }
 
 jlong JavaCall::GetState(JNIEnv* env, jobject jcaller) {
-  return static_cast<jlong>(call_instance_->GetState());
+  return static_cast<jlong>(call_instance_->state());
 }
 
-jstring JavaCall::GetUri(JNIEnv* env, jobject jcaller) {
-  return ConvertUTF8ToJavaString(env,
-      call_instance_->uri().spec()).Release();
+ScopedJavaLocalRef<jstring> JavaCall::GetUri(JNIEnv* env, jobject jcaller) {
+  return base::android::ConvertUTF8ToJavaString(env,
+      call_instance_->uri().spec());
 }
 
-jstring JavaCall::GetName(JNIEnv* env, jobject jcaller) {
-  return ConvertUTF8ToJavaString(env,
-      call_instance_->name()).Release();
+ScopedJavaLocalRef<jstring> JavaCall::GetName(JNIEnv* env, jobject jcaller) {
+  return base::android::ConvertUTF8ToJavaString(env,
+      call_instance_->name());
 }
 
 jlong JavaCall::GetCreationTime(JNIEnv* env, jobject jcaller) {
@@ -64,7 +67,8 @@ jboolean JavaCall::HangUp(JNIEnv* env, jobject jcaller) {
 }
 
 void JavaCall::SendDtmf(JNIEnv* env, jobject jcaller, jstring digits) {
-  call_instance_->SendDtmf(ConvertJavaStringToUTF8(env, digits));
+  call_instance_->SendDtmf(
+      base::android::ConvertJavaStringToUTF8(env, digits));
 }
 
 void JavaCall::Finalize(JNIEnv* env, jobject jcaller) {

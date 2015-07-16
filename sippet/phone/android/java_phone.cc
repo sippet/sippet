@@ -3,11 +3,9 @@
 // found in the LICENSE file.
 
 #include "sippet/phone/android/java_phone.h"
+#include "sippet/phone/android/java_call.h"
 
 #include <jni.h>
-
-#include <cstdint>
-#include <cstddef>
 
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"
@@ -23,12 +21,13 @@ static void Initialize(JNIEnv* env, jclass jcaller) {
 }
 
 static jlong Create(JNIEnv* env, jobject jcaller) {
-  scoped_refptr<Phone>& phone_instance = 
-      Phone::Create(PhoneObserver *phone_observer);
+  return static_cast<jlong>(reinterpret_cast<uintptr_t>(
+      new JavaPhone(env, jcaller)));
 }
 
-JavaPhone::JavaPhone(const scoped_refptr<Phone>& phone_instance) :
-  phone_instance_(phone_instance) {
+JavaPhone::JavaPhone(JNIEnv *env, jobject obj) :
+    phone_instance_(Phone::Create(this)) {
+  java_phone_.Reset(env, obj);
 }
 
 JavaPhone::~JavaPhone() {
@@ -36,12 +35,13 @@ JavaPhone::~JavaPhone() {
 
 jboolean JavaPhone::Init(JNIEnv* env, jobject jcaller,
                          jobject settings) {
-  return phone_instance_->Init(JavaSettingsToSettings(settings))
-    ? JNI_TRUE : JNI_FALSE;
+//  return phone_instance_->Init(JavaSettingsToSettings(settings))
+//    ? JNI_TRUE : JNI_FALSE;
+  return JNI_FALSE; // TODO
 }
 
-jlong JavaPhone::GetState(JNIEnv* env, jobject jcaller) {
-  return static_cast<jlong>(phone_instance_->GetState());
+jint JavaPhone::GetState(JNIEnv* env, jobject jcaller) {
+  return static_cast<jint>(phone_instance_->state());
 }
 
 jboolean JavaPhone::Register(JNIEnv* env, jobject jcaller) {
@@ -54,6 +54,11 @@ jboolean JavaPhone::Unregister(JNIEnv* env, jobject jcaller) {
     ? JNI_TRUE : JNI_FALSE;
 }
 
+jboolean JavaPhone::UnregisterAll(JNIEnv* env, jobject jcaller) {
+  return phone_instance_->UnregisterAll()
+    ? JNI_TRUE : JNI_FALSE;
+}
+
 jlong JavaPhone::MakeCall(JNIEnv* env, jobject jcaller,
                           jstring target) {
   scoped_refptr<Call> call_instance =
@@ -63,13 +68,45 @@ jlong JavaPhone::MakeCall(JNIEnv* env, jobject jcaller,
       new JavaCall(phone_instance_, call_instance)));
 }
 
-jboolean JavaPhone::HangUpAll(JNIEnv* env, jobject jcaller) {
-  return phone_instance_->HangUpAll()
-    ? JNI_TRUE : JNI_FALSE;
+void JavaPhone::HangUpAll(JNIEnv* env, jobject jcaller) {
+  phone_instance_->HangUpAll();
 }
 
 void JavaPhone::Finalize(JNIEnv* env, jobject jcaller) {
   delete this;
+}
+
+void JavaPhone::OnNetworkError(int error_code) {
+  JNIEnv* env = base::android::AttachCurrentThread();
+  Java_Phone_runOnNetworkError(env, java_phone_.obj(), error_code);
+}
+
+void JavaPhone::OnRegisterCompleted(int status_code,
+    const std::string& status_text) {
+  JNIEnv* env = base::android::AttachCurrentThread();
+  Java_Phone_runOnRegisterCompleted(env, java_phone_.obj(), status_code,
+      base::android::ConvertUTF8ToJavaString(env, status_text).Release());
+}
+
+void JavaPhone::OnRefreshError(int status_code,
+    const std::string& status_text) {
+  JNIEnv* env = base::android::AttachCurrentThread();
+  Java_Phone_runOnRefreshError(env, java_phone_.obj(), status_code,
+      base::android::ConvertUTF8ToJavaString(env, status_text).Release());
+}
+
+void JavaPhone::OnUnregisterCompleted(int status_code,
+    const std::string& status_text) {
+  JNIEnv* env = base::android::AttachCurrentThread();
+  Java_Phone_runOnUnregisterCompleted(env, java_phone_.obj(), status_code,
+      base::android::ConvertUTF8ToJavaString(env, status_text).Release());
+}
+
+void JavaPhone::OnIncomingCall(const scoped_refptr<Call>& call) {
+  JNIEnv* env = base::android::AttachCurrentThread();
+  JavaCall *java_call = new JavaCall(phone_instance_, call);
+  Java_Phone_runOnIncomingCall(env, java_phone_.obj(),
+      static_cast<jlong>(reinterpret_cast<uintptr_t>(java_call)));
 }
 
 // static

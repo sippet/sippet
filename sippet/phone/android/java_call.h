@@ -7,6 +7,7 @@
 
 #include <jni.h>
 
+#include "base/android/scoped_java_ref.h"
 #include "sippet/phone/call.h"
 
 namespace sippet {
@@ -16,14 +17,17 @@ namespace android {
 // A Java Call implementation.
 class JavaCall {
  public:
-  JavaCall(scoped_refptr<Call> call_instance);
+  JavaCall(const scoped_refptr<Phone>& phone_instance,
+           const scoped_refptr<Call>& call_instance);
   virtual ~JavaCall();
 
   // Called from java.
   jlong GetDirection(JNIEnv* env, jobject jcaller);
   jlong GetState(JNIEnv* env, jobject jcaller);
-  jstring GetUri(JNIEnv* env, jobject jcaller);
-  jstring GetName(JNIEnv* env, jobject jcaller);
+  base::android::ScopedJavaLocalRef<jstring>
+      GetUri(JNIEnv* env, jobject jcaller);
+  base::android::ScopedJavaLocalRef<jstring>
+      GetName(JNIEnv* env, jobject jcaller);
   jlong GetCreationTime(JNIEnv* env, jobject jcaller);
   jlong GetStartTime(JNIEnv* env, jobject jcaller);
   jlong GetEndTime(JNIEnv* env, jobject jcaller);
@@ -37,6 +41,10 @@ class JavaCall {
 
  private:
   scoped_refptr<Call> call_instance_;
+
+  // This reference makes sure Phone instance is deleted only after all Calls
+  // are deleted as well.
+  scoped_refptr<Phone> phone_instance_;
 };
 
 }  // namespace android
