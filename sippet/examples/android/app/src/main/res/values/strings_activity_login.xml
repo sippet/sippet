@@ -1,0 +1,13 @@
+<resources>
+
+    <!-- Strings related to login -->
+    <string name="prompt_uri">User URI</string>
+    <string name="prompt_password">Password</string>
+    <string name="prompt_registrar_server">Registrar URI</string>
+    <string name="action_sign_in">Register</string>
+
+    <string name="error_invalid_uri">This URI is invalid</string>
+    <string name="error_invalid_password">This password is too short</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_field_required">This field is required</string>
+</resources>
