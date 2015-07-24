@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/in_call_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:padding="2dip"
+    tools:ignore="Overdraw"
+    android:elevation="5dp"
+    android:stateListAnimator="@anim/button_state_list_anim_material">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageView
+            android:id="@+id/contact_photo"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:contentDescription="@string/empty_description"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_contact_picture_180_holo_light" />
+
+        <RelativeLayout
+            android:id="@+id/contact_name_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#9e808080"
+            android:gravity="center_vertical" >
+
+            <TextView
+                android:id="@+id/contact_name_display_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentRight="true"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:padding="5dip"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textSize="25sp" />
+
+            <TextView
+                android:id="@+id/contact_name_sip_address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentRight="true"
+                android:layout_below="@+id/contact_name_display_name"
+                android:ellipsize="marquee"
+                android:marqueeRepeatLimit="marquee_forever"
+                android:padding="2dip"
+                android:singleLine="true"
+                android:textColor="@android:color/white"
+                android:textSize="15sp" />
+
+            <Chronometer
+                android:id="@+id/elapsedTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:textSize="20sp" />
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/call_status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/contact_name_bar"
+            android:layout_marginTop="1dip"
+            android:background="#c818617b"
+            android:gravity="center_vertical|right"
+            android:padding="3dip"
+            android:text="@string/call_state_calling"
+            android:textAllCaps="true"
+            android:textColor="@android:color/white"
+            android:textSize="15sp" />
+    </RelativeLayout>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/endButton"
+        android:layout_width="70dip"
+        android:layout_height="70dip"
+        android:clickable="true"
+        android:src="@drawable/ic_hangup"
+        app:borderWidth="0dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:backgroundTint="#ffff0000" />
+
+</FrameLayout>

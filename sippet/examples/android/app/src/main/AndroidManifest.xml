@@ -18,6 +18,7 @@
             android:windowSoftInputMode="stateHidden" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -25,6 +26,10 @@
             android:name=".LoginActivity"
             android:label="@string/title_activity_dialer"
             android:windowSoftInputMode="adjustResize|stateVisible" >
+        </activity>
+        <activity
+            android:name=".InCallActivity"
+            android:label="@string/title_activity_in_call" >
         </activity>
     </application>
 
