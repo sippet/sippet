@@ -52,7 +52,14 @@
           'PJ_HAS_NETINET_TCP_H=1',
         ],
       }],
-    ],
+      ['OS=="android"', {
+        'defines': [
+          'PJ_ANDROID=1',
+          'PJ_IS_LITTLE_ENDIAN=1',
+          'PJ_IS_BIG_ENDIAN=0'
+        ]
+      }],
+     ],
     'defines': [
       'PJMEDIA_HAS_SRTP=0',
       'PJMEDIA_RESAMPLE_IMP=PJMEDIA_RESAMPLE_NONE',
@@ -400,12 +407,7 @@
             'PJMEDIA_AUDIO_DEV_HAS_PORTAUDIO=0',
           ]
         }],
-        ['OS=="android"', {
-          'defines': [
-            'PJ_ANDROID=1'
-          ]
-        }],
-      ],
+     ],
     },  # target pjmedia-audiodev
   ],
 }

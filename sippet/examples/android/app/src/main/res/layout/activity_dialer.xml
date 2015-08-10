@@ -34,7 +34,7 @@
                 android:src="@drawable/ic_dialpad_delete"
                 android:tint="#ff9c9c9c"
                 android:layout_gravity="center"
-                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
                 android:minWidth="50dip" />
         </RelativeLayout>
 
@@ -134,8 +134,8 @@
         android:id="@+id/snackbar"
         android:layout_gravity="bottom"
         android:elevation="15dp"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp">
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp">
     </android.support.design.widget.CoordinatorLayout>
 
 </FrameLayout>
