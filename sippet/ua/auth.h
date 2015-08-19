@@ -7,7 +7,6 @@
 
 #include <set>
 #include "net/base/auth.h"
-#include "net/base/net_log.h"
 #include "net/http/http_auth.h"
 #include "sippet/message/header.h"
 

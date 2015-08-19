@@ -5,6 +5,7 @@
 #include "sippet/transport/chrome/transport_test_util.h"
 
 #include "base/strings/string_util.h"
+#include "base/strings/string_tokenizer.h"
 #include "base/rand_util.h"
 
 #include "third_party/icu/source/i18n/unicode/regex.h"
@@ -198,17 +199,16 @@ bool MatchMessage(const scoped_refptr<Message> &message,
   bool result = true;
   icu::UnicodeString input(
     icu::UnicodeString::fromUTF8(message->ToString()));
-  std::vector<std::string> regexps;
-  Tokenize(regular_expressions, "\n", &regexps);
-  for (std::vector<std::string>::iterator i = regexps.begin(),
-       ie = regexps.end(); i != ie; ++i) {
+  base::CStringTokenizer t(regular_expressions,
+      regular_expressions + strlen(regular_expressions), "\n");
+  while (t.GetNext()) {
     UErrorCode status = U_ZERO_ERROR;
-    icu::RegexMatcher matcher(icu::UnicodeString::fromUTF8(*i), 0, status);
+    icu::RegexMatcher matcher(icu::UnicodeString::fromUTF8(t.token()), 0, status);
     DCHECK(U_SUCCESS(status));
     matcher.reset(input);
     if (!matcher.find()) {
       EXPECT_TRUE(false)
-        << "Failed to match pattern '" << *i << "', line " << line;
+        << "Failed to match pattern '" << t.token() << "', line " << line;
       result = false;
     }
     ++line;

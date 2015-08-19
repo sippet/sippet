@@ -9,81 +9,81 @@
   'conditions': [
     ['OS == "android"', {
       'targets': [
-        {
-          'target_name': 'sippet_phone_jni_headers',
-          'type': 'none',
-          'sources': [
-            'phone/android/java/src/org/sippet/phone/Phone.java',
-            'phone/android/java/src/org/sippet/phone/Call.java',
-          ],
-          'variables': {
-            'jni_gen_package': 'sippet_phone',
-          },
-          'includes': [ '../build/jni_generator.gypi' ],
-        },
-        {
-          'target_name': 'sippet_phone_java',
-          'type': 'none',
-          'dependencies': [
-            '../base/base.gyp:base_java',
-            'sippet_phone_jni',
-            'sippet_phone_java_phone_state',
-          ],
-          'variables': {
-            'java_in_dir': '../sippet/phone/android/java',
-          },
-          'includes': [ '../build/java.gypi' ],
-        },
-        {
-          'target_name': 'sippet_phone_java_phone_state',
-          'type': 'none',
-          'variables': {
-            'source_file': 'phone/phone_state.h',
-          },
-          'includes': [ '../build/android/java_cpp_enum.gypi' ],
-        },
-        {
-          'target_name': 'sippet_phone_jni',
-          'type': 'shared_library',
-          'sources': [
-            'phone/android/java_phone.h',
-            'phone/android/java_phone.cc',
-            'phone/android/java_call.h',
-            'phone/android/java_call.cc',
-          ],
-          'dependencies': [
-            'sippet_phone',
-            'sippet_phone_jni_headers',
-            '../base/base.gyp:base',
-            '../base/base.gyp:base_static',
-            '../net/net.gyp:net',
-            '../net/net.gyp:net_resources'
-          ],
-          'include_dirs': [
-            '<(DEPTH)',
-            '<(SHARED_INTERMEDIATE_DIR)'
-          ],
-        },
-        {
-          'target_name': 'sippet_phone_apk',
-          'type': 'none',
-          'dependencies': [
-            'sippet_phone_java',
-            'sippet_phone_jni',
-            '../third_party/android_tools/android_tools.gyp:android_support_v7_appcompat_javalib',
-            '../third_party/android_tools/android_tools.gyp:android_support_v13_javalib',
-          ],
-          'variables': {
-            'apk_name': "SippetPhone",
-            'manifest_package_name': 'io.sippet.phone',
-            'android_manifest_path': '../sippet/examples/android/app/src/main/AndroidManifest.xml',
-            'java_in_dir': '../sippet/examples/android/app/src/main/java',
-            'java_in_dir_suffix': '',
-            'resource_dir': '../sippet/examples/android/app/src/main/res',
-            'native_lib_target': 'libsippet_phone_jni',
-          },
-          'includes': [ '../build/java_apk.gypi' ],
-        },
+        #{
+        #  'target_name': 'sippet_phone_jni_headers',
+        #  'type': 'none',
+        #  'sources': [
+        #    'phone/android/java/src/org/sippet/phone/Phone.java',
+        #    'phone/android/java/src/org/sippet/phone/Call.java',
+        #  ],
+        #  'variables': {
+        #    'jni_gen_package': 'sippet_phone',
+        #  },
+        #  'includes': [ '../build/jni_generator.gypi' ],
+        #},
+        #{
+        #  'target_name': 'sippet_phone_java',
+        #  'type': 'none',
+        #  'dependencies': [
+        #    '../base/base.gyp:base_java',
+        #    'sippet_phone_jni',
+        #    'sippet_phone_java_phone_state',
+        #  ],
+        #  'variables': {
+        #    'java_in_dir': '../sippet/phone/android/java',
+        #  },
+        #  'includes': [ '../build/java.gypi' ],
+        #},
+        #{
+        #  'target_name': 'sippet_phone_java_phone_state',
+        #  'type': 'none',
+        #  'variables': {
+        #    'source_file': 'phone/phone_state.h',
+        #  },
+        #  'includes': [ '../build/android/java_cpp_enum.gypi' ],
+        #},
+        #{
+        #  'target_name': 'sippet_phone_jni',
+        #  'type': 'shared_library',
+        #  'sources': [
+        #    'phone/android/java_phone.h',
+        #    'phone/android/java_phone.cc',
+        #    'phone/android/java_call.h',
+        #    'phone/android/java_call.cc',
+        #  ],
+        #  'dependencies': [
+        #    'sippet_phone',
+        #    'sippet_phone_jni_headers',
+        #    '../base/base.gyp:base',
+        #    '../base/base.gyp:base_static',
+        #    '../net/net.gyp:net',
+        #    '../net/net.gyp:net_resources'
+        #  ],
+        #  'include_dirs': [
+        #    '<(DEPTH)',
+        #    '<(SHARED_INTERMEDIATE_DIR)'
+        #  ],
+        #},
+        #{
+        #  'target_name': 'sippet_phone_apk',
+        #  'type': 'none',
+        #  'dependencies': [
+        #    'sippet_phone_java',
+        #    'sippet_phone_jni',
+        #    '../third_party/android_extras/android_extras.gyp:android_support_v7_appcompat_javalib',
+        #    '../third_party/android_extras/android_extras.gyp:android_support_v13_javalib',
+        #  ],
+        #  'variables': {
+        #    'apk_name': "SippetPhone",
+        #    'manifest_package_name': 'io.sippet.phone',
+        #    'android_manifest_path': '../sippet/examples/android/app/src/main/AndroidManifest.xml',
+        #    'java_in_dir': '../sippet/examples/android/app',
+        #    'java_in_dir_suffix': '/src/main/java',
+        #    'resource_dir': '../sippet/examples/android/app/src/main/res',
+        #    'native_lib_target': 'libsippet_phone_jni',
+        #  },
+        #  'includes': [ '../build/java_apk.gypi' ],
+        #},
       ],
     }],
   ],

@@ -6,6 +6,7 @@
 #define SIPPET_MESSAGE_MESSAGE_H_
 
 #include <algorithm>
+#include <vector>
 #include "sippet/base/ilist.h"
 #include "sippet/base/casting.h"
 #include "sippet/message/header.h"
@@ -248,7 +249,7 @@ class Message
   }
 
   // Filter the given headers.
-  template<class HeaderType>
+  template<typename HeaderType>
   std::vector<HeaderType*> filter() {
     std::vector<HeaderType*> result;
     for (iterator i = find_first<HeaderType>(), ie = end();

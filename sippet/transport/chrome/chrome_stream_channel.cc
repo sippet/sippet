@@ -548,11 +548,9 @@ int ChromeStreamChannel::HandleCertificateError(int result) {
   net::SSLInfo ssl_info;
   ssl_socket->GetSSLInfo(&ssl_info);
 
-  net::TransportSecurityState::DomainState domain_state;
-  const bool fatal = context->transport_security_state() &&
-      context->transport_security_state()->GetStaticDomainState(
-          destination_.host(), &domain_state) &&
-      domain_state.ShouldSSLErrorsBeFatal();
+  net::TransportSecurityState* state = context->transport_security_state();
+  const bool fatal =
+      state && state->ShouldSSLErrorsBeFatal(destination_.host());
 
   delegate_->OnSSLCertificateError(this, ssl_info, fatal);
   return net::ERR_IO_PENDING;

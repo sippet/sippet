@@ -8,7 +8,6 @@
 #include "base/memory/scoped_ptr.h"
 #include "sippet/transport/end_point.h"
 #include "sippet/transport/channel.h"
-#include "net/base/net_log.h"
 
 namespace sippet {
 

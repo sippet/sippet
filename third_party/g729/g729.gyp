@@ -3,12 +3,6 @@
 # found in the LICENSE file.
 
 {
-  'variables': {
-    'g729_amalgamation%': 0,
-  },
-  'includes': [
-    '../../build/win_precompile.gypi',
-  ],
   'targets': [
     {
       'target_name': 'g729',
@@ -16,97 +10,61 @@
       'dependencies': [
         '<(DEPTH)/third_party/webrtc/common_audio/common_audio.gyp:common_audio',
       ],
-      'variables': {
-        'clang_warning_flags': [
-          # The code has constructs like:
-          # if ((UWord32)(t0 - 0xfe000000L) < 0x01ffffffL -  0xfe000000L)
-          '-Wno-tautological-constant-out-of-range-compare',
-        ],
-        'optimize': 'max',
-      },
+      'include_dirs': [
+        './include',
+        './source',
+        '<(DEPTH)/third_party/webrtc',
+      ],
       'direct_dependent_settings': {
         'include_dirs': [
           './source',
-          '<(DEPTH)/third_party',
-          '<(DEPTH)/third_party/webrtc/common_audio/signal_processing/include',
+          '<(DEPTH)/third_party/webrtc',
         ],
       },
-      'conditions': [
-        ['g729_amalgamation==1', {
-          'sources': [
-            'source/g729a.c',
-          ],
-        }, {
-          'include_dirs': [
-            './source',
-          ],
-          'sources': [
-            'source/acelp_ca.c',
-            'source/basic_op.h',
-            'source/bits.c',
-            'source/calcexc.c',
-            'source/cod_ld8a.c',
-            'source/cor_func.c',
-            'source/de_acelp.c',
-            'source/dec_gain.c',
-            'source/dec_lag3.c',
-            'source/dec_ld8a.c',
-            'source/dec_sid.c',
-            'source/dspfunc.c',
-            'source/dtx.c',
-            'source/dtx.h',
-            'source/filter.c',
-            'source/gainpred.c',
-            'source/ld8a.h',
-            'source/lpc.c',
-            'source/lpcfunc.c',
-            'source/lspdec.c',
-            'source/lspgetq.c',
-            'source/octet.h',
-            'source/oper_32b.c',
-            'source/oper_32b.h',
-            'source/pitch_a.c',
-            'source/postfilt.c',
-            'source/post_pro.c',
-            'source/p_parity.c',
-            'source/pred_lt3.c',
-            'source/pre_proc.c',
-            'source/qsidgain.c',
-            'source/qsidlsf.c',
-            'source/qua_gain.c',
-            'source/qua_lsp.c',
-            'source/sid.h',
-            'source/tab_dtx.c',
-            'source/tab_dtx.h',
-            'source/tab_ld8a.c',
-            'source/tab_ld8a.h',
-            'source/taming.c',
-            'source/vad.c',
-            'source/vad.h',
-            'source/util.c',
-          ],
-        }],
-        ['OS=="android" or OS=="ios"', {
-          # Available assembly optimizations are valid only
-          # for GCC and LLVM compilers
-          'conditions': [
-            ['target_arch=="ia32"', {
-              'defines': [ 'ARCH_X86' ]
-            }],
-            ['target_arch=="arm"', {
-              'defines': [ 'ARCH_ARM' ]
-            }],
-            ['OS=="android"', {
-              'defines': [ 'OS_ANDROID' ],
-            }],
-            ['OS=="ios"', {
-              'defines': [ 'OS_IOS' ],
-            }],
-          ],
-        }], # OS=="android" or OS=="ios"
-      ],
-      'includes': [
-        '../../build/android/increase_size_for_speed.gypi',
+      'sources': [
+        'src/acelp_ca.c',
+        'src/basic_op.h',
+        'src/bits.c',
+        'src/calcexc.c',
+        'src/cod_ld8a.c',
+        'src/cor_func.c',
+        'src/de_acelp.c',
+        'src/dec_gain.c',
+        'src/dec_lag3.c',
+        'src/dec_ld8a.c',
+        'src/dec_sid.c',
+        'src/dspfunc.c',
+        'src/dtx.c',
+        'src/dtx.h',
+        'src/filter.c',
+        'src/gainpred.c',
+        'src/ld8a.h',
+        'src/lpc.c',
+        'src/lpcfunc.c',
+        'src/lspdec.c',
+        'src/lspgetq.c',
+        'src/octet.h',
+        'src/oper_32b.c',
+        'src/oper_32b.h',
+        'src/pitch_a.c',
+        'src/postfilt.c',
+        'src/post_pro.c',
+        'src/p_parity.c',
+        'src/pred_lt3.c',
+        'src/pre_proc.c',
+        'src/qsidgain.c',
+        'src/qsidlsf.c',
+        'src/qua_gain.c',
+        'src/qua_lsp.c',
+        'src/sid.h',
+        'src/tab_dtx.c',
+        'src/tab_dtx.h',
+        'src/tab_ld8a.c',
+        'src/tab_ld8a.h',
+        'src/taming.c',
+        'src/vad.c',
+        'src/vad.h',
+        'src/util.c',
       ],
     },  # target g729
     {
@@ -119,7 +77,7 @@
         'g729',
       ],
       'sources': [
-        'source/coder.c',
+        'src/coder.c',
       ],
     },  # target g729_coder
     {
@@ -132,7 +90,7 @@
         'g729',
       ],
       'sources': [
-        'source/decoder.c',
+        'src/decoder.c',
       ],
     },  # target g729_decoder
     {
@@ -145,7 +103,7 @@
         'g729',
       ],
       'sources': [
-        'source/autocorr.c',
+        'src/autocorr.c',
       ],
     },  # target autocorr
   ],

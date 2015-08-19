@@ -115,11 +115,13 @@ struct Converter<sippet::phone::Settings> {
         ConvertToV8(isolate, val.disable_encryption()));
     if (!val.ice_servers().empty()) {
       result->Set(v8::String::NewFromUtf8(isolate, kIceServers),
-          ConvertToV8(isolate, val.ice_servers()));
+          ConvertToV8(isolate->GetCurrentContext(),
+              val.ice_servers()).ToLocalChecked());
     }
     if (!val.route_set().empty()) {
       result->Set(v8::String::NewFromUtf8(isolate, kRouteSet),
-          ConvertToV8(isolate, val.route_set()));
+          ConvertToV8(isolate->GetCurrentContext(),
+              val.route_set()).ToLocalChecked());
     }
     if (!val.uri().is_empty()) {
       result->Set(v8::String::NewFromUtf8(isolate, kUri),

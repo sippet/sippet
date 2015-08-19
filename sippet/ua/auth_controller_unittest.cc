@@ -295,7 +295,7 @@ class MockHandler : public AuthHandlerMock {
     // challenge for a non connection based scheme, assume it's a rejection.
     if (challenge.param_empty())
       return net::HttpAuth::AUTHORIZATION_RESULT_REJECT;
-    if (!LowerCaseEqualsASCII(challenge.scheme(), "mock"))
+    if (!base::LowerCaseEqualsASCII(challenge.scheme(), "mock"))
       return net::HttpAuth::AUTHORIZATION_RESULT_INVALID;
     return net::HttpAuth::AUTHORIZATION_RESULT_ACCEPT;
   }

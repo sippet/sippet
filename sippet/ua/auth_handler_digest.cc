@@ -115,7 +115,7 @@ Auth::AuthorizationResult AuthHandlerDigest::HandleAnotherChallenge(
   // to differentiate between stale and rejected responses.
   // Note that the state of the current handler is not mutated - this way if
   // there is a rejection the realm hasn't changed.
-  if (!LowerCaseEqualsASCII(challenge.scheme(), "digest"))
+  if (!base::LowerCaseEqualsASCII(challenge.scheme(), "digest"))
     return net::HttpAuth::AUTHORIZATION_RESULT_INVALID;
 
   // Try to find the "stale" value, and also keep track of the realm
@@ -193,7 +193,7 @@ bool AuthHandlerDigest::ParseChallenge(
   realm_ = original_realm_ = nonce_ = domain_ = opaque_ = std::string();
 
   // FAIL -- Couldn't match auth-scheme.
-  if (!LowerCaseEqualsASCII(challenge.scheme(), "digest"))
+  if (!base::LowerCaseEqualsASCII(challenge.scheme(), "digest"))
     return false;
 
   // Get all properties.
@@ -219,9 +219,9 @@ bool AuthHandlerDigest::ParseChallenge(
   }
   if (challenge.HasAlgorithm()) {
     std::string algorithm(challenge.algorithm());
-    if (LowerCaseEqualsASCII(algorithm, "md5")) {
+    if (base::LowerCaseEqualsASCII(algorithm, "md5")) {
       algorithm_ = ALGORITHM_MD5;
-    } else if (LowerCaseEqualsASCII(algorithm, "md5-sess")) {
+    } else if (base::LowerCaseEqualsASCII(algorithm, "md5-sess")) {
       algorithm_ = ALGORITHM_MD5_SESS;
     } else {
       DVLOG(1) << "Unknown value of algorithm";
@@ -235,11 +235,11 @@ bool AuthHandlerDigest::ParseChallenge(
     net::HttpUtil::ValuesIterator qop_values(value.begin(), value.end(), ',');
     qop_ = QOP_UNSPECIFIED;
     while (qop_values.GetNext()) {
-      if (LowerCaseEqualsASCII(qop_values.value(), "auth")) {
+      if (base::LowerCaseEqualsASCII(qop_values.value(), "auth")) {
         qop_ = QOP_AUTH;
         break;
       }
-      else if (LowerCaseEqualsASCII(qop_values.value(), "auth-int")) {
+      else if (base::LowerCaseEqualsASCII(qop_values.value(), "auth-int")) {
         qop_ = QOP_AUTH_INT;
         continue;
       }

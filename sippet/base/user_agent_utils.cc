@@ -20,20 +20,6 @@
 
 namespace sippet {
 
-namespace {
-
-#if defined(OS_ANDROID)
-std::string GetAndroidDeviceName() {
-  std::string android_device_name = base::SysInfo::GetDeviceName();
-#if defined(GOOGLE_TV)
-  android_device_name += " TV";
-#endif
-  return android_device_name;
-}
-#endif
-
-}
-
 std::string BuildOSCpuInfo() {
   std::string os_cpu;
 
@@ -102,7 +88,7 @@ std::string BuildOSCpuInfo() {
   // Send information about the device.
   bool semicolon_inserted = false;
   std::string android_build_codename = base::SysInfo::GetAndroidBuildCodename();
-  std::string android_device_name = GetAndroidDeviceName();
+  std::string android_device_name = base::SysInfo::HardwareModelName();
   if ("REL" == android_build_codename && android_device_name.size() > 0) {
     android_info_str += "; " + android_device_name;
     semicolon_inserted = true;

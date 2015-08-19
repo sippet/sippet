@@ -19,6 +19,10 @@
 #include "gin/try_catch.h"
 #include "sippet/phone/v8/phone_js_wrapper.h"
 
+#ifdef V8_USE_EXTERNAL_STARTUP_DATA
+#include "gin/v8_initializer.h"
+#endif
+
 namespace gin {
 namespace {
 
@@ -138,7 +142,8 @@ int main(int argc, char** argv) {
   base::CommandLine::Init(argc, argv);
   base::i18n::InitializeICU();
 #ifdef V8_USE_EXTERNAL_STARTUP_DATA
-  gin::IsolateHolder::LoadV8Snapshot();
+  gin::V8Initializer::LoadV8Snapshot();
+  gin::V8Initializer::LoadV8Natives();
 #endif
 
   gin::IsolateHolder::Initialize(gin::IsolateHolder::kStrictMode,

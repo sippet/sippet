@@ -4,7 +4,10 @@
 
 #include "sippet/uri/uri.h"
 #include "sippet/base/stl_extras.h"
+
 #include "base/logging.h"
+#include "base/strings/string_piece.h"
+#include "base/strings/string_util.h"
 
 #include <sstream>
 
@@ -34,9 +37,10 @@ bool InitCanonical(const STR& input_spec,
 bool SchemeIs(const std::string& spec,
               const uri::Parsed& parsed,
               const char* lower_ascii_scheme) {
-  return uri::LowerCaseEqualsASCII(spec.data() + parsed.scheme.begin,
-                                        spec.data() + parsed.scheme.end(),
-                                        lower_ascii_scheme);
+  return base::LowerCaseEqualsASCII(
+      base::StringPiece(spec.data() + parsed.scheme.begin,
+                        parsed.scheme.len),
+      lower_ascii_scheme);
 }
 
 template<typename STR>
@@ -79,12 +83,10 @@ std::pair<bool, std::string> LookupKeyValue(
           spec.data(), &query, &key, &value)) {
       std::string unescaped_key(
           uri_details::UnescapedComponentString(spec, key));
-      if (unescaped_key.length() != name.length())
+      if (!base::EqualsCaseInsensitiveASCII(unescaped_key, name))
         continue;
-      if (base::strncasecmp(name.data(),
-          unescaped_key.data(), unescaped_key.length()) == 0)
-        return std::make_pair(true,
-            uri_details::UnescapedComponentString(spec, value));
+      return std::make_pair(true,
+          uri_details::UnescapedComponentString(spec, value));
   }
   return std::make_pair(false, "");
 }
@@ -243,43 +245,42 @@ std::string SipURI::HostNoBrackets() const {
   return uri_details::ComponentString(spec_, h);
 }
 
-bool SipURI::DomainIs(const char* lower_ascii_domain, int domain_len) const {
+bool SipURI::DomainIs(base::StringPiece lower_ascii_domain) const {
   // Return false if this URL is not valid or domain is empty.
-  if (!is_valid_ || !domain_len)
+  if (!is_valid_ || lower_ascii_domain.empty())
     return false;
 
   if (!parsed_.host.is_nonempty())
     return false;
 
-  // Check whether the host name is end with a dot. If yes, treat it
-  // the same as no-dot unless the input comparison domain is end
-  // with dot.
-  const char* last_pos = spec_.data() + parsed_.host.end() - 1;
+  // If the host name ends with a dot but the input domain doesn't,
+  // then we ignore the dot in the host name.
+  const char* host_last_pos = spec_.data() + parsed_.host.end() - 1;
   int host_len = parsed_.host.len;
-  if ('.' == *last_pos && '.' != lower_ascii_domain[domain_len - 1]) {
-    last_pos--;
+  int domain_len = lower_ascii_domain.length();
+  if ('.' == *host_last_pos && '.' != lower_ascii_domain[domain_len - 1]) {
+    host_last_pos--;
     host_len--;
   }
 
-  // Return false if host's length is less than domain's length.
   if (host_len < domain_len)
     return false;
 
-  // Compare this url whether belong specific domain.
-  const char* start_pos = spec_.data() + parsed_.host.begin +
-                          host_len - domain_len;
+  // |host_first_pos| is the start of the compared part of the host name, not
+  // start of the whole host name.
+  const char* host_first_pos = spec_.data() + parsed_.host.begin +
+                               host_len - domain_len;
 
-  if (!uri::LowerCaseEqualsASCII(start_pos,
-                                      last_pos + 1,
-                                      lower_ascii_domain,
-                                      lower_ascii_domain + domain_len))
+  if (!base::LowerCaseEqualsASCII(
+           base::StringPiece(host_first_pos, domain_len), lower_ascii_domain))
     return false;
 
-  // Check whether host has right domain start with dot, make sure we got
-  // right domain range. For example www.google.com has domain
-  // "google.com" but www.iamnotgoogle.com does not.
+  // Make sure there aren't extra characters in host before the compared part;
+  // if the host name is longer than the input domain name, then the character
+  // immediately before the compared part should be a dot. For example,
+  // www.google.com has domain "google.com", but www.iamnotgoogle.com does not.
   if ('.' != lower_ascii_domain[0] && host_len > domain_len &&
-      '.' != *(start_pos - 1))
+      '.' != *(host_first_pos - 1))
     return false;
 
   return true;

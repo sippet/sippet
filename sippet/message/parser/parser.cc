@@ -113,7 +113,8 @@ bool IsStatusLine(
       std::string::const_iterator line_begin,
       std::string::const_iterator line_end) {
   return ((line_end - line_begin > 4)
-    && LowerCaseEqualsASCII(line_begin, line_begin + 4, "sip/"));
+      && base::LowerCaseEqualsASCII(
+             base::StringPiece(line_begin, line_begin + 4), "sip/"));
 }
 
 std::string::const_iterator FindLineEnd(
@@ -131,7 +132,8 @@ Version ParseVersion(
   Tokenizer tok(line_begin, line_end);
 
   if ((line_end - line_begin < 3) ||
-      !LowerCaseEqualsASCII(line_begin, line_begin + 3, "sip")) {
+      !LowerCaseEqualsASCII(
+          base::StringPiece(line_begin, line_begin + 3), "sip")) {
     DVLOG(1) << "missing status line";
     return Version();
   }
@@ -520,7 +522,8 @@ bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
                               const net::HostPortPair &)) {
   std::string::const_iterator version_start = tok.Skip(HTTP_LWS);
   if ((tok.end() - tok.current() < 3)
-      || !LowerCaseEqualsASCII(tok.current(), tok.current() + 3, "sip")) {
+      || !LowerCaseEqualsASCII(
+          base::StringPiece(tok.current(), tok.current() + 3), "sip")) {
     DVLOG(1) << "unknown SIP-version";
     return false;
   }
@@ -541,7 +544,7 @@ bool ParseVia(Tokenizer &tok, scoped_ptr<HeaderType> &header,
     return false;
   }
   std::string protocol(protocol_start, tok.SkipNotIn(HTTP_LWS));
-  StringToUpperASCII(&protocol);
+  base::StringToUpperASCII(&protocol);
   std::string::const_iterator sentby_start = tok.Skip(HTTP_LWS);
   if (tok.EndOfInput()) {
     DVLOG(1) << "missing sent-by";

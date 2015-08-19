@@ -6,7 +6,7 @@
 #define SIPPET_UA_AUTH_HANDLER_H_
 
 #include "sippet/ua/auth.h"
-#include "net/base/net_log.h"
+#include "net/log/net_log.h"
 #include "net/base/completion_callback.h"
 
 namespace sippet {

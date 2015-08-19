@@ -15,8 +15,8 @@ class DatagramChannelTest : public testing::Test {
  public:
   void Finish() {
     base::MessageLoop::current()->RunUntilIdle();
-    EXPECT_TRUE(data_->at_read_eof());
-    EXPECT_TRUE(data_->at_write_eof());
+    EXPECT_TRUE(data_->AllReadDataConsumed());
+    EXPECT_TRUE(data_->AllWriteDataConsumed());
   }
 
   void Initialize(net::MockWrite* writes, size_t writes_count) {
@@ -28,7 +28,7 @@ class DatagramChannelTest : public testing::Test {
     }
     wrapped_socket_ =
         new net::DeterministicMockTCPClientSocket(net_log_.net_log(), data_.get());
-    data_->set_socket(wrapped_socket_);
+    data_->set_delegate(wrapped_socket_->AsWeakPtr());
     writer_.reset(new ChromeDatagramWriter(wrapped_socket_));
     wrapped_socket_->Connect(callback_.callback());
   }

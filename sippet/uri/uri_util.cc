@@ -5,10 +5,24 @@
 #include "sippet/uri/uri.h"
 #include "url/url_canon_internal.h"
 
+#include "base/strings/string_piece.h"
+#include "base/strings/string_util.h"
+
 namespace sippet {
 namespace uri {
 
 namespace {
+
+// This template converts a given character type to the corresponding
+// StringPiece type.
+template<typename CHAR> struct CharToStringPiece {
+};
+template<> struct CharToStringPiece<char> {
+  typedef base::StringPiece Piece;
+};
+template<> struct CharToStringPiece<base::char16> {
+  typedef base::StringPiece16 Piece;
+};
 
 // Given a string and a range inside the string, compares it to the given
 // lower-case |compare_to| buffer.
@@ -18,9 +32,10 @@ inline bool DoCompareSchemeComponent(const CHAR* spec,
                                      const char* compare_to) {
   if (!component.is_nonempty())
     return compare_to[0] == 0;  // When component is empty, match empty scheme.
-  return uri::LowerCaseEqualsASCII(&spec[component.begin],
-                                        &spec[component.end()],
-                                        compare_to);
+  return base::LowerCaseEqualsASCII(
+      typename CharToStringPiece<CHAR>::Piece(
+          &spec[component.begin], component.len),
+      compare_to);
 }
 
 template<typename CHAR>

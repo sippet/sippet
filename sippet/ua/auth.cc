@@ -160,7 +160,7 @@ Auth::AuthorizationResult Auth::HandleChallengeResponse(
        i != ie; i++) {
     if (header_type == i->type()) {
       Challenge& challenge = GetChallengeFromHeader(i);
-      if (!LowerCaseEqualsASCII(challenge.scheme(),
+      if (!base::LowerCaseEqualsASCII(challenge.scheme(),
           current_scheme_name.c_str()))
         continue;
       authorization_result = handler->HandleAnotherChallenge(challenge);

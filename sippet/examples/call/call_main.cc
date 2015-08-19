@@ -83,6 +83,16 @@ private:
             base::Unretained(this), net::OK));
   }
 
+  void OnRefreshError(int status_code,
+      const std::string& status_text) override {
+    // do nothing
+  }
+
+  void OnUnregisterCompleted(int status_code,
+      const std::string& status_text) override {
+    // do nothing
+  }
+
   void OnIncomingCall(const scoped_refptr<Call>& call) override {
     LOG(ERROR) << "Unexpected incoming call";
     message_loop_.PostTask(FROM_HERE,

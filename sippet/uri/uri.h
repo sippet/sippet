@@ -241,14 +241,7 @@ class SipURI {
   //
   // If function DomainIs has parameter domain_len, which means the parameter
   // lower_ascii_domain does not gurantee to terminate with NULL character.
-  bool DomainIs(const char* lower_ascii_domain, int domain_len) const;
-
-  // If function DomainIs only has parameter lower_ascii_domain, which means
-  // domain string should be terminate with NULL character.
-  bool DomainIs(const char* lower_ascii_domain) const {
-    return DomainIs(lower_ascii_domain,
-                    static_cast<int>(strlen(lower_ascii_domain)));
-  }
+  bool DomainIs(base::StringPiece lower_ascii_domain) const;
 
   // Swaps the contents of this URI object with the argument without doing
   // any memory allocations.

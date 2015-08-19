@@ -196,7 +196,7 @@ TEST(SimpleMessages, TortureMessage2) {
   ASSERT_TRUE(isa<Request>(message));
 
   Request *request = dyn_cast<Request>(message).get();
-  EXPECT_TRUE(LowerCaseEqualsASCII(request->method().str(),
+  EXPECT_TRUE(base::LowerCaseEqualsASCII(request->method().str(),
     "!interesting-method0123456789_*+`.%indeed'~"));
   EXPECT_EQ(GURL("sip:1_unusual.URI~(to-be!sure)"
                    "&isn't+it$/crazy?,/;;*:"
@@ -236,7 +236,7 @@ TEST(SimpleMessages, TortureMessage2) {
 
   Cseq *cseq = request->get<Cseq>();
   ASSERT_TRUE(cseq);
-  EXPECT_TRUE(LowerCaseEqualsASCII(cseq->method().str(),
+  EXPECT_TRUE(base::LowerCaseEqualsASCII(cseq->method().str(),
     "!interesting-method0123456789_*+`.%indeed'~"));
   EXPECT_EQ(139122385, cseq->sequence());
 

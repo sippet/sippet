@@ -8,7 +8,7 @@
 #include "base/at_exit.h"
 #include "base/command_line.h"
 #include "net/dns/host_resolver.h"
-#include "net/base/net_log_logger.h"
+#include "net/log/net_log.h"
 #include "sippet/ua/ua_user_agent.h"
 #include "sippet/ua/auth_handler_factory.h"
 #include "sippet/transport/chrome/chrome_channel_factory.h"

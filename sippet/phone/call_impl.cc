@@ -348,11 +348,15 @@ void CallImpl::HandleSessionDescriptionAnswer(
   if (content_type != nullptr
       && "application" == content_type->MediaType::type()
       && "sdp" == content_type->subtype()) {
+    webrtc::SdpParseError error;
     webrtc::SessionDescriptionInterface *desc =
       webrtc::CreateSessionDescription(
           webrtc::SessionDescriptionInterface::kAnswer,
-          incoming_response->content());
-    if (desc) {
+          incoming_response->content(), &error);
+    if (!desc) {
+      LOG(WARNING) << "Can't parse received session description message. "
+          << "SdpParseError was: " << error.description;
+    } else {
       peer_connection_->SetRemoteDescription(
         ProxySetSessionDescriptionObserver::Create(
           base::Bind(&CallImpl::OnSetRemoteSessionSuccess, base::Unretained(this)),

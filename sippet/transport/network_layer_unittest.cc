@@ -69,8 +69,8 @@ class NetworkLayerTest : public testing::Test {
   void Finish() {
     base::MessageLoop::current()->RunUntilIdle();
     EXPECT_TRUE(data_provider_->at_events_end());
-    EXPECT_TRUE(data_->at_write_eof());
-    EXPECT_TRUE(data_->at_read_eof());
+    EXPECT_TRUE(data_->AllReadDataConsumed());
+    EXPECT_TRUE(data_->AllWriteDataConsumed());
   }
 
   void Initialize(net::MockRead* reads = nullptr, size_t reads_count = 0,
@@ -111,7 +111,8 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   Initialize();
 
   std::string branch = network_layer_->CreateBranch();
-  EXPECT_TRUE(StartsWithASCII(branch, kMagicCookie, true));
+  EXPECT_TRUE(base::StartsWith(branch, kMagicCookie,
+      base::CompareCase::SENSITIVE));
 
   scoped_refptr<Channel> channel;
   channel_factory_->CreateChannel(EndPoint("192.0.2.34", 321, Protocol::TCP),
@@ -121,16 +122,18 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   scoped_refptr<Request> client_request =
     new Request(Method::INVITE, GURL("sip:foo@bar.com"));
   network_layer_->StampClientTopmostVia(client_request, channel);
-  EXPECT_TRUE(StartsWithASCII(client_request->ToString(),
+  EXPECT_TRUE(base::StartsWith(client_request->ToString(),
     "INVITE sip:foo@bar.com SIP/2.0\r\n"
-    "v: SIP/2.0/TCP 192.0.2.33:123;rport;branch=z9", true));
+    "v: SIP/2.0/TCP 192.0.2.33:123;rport;branch=z9",
+    base::CompareCase::SENSITIVE));
 
   scoped_refptr<Request> empty_via_request =
     new Request(Method::INVITE, GURL("sip:bar@foo.com"));
   network_layer_->StampServerTopmostVia(empty_via_request, channel);
-  EXPECT_TRUE(StartsWithASCII(empty_via_request->ToString(),
+  EXPECT_TRUE(base::StartsWith(empty_via_request->ToString(),
     "INVITE sip:bar@foo.com SIP/2.0\r\n"
-    "v: SIP/2.0/TCP 192.0.2.34:321;rport", true));
+    "v: SIP/2.0/TCP 192.0.2.34:321;rport",
+    base::CompareCase::SENSITIVE));
 
   scoped_refptr<Request> single_via_request =
     new Request(Method::INVITE, GURL("sip:foobar@foo.com"));
@@ -139,9 +142,10 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   via->push_back(ViaParam(Protocol::TCP, hostport));
   single_via_request->push_front(via.Pass());
   network_layer_->StampServerTopmostVia(single_via_request, channel);
-  EXPECT_TRUE(StartsWithASCII(single_via_request->ToString(),
+  EXPECT_TRUE(base::StartsWith(single_via_request->ToString(),
     "INVITE sip:foobar@foo.com SIP/2.0\r\n"
-    "v: SIP/2.0/TCP 192.168.0.1:7001;received=192.0.2.34;rport=321", true));
+    "v: SIP/2.0/TCP 192.168.0.1:7001;received=192.0.2.34;rport=321",
+    base::CompareCase::SENSITIVE));
 
   EndPoint single_via_request_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_request);

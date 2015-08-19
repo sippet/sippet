@@ -433,7 +433,7 @@ void StandaloneTestServer::OnReceiveResponse(pjsip_rx_data *rdata) {
 }
 
 void StandaloneTestServer::InitializeOnIOThread() {
-  DCHECK(io_thread_->message_loop_proxy()->BelongsToCurrentThread());
+  DCHECK(io_thread_->task_runner()->BelongsToCurrentThread());
   DCHECK(!Started());
 
   control_struct_.reset(new ControlStruct);
@@ -459,7 +459,7 @@ void StandaloneTestServer::InitializeOnIOThread() {
 }
 
 void StandaloneTestServer::ShutdownOnIOThread() {
-  DCHECK(io_thread_->message_loop_proxy()->BelongsToCurrentThread());
+  DCHECK(io_thread_->task_runner()->BelongsToCurrentThread());
 
   control_struct_.reset(nullptr);
   pj_shutdown();
@@ -480,7 +480,7 @@ bool StandaloneTestServer::PostTaskToIOThreadAndWait(
     temporary_loop.reset(new base::MessageLoop());
 
   base::RunLoop run_loop;
-  if (!io_thread_->message_loop_proxy()->PostTaskAndReply(
+  if (!io_thread_->task_runner()->PostTaskAndReply(
           FROM_HERE, closure, run_loop.QuitClosure())) {
     return false;
   }

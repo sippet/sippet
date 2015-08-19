@@ -7,7 +7,6 @@
 
 #include "net/base/completion_callback.h"
 #include "net/base/net_export.h"
-#include "net/base/net_log.h"
 #include "net/base/address_list.h"
 #include "base/memory/ref_counted.h"
 #include "sippet/transport/end_point.h"

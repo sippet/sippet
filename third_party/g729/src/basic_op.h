@@ -544,6 +544,8 @@ static __inline int32_t L_msu(int32_t L_var3, int16_t var1, int16_t var2)
           : "r"(ra),
             "r"(rb),
             "r"(rc));
+
+  return L_var_out;
 #else
   return WebRtcSpl_SubSatW32(L_var3, L_mult(var1, var2));
 #endif

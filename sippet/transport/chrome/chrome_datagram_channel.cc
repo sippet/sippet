@@ -6,7 +6,6 @@
 
 #include "base/rand_util.h"
 #include "net/base/net_errors.h"
-#include "net/base/net_log.h"
 #include "net/base/ip_endpoint.h"
 #include "net/socket/client_socket_handle.h"
 #include "net/socket/client_socket_factory.h"

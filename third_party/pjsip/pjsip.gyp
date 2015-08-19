@@ -7,10 +7,12 @@
     '../../build/win_precompile.gypi',
   ],
   'variables': {
-    'pjsip_source%': "source",
-  },
-  'target_defaults': {
-    'include_dirs': [
+    'variables': {
+      'pjsip_source%': "source",
+    },
+    'pjsip_source%': '<(pjsip_source)',
+    'pjsip_export_defines': [],
+    'pjsip_include_dirs': [
       './overrides',
       './<(pjsip_source)/pjlib/include',
       './<(pjsip_source)/pjlib-util/include',
@@ -18,9 +20,17 @@
       './<(pjsip_source)/pjnath/include',
       './<(pjsip_source)/pjsip/include',
     ],
-    'dependencies': [
+    'pjsip_export_dependencies': [
       '<(DEPTH)/third_party/speex/speex.gyp:libspeex',
       '<(DEPTH)/third_party/boringssl/boringssl.gyp:boringssl',
+    ],
+  },
+  'target_defaults': {
+    'include_dirs': [
+      '<@(pjsip_include_dirs)',
+    ],
+    'dependencies': [
+      '<@(pjsip_export_dependencies)',
     ],
     'link_settings': {
       'msvs_settings': {
@@ -29,19 +39,16 @@
         },
       }
     },
-    'direct_dependent_settings': {
+    'all_dependent_settings': {
       'include_dirs': [
-        './overrides',
-        './<(pjsip_source)/pjlib/include',
-        './<(pjsip_source)/pjlib-util/include',
-        './<(pjsip_source)/pjmedia/include',
-        './<(pjsip_source)/pjnath/include',
-        './<(pjsip_source)/pjsip/include',
+        '<@(pjsip_include_dirs)',
+      ],
+      'defines': [
+        '<@(pjsip_export_defines)',
       ],
     },
     'export_dependent_settings': [
-      '<(DEPTH)/third_party/speex/speex.gyp:libspeex',
-      '<(DEPTH)/third_party/boringssl/boringssl.gyp:boringssl',
+      '<@(pjsip_export_dependencies)',
     ],
     'conditions': [
       ['OS=="win"', {
@@ -53,14 +60,17 @@
         ],
       }],
       ['OS=="android"', {
-        'defines': [
-          'PJ_ANDROID=1',
-          'PJ_IS_LITTLE_ENDIAN=1',
-          'PJ_IS_BIG_ENDIAN=0'
-        ]
+        'variables': {
+          'pjsip_export_defines': [
+            'PJ_ANDROID=1',
+            'PJ_IS_BIG_ENDIAN=0',
+            'PJ_IS_LITTLE_ENDIAN=1',
+          ],
+        },
       }],
      ],
     'defines': [
+      '<@(pjsip_export_defines)',
       'PJMEDIA_HAS_SRTP=0',
       'PJMEDIA_RESAMPLE_IMP=PJMEDIA_RESAMPLE_NONE',
       'PJ_HAS_SSL_SOCK=1',

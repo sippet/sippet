@@ -7,7 +7,6 @@
 
 #include <deque>
 #include "base/memory/weak_ptr.h"
-#include "net/base/net_log.h"
 #include "net/base/completion_callback.h"
 
 namespace base {

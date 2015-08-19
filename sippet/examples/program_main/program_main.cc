@@ -46,7 +46,7 @@ bool ProgramMain::Init() {
   logging::SetMinLogLevel(-10);
 
   request_context_getter_ =
-      new URLRequestContextGetter(message_loop_.message_loop_proxy());
+      new URLRequestContextGetter(message_loop_.task_runner());
 
   net::ClientSocketFactory *client_socket_factory =
       net::ClientSocketFactory::GetDefaultFactory();

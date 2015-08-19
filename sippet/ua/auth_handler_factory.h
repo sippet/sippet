@@ -8,7 +8,6 @@
 #include <map>
 
 #include "base/memory/scoped_ptr.h"
-#include "net/base/net_log.h"
 #include "net/dns/host_resolver.h"
 #include "sippet/ua/auth.h"
 

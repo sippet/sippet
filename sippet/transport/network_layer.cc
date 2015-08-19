@@ -469,7 +469,8 @@ std::string NetworkLayer::ServerTransactionId(
   if (topmost_via != request->end()) {
     const Via *via = dyn_cast<Via>(topmost_via);
     if (via->front().HasBranch()
-        && StartsWithASCII(via->front().branch(), kMagicCookie, false)) {
+        && base::StartsWith(via->front().branch(), kMagicCookie,
+            base::CompareCase::SENSITIVE)) {
       std::string id;
       id += "s:"; // Protect against clashes with server transactions
       id += via->front().branch();
@@ -529,7 +530,8 @@ std::string NetworkLayer::ServerTransactionId(
   if (topmost_via != response->end()) {
     const Via *via = dyn_cast<Via>(topmost_via);
     if (via->front().HasBranch()
-        && StartsWithASCII(via->front().branch(), kMagicCookie, false)) {
+        && base::StartsWith(via->front().branch(), kMagicCookie,
+            base::CompareCase::SENSITIVE)) {
       std::string id;
       id += "s:"; // Protect against clashes with server transactions
       id += via->front().branch();
@@ -819,7 +821,8 @@ void NetworkLayer::OnTransportError(
 }
 
 void NetworkLayer::OnTransactionTerminated(const std::string &transaction_id) {
-  if (StartsWithASCII(transaction_id, "c:", true)) {
+  if (base::StartsWith(transaction_id, "c:",
+      base::CompareCase::INSENSITIVE_ASCII)) {
     scoped_refptr<ClientTransaction> client_transaction =
       GetClientTransaction(transaction_id);
     DestroyClientTransaction(client_transaction);

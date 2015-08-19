@@ -289,7 +289,7 @@ void PhoneImpl::OnInit(const Settings& settings) {
   refresh_timer_.reset(new base::OneShotTimer<PhoneImpl>);
 
   request_context_getter_ =
-    new URLRequestContextGetter(message_loop->message_loop_proxy());
+    new URLRequestContextGetter(message_loop->task_runner());
 
   net::ClientSocketFactory *client_socket_factory =
     net::ClientSocketFactory::GetDefaultFactory();

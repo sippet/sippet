@@ -6,11 +6,11 @@
 vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '9070a8059b513108b09d30f96576b5ce11d0857a',
+  'chromium_revision': '877b62cc157d4a07d20edddc9f5adf2fe0d4e2ae',
 
   'sippet_git': 'https://github.com/sippet',
-  'webrtc_revision': '12c612a47b226fe683a68af108efabbc563926c3',
-  'talk_revision': '7347cb83dd690484343f27940dee408a583deee9',
+  'webrtc_revision': '1158f54638af204c46ebca2332bb2eb58ed62403',
+  'talk_revision': 'adb356c36a4a42028cec57e43bd7126439dba237',
 
   # PJSIP is used for testing purposes
   'pjsip_trunk': 'http://svn.pjsip.org/repos/pjproject/trunk',
@@ -34,6 +34,9 @@ deps = {
 
   'src/third_party/gflags/src':
     Var('chromium_git') + '/external/gflags/src@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
+
+  'src/third_party/speex':
+    Var('chromium_git') + '/chromium/third_party/speex@45535c64629edeb9b53ec3d73c98dd4543b93956', # latest revision
 
   'src/third_party/libjingle/source/talk':
     Var('sippet_git') + '/talk.git@' + Var('talk_revision'),
@@ -78,6 +81,7 @@ hooks = [
     'pattern': '.',
     'action': ['python', 'src/sippet/build/gyp_sippet',
                '-Dinclude_internal_audio_device=1',
+               '-Dlibrary=static_library',
                Var('extra_gyp_flag')],
   },
 ]
