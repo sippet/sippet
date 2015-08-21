@@ -4,7 +4,7 @@
 
 package org.sippet.phone;
 
-import org.chromium.base.AccessedByNative;
+import org.chromium.base.annotations.AccessedByNative;
 
 import java.util.List;
 

@@ -3,6 +3,7 @@
 *.host.mk
 *.ncb
 *.ninja
+*.orig
 *.props
 *.pyc
 *.rules
@@ -36,9 +37,11 @@
 .settings
 .sw?
 /Makefile
+/build
 /base
 /buildtools
 /chrome
+/chromium/.gclient_entries
 /chromium/.gclient.tmp
 /chromium/.gclient.tmp_entries
 /chromium/.last_sync_chromium
@@ -56,6 +59,7 @@
 /jingle/jingle_nacl.gyp
 /jingle/notifier
 /links
+/mojo
 /net
 /out
 /resources
@@ -90,6 +94,7 @@
 /third_party/libyuv
 /third_party/llvm-build
 /third_party/modp_b64
+/third_party/mojo
 /third_party/ocmock
 /third_party/openmax_dl
 /third_party/opus

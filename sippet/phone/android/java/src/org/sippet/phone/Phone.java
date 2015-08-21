@@ -4,8 +4,8 @@
 
 package org.sippet.phone;
 
-import org.chromium.base.JNINamespace;
-import org.chromium.base.CalledByNative;
+import org.chromium.base.annotations.JNINamespace;
+import org.chromium.base.annotations.CalledByNative;
 
 /**
  * Base Phone class.
