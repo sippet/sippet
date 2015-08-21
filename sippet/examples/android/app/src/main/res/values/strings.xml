@@ -8,6 +8,6 @@
     <string name="title_activity_in_call">InCallActivity</string>
     <string name="done">Done</string>
     <string name="empty_description" />
-    <string name="call_state_calling">Calling...</string>
+    <string name="call_state_calling">Calling&#8230;</string>
     <string name="content_description_make_call">Make Call</string>
 </resources>

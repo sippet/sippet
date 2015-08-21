@@ -15,6 +15,8 @@ import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewAnimationUtils;
+import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
 
@@ -68,52 +70,74 @@ public class DialerActivity extends Activity {
             final int index = i;
             ImageButton button =
                     (ImageButton) findViewById(dialpadButtons[i]);
-            button.setOnClickListener((view) -> {
-                int keyCode = KeyEvent.KEYCODE_Z;
-                switch (index) {
-                    case 0: keyCode = KeyEvent.KEYCODE_0; break;
-                    case 1: keyCode = KeyEvent.KEYCODE_1; break;
-                    case 2: keyCode = KeyEvent.KEYCODE_2; break;
-                    case 3: keyCode = KeyEvent.KEYCODE_3; break;
-                    case 4: keyCode = KeyEvent.KEYCODE_4; break;
-                    case 5: keyCode = KeyEvent.KEYCODE_5; break;
-                    case 6: keyCode = KeyEvent.KEYCODE_6; break;
-                    case 7: keyCode = KeyEvent.KEYCODE_7; break;
-                    case 8: keyCode = KeyEvent.KEYCODE_8; break;
-                    case 9: keyCode = KeyEvent.KEYCODE_9; break;
-                    case 10: keyCode = KeyEvent.KEYCODE_STAR; break;
-                    case 11: keyCode = KeyEvent.KEYCODE_POUND; break;
+            button.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View arg0) {
+                    int keyCode = KeyEvent.KEYCODE_Z;
+                    switch (index) {
+                        case 0: keyCode = KeyEvent.KEYCODE_0; break;
+                        case 1: keyCode = KeyEvent.KEYCODE_1; break;
+                        case 2: keyCode = KeyEvent.KEYCODE_2; break;
+                        case 3: keyCode = KeyEvent.KEYCODE_3; break;
+                        case 4: keyCode = KeyEvent.KEYCODE_4; break;
+                        case 5: keyCode = KeyEvent.KEYCODE_5; break;
+                        case 6: keyCode = KeyEvent.KEYCODE_6; break;
+                        case 7: keyCode = KeyEvent.KEYCODE_7; break;
+                        case 8: keyCode = KeyEvent.KEYCODE_8; break;
+                        case 9: keyCode = KeyEvent.KEYCODE_9; break;
+                        case 10: keyCode = KeyEvent.KEYCODE_STAR; break;
+                        case 11: keyCode = KeyEvent.KEYCODE_POUND; break;
+                    }
+                    KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
+                    phoneNumberView.dispatchKeyEvent(event);
                 }
-                KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
-                phoneNumberView.dispatchKeyEvent(event);
             });
         }
 
         ImageButton zeroButton =
                 (ImageButton) findViewById(R.id.zero);
-        zeroButton.setOnLongClickListener((view) -> {
-            KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN,
-                    KeyEvent.KEYCODE_PLUS);
-            phoneNumberView.dispatchKeyEvent(event);
-            return true;
+        zeroButton.setOnLongClickListener(new OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View arg0) {
+                KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN,
+                        KeyEvent.KEYCODE_PLUS);
+                phoneNumberView.dispatchKeyEvent(event);
+                return true;
+            }
         });
 
         backspaceButton =
                 (ImageButton) findViewById(R.id.backspace);
-        backspaceButton.setOnClickListener((view) -> {
-            KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN,
-                    KeyEvent.KEYCODE_DEL);
-            phoneNumberView.dispatchKeyEvent(event);
+        backspaceButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN,
+                        KeyEvent.KEYCODE_DEL);
+                phoneNumberView.dispatchKeyEvent(event);
+            }
         });
-        backspaceButton.setOnLongClickListener((view) -> {
-            phoneNumberView.getText().clear();
-            return true;
+        backspaceButton.setOnLongClickListener(new OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View arg0) {
+                phoneNumberView.getText().clear();
+                return true;
+            }
         });
 
         makeCallButton =
                 (FloatingActionButton) findViewById(R.id.make_call);
-        makeCallButton.setOnClickListener((view) -> attemptMakeCall());
-        makeCallButton.postDelayed(() -> enterReveal(), 0);
+        makeCallButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                attemptMakeCall();
+            }
+        });
+        makeCallButton.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                enterReveal();
+            }
+        }, 0);
     }
 
     private void adjustTextSize() {
@@ -204,7 +228,11 @@ public class DialerActivity extends Activity {
         if (internationalPhoneNumber == null) {
             final View snackbar = findViewById(R.id.snackbar);
             Snackbar.make(snackbar, R.string.error_invalid_phone_number, Snackbar.LENGTH_LONG)
-                    .setAction("OK", (view) -> { })
+                    .setAction("OK", new OnClickListener() {
+                        @Override
+                        public void onClick(View arg0) {
+                        }
+                    })
                     .setActionTextColor(Color.MAGENTA)
                     .show();
             cancel = true;

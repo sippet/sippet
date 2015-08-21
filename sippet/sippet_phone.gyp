@@ -72,6 +72,7 @@
             'sippet_phone_jni',
             '../third_party/android_tools/android_tools.gyp:android_support_v7_appcompat_javalib',
             '../third_party/android_tools/android_tools.gyp:android_support_v13_javalib',
+            '../third_party/android_tools/android_tools.gyp:android_support_design_javalib',
           ],
           'variables': {
             'apk_name': "SippetPhone",
@@ -81,6 +82,9 @@
             'java_in_dir_suffix': '/src/main/java',
             'resource_dir': '../sippet/examples/android/app/src/main/res',
             'native_lib_target': 'libsippet_phone_jni',
+            'input_jars_paths': [
+              '../sippet/examples/android/app/libs/libphonenumber-7.0.9.jar',
+            ],
           },
           'includes': [ '../build/java_apk.gypi' ],
         },

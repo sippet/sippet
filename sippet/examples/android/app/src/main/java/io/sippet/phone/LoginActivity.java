@@ -74,7 +74,12 @@ public class LoginActivity extends Activity {
         registrarServerView = (EditText) findViewById(R.id.registrar_server);
 
         ImageButton signInButton = (ImageButton) findViewById(R.id.sign_in_button);
-        signInButton.setOnClickListener((View view) -> attemptLogin());
+        signInButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                attemptLogin();
+            }
+        });
 
         loginFormView = findViewById(R.id.login_form);
         progressView = findViewById(R.id.login_progress);
