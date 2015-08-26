@@ -4,6 +4,7 @@
 
 package org.sippet.phone;
 
+import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.annotations.CalledByNative;
 
@@ -13,7 +14,10 @@ import java.util.Date;
  * Base Phone class.
  */
 @JNINamespace("sippet::phone::android")
-public class Call extends RunOnUIThread<Call.Delegate> {
+public class Call {
+    private long mInstance;
+    private Delegate mDelegate;
+
     /**
      * Call direction: incoming or outgoing.
      */
@@ -60,7 +64,7 @@ public class Call extends RunOnUIThread<Call.Delegate> {
     };
 
     /**
-     * Call delegate.
+     * Call mDelegate.
      */
     public interface Delegate {
       /**
@@ -85,59 +89,66 @@ public class Call extends RunOnUIThread<Call.Delegate> {
     }
 
     /**
-     * Create a |Call| instance.
+     * Create a |Call| mInstance.
      */
-    Call(long instance) {
-        this.instance = instance;
+    Call(long mInstance) {
+        this.mInstance = mInstance;
     };
+
+    /**
+     * Set the |Delegate| mInstance that will run callbacks on the UI thread.
+     */
+    public void setDelegate(Delegate mDelegate) {
+        this.mDelegate = mDelegate;
+    }
 
     /**
      * Gets the current |Call| direction.
      */
     public Direction getDirection() {
-        return Direction.fromInteger(nativeGetDirection(instance));
+        return Direction.fromInteger(nativeGetDirection(mInstance));
     }
 
     /**
      * Get the current |Call| state.
      */
     public State getState() {
-        return State.fromInteger(nativeGetState(instance));
+        return State.fromInteger(nativeGetState(mInstance));
     }
 
     /**
      * Get the |Call| URI.
      */
     public String getUri() {
-        return nativeGetUri(instance);
+        return nativeGetUri(mInstance);
     }
  
     /**
      * Get the callee username or number.
      */
     public String getName() {
-        return nativeGetName(instance);
+        return nativeGetName(mInstance);
     }
  
     /**
      * Get the time when the |Call| was created.
      */
     public Date getCreationTime() {
-        return new Date(nativeGetCreationTime(instance));
+        return new Date(nativeGetCreationTime(mInstance));
     }
  
     /**
      * Get the time when the |Call| has started (established).
      */
     public Date getStartTime() {
-        return new Date(nativeGetStartTime(instance));
+        return new Date(nativeGetStartTime(mInstance));
     }
  
     /**
      * Get the time when the |Call| was hung up.
      */
     public Date getEndTime() {
-        return new Date(nativeGetEndTime(instance));
+        return new Date(nativeGetEndTime(mInstance));
     }
  
     /**
@@ -154,7 +165,7 @@ public class Call extends RunOnUIThread<Call.Delegate> {
     public boolean pickUp() {
         if (getState() != State.RINGING)
             return false;
-        return nativePickUp(instance);
+        return nativePickUp(mInstance);
     }
 
     /**
@@ -164,7 +175,7 @@ public class Call extends RunOnUIThread<Call.Delegate> {
     public boolean reject() {
         if (getState() != State.RINGING)
             return false;
-        return nativeReject(instance);
+        return nativeReject(mInstance);
     }
 
     /**
@@ -174,7 +185,7 @@ public class Call extends RunOnUIThread<Call.Delegate> {
     public boolean hangUp() {
         if (getState() != State.ESTABLISHED)
             return false;
-        return nativeHangUp(instance);
+        return nativeHangUp(mInstance);
     }    
  
     /**
@@ -184,51 +195,53 @@ public class Call extends RunOnUIThread<Call.Delegate> {
     public void sendDtmf(String digits) {
         if (getState() != State.ESTABLISHED)
             return;
-        nativeSendDtmf(instance, digits);
+        nativeSendDtmf(mInstance, digits);
     }
 
     /**
-     * Disposes the |Call| inner instance.
+     * Disposes the |Call| inner mInstance.
      */
     protected void finalize() throws Throwable {
-        nativeFinalize(instance);
+        nativeFinalize(mInstance);
         super.finalize();
     }
 
-    private long instance;
-
     @CalledByNative
     private void runOnError(final int statusCode, final String statusText) {
-        post(new Runnable<Delegate>() {
-            public void run(Delegate delegate) {
-                delegate.onError(statusCode, statusText);
+        ThreadUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onError(statusCode, statusText);
             }
         });
     }
 
     @CalledByNative
     private void runOnRinging() {
-        post(new Runnable<Delegate>() {
-            public void run(Delegate delegate) {
-                delegate.onRinging();
+        ThreadUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onRinging();
             }
         });
     }
 
     @CalledByNative
     private void runOnEstablished() {
-        post(new Runnable<Delegate>() {
-            public void run(Delegate delegate) {
-                delegate.onEstablished();
+        ThreadUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onEstablished();
             }
         });
     }
 
     @CalledByNative
     private void runOnHungUp() {
-        post(new Runnable<Delegate>() {
-            public void run(Delegate delegate) {
-                delegate.onHungUp();
+        ThreadUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onHungUp();
             }
         });
     }

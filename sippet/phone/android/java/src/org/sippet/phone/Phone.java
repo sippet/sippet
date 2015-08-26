@@ -4,16 +4,30 @@
 
 package org.sippet.phone;
 
+import android.content.Context;
+
+import org.chromium.base.Log;
+import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.JNINamespace;
 import org.chromium.base.annotations.CalledByNative;
+import org.chromium.base.annotations.SuppressFBWarnings;
+import org.chromium.base.library_loader.LibraryLoader;
+import org.chromium.base.library_loader.LibraryProcessType;
+import org.chromium.base.library_loader.ProcessInitException;
 
 /**
  * Base Phone class.
  */
 @JNINamespace("sippet::phone::android")
-public class Phone extends RunOnUIThread<Phone.Delegate> {
+public class Phone {
+    private static final String TAG = "Phone";
+
+    private long mInstance;
+    private Delegate mDelegate;
+    private Context mContext;
+
     /**
-     * Phone delegate.
+     * Phone mDelegate.
      */
     public interface Delegate {
       /**
@@ -43,31 +57,48 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     }
 
     /**
-     * Initialize the |Phone| system.
+     * Create a |Phone| mInstance.
+     * @param context The context to pull the application context from.
+     * @param mDelegate The |Delegate| mInstance that will run phone callbacks.
      */
-    public static void initialize() {
-        nativeInitialize();
+    public Phone(Context context, Delegate mDelegate) {
+        mContext = context;
+        mDelegate = mDelegate;
     }
 
     /**
-     * Create a |Phone| instance.
+     * Initializes the |Phone| mInstance.
      */
-    public Phone() {
-        this.instance = nativeCreate();
-    }
-
-    /**
-     * Initializes the |Phone| instance.
-     */
+    @SuppressFBWarnings("DM_EXIT")
     boolean init(Settings settings) {
-        return nativeInit(instance, settings);
+        try {
+            LibraryLoader libraryLoader =
+                    LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
+            libraryLoader.ensureInitialized(mContext.getApplicationContext());
+            // The prefetch is done after the library load for two reasons:
+            // - It is easier to know the library location after it has
+            //   been loaded.
+            // - Testing has shown that this gives the best compromise,
+            //   by avoiding performance regression on any tested
+            //   device, and providing performance improvement on
+            //   some. Doing it earlier delays UI inflation and more
+            //   generally startup on some devices, most likely by
+            //   competing for IO.
+            // For experimental results, see http://crbug.com/460438.
+            libraryLoader.asyncPrefetchLibrariesToMemory();
+        } catch (ProcessInitException e) {
+            Log.e(TAG, "Unable to load native library.", e);
+            System.exit(-1);
+        }
+        mInstance = nativeCreate();
+        return nativeInit(mInstance, settings);
     }
 
     /**
      * Get the |Phone| state.
      */
     public int getState() {
-        return nativeGetState(instance);
+        return nativeGetState(mInstance);
     }
 
     /**
@@ -75,21 +106,21 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
      * Upon successful registration, the Phone will emit a registered event.
      */
     public boolean register() {
-        return nativeRegister(instance);
+        return nativeRegister(mInstance);
     }
 
     /**
      * Unregisters the |Phone|.
      */
     public boolean unregister() {
-        return nativeUnregister(instance);
+        return nativeUnregister(mInstance);
     }
 
     /**
      * Unregisters all instances that registered in registrar.
      */
     public boolean unregisterAll() {
-        return nativeUnregisterAll(instance);
+        return nativeUnregisterAll(mInstance);
     }
 
     /**
@@ -100,31 +131,30 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
      * @return         A call object.
      */
     public Call makeCall(String target) {
-        return new Call(nativeMakeCall(instance, target));
+        return new Call(nativeMakeCall(mInstance, target));
     }
 
     /**
      * Hangs up all active calls.
      */
     public void hangUpAll() {
-        nativeHangUpAll(instance);
+        nativeHangUpAll(mInstance);
     }
 
     /**
-     * Disposes the |Phone| inner instance.
+     * Disposes the |Phone| inner mInstance.
      */
     protected void finalize() throws Throwable {
-        nativeFinalize(instance);
+        nativeFinalize(mInstance);
         super.finalize();
     }
 
-    private long instance;
-
     @CalledByNative
     private void runOnNetworkError(final int errorCode) {
-        post(new Runnable<Delegate>() {
-            public void run(Delegate delegate) {
-                delegate.onNetworkError(errorCode);
+        ThreadUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onNetworkError(errorCode);
             }
         });
     }
@@ -132,9 +162,10 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     @CalledByNative
     private void runOnRegisterCompleted(final int statusCode,
                                         final String statusText) {
-        post(new Runnable<Delegate>() {
-            public void run(Delegate delegate) {
-                delegate.onRegisterCompleted(statusCode, statusText);
+        ThreadUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onRegisterCompleted(statusCode, statusText);
             }
         });
     }
@@ -142,9 +173,10 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     @CalledByNative
     private void runOnRefreshError(final int statusCode,
                                    final String statusText) {
-        post(new Runnable<Delegate>() {
-            public void run(Delegate delegate) {
-                delegate.onRefreshError(statusCode, statusText);
+        ThreadUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onRefreshError(statusCode, statusText);
             }
         });
     }
@@ -152,23 +184,24 @@ public class Phone extends RunOnUIThread<Phone.Delegate> {
     @CalledByNative
     private void runOnUnregisterCompleted(final int statusCode,
                                           final String statusText) {
-        post(new Runnable<Delegate>() {
-            public void run(Delegate delegate) {
-                delegate.onUnregisterCompleted(statusCode, statusText);
+        ThreadUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onUnregisterCompleted(statusCode, statusText);
             }
         });
     }
 
     @CalledByNative
-    private void runOnIncomingCall(final long instance) {
-        post(new Runnable<Delegate>() {
-            public void run(Delegate delegate) {
-                delegate.onIncomingCall(new Call(instance));
+    private void runOnIncomingCall(final long mInstance) {
+        ThreadUtils.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mDelegate.onIncomingCall(new Call(mInstance));
             }
         });
     }
 
-    private static native void nativeInitialize();
     private native long nativeCreate();
     private native boolean nativeInit(long nativeJavaPhone, Settings settings);
     private native int nativeGetState(long nativeJavaPhone);

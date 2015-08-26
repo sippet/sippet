@@ -50,6 +50,11 @@
             'phone/android/java_phone.cc',
             'phone/android/java_call.h',
             'phone/android/java_call.cc',
+            'phone/android/jni_onload.h',
+            'phone/android/jni_onload.cc',
+            'phone/android/jni_registrar.h',
+            'phone/android/jni_registrar.cc',
+            'phone/android/entry_point.cc',
           ],
           'dependencies': [
             'sippet_phone',
