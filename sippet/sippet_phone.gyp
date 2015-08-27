@@ -22,19 +22,6 @@
           'includes': [ '../build/jni_generator.gypi' ],
         },
         {
-          'target_name': 'sippet_phone_java',
-          'type': 'none',
-          'dependencies': [
-            '../base/base.gyp:base_java',
-            'sippet_phone_jni',
-            'sippet_phone_java_phone_state',
-          ],
-          'variables': {
-            'java_in_dir': '../sippet/phone/android/java',
-          },
-          'includes': [ '../build/java.gypi' ],
-        },
-        {
           'target_name': 'sippet_phone_java_phone_state',
           'type': 'none',
           'variables': {
@@ -70,28 +57,19 @@
           ],
         },
         {
-          'target_name': 'sippet_phone_apk',
+          'target_name': 'sippet_phone_aar',
           'type': 'none',
           'dependencies': [
-            'sippet_phone_java',
             'sippet_phone_jni',
-            '../third_party/android_tools/android_tools.gyp:android_support_v7_appcompat_javalib',
-            '../third_party/android_tools/android_tools.gyp:android_support_v13_javalib',
-            '../third_party/android_tools/android_tools.gyp:android_support_design_javalib',
+            '../base/base.gyp:base_java',
+            'sippet_phone_java_phone_state',
           ],
           'variables': {
             'apk_name': "SippetPhone",
-            'manifest_package_name': 'io.sippet.phone',
-            'android_manifest_path': '../sippet/examples/android/app/src/main/AndroidManifest.xml',
-            'java_in_dir': '../sippet/examples/android/app',
-            'java_in_dir_suffix': '/src/main/java',
-            'resource_dir': '../sippet/examples/android/app/src/main/res',
+            'java_in_dir': '../sippet/phone/android/java',
             'native_lib_target': 'libsippet_phone_jni',
-            'input_jars_paths': [
-              '../sippet/examples/android/app/libs/libphonenumber-7.0.9.jar',
-            ],
           },
-          'includes': [ '../build/java_apk.gypi' ],
+          'includes': [ '../sippet/build/java_apk.gypi' ],
         },
       ],
     }],
