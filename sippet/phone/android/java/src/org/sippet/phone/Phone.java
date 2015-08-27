@@ -70,7 +70,7 @@ public class Phone {
      * Initializes the |Phone| mInstance.
      */
     @SuppressFBWarnings("DM_EXIT")
-    boolean init(Settings settings) {
+    public boolean init(Settings settings) {
         try {
             LibraryLoader libraryLoader =
                     LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
