@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_PHONE_ANDROID_CALL_H_
-#define SIPPET_PHONE_ANDROID_CALL_H_
+#ifndef SIPPET_PHONE_ANDROID_JAVA_CALL_H_
+#define SIPPET_PHONE_ANDROID_JAVA_CALL_H_
 
 #include <jni.h>
 
@@ -51,4 +51,4 @@ class JavaCall {
 }  // namespace phone
 }  // namespace sippet
 
-#endif // SIPPET_PHONE_ANDROID_CALL_H_
+#endif // SIPPET_PHONE_ANDROID_JAVA_CALL_H_

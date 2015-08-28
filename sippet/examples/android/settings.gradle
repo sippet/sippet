@@ -1,1 +1,1 @@
-include ':app'
+include ':app', ':sippet_phone_aar'

@@ -13,8 +13,10 @@
           'target_name': 'sippet_phone_jni_headers',
           'type': 'none',
           'sources': [
-            'phone/android/java/src/org/sippet/phone/Phone.java',
-            'phone/android/java/src/org/sippet/phone/Call.java',
+            'phone/android/java/src/io/sippet/phone/Phone.java',
+            'phone/android/java/src/io/sippet/phone/Call.java',
+            'phone/android/java/src/io/sippet/phone/Settings.java',
+            'phone/android/java/src/io/sippet/phone/IceServer.java',
           ],
           'variables': {
             'jni_gen_package': 'sippet_phone',
@@ -37,6 +39,8 @@
             'phone/android/java_phone.cc',
             'phone/android/java_call.h',
             'phone/android/java_call.cc',
+            'phone/android/java_settings.h',
+            'phone/android/java_settings.cc',
             'phone/android/jni_onload.h',
             'phone/android/jni_onload.cc',
             'phone/android/jni_registrar.h',
@@ -49,7 +53,8 @@
             '../base/base.gyp:base',
             '../base/base.gyp:base_static',
             '../net/net.gyp:net',
-            '../net/net.gyp:net_resources'
+            '../net/net.gyp:net_resources',
+            '../third_party/webrtc/webrtc.gyp:webrtc',
           ],
           'include_dirs': [
             '<(DEPTH)',
@@ -62,6 +67,7 @@
           'dependencies': [
             'sippet_phone_jni',
             '../base/base.gyp:base_java',
+            '../third_party/webrtc/modules/modules_java_chromium.gyp:audio_device_module_java',
             'sippet_phone_java_phone_state',
           ],
           'variables': {

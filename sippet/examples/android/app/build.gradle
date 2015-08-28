@@ -4,7 +4,7 @@ android {
     compileSdkVersion 22
     buildToolsVersion "23.0.0 rc2"
     defaultConfig {
-        applicationId "io.sippet.phone"
+        applicationId "io.sippet.demo"
         minSdkVersion 21
         targetSdkVersion 22
         versionCode 1
@@ -16,6 +16,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    aaptOptions {
+        noCompress 'dat'
+    }
 }
 
 dependencies {
@@ -23,6 +26,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.2.1'
     compile 'com.google.android.gms:play-services:7.5.0'
     compile 'com.android.support:design:22.2.0'
+    compile project(':sippet_phone_aar')
 }
 
 buildscript {

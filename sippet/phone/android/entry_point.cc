@@ -8,6 +8,8 @@
 
 namespace {
 
+JavaVM* g_jvm = nullptr;
+
 bool RegisterJNI(JNIEnv* env) {
   return true;
 }
@@ -18,8 +20,22 @@ bool Init() {
 
 }  // namespace
 
+namespace sippet {
+namespace android {
+
+JavaVM* GetJVM() {
+  DCHECK(g_jvm);
+  return g_jvm;
+}
+
+}  // namespace android
+}  // namespace sippet
+
+
 // This is called by the VM when the shared library is first loaded.
 JNI_EXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
+  g_jvm = vm;
+
   std::vector<base::android::RegisterCallback> register_callbacks;
   register_callbacks.push_back(base::Bind(&RegisterJNI));
 
@@ -31,5 +47,5 @@ JNI_EXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     return -1;
   }
 
-  return JNI_VERSION_1_4;
+  return JNI_VERSION_1_6;
 }

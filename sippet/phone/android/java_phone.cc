@@ -4,6 +4,7 @@
 
 #include "sippet/phone/android/java_phone.h"
 #include "sippet/phone/android/java_call.h"
+#include "sippet/phone/android/java_settings.h"
 
 #include <jni.h>
 
@@ -11,13 +12,15 @@
 #include "base/android/jni_string.h"
 #include "jni/Phone_jni.h"
 
+#include "sippet/phone/android/jni_onload.h"
+
 namespace sippet {
 namespace phone {
 namespace android {
 
-static void Initialize(JNIEnv* env, jclass jcaller) {
-  // TODO: maybe initialize the WebRTC (passing JNIEnv) from here as well
-  Phone::Initialize();
+static void InitApplicationContext(JNIEnv* env,
+    jobject jcaller, jobject context) {
+  sippet::android::InitApplicationContext(env, context);
 }
 
 static jlong Create(JNIEnv* env, jobject jcaller) {
@@ -35,9 +38,10 @@ JavaPhone::~JavaPhone() {
 
 jboolean JavaPhone::Init(JNIEnv* env, jobject jcaller,
                          jobject settings) {
-//  return phone_instance_->Init(JavaSettingsToSettings(settings))
-//    ? JNI_TRUE : JNI_FALSE;
-  return JNI_FALSE; // TODO
+  Settings s(ConvertJavaSettingsToSettings(env, settings));
+  DCHECK(s.is_valid());
+  return phone_instance_->Init(s)
+      ? JNI_TRUE : JNI_FALSE;
 }
 
 jint JavaPhone::GetState(JNIEnv* env, jobject jcaller) {

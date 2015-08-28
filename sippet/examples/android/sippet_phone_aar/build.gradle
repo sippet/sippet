@@ -1,0 +1,2 @@
+configurations.create("default")
+artifacts.add("default", file('sippet_phone_aar.aar'))

@@ -18,7 +18,7 @@
             android:layout_height="80dp"
             android:textAlignment="center">
 
-            <io.sippet.phone.NoImeEditText
+            <io.sippet.demo.NoImeEditText
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:inputType="phone"
