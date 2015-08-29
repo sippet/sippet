@@ -57,17 +57,17 @@ public class Phone {
     }
 
     /**
-     * Create a |Phone| mInstance.
+     * Create a |Phone| instance.
      * @param context The context to pull the application context from.
-     * @param mDelegate The |Delegate| mInstance that will run phone callbacks.
+     * @param mDelegate The |Delegate| instance that will run phone callbacks.
      */
-    public Phone(Context context, Delegate mDelegate) {
+    public Phone(Context context, Delegate delegate) {
         mContext = context;
-        mDelegate = mDelegate;
+        mDelegate = delegate;
     }
 
     /**
-     * Initializes the |Phone| mInstance.
+     * Initializes the |Phone| instance.
      */
     @SuppressFBWarnings("DM_EXIT")
     public boolean init(Settings settings) {
@@ -143,7 +143,7 @@ public class Phone {
     }
 
     /**
-     * Disposes the |Phone| inner mInstance.
+     * Disposes the |Phone| inner instance.
      */
     protected void finalize() throws Throwable {
         nativeFinalize(mInstance);
@@ -155,7 +155,10 @@ public class Phone {
         ThreadUtils.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mDelegate.onNetworkError(errorCode);
+                if (mDelegate != null)
+                    mDelegate.onNetworkError(errorCode);
+                else
+                    Log.e(TAG, "Phone delegate is null: onNetworkError");
             }
         });
     }
@@ -166,7 +169,10 @@ public class Phone {
         ThreadUtils.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mDelegate.onRegisterCompleted(statusCode, statusText);
+                if (mDelegate != null)
+                    mDelegate.onRegisterCompleted(statusCode, statusText);
+                else
+                    Log.e(TAG, "Phone delegate is null: onRegisterCompleted");
             }
         });
     }
@@ -177,7 +183,10 @@ public class Phone {
         ThreadUtils.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mDelegate.onRefreshError(statusCode, statusText);
+                if (mDelegate != null)
+                    mDelegate.onRefreshError(statusCode, statusText);
+                else
+                    Log.e(TAG, "Phone delegate is null: onRefreshError");
             }
         });
     }
@@ -188,17 +197,23 @@ public class Phone {
         ThreadUtils.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mDelegate.onUnregisterCompleted(statusCode, statusText);
+                if (mDelegate != null)
+                    mDelegate.onUnregisterCompleted(statusCode, statusText);
+                else
+                    Log.e(TAG, "Phone delegate is null: onUnregisterCompleted");
             }
         });
     }
 
     @CalledByNative
-    private void runOnIncomingCall(final long mInstance) {
+    private void runOnIncomingCall(final long nativeCall) {
         ThreadUtils.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mDelegate.onIncomingCall(new Call(mInstance));
+                if (mDelegate != null)
+                    mDelegate.onIncomingCall(new Call(nativeCall));
+                else
+                    Log.e(TAG, "Phone delegate is null: onIncomingCall");
             }
         });
     }

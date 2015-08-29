@@ -24,13 +24,13 @@ static void InitApplicationContext(JNIEnv* env,
 }
 
 static jlong Create(JNIEnv* env, jobject jcaller) {
-  return static_cast<jlong>(reinterpret_cast<uintptr_t>(
-      new JavaPhone(env, jcaller)));
+  return reinterpret_cast<jlong>(new JavaPhone(env, jcaller));
 }
 
 JavaPhone::JavaPhone(JNIEnv *env, jobject obj) :
-    phone_instance_(Phone::Create(this)) {
-  java_phone_.Reset(env, obj);
+    phone_instance_(Phone::Create(this)),
+    java_phone_(env, obj) {
+  DCHECK(!java_phone_.is_null());
 }
 
 JavaPhone::~JavaPhone() {
@@ -65,11 +65,10 @@ jboolean JavaPhone::UnregisterAll(JNIEnv* env, jobject jcaller) {
 
 jlong JavaPhone::MakeCall(JNIEnv* env, jobject jcaller,
                           jstring target) {
-  scoped_refptr<Call> call_instance =
+  scoped_refptr<Call> call =
       phone_instance_->MakeCall(
           base::android::ConvertJavaStringToUTF8(env, target));
-  return static_cast<jlong>(reinterpret_cast<uintptr_t>(
-      new JavaCall(phone_instance_, call_instance)));
+  return reinterpret_cast<jlong>(new JavaCall(phone_instance_, call));
 }
 
 void JavaPhone::HangUpAll(JNIEnv* env, jobject jcaller) {
@@ -82,12 +81,14 @@ void JavaPhone::Finalize(JNIEnv* env, jobject jcaller) {
 
 void JavaPhone::OnNetworkError(int error_code) {
   JNIEnv* env = base::android::AttachCurrentThread();
+  DCHECK(!java_phone_.is_null());
   Java_Phone_runOnNetworkError(env, java_phone_.obj(), error_code);
 }
 
 void JavaPhone::OnRegisterCompleted(int status_code,
     const std::string& status_text) {
   JNIEnv* env = base::android::AttachCurrentThread();
+  DCHECK(!java_phone_.is_null());
   Java_Phone_runOnRegisterCompleted(env, java_phone_.obj(), status_code,
       base::android::ConvertUTF8ToJavaString(env, status_text).Release());
 }
@@ -95,6 +96,7 @@ void JavaPhone::OnRegisterCompleted(int status_code,
 void JavaPhone::OnRefreshError(int status_code,
     const std::string& status_text) {
   JNIEnv* env = base::android::AttachCurrentThread();
+  DCHECK(!java_phone_.is_null());
   Java_Phone_runOnRefreshError(env, java_phone_.obj(), status_code,
       base::android::ConvertUTF8ToJavaString(env, status_text).Release());
 }
@@ -102,6 +104,7 @@ void JavaPhone::OnRefreshError(int status_code,
 void JavaPhone::OnUnregisterCompleted(int status_code,
     const std::string& status_text) {
   JNIEnv* env = base::android::AttachCurrentThread();
+  DCHECK(!java_phone_.is_null());
   Java_Phone_runOnUnregisterCompleted(env, java_phone_.obj(), status_code,
       base::android::ConvertUTF8ToJavaString(env, status_text).Release());
 }
@@ -109,8 +112,9 @@ void JavaPhone::OnUnregisterCompleted(int status_code,
 void JavaPhone::OnIncomingCall(const scoped_refptr<Call>& call) {
   JNIEnv* env = base::android::AttachCurrentThread();
   JavaCall *java_call = new JavaCall(phone_instance_, call);
+  DCHECK(!java_phone_.is_null());
   Java_Phone_runOnIncomingCall(env, java_phone_.obj(),
-      static_cast<jlong>(reinterpret_cast<uintptr_t>(java_call)));
+      reinterpret_cast<jlong>(java_call));
 }
 
 // static
