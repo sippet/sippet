@@ -9,7 +9,7 @@ vars = {
   'chromium_revision': '877b62cc157d4a07d20edddc9f5adf2fe0d4e2ae',
 
   'sippet_git': 'https://github.com/sippet',
-  'webrtc_revision': '1158f54638af204c46ebca2332bb2eb58ed62403',
+  'webrtc_revision': '9bcb4893aefa7f0a28844f529c08ee7c713c5612',
   'talk_revision': 'adb356c36a4a42028cec57e43bd7126439dba237',
 
   # PJSIP is used for testing purposes

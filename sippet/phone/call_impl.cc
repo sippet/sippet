@@ -317,14 +317,13 @@ void CallImpl::OnSetRemoteSessionFailure(const std::string& error) {
 
 void CallImpl::OnCreateOfferCompleted(const std::string& offer) {
   std::string request_uri(uri_.spec());
-  std::string from("sip:" + phone_->username() + "@" + phone_->host());
   std::string to(uri_.spec());
 
   last_request_ =
     phone_->user_agent()->CreateRequest(
         Method::INVITE,
         GURL(request_uri),
-        GURL(from),
+        phone_->settings().uri(),
         GURL(to));
 
   scoped_ptr<ContentType> content_type(
@@ -446,11 +445,14 @@ void CallImpl::HandleCallingOrRingingResponse(
   // Now change state and process post changed state conditions
   state_ = next_state;
   if (kStateRinging == state_) {
-    delegate_->OnRinging();
+    if (delegate_)
+      delegate_->OnRinging();
   } else if (kStateEstablished == state_) {
-    delegate_->OnEstablished();
+    if (delegate_)
+      delegate_->OnEstablished();
   } else if (kStateError == state_) {
-    delegate_->OnError(response_code, incoming_response->reason_phrase());
+    if (delegate_)
+      delegate_->OnError(response_code, incoming_response->reason_phrase());
     phone_->RemoveCall(this);
   }
 }
@@ -528,7 +530,8 @@ void CallImpl::OnIncomingRequest(
     phone_->user_agent()->Send(response,
       base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
     state_ = kStateHungUp;
-    delegate_->OnHungUp();
+    if (delegate_)
+      delegate_->OnHungUp();
     phone_->RemoveCall(this);
   }
 }
@@ -551,8 +554,10 @@ void CallImpl::OnTimedOut(
   if (kStateCalling == state_
       || kStateRinging == state_) {
     state_ = kStateError;
-    delegate_->OnError(SIP_REQUEST_TIMEOUT,
-      GetReasonPhrase(SIP_REQUEST_TIMEOUT));
+    if (delegate_) {
+      delegate_->OnError(SIP_REQUEST_TIMEOUT,
+        GetReasonPhrase(SIP_REQUEST_TIMEOUT));
+    }
     phone_->RemoveCall(this);
   }
 }
@@ -563,8 +568,10 @@ void CallImpl::OnTransportError(
   if (kStateCalling == state_
       || kStateRinging == state_) {
     state_ = kStateError;
-    delegate_->OnError(SIP_SERVICE_UNAVAILABLE,
-      GetReasonPhrase(SIP_SERVICE_UNAVAILABLE));
+    if (delegate_) {
+      delegate_->OnError(SIP_SERVICE_UNAVAILABLE,
+        GetReasonPhrase(SIP_SERVICE_UNAVAILABLE));
+    }
     phone_->RemoveCall(this);
   }
 }

@@ -111,8 +111,10 @@ int PhoneImpl::PasswordHandler::GetCredentials(
       base::string16 *password,
       const net::CompletionCallback& callback) {
   std::string authorization_user;
-  if (factory_->settings()->authorization_user().empty())
-    authorization_user = factory_->settings()->uri().username();
+  if (factory_->settings()->authorization_user().empty()) {
+    SipURI uri(factory_->settings()->uri().spec());
+    authorization_user = uri.username();
+  }
   else
     authorization_user = factory_->settings()->authorization_user();
   *username = base::UTF8ToUTF16(authorization_user);
@@ -643,7 +645,7 @@ SipURI PhoneImpl::GetToUri(const std::string& destination) const {
   if (destination.find('@') == std::string::npos) {
     SipURI uri(GetRegistrarUri());
     if (uri.is_valid()) {
-      std::string result(uri.scheme() + ":" + uri.host());
+      std::string result(uri.scheme() + ":" + destination + "@" + uri.host());
       if (uri.has_port())
         result += ":" + uri.port();
       if (uri.has_parameters())
