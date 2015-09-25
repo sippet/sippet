@@ -178,7 +178,7 @@ bool PhoneImpl::Init(const Settings& settings) {
 bool PhoneImpl::Register() {
   if (PHONE_STATE_READY != state_) {
     DVLOG(1) << "Not ready";
-    return nullptr;
+    return false;
   }
   base::AutoLock lock(lock_);
   state_ = PHONE_STATE_REGISTERING;
@@ -191,7 +191,7 @@ bool PhoneImpl::Register() {
 bool PhoneImpl::Unregister() {
   if (PHONE_STATE_REGISTERED != state_) {
     DVLOG(1) << "Not ready";
-    return nullptr;
+    return false;
   }
   base::AutoLock lock(lock_);
   last_state_ = state_;
@@ -206,7 +206,7 @@ bool PhoneImpl::UnregisterAll() {
   if (PHONE_STATE_READY != state_
       && PHONE_STATE_REGISTERED != state_) {
     DVLOG(1) << "Not ready";
-    return nullptr;
+    return false;
   }
   base::AutoLock lock(lock_);
   last_state_ = state_;

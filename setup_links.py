@@ -120,10 +120,12 @@ if 'mac' in get_target_os_list():
 
 if 'linux' in get_target_os_list():
   DIRECTORIES += [
+    'skia',
+    'third_party/libpng',
+    'third_party/harfbuzz-ng',
     'third_party/gold',
     'third_party/libevent',
     'tools/xdisplaycheck',
-    'tools/generate_library_loader'
   ]
 
 FILES = {

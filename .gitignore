@@ -64,6 +64,7 @@
 /out
 /resources
 /sdch
+/skia
 /sql
 /testing
 /url
@@ -79,6 +80,7 @@
 /third_party/drmemory
 /third_party/expat
 /third_party/gflags/src/
+/third_party/harfbuzz-ng
 /third_party/icu
 /third_party/instrumented_libraries
 /third_party/jsoncpp
@@ -87,6 +89,7 @@
 /third_party/libjingle/source
 /third_party/libjpeg
 /third_party/libjpeg_turbo
+/third_party/libpng
 /third_party/libsrtp
 /third_party/libudev
 /third_party/libvpx
@@ -122,4 +125,5 @@
 /tools/relocation_packer
 /tools/swarming_client
 /tools/valgrind
+/tools/xdisplaycheck
 /tools/win
