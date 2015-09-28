@@ -10,6 +10,10 @@
 #include "base/time/time.h"
 #include "base/memory/ref_counted.h"
 #include "url/gurl.h"
+#include "net/base/completion_callback.h"
+
+#include "sippet/phone/call_state.h"
+#include "sippet/phone/call_direction.h"
 
 namespace sippet {
 namespace phone {
@@ -22,50 +26,14 @@ class Phone;
 class Call :
   public base::RefCountedThreadSafe<Call> {
  public:
-  // Call direction: incoming or outgoing.
-  enum Direction {
-    kDirectionIncoming,
-    kDirectionOutgoing
-  };
-
-  // Call state: corresponds to the |Call| lifecycle.
-  enum State {
-    kStateCalling,
-    kStateRinging,
-    kStateEstablished,
-    kStateHungUp,
-    kStateError
-  };
-
-  // Call delegate.
-  class Delegate {
-   public:
-    // Called to inform a |Call| error.
-    virtual void OnError(int status_code,
-           const std::string& status_text) = 0;
-
-    // Called when callee phone starts ringing.
-    virtual void OnRinging() = 0;
-
-    // Called when callee picks up the phone.
-    virtual void OnEstablished() = 0;
-
-    // Called when callee hangs up.
-    virtual void OnHungUp() = 0;
-
-   protected:
-    // Dtor protected as objects shouldn't be deleted via this interface.
-    ~Delegate() {}
-  };
-
   // Get the current |Call| direction.
-  virtual Direction direction() const = 0;
+  virtual CallDirection direction() const = 0;
 
   // Get the current |Call| state.
-  virtual State state() const = 0;
+  virtual CallState state() const = 0;
 
-  // Set the |Call| delegate.
-  virtual void set_delegate(Delegate *delegate) = 0;
+  // Set the |Call| callback.
+  virtual void set_callback(const net::CompletionCallback& callback) = 0;
 
   // Get the |Call| URI
   virtual GURL uri() const = 0;
@@ -87,14 +55,14 @@ class Call :
 
   // Pick up the call (only for incoming calls). No effect if not in
   // |kStateRinging| state.
-  virtual bool PickUp() = 0;
+  virtual bool PickUp(const net::CompletionCallback& on_completion) = 0;
 
   // Reject the call (only for incoming calls). No effect if not in
   // |kStateRinging| state.
-  virtual bool Reject() = 0;
+  virtual bool Reject(const net::CompletionCallback& on_completion) = 0;
 
   // Hang up the call. No effect if not in |kStateEstablished| state.
-  virtual bool HangUp() = 0;
+  virtual bool HangUp(const net::CompletionCallback& on_completion) = 0;
 
   // Send DTMF digits
   virtual void SendDtmf(const std::string& digits) = 0;

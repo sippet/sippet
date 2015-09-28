@@ -21,10 +21,12 @@ SIP_STATUS(QUEUED, 182, "Queued")
 SIP_STATUS(SESSION_PROGRESS, 183, "Session Progress")
 SIP_STATUS(EARLY_DIALOG_TERMINATED, 199, "Early Dialog Terminated")
 
+#ifndef NO_SUCCESS
 // Successful 2xx
 SIP_STATUS(OK, 200, "OK")
 SIP_STATUS(ACCEPTED, 202, "Accepted")
 SIP_STATUS(NO_NOTIFICATION, 204, "No Notification")
+#endif
 
 // Redirection 3xx
 SIP_STATUS(MULTIPLE_CHOICES, 300, "Multiple Choices")

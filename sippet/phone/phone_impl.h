@@ -35,11 +35,14 @@ class PhoneImpl :
  public:
   PhoneState state() const override;
   bool Init(const Settings& settings) override;
-  bool Register() override;
-  bool Unregister() override;
-  bool UnregisterAll() override;
-  scoped_refptr<Call> MakeCall(const std::string& destination) override;
-  void HangUpAll() override;
+  void Register(const net::CompletionCallback& on_completed) override;
+  void StartRefreshRegister(
+      const net::CompletionCallback& on_completed) override;
+  void StopRefreshRegister() override;
+  void Unregister(const net::CompletionCallback& on_completed) override;
+  void UnregisterAll(const net::CompletionCallback& on_completed) override;
+  scoped_refptr<Call> MakeCall(const std::string& destination,
+      const net::CompletionCallback& on_completed) override;
 
  private:
   friend class Phone;
@@ -104,6 +107,10 @@ class PhoneImpl :
   scoped_ptr<ChromeChannelFactory> channel_factory_;
   scoped_ptr<base::OneShotTimer<PhoneImpl>> refresh_timer_;
   Settings::IceServers ice_servers_;
+  base::Time register_expires_;
+  net::CompletionCallback on_register_completed_;
+  net::CompletionCallback on_unregister_completed_;
+  net::CompletionCallback on_refresh_completed_;
 
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
     peer_connection_factory_;
@@ -128,13 +135,14 @@ class PhoneImpl :
   void OnInit(const Settings& settings);
   void OnDestroy();
   void OnRegister();
-  void OnUnregister();
-  void OnUnregisterAll();
+  void OnStartRefreshRegister();
+  void OnStopRefreshRegister();
+  void OnUnregister(bool all);
 
   //
   // UserAgent callbacks
   //
-  void OnRequestSent(int rv);
+  static void OnRequestSent(const net::CompletionCallback& callback, int rv);
 
   //
   // ua::UserAgent::Delegate implementation
@@ -155,9 +163,9 @@ class PhoneImpl :
       const scoped_refptr<Dialog> &dialog) override;
 
   //
-  // Refresh Login timer callback
+  // Refresh register timer callback
   //
-  void OnRefreshLogin();
+  void OnRefreshRegister();
 
   CallImpl *RouteToCall(const scoped_refptr<Request>& request);
   CallImpl *RouteToCall(const scoped_refptr<Dialog>& dialog);

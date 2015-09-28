@@ -25,32 +25,35 @@ class CallImpl :
  private:
   DISALLOW_COPY_AND_ASSIGN(CallImpl);
  public:
-  Direction direction() const override;
-  State state() const override;
-  void set_delegate(Delegate *delegate) override;
+  CallDirection direction() const override;
+  CallState state() const override;
+  void set_callback(const net::CompletionCallback& callback) override;
   GURL uri() const override;
   std::string name() const override;
   base::Time creation_time() const override;
   base::Time start_time() const override;
   base::Time end_time() const override;
   base::TimeDelta duration() const override;
-  bool PickUp() override;
-  bool Reject() override;
-  bool HangUp() override;
+  bool PickUp(const net::CompletionCallback& on_completed) override;
+  bool Reject(const net::CompletionCallback& on_completed) override;
+  bool HangUp(const net::CompletionCallback& on_completed) override;
   void SendDtmf(const std::string& digits) override;
 
  private:
   friend class PhoneImpl;
   friend class base::RefCountedThreadSafe<Call>;
 
-  Direction direction_;
-  State state_;
-  Delegate *delegate_;
+  CallDirection direction_;
+  CallState state_;
   SipURI uri_;
   PhoneImpl *phone_;
   scoped_refptr<Request> last_request_;
   scoped_refptr<Dialog> dialog_;
-  
+  net::CompletionCallback initial_request_callback_;
+  net::CompletionCallback on_pickup_completed_;
+  net::CompletionCallback on_reject_completed_;
+  net::CompletionCallback on_hangup_completed_;
+
   base::Time creation_time_;
   base::Time start_time_;
   base::Time end_time_;
@@ -60,7 +63,8 @@ class CallImpl :
   std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
     active_streams_;
 
-  CallImpl(const SipURI& uri, PhoneImpl* phone);
+  CallImpl(const SipURI& uri, PhoneImpl* phone,
+      const net::CompletionCallback& initial_request_callback);
   CallImpl(const scoped_refptr<Request> &invite, PhoneImpl* phone);
   ~CallImpl() override;
 

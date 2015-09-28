@@ -17,6 +17,7 @@
             'phone/android/java/src/io/sippet/phone/Call.java',
             'phone/android/java/src/io/sippet/phone/Settings.java',
             'phone/android/java/src/io/sippet/phone/IceServer.java',
+            'phone/android/java/src/io/sippet/phone/CompletionCallback.java',
           ],
           'variables': {
             'jni_gen_package': 'sippet_phone',
@@ -28,6 +29,22 @@
           'type': 'none',
           'variables': {
             'source_file': 'phone/phone_state.h',
+          },
+          'includes': [ '../build/android/java_cpp_enum.gypi' ],
+        },
+        {
+          'target_name': 'sippet_phone_java_call_state',
+          'type': 'none',
+          'variables': {
+            'source_file': 'phone/call_state.h',
+          },
+          'includes': [ '../build/android/java_cpp_enum.gypi' ],
+        },
+        {
+          'target_name': 'sippet_phone_java_call_direction',
+          'type': 'none',
+          'variables': {
+            'source_file': 'phone/call_direction.h',
           },
           'includes': [ '../build/android/java_cpp_enum.gypi' ],
         },
@@ -69,6 +86,8 @@
             '../base/base.gyp:base_java',
             '../third_party/webrtc/modules/modules_java_chromium.gyp:audio_device_module_java',
             'sippet_phone_java_phone_state',
+            'sippet_phone_java_call_state',
+            'sippet_phone_java_call_direction',
           ],
           'variables': {
             'apk_name': "SippetPhone",
@@ -109,11 +128,17 @@
         'phone/ice_server.h',
         'phone/ice_server.cc',
         'phone/phone.h',
+        'phone/phone_state.h'
         'phone/phone_impl.h',
         'phone/phone_impl.cc',
         'phone/call.h',
+        'phone/call_direction.h',
+        'phone/call_state.h',
         'phone/call_impl.h',
         'phone/call_impl.cc',
+        'phone/completion_status.h',
+        'phone/completion_status.cc',
+        'phone/q850.h',
       ],
     },  # target sippet_phone
     {

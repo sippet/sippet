@@ -44,28 +44,35 @@ DIRECTORIES = [
   'mojo',
   'net',
   'sdch',
+  'skia',
   'v8',
   'ipc',
   'url',
   'testing',
+  'third_party/apple_apsl',
   'third_party/binutils',
   'third_party/boringssl',
   'third_party/colorama',
   'third_party/drmemory',
   'third_party/expat',
   'third_party/gflags',
+  'third_party/gold',
+  'third_party/harfbuzz-ng',
   'third_party/icu',
   'third_party/instrumented_libraries',
   'third_party/jemalloc',
   'third_party/jsoncpp',
+  'third_party/libevent',
   'third_party/libjpeg',
   'third_party/libjpeg_turbo',
+  'third_party/libpng',
   'third_party/libsrtp',
   'third_party/libudev',
   'third_party/libvpx',
   'third_party/libxml',
   'third_party/libyuv',
   'third_party/llvm-build',
+  'third_party/mach_override',
   'third_party/modp_b64',
   'third_party/mojo',
   'third_party/nss',
@@ -91,6 +98,7 @@ DIRECTORIES = [
   'tools/swarming_client',
   'tools/valgrind',
   'tools/win',
+  'tools/xdisplaycheck',
 
   # --- Compatibility mode:
   # We've changed some parts of libjingle
@@ -110,20 +118,6 @@ if 'android' in get_target_os_list():
     'third_party/requests',
     'tools/android',
     'tools/relocation_packer'
-  ]
-
-if 'mac' in get_target_os_list():
-  DIRECTORIES += [
-    'third_party/mach_override',
-    'third_party/apple_apsl'
-  ]
-
-if 'linux' in get_target_os_list():
-  DIRECTORIES += [
-    'third_party/gold',
-    'third_party/libevent',
-    'tools/xdisplaycheck',
-    'tools/generate_library_loader'
   ]
 
 FILES = {

@@ -64,6 +64,7 @@
 /out
 /resources
 /sdch
+/skia
 /sql
 /testing
 /url
@@ -71,6 +72,7 @@
 /third_party/BUILD.gn
 /third_party/android_testrunner
 /third_party/android_tools
+/third_party/apple_apsl
 /third_party/appurify-python
 /third_party/ashmem
 /third_party/binutils
@@ -79,6 +81,7 @@
 /third_party/drmemory
 /third_party/expat
 /third_party/gflags/src/
+/third_party/harfbuzz-ng
 /third_party/icu
 /third_party/instrumented_libraries
 /third_party/jsoncpp
@@ -87,12 +90,14 @@
 /third_party/libjingle/source
 /third_party/libjpeg
 /third_party/libjpeg_turbo
+/third_party/libpng
 /third_party/libsrtp
 /third_party/libudev
 /third_party/libvpx
 /third_party/libxml
 /third_party/libyuv
 /third_party/llvm-build
+/third_party/mach_override
 /third_party/modp_b64
 /third_party/mojo
 /third_party/ocmock
@@ -122,4 +127,5 @@
 /tools/relocation_packer
 /tools/swarming_client
 /tools/valgrind
+/tools/xdisplaycheck
 /tools/win

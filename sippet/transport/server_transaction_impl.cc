@@ -60,6 +60,8 @@ void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
   if (STATE_PROCEED_CALLING == next_state_)
     StopProvisionalResponse();
 
+  LOG(INFO) << "Sent to " << channel_->destination().ToString();
+
   latest_response_ = response;
   int result = channel_->Send(response,
       base::Bind(&ServerTransactionImpl::OnSendWriteComplete,

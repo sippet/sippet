@@ -25,21 +25,6 @@ class Phone :
   // Phone delegate
   class Delegate {
    public:
-    // Called to inform network errors, at any moment.
-    virtual void OnNetworkError(int error_code) = 0;
-
-    // Called to inform completion of the last registration attempt.
-    virtual void OnRegisterCompleted(int status_code,
-             const std::string& status_text) = 0;
-
-    // Called to inform a refresh registration error.
-    virtual void OnRefreshError(int status_code,
-             const std::string& status_text) = 0;
-
-    // Called to inform completion of the last unregistration attempt.
-    virtual void OnUnregisterCompleted(int status_code,
-             const std::string& status_text) = 0;
-
     // Called on incoming calls.
     virtual void OnIncomingCall(const scoped_refptr<Call>& call) = 0;
 
@@ -61,20 +46,27 @@ class Phone :
   virtual bool Init(const Settings& settings) = 0;
 
   // Register the Phone to receive incoming requests.
-  virtual bool Register() = 0;
+  virtual void Register(const net::CompletionCallback& on_completed) = 0;
+
+  // Starts refreshing registration. The callback is executed only in case of
+  // unrecoverable errors.
+  virtual void StartRefreshRegister(const net::CompletionCallback& on_completed) = 0;
+
+  // Stops refreshing registration.
+  virtual void StopRefreshRegister() = 0;
 
   // Unregister current account.
-  virtual bool Unregister() = 0;
+  virtual void Unregister(const net::CompletionCallback& on_completed) = 0;
 
-  // Unregister all contacts associated with the account.
-  virtual bool UnregisterAll() = 0;
+  // Unregister all accounts eventually registered on the registrar.
+  virtual void UnregisterAll(const net::CompletionCallback& on_completed) = 0;
 
-  // Start a call to the given destination.
-  virtual scoped_refptr<Call> MakeCall(const std::string& destination) = 0;
+  // Start a call to the given destination. The completion callback will be
+  // executed for each SIP response, including provisional responses, until
+  // a final response (success or failure).
+  virtual scoped_refptr<Call> MakeCall(const std::string& destination,
+      const net::CompletionCallback& on_completed) = 0;
     
-  // Hang up all active calls.
-  virtual void HangUpAll() = 0;
-
  protected:
   friend class base::RefCountedThreadSafe<Phone>;
   virtual ~Phone() {}

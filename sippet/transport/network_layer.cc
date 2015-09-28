@@ -157,6 +157,7 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
     DVLOG(1) << "invalid Request-URI";
     return net::ERR_INVALID_ARGUMENT;
   }
+  LOG(INFO) << "Sent to " << destination.ToString();
 
   // Add a User-Agent header if there's none
   if (!request->get<UserAgent>()) {

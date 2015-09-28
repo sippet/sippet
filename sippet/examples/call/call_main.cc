@@ -16,6 +16,7 @@
 #include "base/threading/thread_checker.h"
 #include "net/base/net_errors.h"
 #include "sippet/phone/phone.h"
+#include "sippet/phone/completion_status.h"
 
 using sippet::phone::Settings;
 using sippet::phone::Phone;
@@ -36,8 +37,7 @@ static void PrintUsage() {
 }
 
 class Conductor :
-    public Phone::Delegate,
-    public Call::Delegate {
+    public Phone::Delegate {
 public:
   Conductor(const Settings& settings, const std::string& destination,
     base::MessageLoop& message_loop) :
@@ -68,7 +68,7 @@ private:
   base::OneShotTimer<Conductor> call_timeout_;
   base::ThreadChecker thread_checker_;
 
-  void OnNetworkError(int error_code) override {
+  void OnNetworkError(int error_code) {
     LOG(ERROR) << "Network error: " << error_code
       << ", " << net::ErrorToString(error_code);
     message_loop_.PostTask(FROM_HERE,
@@ -76,20 +76,21 @@ private:
             base::Unretained(this)));
   }
 
-  void OnRegisterCompleted(int status_code,
-      const std::string& status_text) override {
-    message_loop_.PostTask(FROM_HERE,
-        base::Bind(&Conductor::OnIOComplete,
-            base::Unretained(this), net::OK));
+  void OnRegisterCompleted(int error) {
+    if (sippet::OK == error) {
+      message_loop_.PostTask(FROM_HERE,
+          base::Bind(&Conductor::OnIOComplete,
+              base::Unretained(this), net::OK));
+    } else {
+      OnError(error);
+    }
   }
 
-  void OnRefreshError(int status_code,
-      const std::string& status_text) override {
+  void OnRefreshError(int error) {
     // do nothing
   }
 
-  void OnUnregisterCompleted(int status_code,
-      const std::string& status_text) override {
+  void OnUnregisterCompleted(int error) {
     // do nothing
   }
 
@@ -100,23 +101,39 @@ private:
             base::Unretained(this)));
   }
 
-  void OnError(int status_code,
-      const std::string& status_text) override {
-    LOG(ERROR) << "Call error: " << status_code << " " << status_text;
+  void OnCallCompleted(int error) {
+    if (sippet::ERR_SIP_RINGING == error) {
+      OnRinging();
+    } else if (sippet::OK == error) {
+      OnEstablished();
+    } else if (sippet::IsHangupCause(error)) {
+      OnHungUp();
+    } else {
+      OnError(error);
+    }
+  }
+
+  void OnHangUpCompleted(int error) {
+    // Do nothing...
+  }
+
+  void OnError(int error) {
+    LOG(ERROR) << "Error: "
+               << sippet::ErrorToShortString(error);
     message_loop_.PostTask(FROM_HERE,
         base::Bind(&Conductor::OnIOComplete,
             base::Unretained(this), net::ERR_UNEXPECTED));
   }
 
-  void OnRinging() override {
+  void OnRinging() {
     LOG(INFO) << "Ringing...";
   }
 
-  void OnEstablished() override {
+  void OnEstablished() {
     LOG(INFO) << "Established...";
   }
 
-  void OnHungUp() override {
+  void OnHungUp() {
     LOG(ERROR) << "Hung up call";
     message_loop_.PostTask(FROM_HERE,
         base::Bind(&Conductor::OnIOComplete,
@@ -201,8 +218,9 @@ private:
 
   int DoLogin() {
     next_state_ = STATE_LOGIN_COMPLETE;
-    if (!phone_->Register())
-      return net::ERR_ABORTED;
+    phone_->Register(
+       base::Bind(&Conductor::OnRegisterCompleted,
+           base::Unretained(this)));
     return net::ERR_IO_PENDING;
   }
 
@@ -213,7 +231,9 @@ private:
 
   int DoMakeCall() {
     next_state_ = STATE_MAKE_CALL_COMPLETE;
-    call_ = phone_->MakeCall(destination_);
+    call_ = phone_->MakeCall(destination_,
+        base::Bind(&Conductor::OnCallCompleted,
+            base::Unretained(this)));
     return net::ERR_IO_PENDING;
   }
 
@@ -230,7 +250,7 @@ private:
     call_timeout_.Start(FROM_HERE,
         base::TimeDelta::FromSeconds(3600),
         base::Bind(&Conductor::OnIOComplete,
-        base::Unretained(this), net::OK));
+            base::Unretained(this), net::OK));
     return net::ERR_IO_PENDING;
   }
 
@@ -246,7 +266,8 @@ private:
 
   int DoHangup() {
     next_state_ = STATE_HANGUP_COMPLETE;
-    call_->HangUp();
+    call_->HangUp(base::Bind(&Conductor::OnHangUpCompleted,
+        base::Unretained(this)));
     return net::OK;
   }
 
@@ -257,7 +278,8 @@ private:
 
   int DoLogout() {
     next_state_ = STATE_LOGOUT_COMPLETE;
-    phone_->Unregister();
+    phone_->Unregister(base::Bind(&Conductor::OnUnregisterCompleted,
+        base::Unretained(this)));
     return net::OK;
   }
 

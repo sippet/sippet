@@ -14,6 +14,7 @@
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
 #include "sippet/ua/dialog_controller.h"
+#include "sippet/phone/completion_status.h"
 #include "talk/media/devices/devicemanager.h"
 #include "jingle/glue/thread_wrapper.h"
 #include "webrtc/base/ssladapter.h"
@@ -73,6 +74,12 @@ class URLRequestContextGetter : public net::URLRequestContextGetter {
 
   DISALLOW_COPY_AND_ASSIGN(URLRequestContextGetter);
 };
+
+void RunIfNotOk(const net::CompletionCallback& c, int rv) {
+  if (net::OK != rv) {
+    c.Run(rv);
+  }
+}
 
 } // empty namespace
 
@@ -175,49 +182,74 @@ bool PhoneImpl::Init(const Settings& settings) {
   return true;
 }
 
-bool PhoneImpl::Register() {
+void PhoneImpl::Register(const net::CompletionCallback& on_completed) {
   if (PHONE_STATE_READY != state_) {
     DVLOG(1) << "Not ready";
-    return nullptr;
+    return;
   }
   base::AutoLock lock(lock_);
   state_ = PHONE_STATE_REGISTERING;
+  on_register_completed_ = on_completed;
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnRegister, base::Unretained(this))
   );
-  return true;
 }
 
-bool PhoneImpl::Unregister() {
+void PhoneImpl::StartRefreshRegister(
+    const net::CompletionCallback& on_completed) {
+  if (PHONE_STATE_REGISTERED != state_) {
+    DVLOG(1) << "Not registered";
+    return;
+  }
+  base::AutoLock lock(lock_);
+  on_refresh_completed_ = on_completed;
+  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+    base::Bind(&PhoneImpl::OnStartRefreshRegister, base::Unretained(this))
+  );
+}
+
+void PhoneImpl::StopRefreshRegister() {
+  if (PHONE_STATE_REGISTERED != state_) {
+    DVLOG(1) << "Not registered";
+    return;
+  }
+  base::AutoLock lock(lock_);
+  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+    base::Bind(&PhoneImpl::OnStopRefreshRegister, base::Unretained(this))
+  );
+}
+
+void PhoneImpl::Unregister(const net::CompletionCallback& on_completed) {
   if (PHONE_STATE_REGISTERED != state_) {
     DVLOG(1) << "Not ready";
-    return nullptr;
+    return;
   }
   base::AutoLock lock(lock_);
   last_state_ = state_;
   state_ = PHONE_STATE_UNREGISTERING;
+  on_unregister_completed_ = on_completed;
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&PhoneImpl::OnUnregister, base::Unretained(this))
+    base::Bind(&PhoneImpl::OnUnregister, base::Unretained(this), false)
   );
-  return true;
 }
 
-bool PhoneImpl::UnregisterAll() {
+void PhoneImpl::UnregisterAll(const net::CompletionCallback& on_completed) {
   if (PHONE_STATE_READY != state_
       && PHONE_STATE_REGISTERED != state_) {
     DVLOG(1) << "Not ready";
-    return nullptr;
+    return;
   }
   base::AutoLock lock(lock_);
   last_state_ = state_;
   state_ = PHONE_STATE_UNREGISTERING;
+  on_unregister_completed_ = on_completed;
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&PhoneImpl::OnUnregisterAll, base::Unretained(this))
+    base::Bind(&PhoneImpl::OnUnregister, base::Unretained(this), true)
   );
-  return true;
 }
 
-scoped_refptr<Call> PhoneImpl::MakeCall(const std::string& destination) {
+scoped_refptr<Call> PhoneImpl::MakeCall(const std::string& destination,
+    const net::CompletionCallback& on_completed) {
   if (destination.empty()) {
     DVLOG(1) << "Empty destination";
     return nullptr;
@@ -233,20 +265,14 @@ scoped_refptr<Call> PhoneImpl::MakeCall(const std::string& destination) {
     DVLOG(1) << "Invalid destination";
     return nullptr;
   }
-  scoped_refptr<CallImpl> call(new CallImpl(destination_uri, this));
+  scoped_refptr<CallImpl> call(
+      new CallImpl(destination_uri, this, on_completed));
   calls_.push_back(call);
   signalling_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnMakeCall, base::Unretained(call.get()),
       base::Unretained(peer_connection_factory_.get()), ice_servers_)
   );
   return call;
-}
-
-void PhoneImpl::HangUpAll() {
-  base::AutoLock lock(lock_);
-  for (CallsVector::iterator i = calls_.begin(); i != calls_.end(); ++i) {
-    i->get()->HangUp();
-  }
 }
 
 void PhoneImpl::RemoveCall(const scoped_refptr<Call>& call) {
@@ -369,16 +395,30 @@ void PhoneImpl::OnRegister() {
   last_request_->push_back(expires.Pass());
 
   int rv = user_agent_->Send(last_request_,
-      base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
+      base::Bind(&RunIfNotOk, on_register_completed_));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    delegate_->OnNetworkError(rv);
+    on_register_completed_.Run(rv);
     return;
   }
 
   // Wait for SIP response now
 }
 
-void PhoneImpl::OnUnregister() {
+void PhoneImpl::OnStartRefreshRegister() {
+  // Refresh the registration 25 seconds before expiration.
+  base::TimeDelta expiration = register_expires_ - base::Time::Now()
+      - base::TimeDelta::FromSeconds(25);
+  if (expiration < base::TimeDelta::FromSeconds(0))
+    expiration = base::TimeDelta::FromSeconds(0);
+  refresh_timer_->Start(FROM_HERE, expiration,
+      base::Bind(&PhoneImpl::OnRefreshRegister, base::Unretained(this)));
+}
+
+void PhoneImpl::OnStopRefreshRegister() {
+  refresh_timer_->Stop();
+}
+
+void PhoneImpl::OnUnregister(bool all) {
   std::string registrar_uri(GetRegistrarUri());
   std::string address_of_record(GetFromUri());
 
@@ -389,60 +429,33 @@ void PhoneImpl::OnUnregister() {
         GURL(address_of_record),
         GURL(address_of_record));
 
-  // Modifies the Contact header to include an expires=0 at the end
-  // of existing parameters
-  Contact* contact = last_request_->get<Contact>();
-  contact->front().set_expires(0);
+  if (all) {
+    // Uses a "*" as the contact he ader
+    Contact* contact = last_request_->get<Contact>();
+    contact->set_all(true);
+ 
+    // Set expiration to 0 for all contacts
+    scoped_ptr<Expires> expires(new Expires(0));
+    last_request_->push_back(expires.Pass());
+  } else {
+    // Modifies the Contact header to include an expires=0 at the end
+    // of existing parameters
+    Contact* contact = last_request_->get<Contact>();
+    contact->front().set_expires(0);
+  }
 
   int rv = user_agent_->Send(last_request_,
-      base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
+      base::Bind(&RunIfNotOk, on_unregister_completed_));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    delegate_->OnNetworkError(rv);
+    on_unregister_completed_.Run(rv);
     return;
   }
 
   // Wait for SIP response now
-}
-
-void PhoneImpl::OnUnregisterAll() {
-  std::string registrar_uri(GetRegistrarUri());
-  std::string address_of_record(GetFromUri());
-
-  last_request_ =
-    user_agent_->CreateRequest(
-        Method::REGISTER,
-        GURL(registrar_uri),
-        GURL(address_of_record),
-        GURL(address_of_record));
-
-  // Uses a "*" as the contact header
-  Contact* contact = last_request_->get<Contact>();
-  contact->set_all(true);
-
-  // Set expiration to 0 for all contacts
-  scoped_ptr<Expires> expires(new Expires(0));
-  last_request_->push_back(expires.Pass());
-
-  int rv = user_agent_->Send(last_request_,
-      base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(this)));
-  if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    delegate_->OnNetworkError(rv);
-    return;
-  }
-
-  // Wait for SIP response now
-}
-
-void PhoneImpl::OnRequestSent(int rv) {
-  if (net::OK != rv) {
-    delegate_->OnNetworkError(rv);
-  }
 }
 
 void PhoneImpl::OnChannelConnected(const EndPoint &destination, int err) {
-  if (net::OK != err) {
-    delegate_->OnNetworkError(err);
-  }
+  // Nothing to do
 }
 
 void PhoneImpl::OnChannelClosed(const EndPoint &destination) {
@@ -479,10 +492,10 @@ void PhoneImpl::OnIncomingResponse(
         // Do nothing, wait for a final response
         return;
       } else if (response_code / 100 == 2) {
-        // Start a timer to refresh login
+        // Save the time when the registration will expire
         unsigned int expiration = GetContactExpiration(incoming_response);
-        refresh_timer_->Start(FROM_HERE, base::TimeDelta::FromSeconds(expiration),
-          base::Bind(&PhoneImpl::OnRefreshLogin, base::Unretained(this)));
+        register_expires_ = base::Time::Now() +
+            base::TimeDelta::FromSeconds(expiration);
         base::AutoLock lock(lock_);
         state_ = PHONE_STATE_REGISTERED;
       } else {
@@ -490,8 +503,8 @@ void PhoneImpl::OnIncomingResponse(
         state_ = PHONE_STATE_READY;
       }
       // Notify completion
-      delegate_->OnRegisterCompleted(incoming_response->response_code(),
-        incoming_response->reason_phrase());
+      on_register_completed_.Run(
+          StatusCodeToCompletionStatus(incoming_response->response_code()));
     } else if (PHONE_STATE_REGISTERED == state_) { // after refresh register
       int response_code = incoming_response->response_code();
       if (response_code / 100 == 1) {
@@ -500,16 +513,17 @@ void PhoneImpl::OnIncomingResponse(
       } else if (response_code / 100 == 2) {
         // Start the timer to refresh login again
         unsigned int expiration = GetContactExpiration(incoming_response);
-        refresh_timer_->Start(FROM_HERE, base::TimeDelta::FromSeconds(expiration),
-          base::Bind(&PhoneImpl::OnRefreshLogin, base::Unretained(this)));
+        register_expires_ = base::Time::Now() +
+            base::TimeDelta::FromSeconds(expiration);
+        OnStartRefreshRegister();
       } else {
         {
           base::AutoLock lock(lock_);
           state_ = PHONE_STATE_READY;
         }
         // Notify the problem upwards
-        delegate_->OnRefreshError(incoming_response->response_code(),
-          incoming_response->reason_phrase());
+        on_refresh_completed_.Run(
+            StatusCodeToCompletionStatus(incoming_response->response_code()));
       }
     } else if (PHONE_STATE_UNREGISTERING == state_) { // result of Unregister
       int response_code = incoming_response->response_code();
@@ -525,8 +539,8 @@ void PhoneImpl::OnIncomingResponse(
         state_ = last_state_;
       }
       // Notify completion
-      delegate_->OnUnregisterCompleted(incoming_response->response_code(),
-        incoming_response->reason_phrase());
+      on_unregister_completed_.Run(
+          StatusCodeToCompletionStatus(incoming_response->response_code()));
     }
   } else if (Method::INVITE == incoming_response->refer_to()->method()
              || Method::BYE == incoming_response->refer_to()->method()) {
@@ -544,6 +558,13 @@ void PhoneImpl::OnTimedOut(
     CallImpl *call = RouteToCall(request);
     if (call)
       call->OnTimedOut(request, dialog);
+  } else if (Method::REGISTER == request->method()) {
+    if (PHONE_STATE_REGISTERING == state_)
+      on_register_completed_.Run(net::ERR_TIMED_OUT);
+    else if (PHONE_STATE_REGISTERED == state_)
+      on_refresh_completed_.Run(net::ERR_TIMED_OUT);
+    else if (PHONE_STATE_UNREGISTERING == state_)
+      on_unregister_completed_.Run(net::ERR_TIMED_OUT);
   }
 }
 
@@ -555,10 +576,17 @@ void PhoneImpl::OnTransportError(
     CallImpl *call = RouteToCall(request);
     if (call)
       call->OnTransportError(request, error, dialog);
+  } else if (Method::REGISTER == request->method()) {
+    if (PHONE_STATE_REGISTERING == state_)
+      on_register_completed_.Run(error);
+    else if (PHONE_STATE_REGISTERED == state_)
+      on_refresh_completed_.Run(error);
+    else if (PHONE_STATE_UNREGISTERING == state_)
+      on_unregister_completed_.Run(error);
   }
 }
 
-void PhoneImpl::OnRefreshLogin() {
+void PhoneImpl::OnRefreshRegister() {
   // Just send another REGISTER
   OnRegister(); 
 }

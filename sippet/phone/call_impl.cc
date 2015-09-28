@@ -10,6 +10,7 @@
 #include "net/base/net_errors.h"
 #include "re2/re2.h"
 #include "sippet/message/status_code.h"
+#include "sippet/phone/completion_status.h"
 
 namespace {
 
@@ -78,35 +79,42 @@ protected:
   base::Callback<void(const std::string&)> on_failure_;
 };
 
+void RunIfNotOk(const net::CompletionCallback& c, int rv) {
+  if (net::OK != rv) {
+    c.Run(rv);
+  }
+}
+
 } // empty namespace
 
 namespace sippet {
 namespace phone {
 
-CallImpl::CallImpl(const SipURI& uri, PhoneImpl* phone) :
-  direction_(kDirectionOutgoing), state_(kStateCalling), uri_(uri),
-  phone_(phone), delegate_(nullptr) {
+CallImpl::CallImpl(const SipURI& uri, PhoneImpl* phone,
+    const net::CompletionCallback& initial_request_callback)
+  : direction_(CALL_DIRECTION_OUTGOING), state_(CALL_STATE_CALLING),
+    uri_(uri), phone_(phone),
+    initial_request_callback_(initial_request_callback) {
 }
 
-CallImpl::CallImpl(const scoped_refptr<Request> &invite,
-                   PhoneImpl* phone) :
-  direction_(kDirectionIncoming), state_(kStateRinging), uri_(invite->request_uri()),
-  last_request_(invite), phone_(phone), delegate_(nullptr) {
+CallImpl::CallImpl(const scoped_refptr<Request> &invite, PhoneImpl* phone)
+  : direction_(CALL_DIRECTION_INCOMING), state_(CALL_STATE_RINGING),
+    uri_(invite->request_uri()), last_request_(invite), phone_(phone) {
 }
 
 CallImpl::~CallImpl() {
 }
 
-Call::Direction CallImpl::direction() const {
+CallDirection CallImpl::direction() const {
   return direction_;
 }
 
-CallImpl::State CallImpl::state() const {
+CallState CallImpl::state() const {
   return state_;
 }
 
-void CallImpl::set_delegate(Delegate *delegate) {
-  delegate_ = delegate;
+void CallImpl::set_callback(const net::CompletionCallback& callback) {
+  initial_request_callback_ = callback;
 }
 
 GURL CallImpl::uri() const {
@@ -133,47 +141,46 @@ base::TimeDelta CallImpl::duration() const {
   return end_time_ - start_time_;
 }
 
-bool CallImpl::PickUp() {
+bool CallImpl::PickUp(const net::CompletionCallback& on_completed) {
   if (!last_request_ || Request::Incoming != last_request_->direction()) {
     DVLOG(1) << "Impossible to pick up an outgoing call";
     return false;
   }
-  if (kStateRinging != state_) {
+  if (CALL_STATE_RINGING != state_) {
     DVLOG(1) << "Invalid state to pick up call";
     return false;
   }
+  on_pickup_completed_ = on_completed;
   phone_->signalling_message_loop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnPickUp, base::Unretained(this)));
   return true;
 }
 
-bool CallImpl::Reject() {
+bool CallImpl::Reject(const net::CompletionCallback& on_completed) {
   if (!last_request_ || Request::Incoming != last_request_->direction()) {
     DVLOG(1) << "Impossible to reject an outgoing call";
     return false;
   }
-  if (kStateRinging != state_) {
+  if (CALL_STATE_RINGING != state_) {
     DVLOG(1) << "Invalid state to reject call";
     return false;
   }
+  on_reject_completed_ = on_completed;
   phone_->signalling_message_loop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnReject, base::Unretained(this)));
   return true;
 }
 
-bool CallImpl::HangUp() {
+bool CallImpl::HangUp(const net::CompletionCallback& on_completed) {
   if (!last_request_) {
     DVLOG(1) << "Impossible to hangup an uninitiated call";
     return false;
   }
-  if (kStateHungUp == state_) {
-    DVLOG(1) << "Cannot hangup an already hungup call";
+  if (CALL_STATE_TERMINATED == state_) {
+    DVLOG(1) << "Cannot hangup a terminated call";
     return false;
   }
-  if (kStateError == state_) {
-    DVLOG(1) << "Cannot hangup a call in error state";
-    return false;
-  }
+  on_hangup_completed_ = on_completed;
   phone_->signalling_message_loop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnHangup, base::Unretained(this)));
   return true;
@@ -184,12 +191,8 @@ void CallImpl::SendDtmf(const std::string& digits) {
     DVLOG(1) << "Impossible to send digit to an uninitiated call";
     return;
   }
-  if (kStateHungUp == state_) {
-    DVLOG(1) << "Cannot send digit to a hungup call";
-    return;
-  }
-  if (kStateError == state_) {
-    DVLOG(1) << "Cannot send digit to a call in error state";
+  if (CALL_STATE_TERMINATED == state_) {
+    DVLOG(1) << "Cannot send digit to a terminated call";
     return;
   }
   phone_->signalling_message_loop()->PostTask(FROM_HERE,
@@ -333,9 +336,10 @@ void CallImpl::OnCreateOfferCompleted(const std::string& offer) {
   last_request_->set_content(offer);
 
   int rv = phone_->user_agent()->Send(last_request_,
-    base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
+      base::Bind(&RunIfNotOk, initial_request_callback_));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    phone_->delegate()->OnNetworkError(rv);
+    state_ = CALL_STATE_TERMINATED;
+    initial_request_callback_.Run(rv);
     return;
   }
 
@@ -369,10 +373,11 @@ void CallImpl::HandleSessionDescriptionAnswer(
 void CallImpl::SendAck(const scoped_refptr<Response> &incoming_response) {
   scoped_refptr<Request> ack = dialog_->CreateAck(
     incoming_response->refer_to());
-  int rv = phone_->user_agent()->Send(ack, base::Bind(
-    &PhoneImpl::OnRequestSent, phone_));
+  int rv = phone_->user_agent()->Send(ack,
+      base::Bind(&RunIfNotOk, initial_request_callback_));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    phone_->delegate()->OnNetworkError(rv);
+    state_ = CALL_STATE_TERMINATED;
+    initial_request_callback_.Run(rv);
     return;
   }
 
@@ -389,9 +394,9 @@ void CallImpl::SendCancel() {
   }
   else {
     int rv = phone_->user_agent()->Send(cancel,
-      base::Bind(&PhoneImpl::OnRequestSent, phone_));
+        base::Bind(&RunIfNotOk, on_hangup_completed_));
     if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-      phone_->delegate()->OnNetworkError(rv);
+      on_hangup_completed_.Run(rv);
       return;
     }
 
@@ -402,9 +407,9 @@ void CallImpl::SendCancel() {
 void CallImpl::SendBye() {
   last_request_ = dialog_->CreateRequest(Method::BYE);
   int rv = phone_->user_agent()->Send(last_request_,
-    base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
+    base::Bind(&RunIfNotOk, on_hangup_completed_));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
-    phone_->delegate()->OnNetworkError(rv);
+    on_hangup_completed_.Run(rv);
     return;
   }
 
@@ -414,43 +419,45 @@ void CallImpl::SendBye() {
 void CallImpl::HandleCallingOrRingingResponse(
       const scoped_refptr<Response> &incoming_response,
       const scoped_refptr<Dialog> &dialog) {
-  DCHECK(kStateRinging == state_ || kStateCalling == state_);
+  DCHECK(CALL_STATE_RINGING == state_ || CALL_STATE_CALLING == state_);
 
-  State next_state; // Determine the next state
+  CallState next_state; // Determine the next state
   int response_code = incoming_response->response_code();
   if (response_code / 100 == 1) { // 1xx
     if (response_code / 10 == 18) { // 18x
-      next_state = kStateRinging;
+      next_state = CALL_STATE_RINGING;
     } else {
       next_state = state_; // Keep on same state
     }
   } else if (response_code / 100 == 2) { // 2xx
-    next_state = kStateEstablished;
+    next_state = CALL_STATE_ESTABLISHED;
   } else {
-    next_state = kStateError;
+    next_state = CALL_STATE_TERMINATED;
   }
 
   // Send ACK for every 2xx
-  if (next_state == kStateEstablished) {
+  if (next_state == CALL_STATE_ESTABLISHED) {
     SendAck(incoming_response);
   }
 
   // Handle Session Description on ringing or established
   if (state_ != next_state) {
-    if (kStateRinging == next_state
-        || kStateEstablished == next_state) {
+    if (CALL_STATE_RINGING == next_state
+        || CALL_STATE_ESTABLISHED == next_state) {
       HandleSessionDescriptionAnswer(incoming_response);
     }
   }
 
   // Now change state and process post changed state conditions
   state_ = next_state;
-  if (kStateRinging == state_) {
-    delegate_->OnRinging();
-  } else if (kStateEstablished == state_) {
-    delegate_->OnEstablished();
-  } else if (kStateError == state_) {
-    delegate_->OnError(response_code, incoming_response->reason_phrase());
+  if (CALL_STATE_RINGING == state_) {
+    initial_request_callback_.Run(
+        StatusCodeToCompletionStatus(response_code));
+  } else if (CALL_STATE_ESTABLISHED == state_) {
+    initial_request_callback_.Run(net::OK);
+  } else if (CALL_STATE_TERMINATED == state_) {
+    initial_request_callback_.Run(
+        StatusCodeToCompletionStatus(response_code));
     phone_->RemoveCall(this);
   }
 }
@@ -458,7 +465,7 @@ void CallImpl::HandleCallingOrRingingResponse(
 void CallImpl::HandleHungupResponse(
       const scoped_refptr<Response> &incoming_response,
       const scoped_refptr<Dialog> &dialog) {
-  DCHECK(kStateHungUp == state_);
+  DCHECK(CALL_STATE_TERMINATED == state_);
   int response_code = incoming_response->response_code();
   if (Method::INVITE == incoming_response->refer_to()->method()) {
     if (response_code / 100 == 2) { // 2xx
@@ -491,7 +498,7 @@ void CallImpl::OnReject() {
 }
 
 void CallImpl::OnHangup() {
-  state_ = kStateHungUp;
+  state_ = CALL_STATE_TERMINATED;
   if (!dialog_) {
     // Wait until the server answers a 18x before sending CANCEL
   } else if (Dialog::STATE_EARLY == dialog_->state()) {
@@ -526,9 +533,10 @@ void CallImpl::OnIncomingRequest(
     scoped_refptr<Response> response =
         dialog->CreateResponse(SIP_OK, incoming_request);
     phone_->user_agent()->Send(response,
-      base::Bind(&PhoneImpl::OnRequestSent, base::Unretained(phone_)));
-    state_ = kStateHungUp;
-    delegate_->OnHungUp();
+        net::CompletionCallback());
+    state_ = CALL_STATE_TERMINATED;
+    // TODO: get the BYE reason
+    initial_request_callback_.Run(ERR_HANGUP_NOT_DEFINED);
     phone_->RemoveCall(this);
   }
 }
@@ -537,10 +545,10 @@ void CallImpl::OnIncomingResponse(
     const scoped_refptr<Response> &incoming_response,
     const scoped_refptr<Dialog> &dialog) {
   dialog_ = dialog; // Save dialog
-  if (kStateCalling == state_
-      || kStateRinging == state_) {
+  if (CALL_STATE_CALLING == state_
+      || CALL_STATE_RINGING == state_) {
     HandleCallingOrRingingResponse(incoming_response, dialog);
-  } else if (kStateHungUp == state_) {
+  } else if (CALL_STATE_TERMINATED == state_) {
     HandleHungupResponse(incoming_response, dialog);
   }
 }
@@ -548,11 +556,10 @@ void CallImpl::OnIncomingResponse(
 void CallImpl::OnTimedOut(
     const scoped_refptr<Request> &request,
     const scoped_refptr<Dialog> &dialog) {
-  if (kStateCalling == state_
-      || kStateRinging == state_) {
-    state_ = kStateError;
-    delegate_->OnError(SIP_REQUEST_TIMEOUT,
-      GetReasonPhrase(SIP_REQUEST_TIMEOUT));
+  if (CALL_STATE_CALLING == state_
+      || CALL_STATE_RINGING == state_) {
+    state_ = CALL_STATE_TERMINATED;
+    initial_request_callback_.Run(ERR_TIMED_OUT);
     phone_->RemoveCall(this);
   }
 }
@@ -560,11 +567,10 @@ void CallImpl::OnTimedOut(
 void CallImpl::OnTransportError(
     const scoped_refptr<Request> &request, int error,
     const scoped_refptr<Dialog> &dialog) {
-  if (kStateCalling == state_
-      || kStateRinging == state_) {
-    state_ = kStateError;
-    delegate_->OnError(SIP_SERVICE_UNAVAILABLE,
-      GetReasonPhrase(SIP_SERVICE_UNAVAILABLE));
+  if (CALL_STATE_CALLING == state_
+      || CALL_STATE_RINGING == state_) {
+    state_ = CALL_STATE_TERMINATED;
+    initial_request_callback_.Run(error);
     phone_->RemoveCall(this);
   }
 }
