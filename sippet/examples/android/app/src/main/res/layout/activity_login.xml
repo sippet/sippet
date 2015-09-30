@@ -35,6 +35,12 @@
                 android:singleLine="true"
                 android:inputType="textUri" />
 
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/route"
+                android:hint="@string/prompt_route" />
+
             <ImageButton android:id="@+id/sign_in_button"
                 android:src="@android:drawable/ic_menu_directions"
                 android:layout_width="match_parent" android:layout_height="60dp"

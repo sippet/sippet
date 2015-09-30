@@ -8,6 +8,7 @@ import android.app.LoaderManager.LoaderCallbacks;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -16,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
@@ -25,13 +27,20 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import io.sippet.phone.Call;
+import io.sippet.phone.CompletionCallback;
+import io.sippet.phone.Phone;
+import io.sippet.phone.Settings;
 
 
 /**
  * A login screen that offers login via uri/password/registrar.
  */
-public class LoginActivity extends Activity {
+public class LoginActivity extends SippetActivity {
+    private final String TAG = "LoginActivity";
 
     /**
      * A dummy authentication store containing known user names and passwords.
@@ -49,15 +58,11 @@ public class LoginActivity extends Activity {
             "sip:foo@example.com:hello", "sip:bar@example.com:world"
     };
 
-    /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
-    private UserLoginTask authTask = null;
-
     // UI references.
     private EditText uriView;
     private EditText passwordView;
     private EditText registrarServerView;
+    private EditText routeView;
     private View progressView;
     private View loginFormView;
 
@@ -68,10 +73,9 @@ public class LoginActivity extends Activity {
 
         // Set up the login form.
         uriView = (EditText) findViewById(R.id.uri);
-
         passwordView = (EditText) findViewById(R.id.password);
-
         registrarServerView = (EditText) findViewById(R.id.registrar_server);
+        routeView = (EditText) findViewById(R.id.route);
 
         ImageButton signInButton = (ImageButton) findViewById(R.id.sign_in_button);
         signInButton.setOnClickListener(new OnClickListener() {
@@ -83,6 +87,8 @@ public class LoginActivity extends Activity {
 
         loginFormView = findViewById(R.id.login_form);
         progressView = findViewById(R.id.login_progress);
+
+        restoreForm();
     }
 
     /**
@@ -91,9 +97,8 @@ public class LoginActivity extends Activity {
      * errors are presented and no actual login attempt is made.
      */
     public void attemptLogin() {
-        if (authTask != null) {
-            return;
-        }
+
+        saveForm();
 
         // Reset errors.
         uriView.setError(null);
@@ -101,9 +106,10 @@ public class LoginActivity extends Activity {
         registrarServerView.setError(null);
 
         // Store values at the time of the login attempt.
-        String email = uriView.getText().toString();
+        String uri = uriView.getText().toString();
         String password = passwordView.getText().toString();
         String registrarServer = registrarServerView.getText().toString();
+        String route = routeView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
@@ -116,25 +122,44 @@ public class LoginActivity extends Activity {
         }
 
         // Check for a valid email address.
-        if (TextUtils.isEmpty(email)) {
+        if (TextUtils.isEmpty(uri)) {
             uriView.setError(getString(R.string.error_field_required));
             focusView = uriView;
             cancel = true;
-        } else if (!isUriValid(email)) {
+        } else if (!isUriValid(uri)) {
             uriView.setError(getString(R.string.error_invalid_uri));
             focusView = uriView;
             cancel = true;
         }
 
         // Check for a valid registrar server.
-        if (TextUtils.isEmpty(registrarServer)) {
-            registrarServerView.setError(getString(R.string.error_field_required));
-            focusView = registrarServerView;
-            cancel = true;
-        } else if (!isUriValid(registrarServer)) {
-            registrarServerView.setError(getString(R.string.error_invalid_uri));
-            focusView = registrarServerView;
-            cancel = true;
+        if (!TextUtils.isEmpty(registrarServer)) {
+            if (!isRegistrarValid(registrarServer)) {
+                registrarServerView.setError(getString(R.string.error_invalid_uri));
+                focusView = registrarServerView;
+                cancel = true;
+            }
+        }
+
+        if (!cancel) {
+            Settings settings = new Settings();
+            settings.setDisableEncryption(true);
+            settings.setDisableSctpDataChannels(true);
+            settings.setUri(uri);
+            settings.setPassword(password);
+            if (!TextUtils.isEmpty(registrarServer)) {
+                settings.setRegistrarServer(registrarServer);
+            }
+            if (!TextUtils.isEmpty(route)) {
+                List<String> routeSet = Arrays.asList(route.split(" *, *"));
+                settings.setRouteSet(routeSet);
+            }
+            if (!getPhone().init(settings)) {
+                // TODO: show the error in an appropriated way
+                Log.d(TAG, "Error in provided settings");
+                focusView = registrarServerView;
+                cancel = true;
+            }
         }
 
         if (cancel) {
@@ -145,13 +170,49 @@ public class LoginActivity extends Activity {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            authTask = new UserLoginTask(email, password);
-            authTask.execute((Void) null);
+
+            Log.d(TAG, "Registering...");
+            getPhone().register(new CompletionCallback() {
+                @Override
+                public void onCompleted(int error) {
+                    showProgress(false);
+                    if (error == 0) {
+                        loadDialer();
+                    } else {
+                        // TODO: handle other errors
+                        passwordView.setError(getString(R.string.error_incorrect_password));
+                        passwordView.requestFocus();
+                    }
+                }
+            });
         }
+    }
+
+    public void saveForm() {
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString("settings_uri", uriView.getText().toString());
+        editor.putString("settings_password", passwordView.getText().toString());
+        editor.putString("settings_registrar_server", registrarServerView.getText().toString());
+        editor.putString("settings_route_set", routeView.getText().toString());
+        editor.commit();
+    }
+
+    public void restoreForm() {
+        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+        uriView.setText(preferences.getString("settings_uri", ""));
+        passwordView.setText(preferences.getString("settings_password", ""));
+        registrarServerView.setText(preferences.getString("settings_registrar_server", ""));
+        routeView.setText(preferences.getString("settings_route_set", ""));
     }
 
     private boolean isUriValid(String uri) {
         return uri.contains("@") &&
+                (uri.startsWith("sip:") || uri.startsWith("sips:"));
+    }
+
+    private boolean isRegistrarValid(String uri) {
+        return !uri.contains("@") &&
                 (uri.startsWith("sip:") || uri.startsWith("sips:"));
     }
 
@@ -195,61 +256,9 @@ public class LoginActivity extends Activity {
         }
     }
 
-    /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
-     */
-    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
-
-        private final String mEmail;
-        private final String mPassword;
-
-        UserLoginTask(String email, String password) {
-            mEmail = email;
-            mPassword = password;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
-
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
-
-            // TODO: register the new account here.
-            return true;
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            authTask = null;
-            showProgress(false);
-
-            if (success) {
-                loadDialer();
-            } else {
-                passwordView.setError(getString(R.string.error_incorrect_password));
-                passwordView.requestFocus();
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            authTask = null;
-            showProgress(false);
-        }
+    @Override
+    protected void onIncomingCall(Call call) {
+        // TODO
     }
 
     private void loadDialer() {

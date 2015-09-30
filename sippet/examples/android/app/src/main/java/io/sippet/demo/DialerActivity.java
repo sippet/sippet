@@ -27,7 +27,9 @@ import com.google.i18n.phonenumbers.Phonenumber.PhoneNumber;
 
 import java.util.Locale;
 
-public class DialerActivity extends Activity {
+import io.sippet.phone.Call;
+
+public class DialerActivity extends SippetActivity {
 
     private EditText phoneNumberView;
     private float phoneNumberOriginalSize;
@@ -256,5 +258,10 @@ public class DialerActivity extends Activity {
             return null;
         }
         return phoneUtil.format(proto, PhoneNumberFormat.E164);
+    }
+
+    @Override
+    protected void onIncomingCall(Call call) {
+        // TODO
     }
 }

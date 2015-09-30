@@ -1,9 +1,11 @@
 package io.sippet.demo;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 import io.sippet.phone.Call;
+import io.sippet.phone.OnIncomingCallListener;
 import io.sippet.phone.Phone;
 import io.sippet.phone.Settings;
 
@@ -25,53 +28,50 @@ public class SippetApplication extends Application {
     private final String TAG = "SippetApplication";
 
     private Phone mPhone;
+    private SippetActivity mForegroundActivity;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        mPhone = new Phone(getApplicationContext(),
-                new Phone.Delegate() {
-                    @Override
-                    public void onNetworkError(int error) {
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
 
-                    }
+            @Override
+            public void onActivityStarted(Activity activity) {}
 
-                    @Override
-                    public void onRegisterCompleted(int status_code,
-                                                    String status_text) {
-                        Log.d(TAG, String.format("onRegisterCompleted(%d, '%s')", status_code, status_text));
-                    }
+            @Override
+            public void onActivityResumed(Activity activity) {
+                mForegroundActivity = (SippetActivity)activity;
+            }
 
-                    @Override
-                    public void onRefreshError(int status_code,
-                                               String status_text) {
+            @Override
+            public void onActivityPaused(Activity activity) {
+                mForegroundActivity = null;
+            }
 
-                    }
+            @Override
+            public void onActivityStopped(Activity activity) {}
 
-                    @Override
-                    public void onUnregisterCompleted(int status_code,
-                                                      String status_text) {
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
 
-                    }
+            @Override
+            public void onActivityDestroyed(Activity activity) {}
+        });
 
+        Phone.loadLibraries(getApplicationContext());
+        mPhone = new Phone(new OnIncomingCallListener() {
                     @Override
                     public void onIncomingCall(Call call) {
-
+                        if (mForegroundActivity != null)
+                            mForegroundActivity.onIncomingCall(call);
                     }
                 });
+    }
 
-        Settings settings = new Settings();
-        settings.setDisableEncryption(true);
-        settings.setDisableSctpDataChannels(true);
-        settings.setUri("sip:helloworld@foo.com");
-        settings.setPassword("s3cr3t");
-        List<String> routeSet = Arrays.asList("sip:bar.com;lr");
-        settings.setRouteSet(routeSet);
-        if (mPhone.init(settings)) {
-            Log.d(TAG, "Initialized");
-            mPhone.register();
-        }
-        int state = mPhone.getState();
+    public Phone getPhone() {
+        return mPhone;
     }
 }
