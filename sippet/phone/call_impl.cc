@@ -315,14 +315,13 @@ void CallImpl::OnSetRemoteSessionFailure(const std::string& error) {
 
 void CallImpl::OnCreateOfferCompleted(const std::string& offer) {
   std::string request_uri(uri_.spec());
-  std::string from("sip:" + phone_->username() + "@" + phone_->host());
   std::string to(uri_.spec());
 
   last_request_ =
     phone_->user_agent()->CreateRequest(
         Method::INVITE,
         GURL(request_uri),
-        GURL(from),
+        phone_->settings().uri(),
         GURL(to));
 
   scoped_ptr<ContentType> content_type(

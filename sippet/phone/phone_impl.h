@@ -61,9 +61,6 @@ class PhoneImpl :
   PhoneState last_state_;
   base::Lock lock_;
   CallsVector calls_;
-  std::string username_;
-  std::string scheme_;
-  std::string host_;
   Phone::Delegate *delegate_;
   Settings settings_;
 
@@ -120,8 +117,7 @@ class PhoneImpl :
   //
   // Call attributes
   //
-  const std::string &username() { return username_; }
-  const std::string &host() { return host_; }
+  const Settings& settings() const { return settings_; }
   Phone::Delegate *delegate() { return delegate_; }
   ua::UserAgent *user_agent() { return user_agent_.get(); }
   base::MessageLoop *signalling_message_loop() {
