@@ -262,9 +262,8 @@ namespace phone {
 
 namespace {
 
-const char kOnNetworkError[] = "::sippet::phone::OnNetworkError";
 const char kOnRegisterCompleted[] = "::sippet::phone::OnRegisterCompleted";
-const char kOnRefreshError[] = "::sippet::phone::OnRefreshError";
+const char kOnRefreshCompleted[] = "::sippet::phone::OnRefreshCompleted";
 const char kOnUnregisterCompleted[] = "::sippet::phone::OnUnregisterCompleted";
 const char kOnIncomingCall[] = "::sippet::phone::OnIncomingCall";
 
@@ -278,11 +277,10 @@ PhoneJsWrapper::PhoneJsWrapper(
   isolate_(isolate),
   phone_(Phone::Create(this)),
   message_loop_(base::MessageLoop::current()),
-  on_network_error_(this, kOnNetworkError),
-  on_register_completed_(this, kOnRegisterCompleted),
-  on_refresh_error_(this, kOnRefreshError),
-  on_unregister_completed_(this, kOnUnregisterCompleted),
-  on_incoming_call_(this, kOnIncomingCall) {
+  on_register_completed_(kOnRegisterCompleted),
+  on_refresh_completed_(kOnRefreshCompleted),
+  on_unregister_completed_(kOnUnregisterCompleted),
+  on_incoming_call_(kOnIncomingCall) {
 }
 
 PhoneJsWrapper::~PhoneJsWrapper() {
@@ -302,9 +300,12 @@ gin::ObjectTemplateBuilder PhoneJsWrapper::GetObjectTemplateBuilder(
   builder.SetProperty("state", &PhoneJsWrapper::state);
   builder.SetMethod("init", &PhoneJsWrapper::Init);
   builder.SetMethod("register", &PhoneJsWrapper::Register);
+  builder.SetMethod("startRefreshRegister",
+      &PhoneJsWrapper::StartRefreshRegister);
+  builder.SetMethod("stopRefreshRegister",
+      &PhoneJsWrapper::StopRefreshRegister);
   builder.SetMethod("unregister", &PhoneJsWrapper::Unregister);
   builder.SetMethod("unregisterAll", &PhoneJsWrapper::UnregisterAll);
-  builder.SetMethod("hangupAll", &PhoneJsWrapper::HangUpAll);
   builder.SetMethod("makeCall", &PhoneJsWrapper::MakeCall);
   builder.SetMethod("on", &PhoneJsWrapper::On);
   return builder;
@@ -325,74 +326,68 @@ bool PhoneJsWrapper::Init(gin::Arguments args) {
   return phone_->Init(settings);
 }
 
-bool PhoneJsWrapper::Register() {
-  return phone_->Register();
+void PhoneJsWrapper::Register(v8::Handle<v8::Function> function) {
+  on_register_completed_.SetFunction(this, isolate_, function);
+  phone_->Register(base::Bind(
+      &PhoneJsWrapper::OnRegisterCompleted, base::Unretained(this)));
 }
 
-bool PhoneJsWrapper::Unregister() {
-  return phone_->Unregister();
+void PhoneJsWrapper::StartRefreshRegister(v8::Handle<v8::Function> function) {
+  on_refresh_completed_.SetFunction(this, isolate_, function);
+  phone_->StartRefreshRegister(base::Bind(
+      &PhoneJsWrapper::OnRefreshCompleted, base::Unretained(this)));
 }
 
-bool PhoneJsWrapper::UnregisterAll() {
-  return phone_->UnregisterAll();
+void PhoneJsWrapper::StopRefreshRegister() {
+  phone_->StopRefreshRegister();
+}
+
+void PhoneJsWrapper::Unregister(v8::Handle<v8::Function> function) {
+  on_unregister_completed_.SetFunction(this, isolate_, function);
+  phone_->Unregister(base::Bind(
+      &PhoneJsWrapper::OnUnregisterCompleted, base::Unretained(this)));
+}
+
+void PhoneJsWrapper::UnregisterAll(v8::Handle<v8::Function> function) {
+  on_unregister_completed_.SetFunction(this, isolate_, function);
+  return phone_->UnregisterAll(base::Bind(
+      &PhoneJsWrapper::OnUnregisterCompleted, base::Unretained(this)));
 }
 
 gin::Handle<CallJsWrapper> PhoneJsWrapper::MakeCall(
-    const std::string& destination) {
-  scoped_refptr<Call> call = phone_->MakeCall(destination);
-  return CallJsWrapper::Create(isolate_, call);
-}
-
-void PhoneJsWrapper::HangUpAll() {
-  phone_->HangUpAll();
+    const std::string& destination,
+    v8::Handle<v8::Function> function) {
+  gin::Handle<CallJsWrapper> handle(CallJsWrapper::Create(isolate_));
+  handle->set_completed_function(function);
+  scoped_refptr<Call> call = phone_->MakeCall(destination,
+      base::Bind(&CallJsWrapper::OnCompleted,
+          base::Unretained(handle.get())));
+  return handle;
 }
 
 void PhoneJsWrapper::On(const std::string& key,
                         v8::Handle<v8::Function> function) {
-  struct {
-    const char *key;
-    JsFunctionCall<PhoneJsWrapper> &function_call;
-  } pairs[] = {
-    { "networkError", on_network_error_ },
-    { "registerCompleted", on_register_completed_ },
-    { "refreshError", on_refresh_error_ },
-    { "unregisterCompleted", on_unregister_completed_ },
-    { "incomingCall", on_incoming_call_ },
-  };
-
-  for (int i = 0; i < arraysize(pairs); i++) {
-    if (pairs[i].key == key) {
-      pairs[i].function_call.SetFunction(isolate_, function);
-      break;
-    }
+  if ("incomingCall" == key) {
+    on_incoming_call_.SetFunction(this, isolate_, function);
   }
 }
 
-void PhoneJsWrapper::OnNetworkError(int error_code) {
-  message_loop_->PostTask(FROM_HERE,
-      base::Bind(&PhoneJsWrapper::RunNetworkError, base::Unretained(this),
-          error_code));
-}
-
-void PhoneJsWrapper::OnRegisterCompleted(int status_code,
-    const std::string& status_text) {
+void PhoneJsWrapper::OnRegisterCompleted(int error) {
   message_loop_->PostTask(FROM_HERE,
       base::Bind(&PhoneJsWrapper::RunRegisterCompleted, base::Unretained(this),
-          status_code, status_text));
+          error));
 }
 
-void PhoneJsWrapper::OnRefreshError(int status_code,
-    const std::string& status_text) {
+void PhoneJsWrapper::OnRefreshCompleted(int error) {
   message_loop_->PostTask(FROM_HERE,
-      base::Bind(&PhoneJsWrapper::RunRefreshError, base::Unretained(this),
-          status_code, status_text));
+      base::Bind(&PhoneJsWrapper::RunRefreshCompleted, base::Unretained(this),
+          error));
 }
 
-void PhoneJsWrapper::OnUnregisterCompleted(int status_code,
-    const std::string& status_text) {
+void PhoneJsWrapper::OnUnregisterCompleted(int error) {
   message_loop_->PostTask(FROM_HERE,
       base::Bind(&PhoneJsWrapper::RunUnregisterCompleted, base::Unretained(this),
-          status_code, status_text));
+          error));
 }
 
 void PhoneJsWrapper::OnIncomingCall(const scoped_refptr<Call>& call) {
@@ -401,45 +396,22 @@ void PhoneJsWrapper::OnIncomingCall(const scoped_refptr<Call>& call) {
           call));
 }
 
-void PhoneJsWrapper::RunNetworkError(int error_code) {
-  v8::Handle<v8::Value> args[] = {
-    gin::ConvertToV8(isolate_, error_code),
-  };
-  on_network_error_.Run(arraysize(args), args);
+void PhoneJsWrapper::RunRegisterCompleted(int error) {
+  on_register_completed_.Run(this, error);
 }
 
-void PhoneJsWrapper::RunRegisterCompleted(int status_code,
-    const std::string& status_text) {
-  v8::Handle<v8::Value> args[] = {
-    gin::ConvertToV8(isolate_, status_code),
-    gin::ConvertToV8(isolate_, status_text),
-  };
-  on_register_completed_.Run(arraysize(args), args);
+void PhoneJsWrapper::RunRefreshCompleted(int error) {
+  on_refresh_completed_.Run(this, error);
 }
 
-void PhoneJsWrapper::RunRefreshError(int status_code,
-    const std::string& status_text) {
-  v8::Handle<v8::Value> args[] = {
-    gin::ConvertToV8(isolate_, status_code),
-    gin::ConvertToV8(isolate_, status_text),
-  };
-  on_refresh_error_.Run(arraysize(args), args);
-}
-
-void PhoneJsWrapper::RunUnregisterCompleted(int status_code,
-    const std::string& status_text) {
-  v8::Handle<v8::Value> args[] = {
-    gin::ConvertToV8(isolate_, status_code),
-    gin::ConvertToV8(isolate_, status_text),
-  };
-  on_unregister_completed_.Run(arraysize(args), args);
+void PhoneJsWrapper::RunUnregisterCompleted(int error) {
+  on_unregister_completed_.Run(this, error);
 }
 
 void PhoneJsWrapper::RunIncomingCall(const scoped_refptr<Call>& call) {
-  v8::Handle<v8::Value> args[] = {
-    CallJsWrapper::Create(isolate_, call).ToV8(),
-  };
-  on_incoming_call_.Run(arraysize(args), args);
+  gin::Handle<CallJsWrapper> handle(CallJsWrapper::Create(isolate_));
+  handle->set_call_instance(call);
+  on_incoming_call_.Run(this, handle);
 }
 
 // PhoneJsModule =============================================================

@@ -6,7 +6,7 @@
 #define SIPPET_PHONE_V8_CALL_JS_WRAPPER_H_
 
 #include "sippet/phone/call.h"
-#include "sippet/phone/v8/js_function_call.h"
+#include "sippet/phone/v8/js_callback.h"
 
 #include "base/message_loop/message_loop.h"
 #include "gin/handle.h"
@@ -17,63 +17,56 @@ namespace sippet {
 namespace phone {
 
 class CallJsWrapper
-  : public gin::Wrappable<CallJsWrapper>,
-    public Call::Delegate {
+  : public gin::Wrappable<CallJsWrapper> {
 public:
   static gin::WrapperInfo kWrapperInfo;
   ~CallJsWrapper() override;
+
   static gin::Handle<CallJsWrapper> Create(
-      v8::Isolate* isolate,
-      const scoped_refptr<Call>& call);
+      v8::Isolate* isolate);
+
+  void set_call_instance(const scoped_refptr<Call>& instance);
+  void set_completed_function(v8::Handle<v8::Function> function);
 
   // gin::Wrappable<PhoneJsWrapper> overrides
   gin::ObjectTemplateBuilder GetObjectTemplateBuilder(
       v8::Isolate* isolate) override;
 
   // JS interface implementation.
-  Call::Direction direction() const;
-  Call::State state() const;
+  CallDirection direction() const;
+  CallState state() const;
   std::string uri() const;
   std::string name() const;
   base::Time creation_time() const;
   base::Time start_time() const;
   base::Time end_time() const;
   base::TimeDelta duration() const;
-  bool PickUp();
-  bool Reject();
-  bool HangUp();
+  void PickUp(v8::Handle<v8::Function> function);
+  void Reject();
+  void HangUp(v8::Handle<v8::Function> function);
   void SendDtmf(const std::string& digits);
 
-  // Set the callbacks
-  void On(const std::string& key, v8::Handle<v8::Function> function);
-
-  // Call::Delegate implementation
-  void OnError(int status_code,
-      const std::string& status_text) override;
-  void OnRinging() override;
-  void OnEstablished() override;
-  void OnHungUp() override;
+  // Callbacks
+  void OnRinging();
+  void OnEstablished();
+  void OnHungUp();
 
   // Dispatched to message loop
-  void RunError(int status_code,
-      const std::string& status_text);
-  void RunRinging();
-  void RunEstablished();
-  void RunHungUp();
+  void RunCompleted(int error);
+  void RunHangupCompleted(int error);
+
+  void OnCompleted(int error);
+  void OnHangupCompleted(int error);
 
 private:
-  explicit CallJsWrapper(
-      v8::Isolate* isolate,
-      const scoped_refptr<Call>& call);
+  explicit CallJsWrapper(v8::Isolate* isolate);
 
   v8::Isolate* isolate_;
   scoped_refptr<Call> call_;
   base::MessageLoop* message_loop_;
 
-  JsFunctionCall<CallJsWrapper> on_error_;
-  JsFunctionCall<CallJsWrapper> on_ringing_;
-  JsFunctionCall<CallJsWrapper> on_established_;
-  JsFunctionCall<CallJsWrapper> on_hungup_;
+  JsCallback<void(int)> on_completed_;
+  JsCallback<void(int)> on_hangup_completed_;
 
   DISALLOW_COPY_AND_ASSIGN(CallJsWrapper);
 };

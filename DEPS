@@ -5,38 +5,28 @@
 
 vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
+  'sippet_git': 'https://github.com/sippet',
   'chromium_git': 'https://chromium.googlesource.com',
   'chromium_revision': '877b62cc157d4a07d20edddc9f5adf2fe0d4e2ae',
-
-  'sippet_git': 'https://github.com/sippet',
+  # Three lines of non-changing comments so that
+  # the commit queue can handle CLs rolling WebRTC
+  # and whatever else without interference from each other.
   'webrtc_revision': '9bcb4893aefa7f0a28844f529c08ee7c713c5612',
+  # Three lines of non-changing comments so that
+  # the commit queue can handle CLs rolling libjingle
+  # and whatever else without interference from each other.
   'talk_revision': 'adb356c36a4a42028cec57e43bd7126439dba237',
-
-  # PJSIP is used for testing purposes
-  'pjsip_trunk': 'http://svn.pjsip.org/repos/pjproject/trunk',
-  'pjsip_revision': '4796',  # Corresponds to version 2.2.1
-
-  # WebRTC repository for recovering the resources dir
-  # Using the testfile32kHz.pcm for testing
-  'webrtc_trunk': 'http://webrtc.googlecode.com/svn/trunk',
-  'resources_revision': '2280',
-
-  # Siphon G.729 codec was forked here 
-  'siphon_trunk': 'http://siphon.googlecode.com/svn/trunk',
-  'siphon_revision': '793',
+  # Three lines of non-changing comments so that
+  # the commit queue can handle CLs rolling PJSIP
+  # and whatever else without interference from each other.
+  'pjsip_revision': '3dc02a36513e14d8b79139ddc353faa48dcc430b', # version 2.4.5
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
 # https; the latter can cause problems for users behind proxies.
 deps = {
-  'src/third_party/pjsip/source':
-    Var('pjsip_trunk') + '@' + Var('pjsip_revision'),
-
   'src/third_party/gflags/src':
     Var('chromium_git') + '/external/gflags/src@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
-
-  'src/third_party/speex':
-    Var('chromium_git') + '/chromium/third_party/speex@45535c64629edeb9b53ec3d73c98dd4543b93956', # latest revision
 
   'src/third_party/libjingle/source/talk':
     Var('sippet_git') + '/talk.git@' + Var('talk_revision'),
@@ -44,11 +34,13 @@ deps = {
   'src/third_party/webrtc':
     Var('sippet_git') + '/webrtc.git@' + Var('webrtc_revision'),
 
-  'src/resources/g729a':
-    Var('siphon_trunk') + '/g729a/Data@' + Var('siphon_revision'),
+  # PJSIP is used for testing purposes
+  'src/third_party/pjsip/source':
+    Var('sippet_git') + '/pjproject.git@' + Var('pjsip_revision'),
 
-  'src/resources/audio_coding':
-    Var('webrtc_trunk') + '/data/audio_coding@' + Var('resources_revision'),
+  # This is part of the PJSIP build
+  'src/third_party/speex':
+    Var('chromium_git') + '/chromium/third_party/speex@45535c64629edeb9b53ec3d73c98dd4543b93956', # latest revision
 }
 
 hooks = [

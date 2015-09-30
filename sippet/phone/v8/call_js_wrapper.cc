@@ -10,9 +10,9 @@ namespace gin {
 
 // Extend Converter to our type Call::Direction
 template<>
-struct Converter<sippet::phone::Call::Direction> {
+struct Converter<sippet::phone::CallDirection> {
   static v8::Handle<v8::Value> ToV8(v8::Isolate* isolate,
-      sippet::phone::Call::Direction val) {
+      sippet::phone::CallDirection val) {
     v8::Handle<v8::Integer> result(v8::Int32::New(isolate,
         static_cast<int32_t>(val)));
     return result;
@@ -20,21 +20,21 @@ struct Converter<sippet::phone::Call::Direction> {
 
   static bool FromV8(v8::Isolate* isolate,
       v8::Handle<v8::Value> val,
-      sippet::phone::Call::Direction* out) {
+      sippet::phone::CallDirection* out) {
     if (!val->IsInt32())
       return false;
 
     v8::Handle<v8::Integer> result(v8::Handle<v8::Integer>::Cast(val));
-    *out = static_cast<sippet::phone::Call::Direction>(result->Int32Value());
+    *out = static_cast<sippet::phone::CallDirection>(result->Int32Value());
     return true;
   }
 };
 
 // Extend Converter to our type Call::State
 template<>
-struct Converter<sippet::phone::Call::State> {
+struct Converter<sippet::phone::CallState> {
   static v8::Handle<v8::Value> ToV8(v8::Isolate* isolate,
-      sippet::phone::Call::State val) {
+      sippet::phone::CallState val) {
     v8::Handle<v8::Integer> result(v8::Int32::New(isolate,
         static_cast<int32_t>(val)));
     return result;
@@ -42,12 +42,12 @@ struct Converter<sippet::phone::Call::State> {
 
   static bool FromV8(v8::Isolate* isolate,
       v8::Handle<v8::Value> val,
-      sippet::phone::Call::State* out) {
+      sippet::phone::CallState* out) {
     if (!val->IsInt32())
       return false;
 
     v8::Handle<v8::Integer> result(v8::Handle<v8::Integer>::Cast(val));
-    *out = static_cast<sippet::phone::Call::State>(result->Int32Value());
+    *out = static_cast<sippet::phone::CallState>(result->Int32Value());
     return true;
   }
 };
@@ -97,39 +97,34 @@ namespace phone {
 
 namespace {
 
-const char kOnError[] = "::sippet::call::OnError";
-const char kOnRinging[] = "::sippet::call::OnRinging";
-const char kOnEstablished[] = "::sippet::call::OnEstablished";
-const char kOnHungUp[] = "::sippet::call::OnHungUp";
+const char kOnCompleted[] = "::sippet::call::OnCompleted";
+const char kOnHangupCompleted[] = "::sippet::call::OnHangupCompleted";
 
 }  // namespace
 
-gin::WrapperInfo CallJsWrapper::kWrapperInfo = {
-    gin::kEmbedderNativeGin };
+gin::WrapperInfo CallJsWrapper::kWrapperInfo = { gin::kEmbedderNativeGin };
 
-CallJsWrapper::CallJsWrapper(
-    v8::Isolate* isolate,
-    const scoped_refptr<Call>& call) :
+CallJsWrapper::CallJsWrapper(v8::Isolate* isolate) :
   isolate_(isolate),
-  call_(call),
   message_loop_(base::MessageLoop::current()),
-  on_error_(this, kOnError),
-  on_ringing_(this, kOnRinging),
-  on_established_(this, kOnEstablished),
-  on_hungup_(this, kOnHungUp) {
-  call_->set_delegate(this);
+  on_completed_(kOnCompleted),
+  on_hangup_completed_(kOnHangupCompleted) {
 }
 
 CallJsWrapper::~CallJsWrapper() {
-  call_->set_delegate(nullptr);
 }
 
-gin::Handle<CallJsWrapper> CallJsWrapper::Create(
-    v8::Isolate* isolate,
-    const scoped_refptr<Call>& call) {
-  return gin::CreateHandle(
-      isolate,
-      new CallJsWrapper(isolate, call));
+gin::Handle<CallJsWrapper> CallJsWrapper::Create(v8::Isolate* isolate) {
+  return gin::CreateHandle(isolate, new CallJsWrapper(isolate));
+}
+
+void CallJsWrapper::set_call_instance(
+    const scoped_refptr<Call>& instance) {
+  call_ = instance;
+}
+
+void CallJsWrapper::set_completed_function(v8::Handle<v8::Function> function) {
+  on_completed_.SetFunction(this, isolate_, function);
 }
 
 gin::ObjectTemplateBuilder CallJsWrapper::GetObjectTemplateBuilder(
@@ -148,15 +143,14 @@ gin::ObjectTemplateBuilder CallJsWrapper::GetObjectTemplateBuilder(
   builder.SetMethod("reject", &CallJsWrapper::Reject);
   builder.SetMethod("hangup", &CallJsWrapper::HangUp);
   builder.SetMethod("sendDtmf", &CallJsWrapper::SendDtmf);
-  builder.SetMethod("on", &CallJsWrapper::On);
   return builder;
 }
 
-Call::Direction CallJsWrapper::direction() const {
+CallDirection CallJsWrapper::direction() const {
   return call_->direction();
 }
 
-Call::State CallJsWrapper::state() const {
+CallState CallJsWrapper::state() const {
   return call_->state();
 }
 
@@ -184,83 +178,44 @@ base::TimeDelta CallJsWrapper::duration() const {
   return call_->duration();
 }
 
-bool CallJsWrapper::PickUp() {
-  return call_->PickUp();
+void CallJsWrapper::PickUp(v8::Handle<v8::Function> function) {
+  on_completed_.SetFunction(this, isolate_, function);
+  call_->PickUp(base::Bind(
+      &CallJsWrapper::OnCompleted, base::Unretained(this)));
 }
 
-bool CallJsWrapper::Reject() {
-  return call_->Reject();
+void CallJsWrapper::Reject() {
+  call_->Reject();
 }
 
-bool CallJsWrapper::HangUp() {
-  return call_->HangUp();
+void CallJsWrapper::HangUp(v8::Handle<v8::Function> function) {
+  on_hangup_completed_.SetFunction(this, isolate_, function);
+  call_->HangUp(base::Bind(
+      &CallJsWrapper::OnHangupCompleted, base::Unretained(this)));
 }
 
 void CallJsWrapper::SendDtmf(const std::string& digits) {
   call_->SendDtmf(digits);
 }
 
-void CallJsWrapper::On(const std::string& key,
-                       v8::Handle<v8::Function> function) {
-  struct {
-    const char *key;
-    JsFunctionCall<CallJsWrapper> &function_call;
-  } pairs[] = {
-    { "error", on_error_ },
-    { "ringing", on_ringing_ },
-    { "established", on_established_ },
-    { "hungUp", on_hungup_ },
-  };
-
-  for (int i = 0; i < arraysize(pairs); i++) {
-    if (pairs[i].key == key) {
-      pairs[i].function_call.SetFunction(isolate_, function);
-      break;
-    }
-  }
-}
-
-void CallJsWrapper::OnError(int status_code,
-    const std::string& status_text) {
+void CallJsWrapper::OnCompleted(int error) {
   message_loop_->PostTask(FROM_HERE,
-      base::Bind(&CallJsWrapper::RunError, base::Unretained(this),
-          status_code, status_text));
+      base::Bind(&CallJsWrapper::RunCompleted,
+          base::Unretained(this), error));
 }
 
-void CallJsWrapper::OnRinging() {
+void CallJsWrapper::OnHangupCompleted(int error) {
   message_loop_->PostTask(FROM_HERE,
-      base::Bind(&CallJsWrapper::RunRinging, base::Unretained(this)));
+      base::Bind(&CallJsWrapper::RunHangupCompleted,
+          base::Unretained(this), error));
 }
 
-void CallJsWrapper::OnEstablished() {
-  message_loop_->PostTask(FROM_HERE,
-      base::Bind(&CallJsWrapper::RunEstablished, base::Unretained(this)));
+void CallJsWrapper::RunCompleted(int error) {
+  on_completed_.Run(this, error);
 }
 
-void CallJsWrapper::OnHungUp() {
-  message_loop_->PostTask(FROM_HERE,
-      base::Bind(&CallJsWrapper::RunHungUp, base::Unretained(this)));
-}
-
-void CallJsWrapper::RunError(int status_code,
-    const std::string& status_text) {
-  v8::Handle<v8::Value> args[] = {
-    gin::ConvertToV8(isolate_, status_code),
-    gin::ConvertToV8(isolate_, status_text)
-  };
-  on_error_.Run(arraysize(args), args);
-}
-
-void CallJsWrapper::RunRinging() {
-  on_ringing_.Run(0, nullptr);
-}
-
-void CallJsWrapper::RunEstablished() {
-  on_established_.Run(0, nullptr);
-}
-
-void CallJsWrapper::RunHungUp() {
-  on_hungup_.Run(0, nullptr);
+void CallJsWrapper::RunHangupCompleted(int error) {
+  on_hangup_completed_.Run(this, error);
 }
 
 } // namespace phone

@@ -91,10 +91,10 @@ namespace sippet {
 namespace phone {
 
 CallImpl::CallImpl(const SipURI& uri, PhoneImpl* phone,
-    const net::CompletionCallback& initial_request_callback)
+    const net::CompletionCallback& on_completed)
   : direction_(CALL_DIRECTION_OUTGOING), state_(CALL_STATE_CALLING),
     uri_(uri), phone_(phone),
-    initial_request_callback_(initial_request_callback) {
+    on_completed_(on_completed) {
 }
 
 CallImpl::CallImpl(const scoped_refptr<Request> &invite, PhoneImpl* phone)
@@ -111,10 +111,6 @@ CallDirection CallImpl::direction() const {
 
 CallState CallImpl::state() const {
   return state_;
-}
-
-void CallImpl::set_callback(const net::CompletionCallback& callback) {
-  initial_request_callback_ = callback;
 }
 
 GURL CallImpl::uri() const {
@@ -150,13 +146,13 @@ bool CallImpl::PickUp(const net::CompletionCallback& on_completed) {
     DVLOG(1) << "Invalid state to pick up call";
     return false;
   }
-  on_pickup_completed_ = on_completed;
+  on_completed_ = on_completed;
   phone_->signalling_message_loop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnPickUp, base::Unretained(this)));
   return true;
 }
 
-bool CallImpl::Reject(const net::CompletionCallback& on_completed) {
+bool CallImpl::Reject() {
   if (!last_request_ || Request::Incoming != last_request_->direction()) {
     DVLOG(1) << "Impossible to reject an outgoing call";
     return false;
@@ -165,7 +161,6 @@ bool CallImpl::Reject(const net::CompletionCallback& on_completed) {
     DVLOG(1) << "Invalid state to reject call";
     return false;
   }
-  on_reject_completed_ = on_completed;
   phone_->signalling_message_loop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnReject, base::Unretained(this)));
   return true;
@@ -336,10 +331,10 @@ void CallImpl::OnCreateOfferCompleted(const std::string& offer) {
   last_request_->set_content(offer);
 
   int rv = phone_->user_agent()->Send(last_request_,
-      base::Bind(&RunIfNotOk, initial_request_callback_));
+      base::Bind(&RunIfNotOk, on_completed_));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
     state_ = CALL_STATE_TERMINATED;
-    initial_request_callback_.Run(rv);
+    on_completed_.Run(rv);
     return;
   }
 
@@ -374,10 +369,10 @@ void CallImpl::SendAck(const scoped_refptr<Response> &incoming_response) {
   scoped_refptr<Request> ack = dialog_->CreateAck(
     incoming_response->refer_to());
   int rv = phone_->user_agent()->Send(ack,
-      base::Bind(&RunIfNotOk, initial_request_callback_));
+      base::Bind(&RunIfNotOk, on_completed_));
   if (net::OK != rv && net::ERR_IO_PENDING != rv) {
     state_ = CALL_STATE_TERMINATED;
-    initial_request_callback_.Run(rv);
+    on_completed_.Run(rv);
     return;
   }
 
@@ -451,12 +446,12 @@ void CallImpl::HandleCallingOrRingingResponse(
   // Now change state and process post changed state conditions
   state_ = next_state;
   if (CALL_STATE_RINGING == state_) {
-    initial_request_callback_.Run(
+    on_completed_.Run(
         StatusCodeToCompletionStatus(response_code));
   } else if (CALL_STATE_ESTABLISHED == state_) {
-    initial_request_callback_.Run(net::OK);
+    on_completed_.Run(net::OK);
   } else if (CALL_STATE_TERMINATED == state_) {
-    initial_request_callback_.Run(
+    on_completed_.Run(
         StatusCodeToCompletionStatus(response_code));
     phone_->RemoveCall(this);
   }
@@ -536,7 +531,7 @@ void CallImpl::OnIncomingRequest(
         net::CompletionCallback());
     state_ = CALL_STATE_TERMINATED;
     // TODO: get the BYE reason
-    initial_request_callback_.Run(ERR_HANGUP_NOT_DEFINED);
+    on_completed_.Run(ERR_HANGUP_NOT_DEFINED);
     phone_->RemoveCall(this);
   }
 }
@@ -559,7 +554,7 @@ void CallImpl::OnTimedOut(
   if (CALL_STATE_CALLING == state_
       || CALL_STATE_RINGING == state_) {
     state_ = CALL_STATE_TERMINATED;
-    initial_request_callback_.Run(ERR_TIMED_OUT);
+    on_completed_.Run(ERR_TIMED_OUT);
     phone_->RemoveCall(this);
   }
 }
@@ -570,7 +565,7 @@ void CallImpl::OnTransportError(
   if (CALL_STATE_CALLING == state_
       || CALL_STATE_RINGING == state_) {
     state_ = CALL_STATE_TERMINATED;
-    initial_request_callback_.Run(error);
+    on_completed_.Run(error);
     phone_->RemoveCall(this);
   }
 }

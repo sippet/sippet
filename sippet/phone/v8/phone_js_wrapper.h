@@ -6,7 +6,7 @@
 #define SIPPET_PHONE_V8_PHONE_JS_WRAPPER_H_
 
 #include "sippet/phone/phone.h"
-#include "sippet/phone/v8/js_function_call.h"
+#include "sippet/phone/v8/js_callback.h"
 
 #include "base/message_loop/message_loop.h"
 #include "gin/handle.h"
@@ -35,33 +35,27 @@ class PhoneJsWrapper :
   // JS interface implementation.
   PhoneState state() const;
   bool Init(gin::Arguments args);
-  bool Register();
-  bool Unregister();
-  bool UnregisterAll();
-  gin::Handle<CallJsWrapper> MakeCall(const std::string& destination);
-  void HangUpAll();
-  
-  // Set the callbacks
+  void Register(v8::Handle<v8::Function> function);
+  void StartRefreshRegister(v8::Handle<v8::Function> function);
+  void StopRefreshRegister();
+  void Unregister(v8::Handle<v8::Function> function);
+  void UnregisterAll(v8::Handle<v8::Function> function);
+  gin::Handle<CallJsWrapper> MakeCall(const std::string& destination,
+      v8::Handle<v8::Function> function);
   void On(const std::string& key, v8::Handle<v8::Function> function);
 
   // Phone::Delegate implementation
-  void OnNetworkError(int error_code) override;
-  void OnRegisterCompleted(int status_code,
-      const std::string& status_text) override;
-  void OnRefreshError(int status_code,
-      const std::string& status_text) override;
-  void OnUnregisterCompleted(int status_code,
-      const std::string& status_text) override;
   void OnIncomingCall(const scoped_refptr<Call>& call) override;
 
+  // Callbacks
+  void OnRegisterCompleted(int error);
+  void OnRefreshCompleted(int error);
+  void OnUnregisterCompleted(int error);
+
   // Dispatched to message loop
-  void RunNetworkError(int error_code);
-  void RunRegisterCompleted(int status_code,
-      const std::string& status_text);
-  void RunRefreshError(int status_code,
-      const std::string& status_text);
-  void RunUnregisterCompleted(int status_code,
-      const std::string& status_text);
+  void RunRegisterCompleted(int error);
+  void RunRefreshCompleted(int error);
+  void RunUnregisterCompleted(int error);
   void RunIncomingCall(const scoped_refptr<Call>& call);
 
  private:
@@ -72,11 +66,10 @@ class PhoneJsWrapper :
   scoped_refptr<Phone> phone_;
   base::MessageLoop* message_loop_;
 
-  JsFunctionCall<PhoneJsWrapper> on_network_error_;
-  JsFunctionCall<PhoneJsWrapper> on_register_completed_;
-  JsFunctionCall<PhoneJsWrapper> on_refresh_error_;
-  JsFunctionCall<PhoneJsWrapper> on_unregister_completed_;
-  JsFunctionCall<PhoneJsWrapper> on_incoming_call_;
+  JsCallback<void(int)> on_register_completed_;
+  JsCallback<void(int)> on_refresh_completed_;
+  JsCallback<void(int)> on_unregister_completed_;
+  JsCallback<void(gin::Handle<CallJsWrapper>)> on_incoming_call_;
 
   DISALLOW_COPY_AND_ASSIGN(PhoneJsWrapper);
 };

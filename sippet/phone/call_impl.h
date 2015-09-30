@@ -27,7 +27,6 @@ class CallImpl :
  public:
   CallDirection direction() const override;
   CallState state() const override;
-  void set_callback(const net::CompletionCallback& callback) override;
   GURL uri() const override;
   std::string name() const override;
   base::Time creation_time() const override;
@@ -35,7 +34,7 @@ class CallImpl :
   base::Time end_time() const override;
   base::TimeDelta duration() const override;
   bool PickUp(const net::CompletionCallback& on_completed) override;
-  bool Reject(const net::CompletionCallback& on_completed) override;
+  bool Reject() override;
   bool HangUp(const net::CompletionCallback& on_completed) override;
   void SendDtmf(const std::string& digits) override;
 
@@ -49,9 +48,7 @@ class CallImpl :
   PhoneImpl *phone_;
   scoped_refptr<Request> last_request_;
   scoped_refptr<Dialog> dialog_;
-  net::CompletionCallback initial_request_callback_;
-  net::CompletionCallback on_pickup_completed_;
-  net::CompletionCallback on_reject_completed_;
+  net::CompletionCallback on_completed_;
   net::CompletionCallback on_hangup_completed_;
 
   base::Time creation_time_;
@@ -64,7 +61,7 @@ class CallImpl :
     active_streams_;
 
   CallImpl(const SipURI& uri, PhoneImpl* phone,
-      const net::CompletionCallback& initial_request_callback);
+      const net::CompletionCallback& on_completed);
   CallImpl(const scoped_refptr<Request> &invite, PhoneImpl* phone);
   ~CallImpl() override;
 

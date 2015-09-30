@@ -32,9 +32,6 @@ class Call :
   // Get the current |Call| state.
   virtual CallState state() const = 0;
 
-  // Set the |Call| callback.
-  virtual void set_callback(const net::CompletionCallback& callback) = 0;
-
   // Get the |Call| URI
   virtual GURL uri() const = 0;
 
@@ -59,7 +56,7 @@ class Call :
 
   // Reject the call (only for incoming calls). No effect if not in
   // |kStateRinging| state.
-  virtual bool Reject(const net::CompletionCallback& on_completion) = 0;
+  virtual bool Reject() = 0;
 
   // Hang up the call. No effect if not in |kStateEstablished| state.
   virtual bool HangUp(const net::CompletionCallback& on_completion) = 0;
