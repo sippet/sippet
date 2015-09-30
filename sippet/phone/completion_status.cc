@@ -49,6 +49,8 @@ std::string ErrorToShortString(int error) {
 }
 
 int StatusCodeToCompletionStatus(int status_code) {
+  if (status_code >= 200 && status_code <= 200)
+    return OK;
   return -(1000 + status_code);
 }
 
