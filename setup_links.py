@@ -114,7 +114,6 @@ if 'android' in get_target_os_list():
     'third_party/appurify-python',
     'third_party/ashmem',
     'third_party/jsr-305',
-    'third_party/libevent',
     'third_party/requests',
     'tools/android',
     'tools/relocation_packer'

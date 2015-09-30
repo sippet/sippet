@@ -49,6 +49,14 @@
           'includes': [ '../build/android/java_cpp_enum.gypi' ],
         },
         {
+          'target_name': 'sippet_phone_java_completion_status',
+          'type': 'none',
+          'variables': {
+            'source_file': 'phone/completion_status_list.h',
+          },
+          'includes': [ '../sippet/build/android/java_cpp_enum.gypi' ],
+        },
+        {
           'target_name': 'sippet_phone_jni',
           'type': 'shared_library',
           'sources': [
@@ -138,6 +146,7 @@
         'phone/call_impl.cc',
         'phone/completion_status.h',
         'phone/completion_status.cc',
+        'phone/completion_status_list.h',
         'phone/q850.h',
       ],
     },  # target sippet_phone
