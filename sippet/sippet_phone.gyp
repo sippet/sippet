@@ -71,6 +71,8 @@
             'phone/android/jni_registrar.h',
             'phone/android/jni_registrar.cc',
             'phone/android/entry_point.cc',
+            'phone/android/run_completion_callback.h',
+            'phone/android/run_completion_callback.cc',
           ],
           'dependencies': [
             'sippet_phone',

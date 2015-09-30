@@ -4,6 +4,7 @@
 
 #include "sippet/phone/android/java_call.h"
 #include "sippet/phone/android/java_phone.h"
+#include "sippet/phone/android/run_completion_callback.h"
 
 #include <jni.h>
 
@@ -54,16 +55,18 @@ jlong JavaCall::GetEndTime(JNIEnv* env, jobject jcaller) {
   return static_cast<jlong>(call_instance_->end_time().ToJavaTime());
 }
 
-jboolean JavaCall::PickUp(JNIEnv* env, jobject jcaller) {
-  return call_instance_->PickUp() ? JNI_TRUE : JNI_FALSE;
+void JavaCall::PickUp(JNIEnv* env, jobject jcaller, jobject jcallback) {
+  call_instance_->PickUp(base::Bind(&RunCompletionCallback,
+      base::android::ScopedJavaGlobalRef<jobject>(env, jcallback)));
 }
 
-jboolean JavaCall::Reject(JNIEnv* env, jobject jcaller) {
-  return call_instance_->Reject() ? JNI_TRUE : JNI_FALSE;
+void JavaCall::Reject(JNIEnv* env, jobject jcaller) {
+  call_instance_->Reject();
 }
 
-jboolean JavaCall::HangUp(JNIEnv* env, jobject jcaller) {
-  return call_instance_->HangUp() ? JNI_TRUE : JNI_FALSE;
+void JavaCall::HangUp(JNIEnv* env, jobject jcaller, jobject jcallback) {
+  call_instance_->HangUp(base::Bind(&RunCompletionCallback,
+      base::android::ScopedJavaGlobalRef<jobject>(env, jcallback)));
 }
 
 void JavaCall::SendDtmf(JNIEnv* env, jobject jcaller, jstring digits) {

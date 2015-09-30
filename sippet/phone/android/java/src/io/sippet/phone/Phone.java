@@ -22,76 +22,57 @@ import org.chromium.base.library_loader.ProcessInitException;
 public class Phone {
     private static final String TAG = "Phone";
 
+    private static boolean mInitialized = false;
     private long mInstance;
-    private Delegate mDelegate;
-    private Context mContext;
+    private OnIncomingCallListener mListener;
 
     /**
-     * Phone mDelegate.
+     * Load Sippet libraries on memory.
+     * It should be called at least once before creating a |Phone| instance.
+     * @param context The context to pull the application context from.
      */
-    public interface Delegate {
-      /**
-       * Called to inform network errors, at any moment.
-       */
-      void onNetworkError(int errorCode);
-
-      /**
-       * Called to inform completion of the last registration attempt.
-       */
-      void onRegisterCompleted(int statusCode, String statusText);
-
-      /**
-       * Called when the internal refresh registration fails.
-       */
-      void onRefreshError(int statusCode, String statusText);
-
-      /**
-       * Called to inform completion of the last unregistration attempt.
-       */
-      void onUnregisterCompleted(int statusCode, String statusText);
-
-      /**
-       * Called on incoming calls.
-       */
-      void onIncomingCall(Call call);
+    @SuppressFBWarnings("DM_EXIT")
+    public static void loadLibraries(Context context) {
+        if (!mInitialized) {
+            try {
+                LibraryLoader libraryLoader =
+                        LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
+                libraryLoader.ensureInitialized(context.getApplicationContext());
+                // The prefetch is done after the library load for two reasons:
+                // - It is easier to know the library location after it has
+                //   been loaded.
+                // - Testing has shown that this gives the best compromise,
+                //   by avoiding performance regression on any tested
+                //   device, and providing performance improvement on
+                //   some. Doing it earlier delays UI inflation and more
+                //   generally startup on some devices, most likely by
+                //   competing for IO.
+                // For experimental results, see http://crbug.com/460438.
+                libraryLoader.asyncPrefetchLibrariesToMemory();
+            } catch (ProcessInitException e) {
+                Log.e(TAG, "Unable to load native library.", e);
+                System.exit(-1);
+            }
+            nativeInitApplicationContext(context.getApplicationContext());
+            mInitialized = true;
+        }
     }
 
     /**
      * Create a |Phone| instance.
-     * @param context The context to pull the application context from.
-     * @param mDelegate The |Delegate| instance that will run phone callbacks.
+     * @param listener The |OnIncomingCallListener| instance that will handle
+     *        the incoming calls.
      */
-    public Phone(Context context, Delegate delegate) {
-        mContext = context;
-        mDelegate = delegate;
+    public Phone(OnIncomingCallListener listener) {
+        assert listener != null;
+        mListener = listener;
+        mInstance = nativeCreate();
     }
 
     /**
      * Initializes the |Phone| instance.
      */
-    @SuppressFBWarnings("DM_EXIT")
     public boolean init(Settings settings) {
-        try {
-            LibraryLoader libraryLoader =
-                    LibraryLoader.get(LibraryProcessType.PROCESS_BROWSER);
-            libraryLoader.ensureInitialized(mContext.getApplicationContext());
-            // The prefetch is done after the library load for two reasons:
-            // - It is easier to know the library location after it has
-            //   been loaded.
-            // - Testing has shown that this gives the best compromise,
-            //   by avoiding performance regression on any tested
-            //   device, and providing performance improvement on
-            //   some. Doing it earlier delays UI inflation and more
-            //   generally startup on some devices, most likely by
-            //   competing for IO.
-            // For experimental results, see http://crbug.com/460438.
-            libraryLoader.asyncPrefetchLibrariesToMemory();
-        } catch (ProcessInitException e) {
-            Log.e(TAG, "Unable to load native library.", e);
-            System.exit(-1);
-        }
-        nativeInitApplicationContext(mContext.getApplicationContext());
-        mInstance = nativeCreate();
         return nativeInit(mInstance, settings);
     }
 
@@ -106,22 +87,26 @@ public class Phone {
      * Registers the |Phone| to receive incoming requests.
      * Upon successful registration, the Phone will emit a registered event.
      */
-    public boolean register() {
-        return nativeRegister(mInstance);
+    public void register(CompletionCallback callback) {
+        assert callback != null;
+        nativeRegister(mInstance, callback);
     }
 
     /**
      * Unregisters the |Phone|.
      */
-    public boolean unregister() {
-        return nativeUnregister(mInstance);
+    public void unregister(CompletionCallback callback) {
+        assert callback != null;
+        nativeUnregister(mInstance, callback);
     }
 
     /**
-     * Unregisters all instances that registered in registrar.
+     * Unregisters all instances registered on the current Registrar with the
+     * same identity of the |Phone|.
      */
-    public boolean unregisterAll() {
-        return nativeUnregisterAll(mInstance);
+    public void unregisterAll(CompletionCallback callback) {
+        assert callback != null;
+        nativeUnregisterAll(mInstance, callback);
     }
 
     /**
@@ -131,15 +116,9 @@ public class Phone {
      *                 destination, username, or a complete SIP URI.
      * @return         A call object.
      */
-    public Call makeCall(String target) {
-        return new Call(nativeMakeCall(mInstance, target));
-    }
-
-    /**
-     * Hangs up all active calls.
-     */
-    public void hangUpAll() {
-        nativeHangUpAll(mInstance);
+    public Call makeCall(String target, CompletionCallback callback) {
+        assert callback != null;
+        return new Call(nativeMakeCall(mInstance, target, callback));
     }
 
     /**
@@ -151,81 +130,29 @@ public class Phone {
     }
 
     @CalledByNative
-    private void runOnNetworkError(final int errorCode) {
-        ThreadUtils.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (mDelegate != null)
-                    mDelegate.onNetworkError(errorCode);
-                else
-                    Log.e(TAG, "Phone delegate is null: onNetworkError");
-            }
-        });
-    }
-
-    @CalledByNative
-    private void runOnRegisterCompleted(final int statusCode,
-                                        final String statusText) {
-        ThreadUtils.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (mDelegate != null)
-                    mDelegate.onRegisterCompleted(statusCode, statusText);
-                else
-                    Log.e(TAG, "Phone delegate is null: onRegisterCompleted");
-            }
-        });
-    }
-
-    @CalledByNative
-    private void runOnRefreshError(final int statusCode,
-                                   final String statusText) {
-        ThreadUtils.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (mDelegate != null)
-                    mDelegate.onRefreshError(statusCode, statusText);
-                else
-                    Log.e(TAG, "Phone delegate is null: onRefreshError");
-            }
-        });
-    }
-
-    @CalledByNative
-    private void runOnUnregisterCompleted(final int statusCode,
-                                          final String statusText) {
-        ThreadUtils.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (mDelegate != null)
-                    mDelegate.onUnregisterCompleted(statusCode, statusText);
-                else
-                    Log.e(TAG, "Phone delegate is null: onUnregisterCompleted");
-            }
-        });
-    }
-
-    @CalledByNative
     private void runOnIncomingCall(final long nativeCall) {
-        ThreadUtils.runOnUiThread(new Runnable() {
+        ThreadUtils.postOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (mDelegate != null)
-                    mDelegate.onIncomingCall(new Call(nativeCall));
-                else
-                    Log.e(TAG, "Phone delegate is null: onIncomingCall");
+                mListener.onIncomingCall(new Call(nativeCall));
             }
         });
     }
 
-    private native void nativeInitApplicationContext(Context context);
+    private static native void nativeInitApplicationContext(Context context);
     private native long nativeCreate();
     private native boolean nativeInit(long nativeJavaPhone, Settings settings);
     private native int nativeGetState(long nativeJavaPhone);
-    private native boolean nativeRegister(long nativeJavaPhone);
-    private native boolean nativeUnregister(long nativeJavaPhone);
-    private native boolean nativeUnregisterAll(long nativeJavaPhone);
-    private native long nativeMakeCall(long nativeJavaPhone, String target);
-    private native void nativeHangUpAll(long nativeJavaPhone);
+    private native void nativeRegister(long nativeJavaPhone,
+                                       CompletionCallback callback);
+    private native void nativeStartRefreshRegister(long nativeJavaPhone,
+                                                   CompletionCallback callback);
+    private native void nativeStopRefreshRegister(long nativeJavaPhone);
+    private native void nativeUnregister(long nativeJavaPhone,
+                                         CompletionCallback callback);
+    private native void nativeUnregisterAll(long nativeJavaPhone,
+                                            CompletionCallback callback);
+    private native long nativeMakeCall(long nativeJavaPhone, String target,
+                                       CompletionCallback callback);
     private native void nativeFinalize(long nativeJavaPhone);
 }

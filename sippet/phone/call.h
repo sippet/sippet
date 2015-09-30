@@ -55,10 +55,11 @@ class Call :
   virtual bool PickUp(const net::CompletionCallback& on_completion) = 0;
 
   // Reject the call (only for incoming calls). No effect if not in
-  // |kStateRinging| state.
+  // |CALL_STATE_RINGING| state. The call will be rejected with status
+  // |ERR_SIP_BUSY_HERE| (SIP/486).
   virtual bool Reject() = 0;
 
-  // Hang up the call. No effect if not in |kStateEstablished| state.
+  // Hang up the call. No effect if not in |CALL_STATE_ESTABLISHED| state.
   virtual bool HangUp(const net::CompletionCallback& on_completion) = 0;
 
   // Send DTMF digits

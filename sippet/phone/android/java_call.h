@@ -31,9 +31,9 @@ class JavaCall {
   jlong GetCreationTime(JNIEnv* env, jobject jcaller);
   jlong GetStartTime(JNIEnv* env, jobject jcaller);
   jlong GetEndTime(JNIEnv* env, jobject jcaller);
-  jboolean PickUp(JNIEnv* env, jobject jcaller);
-  jboolean Reject(JNIEnv* env, jobject jcaller);
-  jboolean HangUp(JNIEnv* env, jobject jcaller);
+  void PickUp(JNIEnv* env, jobject jcaller, jobject jcallbacks);
+  void Reject(JNIEnv* env, jobject jcaller);
+  void HangUp(JNIEnv* env, jobject jcaller, jobject jcallbacks);
   void SendDtmf(JNIEnv* env, jobject jcaller, jstring digits);
   void Finalize(JNIEnv* env, jobject jcaller);
 

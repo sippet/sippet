@@ -25,24 +25,18 @@ class JavaPhone :
   jboolean Init(JNIEnv* env, jobject jcaller,
                 jobject settings);
   jint GetState(JNIEnv* env, jobject jcaller);
-  jboolean Register(JNIEnv* env, jobject jcaller);
-  jboolean Unregister(JNIEnv* env, jobject jcaller);
-  jboolean UnregisterAll(JNIEnv* env, jobject jcaller);
+  void Register(JNIEnv* env, jobject jcaller, jobject jcallback);
+  void StartRefreshRegister(JNIEnv* env, jobject jcaller, jobject jcallback);
+  void StopRefreshRegister(JNIEnv* env, jobject jcaller);
+  void Unregister(JNIEnv* env, jobject jcaller, jobject jcallback);
+  void UnregisterAll(JNIEnv* env, jobject jcaller, jobject jcallback);
   jlong MakeCall(JNIEnv* env, jobject jcaller,
-                 jstring target);
-  void HangUpAll(JNIEnv* env, jobject jcaller);
+                 jstring target, jobject jcallback);
   void Finalize(JNIEnv* env, jobject jcaller);
 
   static bool RegisterBindings(JNIEnv* env);
 
   // Phone::Delegate implementation
-  void OnNetworkError(int error_code) override;
-  void OnRegisterCompleted(int status_code,
-      const std::string& status_text) override;
-  void OnRefreshError(int status_code,
-      const std::string& status_text) override;
-  void OnUnregisterCompleted(int status_code,
-      const std::string& status_text) override;
   void OnIncomingCall(const scoped_refptr<Call>& call) override;
 
  private:

@@ -5,6 +5,7 @@
 #include "sippet/phone/android/java_phone.h"
 #include "sippet/phone/android/java_call.h"
 #include "sippet/phone/android/java_settings.h"
+#include "sippet/phone/android/run_completion_callback.h"
 
 #include <jni.h>
 
@@ -18,8 +19,8 @@ namespace sippet {
 namespace phone {
 namespace android {
 
-static void InitApplicationContext(JNIEnv* env,
-    jobject jcaller, jobject context) {
+static void InitApplicationContext(JNIEnv* env, jclass jcaller,
+    jobject context) {
   sippet::android::InitApplicationContext(env, context);
 }
 
@@ -48,72 +49,55 @@ jint JavaPhone::GetState(JNIEnv* env, jobject jcaller) {
   return static_cast<jint>(phone_instance_->state());
 }
 
-jboolean JavaPhone::Register(JNIEnv* env, jobject jcaller) {
-  return phone_instance_->Register()
-    ? JNI_TRUE : JNI_FALSE;
+void JavaPhone::Register(JNIEnv* env, jobject jcaller,
+                         jobject jcallback) {
+  phone_instance_->Register(base::Bind(&RunCompletionCallback,
+      base::android::ScopedJavaGlobalRef<jobject>(env, jcallback)));
 }
 
-jboolean JavaPhone::Unregister(JNIEnv* env, jobject jcaller) {
-  return phone_instance_->Unregister()
-    ? JNI_TRUE : JNI_FALSE;
+void JavaPhone::StartRefreshRegister(JNIEnv* env, jobject jcaller,
+                                     jobject jcallback) {
+  phone_instance_->StartRefreshRegister(base::Bind(&RunCompletionCallback,
+      base::android::ScopedJavaGlobalRef<jobject>(env, jcallback)));
 }
 
-jboolean JavaPhone::UnregisterAll(JNIEnv* env, jobject jcaller) {
-  return phone_instance_->UnregisterAll()
-    ? JNI_TRUE : JNI_FALSE;
+void JavaPhone::StopRefreshRegister(JNIEnv* env, jobject jcaller) {
+  phone_instance_->StopRefreshRegister();
+}
+
+void JavaPhone::Unregister(JNIEnv* env, jobject jcaller,
+                           jobject jcallback) {
+  phone_instance_->Unregister(base::Bind(&RunCompletionCallback,
+      base::android::ScopedJavaGlobalRef<jobject>(env, jcallback)));
+}
+
+void JavaPhone::UnregisterAll(JNIEnv* env, jobject jcaller,
+                              jobject jcallback) {
+  return phone_instance_->UnregisterAll(base::Bind(&RunCompletionCallback,
+      base::android::ScopedJavaGlobalRef<jobject>(env, jcallback)));
 }
 
 jlong JavaPhone::MakeCall(JNIEnv* env, jobject jcaller,
-                          jstring target) {
+                          jstring target, jobject jcallback) {
   scoped_refptr<Call> call =
       phone_instance_->MakeCall(
-          base::android::ConvertJavaStringToUTF8(env, target));
+          base::android::ConvertJavaStringToUTF8(env, target),
+          base::Bind(&RunCompletionCallback,
+              base::android::ScopedJavaGlobalRef<jobject>(env, jcallback))
+      );
   return reinterpret_cast<jlong>(new JavaCall(phone_instance_, call));
-}
-
-void JavaPhone::HangUpAll(JNIEnv* env, jobject jcaller) {
-  phone_instance_->HangUpAll();
 }
 
 void JavaPhone::Finalize(JNIEnv* env, jobject jcaller) {
   delete this;
 }
 
-void JavaPhone::OnNetworkError(int error_code) {
-  JNIEnv* env = base::android::AttachCurrentThread();
-  DCHECK(!java_phone_.is_null());
-  Java_Phone_runOnNetworkError(env, java_phone_.obj(), error_code);
-}
-
-void JavaPhone::OnRegisterCompleted(int status_code,
-    const std::string& status_text) {
-  JNIEnv* env = base::android::AttachCurrentThread();
-  DCHECK(!java_phone_.is_null());
-  Java_Phone_runOnRegisterCompleted(env, java_phone_.obj(), status_code,
-      base::android::ConvertUTF8ToJavaString(env, status_text).Release());
-}
-
-void JavaPhone::OnRefreshError(int status_code,
-    const std::string& status_text) {
-  JNIEnv* env = base::android::AttachCurrentThread();
-  DCHECK(!java_phone_.is_null());
-  Java_Phone_runOnRefreshError(env, java_phone_.obj(), status_code,
-      base::android::ConvertUTF8ToJavaString(env, status_text).Release());
-}
-
-void JavaPhone::OnUnregisterCompleted(int status_code,
-    const std::string& status_text) {
-  JNIEnv* env = base::android::AttachCurrentThread();
-  DCHECK(!java_phone_.is_null());
-  Java_Phone_runOnUnregisterCompleted(env, java_phone_.obj(), status_code,
-      base::android::ConvertUTF8ToJavaString(env, status_text).Release());
-}
-
 void JavaPhone::OnIncomingCall(const scoped_refptr<Call>& call) {
   JNIEnv* env = base::android::AttachCurrentThread();
   JavaCall *java_call = new JavaCall(phone_instance_, call);
   DCHECK(!java_phone_.is_null());
-  Java_Phone_runOnIncomingCall(env, java_phone_.obj(),
+  Java_Phone_runOnIncomingCall(env,
+      java_phone_.obj(),
       reinterpret_cast<jlong>(java_call));
 }
 
