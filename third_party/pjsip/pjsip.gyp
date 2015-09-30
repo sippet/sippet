@@ -81,6 +81,8 @@
         '-Wno-return-type',
         # pjsip does `if ((a == b))` in some places.
         '-Wno-parentheses-equality',
+        # pjsip has statements like `if (i > 42);`.
+        '-Wno-empty-body',
       ],
       'clang_warning_flags_unset': [
         # Disable the default flag from common.gypi
