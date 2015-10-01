@@ -136,16 +136,16 @@ PhoneImpl::PhoneImpl(Phone::Delegate *delegate)
   : state_(PHONE_STATE_OFFLINE),
     last_state_(PHONE_STATE_OFFLINE),
     delegate_(delegate),
-    signalling_thread_("PhoneSignalling"),
-    signalling_thread_event_(false, false) {
+    network_thread_("PhoneSignalling"),
+    network_thread_event_(false, false) {
   DCHECK(delegate);
 }
 
 PhoneImpl::~PhoneImpl() {
-  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+  network_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnDestroy, base::Unretained(this))
   );
-  signalling_thread_event_.Wait();
+  network_thread_event_.Wait();
 }
 
 PhoneState PhoneImpl::state() const {
@@ -157,29 +157,20 @@ bool PhoneImpl::Init(const Settings& settings) {
     DVLOG(1) << "Already initialized";
     return false;
   }
-  if (!settings.uri().SchemeIs("sip")
-      && !settings.uri().SchemeIs("sips")) {
-    DVLOG(1) << "Unknown scheme '" << settings.uri().scheme()
-             << "' in uri attribute";
-    return false;
-  }
-  if (!settings.registrar_server().is_empty()
-      && !settings.registrar_server().SchemeIs("sip")
-      && !settings.registrar_server().SchemeIs("sips")) {
-    DVLOG(1) << "Unknown scheme '" << settings.registrar_server().scheme()
-             << "' in registrar_server attribute";
+  if (!settings.is_valid()) {
+    DVLOG(1) << "Invalid settings";
     return false;
   }
   base::Thread::Options options;
   settings_ = settings;
   password_handler_factory_.reset(new PasswordHandler::Factory(&settings_));
   options.message_loop_type = base::MessageLoop::TYPE_IO;
-  if (!signalling_thread_.StartWithOptions(options)) {
+  if (!network_thread_.StartWithOptions(options)) {
     return false;
   }
   state_ = PHONE_STATE_READY;
-  signalling_thread_.message_loop()->PostTask(FROM_HERE,
-    base::Bind(&PhoneImpl::OnInit, base::Unretained(this), settings)
+  network_thread_.message_loop()->PostTask(FROM_HERE,
+    base::Bind(&PhoneImpl::OnInit, base::Unretained(this))
   );
   return true;
 }
@@ -192,7 +183,7 @@ void PhoneImpl::Register(const net::CompletionCallback& on_completed) {
   base::AutoLock lock(lock_);
   state_ = PHONE_STATE_REGISTERING;
   on_register_completed_ = on_completed;
-  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+  network_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnRegister, base::Unretained(this))
   );
 }
@@ -205,7 +196,7 @@ void PhoneImpl::StartRefreshRegister(
   }
   base::AutoLock lock(lock_);
   on_refresh_completed_ = on_completed;
-  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+  network_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnStartRefreshRegister, base::Unretained(this))
   );
 }
@@ -216,7 +207,7 @@ void PhoneImpl::StopRefreshRegister() {
     return;
   }
   base::AutoLock lock(lock_);
-  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+  network_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnStopRefreshRegister, base::Unretained(this))
   );
 }
@@ -230,7 +221,7 @@ void PhoneImpl::Unregister(const net::CompletionCallback& on_completed) {
   last_state_ = state_;
   state_ = PHONE_STATE_UNREGISTERING;
   on_unregister_completed_ = on_completed;
-  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+  network_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnUnregister, base::Unretained(this), false)
   );
 }
@@ -245,7 +236,7 @@ void PhoneImpl::UnregisterAll(const net::CompletionCallback& on_completed) {
   last_state_ = state_;
   state_ = PHONE_STATE_UNREGISTERING;
   on_unregister_completed_ = on_completed;
-  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+  network_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&PhoneImpl::OnUnregister, base::Unretained(this), true)
   );
 }
@@ -270,9 +261,9 @@ scoped_refptr<Call> PhoneImpl::MakeCall(const std::string& destination,
   scoped_refptr<CallImpl> call(
       new CallImpl(destination_uri, this, on_completed));
   calls_.push_back(call);
-  signalling_thread_.message_loop()->PostTask(FROM_HERE,
+  network_thread_.message_loop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnMakeCall, base::Unretained(call.get()),
-      base::Unretained(peer_connection_factory_.get()), ice_servers_)
+      base::Unretained(peer_connection_factory_.get()))
   );
   return call;
 }
@@ -288,7 +279,7 @@ void PhoneImpl::RemoveCall(const scoped_refptr<Call>& call) {
     calls_.erase(i);
 }
 
-bool PhoneImpl::InitializePeerConnectionFactory(const Settings& settings) {
+bool PhoneImpl::InitializePeerConnectionFactory() {
   DCHECK(peer_connection_factory_.get() == nullptr);
 
   // To allow sending to the signaling/worker threads.
@@ -302,8 +293,8 @@ bool PhoneImpl::InitializePeerConnectionFactory(const Settings& settings) {
   }
 
   webrtc::PeerConnectionFactoryInterface::Options options;
-  options.disable_encryption = settings.disable_encryption();
-  options.disable_sctp_data_channels = settings.disable_sctp_data_channels();
+  options.disable_encryption = settings_.disable_encryption();
+  options.disable_sctp_data_channels = settings_.disable_sctp_data_channels();
   peer_connection_factory_->SetOptions(options);
   return true;
 }
@@ -312,8 +303,10 @@ void PhoneImpl::DeletePeerConnectionFactory() {
   peer_connection_factory_ = nullptr;
 }
 
-void PhoneImpl::OnInit(const Settings& settings) {
-  base::MessageLoop *message_loop = signalling_thread_.message_loop();
+void PhoneImpl::OnInit() {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
+
+  base::MessageLoop *message_loop = network_thread_.message_loop();
   refresh_timer_.reset(new base::OneShotTimer<PhoneImpl>);
 
   request_context_getter_ =
@@ -349,19 +342,17 @@ void PhoneImpl::OnInit(const Settings& settings) {
   user_agent_->SetNetworkLayer(network_layer_.get());
   user_agent_->AppendHandler(this);
 
-  InitializePeerConnectionFactory(settings);
+  InitializePeerConnectionFactory();
 
   // Initialize the route-set, if available
-  if (settings.route_set().size() > 0) {
-    user_agent_->set_route_set(settings.route_set());
+  if (settings_.route_set().size() > 0) {
+    user_agent_->set_route_set(settings_.route_set());
   }
-
-  // Save the ICE server list for later, while initializing
-  // a PeerConnection instance.
-  ice_servers_ = settings.ice_servers();
 }
 
 void PhoneImpl::OnDestroy() {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
+
   for (CallsVector::iterator i = calls_.begin(), ie = calls_.end();
        i != ie; i++) {
     (*i)->OnDestroy();
@@ -378,10 +369,12 @@ void PhoneImpl::OnDestroy() {
   refresh_timer_->Stop();
   refresh_timer_.reset();
 
-  signalling_thread_event_.Signal();
+  network_thread_event_.Signal();
 }
 
 void PhoneImpl::OnRegister() {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
+
   std::string registrar_uri(GetRegistrarUri());
   std::string address_of_record(GetFromUri());
 
@@ -407,6 +400,8 @@ void PhoneImpl::OnRegister() {
 }
 
 void PhoneImpl::OnStartRefreshRegister() {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
+
   // Refresh the registration 25 seconds before expiration.
   base::TimeDelta expiration = register_expires_ - base::Time::Now()
       - base::TimeDelta::FromSeconds(25);
@@ -417,10 +412,14 @@ void PhoneImpl::OnStartRefreshRegister() {
 }
 
 void PhoneImpl::OnStopRefreshRegister() {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
+
   refresh_timer_->Stop();
 }
 
 void PhoneImpl::OnUnregister(bool all) {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
+
   std::string registrar_uri(GetRegistrarUri());
   std::string address_of_record(GetFromUri());
 
@@ -467,6 +466,7 @@ void PhoneImpl::OnChannelClosed(const EndPoint &destination) {
 void PhoneImpl::OnIncomingRequest(
     const scoped_refptr<Request> &incoming_request,
     const scoped_refptr<Dialog> &dialog) {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
   if (Method::INVITE == incoming_request->method()) {
     scoped_refptr<CallImpl> call(new CallImpl(incoming_request, this));
     {
@@ -484,6 +484,7 @@ void PhoneImpl::OnIncomingRequest(
 void PhoneImpl::OnIncomingResponse(
     const scoped_refptr<Response> &incoming_response,
     const scoped_refptr<Dialog> &dialog) {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
   if (Method::REGISTER == incoming_response->refer_to()->method()) {
     if (last_request_->id() != incoming_response->refer_to()->id()) {
       // Discard, as it was unrelated to current REGISTER request
@@ -555,6 +556,7 @@ void PhoneImpl::OnIncomingResponse(
 void PhoneImpl::OnTimedOut(
     const scoped_refptr<Request> &request,
     const scoped_refptr<Dialog> &dialog) {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
   if (Method::INVITE == request->method()
       || Method::BYE == request->method()) {
     CallImpl *call = RouteToCall(request);
@@ -573,6 +575,7 @@ void PhoneImpl::OnTimedOut(
 void PhoneImpl::OnTransportError(
     const scoped_refptr<Request> &request, int error,
     const scoped_refptr<Dialog> &dialog) {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
   if (Method::INVITE == request->method()
       || Method::BYE == request->method()) {
     CallImpl *call = RouteToCall(request);
@@ -589,6 +592,7 @@ void PhoneImpl::OnTransportError(
 }
 
 void PhoneImpl::OnRefreshRegister() {
+  DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
   // Just send another REGISTER
   OnRegister(); 
 }
@@ -684,6 +688,15 @@ SipURI PhoneImpl::GetToUri(const std::string& destination) const {
     destination_uri = SipURI(destination);
   }
   return destination_uri;
+}
+
+scoped_refptr<base::SingleThreadTaskRunner>
+PhoneImpl::GetNetworkTaskRunner() const {
+  return network_thread_.task_runner();
+}
+
+base::MessageLoop *PhoneImpl::GetNetworkMessageLoop() const {
+  return network_thread_.message_loop();
 }
 
 void Phone::Initialize() {

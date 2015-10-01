@@ -54,7 +54,7 @@ class PhoneImpl :
   PhoneImpl(Phone::Delegate *delegate);
   ~PhoneImpl() override;
 
-  bool InitializePeerConnectionFactory(const Settings& settings);
+  bool InitializePeerConnectionFactory();
   void DeletePeerConnectionFactory();
 
   PhoneState state_;
@@ -64,8 +64,8 @@ class PhoneImpl :
   Phone::Delegate *delegate_;
   Settings settings_;
 
-  base::Thread signalling_thread_;
-  base::WaitableEvent signalling_thread_event_;
+  base::Thread network_thread_;
+  base::WaitableEvent network_thread_event_;
 
   class PasswordHandler : public sippet::PasswordHandler {
    public:
@@ -120,15 +120,12 @@ class PhoneImpl :
   const Settings& settings() const { return settings_; }
   Phone::Delegate *delegate() { return delegate_; }
   ua::UserAgent *user_agent() { return user_agent_.get(); }
-  base::MessageLoop *signalling_message_loop() {
-    return signalling_thread_.message_loop();
-  }
   void RemoveCall(const scoped_refptr<Call>& call);
 
   //
   // Signalling thread callbacks
   //
-  void OnInit(const Settings& settings);
+  void OnInit();
   void OnDestroy();
   void OnRegister();
   void OnStartRefreshRegister();
@@ -170,6 +167,9 @@ class PhoneImpl :
   std::string GetRegistrarUri() const;
   std::string GetFromUri() const;
   SipURI GetToUri(const std::string& destination) const;
+
+  scoped_refptr<base::SingleThreadTaskRunner> GetNetworkTaskRunner() const;
+  base::MessageLoop *GetNetworkMessageLoop() const;
 };
 
 } // namespace sippet

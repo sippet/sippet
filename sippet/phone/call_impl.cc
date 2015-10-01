@@ -147,7 +147,7 @@ bool CallImpl::PickUp(const net::CompletionCallback& on_completed) {
     return false;
   }
   on_completed_ = on_completed;
-  phone_->signalling_message_loop()->PostTask(FROM_HERE,
+  phone_->GetNetworkMessageLoop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnPickUp, base::Unretained(this)));
   return true;
 }
@@ -161,7 +161,7 @@ bool CallImpl::Reject() {
     DVLOG(1) << "Invalid state to reject call";
     return false;
   }
-  phone_->signalling_message_loop()->PostTask(FROM_HERE,
+  phone_->GetNetworkMessageLoop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnReject, base::Unretained(this)));
   return true;
 }
@@ -176,7 +176,7 @@ bool CallImpl::HangUp(const net::CompletionCallback& on_completed) {
     return false;
   }
   on_hangup_completed_ = on_completed;
-  phone_->signalling_message_loop()->PostTask(FROM_HERE,
+  phone_->GetNetworkMessageLoop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnHangup, base::Unretained(this)));
   return true;
 }
@@ -190,14 +190,14 @@ void CallImpl::SendDtmf(const std::string& digits) {
     DVLOG(1) << "Cannot send digit to a terminated call";
     return;
   }
-  phone_->signalling_message_loop()->PostTask(FROM_HERE,
+  phone_->GetNetworkMessageLoop()->PostTask(FROM_HERE,
     base::Bind(&CallImpl::OnSendDtmf, base::Unretained(this), digits));
 }
 
 bool CallImpl::InitializePeerConnection(
-    webrtc::PeerConnectionFactoryInterface *peer_connection_factory,
-    const Settings::IceServers& ice_servers) {
+    webrtc::PeerConnectionFactoryInterface *peer_connection_factory) {
   webrtc::PeerConnectionInterface::RTCConfiguration config;
+  const Settings::IceServers& ice_servers(phone_->settings().ice_servers());
   if (ice_servers.size() > 0) {
     for (Settings::IceServers::const_iterator i = ice_servers.begin(),
          ie = ice_servers.end(); i != ie; i++) {
@@ -238,9 +238,8 @@ void CallImpl::DeletePeerConnection() {
 }
 
 void CallImpl::OnMakeCall(
-    webrtc::PeerConnectionFactoryInterface *peer_connection_factory,
-    const Settings::IceServers& ice_servers) {
-  InitializePeerConnection(peer_connection_factory, ice_servers);
+    webrtc::PeerConnectionFactoryInterface *peer_connection_factory) {
+  InitializePeerConnection(peer_connection_factory);
   // TODO: handle errors
 
   CreateOffer();
@@ -279,7 +278,7 @@ void CallImpl::OnIceComplete() {
     RE2::GlobalReplace(&offer, elem.first, elem.second);
   }
 
-  phone_->signalling_message_loop()->PostTask(
+  phone_->GetNetworkMessageLoop()->PostTask(
     FROM_HERE,
     base::Bind(&CallImpl::OnCreateOfferCompleted,
     base::Unretained(this), offer));
