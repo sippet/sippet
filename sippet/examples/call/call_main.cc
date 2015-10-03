@@ -399,7 +399,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  Conductor conductor(settings, destination, message_loop);
+  Conductor conductor(settings, destination, &message_loop);
   if (!conductor.Start())
     return -1;
 
