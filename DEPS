@@ -19,7 +19,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling G.729
   # and whatever else without interference from each other.
-  'g729_revision': '614d96bb2f79db33c33515c8e2d912826fb52fef',
+  'g729_revision': 'd9822672b47a2839366ea7b01bd725e90e806f34',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling PJSIP
   # and whatever else without interference from each other.
