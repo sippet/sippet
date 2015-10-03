@@ -4,6 +4,9 @@
 
 #include "sippet/ua/auth_handler_factory.h"
 
+#include <string>
+#include <vector>
+
 #include "base/stl_util.h"
 #include "base/strings/string_util.h"
 #include "net/base/net_errors.h"
@@ -61,7 +64,7 @@ bool IsSupportedScheme(const std::vector<std::string>& supported_schemes,
   return it != supported_schemes.end();
 }
 
-} // namespace
+}  // namespace
 
 AuthHandlerRegistryFactory::AuthHandlerRegistryFactory() {
 }
@@ -90,7 +93,7 @@ AuthHandlerFactory* AuthHandlerRegistryFactory::GetSchemeFactory(
   std::string lower_scheme = base::StringToLowerASCII(scheme);
   FactoryMap::const_iterator it = factory_map_.find(lower_scheme);
   if (it == factory_map_.end()) {
-    return nullptr; // |scheme| is not registered.
+    return nullptr;  // |scheme| is not registered.
   }
   return it->second;
 }
@@ -134,4 +137,4 @@ int AuthHandlerRegistryFactory::CreateAuthHandler(
                                        digest_nonce_count, net_log, handler);
 }
 
-} // namespace sippet
+}  // namespace sippet

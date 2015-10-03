@@ -129,5 +129,5 @@ void SSLCertErrorTransaction::RunUserCallback(int status) {
   c.Run(status);
 }
 
-} // namespace sippet
+}  // namespace sippet
 

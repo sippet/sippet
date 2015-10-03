@@ -4,6 +4,8 @@
 
 #include "sippet/transport/client_transaction_impl.h"
 
+#include <string>
+
 #include "net/base/net_errors.h"
 
 namespace sippet {
@@ -225,4 +227,4 @@ void ClientTransactionImpl::Terminate() {
   delegate_->OnTransactionTerminated(id_);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

@@ -4,6 +4,8 @@
 
 #include "sippet/transport/chrome/message_reader.h"
 
+#include <string>
+
 #include "base/message_loop/message_loop.h"
 #include "net/base/net_errors.h"
 #include "net/base/io_buffer.h"
@@ -136,11 +138,11 @@ int MessageReader::DoReadHeaders() {
     return ReadMore();
   }
   std::string header(data(), end + end_size);
-  DidConsume(int(end + end_size));
+  DidConsume(static_cast<int>(end + end_size));
   current_message_ = Message::Parse(header);
   if (!current_message_) {
     // Close connection: bad protocol
-    return net::ERR_INVALID_RESPONSE; // XXX: what if it's a request?
+    return net::ERR_INVALID_RESPONSE;  // XXX: what if it's a request?
   }
   next_state_ = STATE_READ_HEADERS_COMPLETE;
   return net::OK;
@@ -168,7 +170,7 @@ int MessageReader::DoReadHeadersComplete() {
 
   return net::OK;
 }
-    
+
 int MessageReader::DoReadBody() {
   ContentLength *content_length = current_message_->get<ContentLength>();
   DCHECK(content_length);
@@ -199,5 +201,5 @@ int MessageReader::ReadMore() {
   return net::OK;
 }
 
-} // namespace sippet
+}  // namespace sippet
 

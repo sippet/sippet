@@ -4,6 +4,8 @@
 
 #include "sippet/transport/chrome/transport_test_util.h"
 
+#include <string>
+
 #include "base/strings/string_util.h"
 #include "base/strings/string_tokenizer.h"
 #include "base/rand_util.h"
@@ -74,7 +76,7 @@ class ExpectNothing : public MockEvent::Expect {
 
 class ChannelConnectedImpl : public ExpectNothing {
  public:
-  ChannelConnectedImpl(const EndPoint &destination)
+  explicit ChannelConnectedImpl(const EndPoint &destination)
     : has_error_(false), destination_(destination) {}
   ChannelConnectedImpl(const EndPoint &destination, int error)
     : has_error_(true), destination_(destination), error_(error) {}
@@ -92,7 +94,7 @@ class ChannelConnectedImpl : public ExpectNothing {
 
 class ChannelClosedImpl : public ExpectNothing {
  public:
-  ChannelClosedImpl(const EndPoint &destination)
+  explicit ChannelClosedImpl(const EndPoint &destination)
     : destination_(destination) {}
   ~ChannelClosedImpl() override {}
   void OnChannelClosed(const EndPoint& destination) override {
@@ -104,7 +106,7 @@ class ChannelClosedImpl : public ExpectNothing {
 
 class IncomingMessageImpl : public ExpectNothing {
  public:
-  IncomingMessageImpl(const char *regular_expressions)
+  explicit IncomingMessageImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
   ~IncomingMessageImpl() override {}
   void OnIncomingRequest(
@@ -123,7 +125,7 @@ class IncomingMessageImpl : public ExpectNothing {
 
 class ExpectStartImpl : public ExpectNothing {
  public:
-  ExpectStartImpl(const char *regular_expressions)
+  explicit ExpectStartImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
   ~ExpectStartImpl() override {}
   void Start(const scoped_refptr<Request>& request) override {
@@ -136,7 +138,7 @@ class ExpectStartImpl : public ExpectNothing {
 
 class ExpectSendImpl : public ExpectNothing {
  public:
-  ExpectSendImpl(const char *regular_expressions)
+  explicit ExpectSendImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
   ~ExpectSendImpl() override {}
   void Send(const scoped_refptr<Response>& response) override {
@@ -149,7 +151,7 @@ class ExpectSendImpl : public ExpectNothing {
 
 class ExpectIncomingResponseImpl : public ExpectNothing {
  public:
-  ExpectIncomingResponseImpl(const char *regular_expressions)
+  explicit ExpectIncomingResponseImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
   ~ExpectIncomingResponseImpl() override {}
   void HandleIncomingResponse(
@@ -163,7 +165,7 @@ class ExpectIncomingResponseImpl : public ExpectNothing {
 
 class ExpectIncomingRequestImpl : public ExpectNothing {
  public:
-  ExpectIncomingRequestImpl(const char *regular_expressions)
+  explicit ExpectIncomingRequestImpl(const char *regular_expressions)
     : regular_expressions_(regular_expressions) {}
   ~ExpectIncomingRequestImpl() override {}
   void HandleIncomingRequest(
@@ -184,7 +186,7 @@ class ExpectCloseImpl : public ExpectNothing {
   }
 };
 
-} // End of empty namespace
+}  // namespace
 
 bool MatchMessage(const scoped_refptr<Message> &message,
                   const char *regular_expressions) {
@@ -203,7 +205,8 @@ bool MatchMessage(const scoped_refptr<Message> &message,
       regular_expressions + strlen(regular_expressions), "\n");
   while (t.GetNext()) {
     UErrorCode status = U_ZERO_ERROR;
-    icu::RegexMatcher matcher(icu::UnicodeString::fromUTF8(t.token()), 0, status);
+    icu::RegexMatcher matcher(icu::UnicodeString::fromUTF8(t.token()),
+        0, status);
     DCHECK(U_SUCCESS(status));
     matcher.reset(input);
     if (!matcher.find()) {
@@ -453,8 +456,7 @@ int UDPChannelAdapter::Connect(
   if (!socket_.get()) {
     LOG(WARNING) << "Failed to create socket.";
     return net::ERR_UNEXPECTED;
-  }
-  else {
+  } else {
     return socket_->Connect(addrlist.front());
   }
 }
@@ -497,8 +499,7 @@ int TCPChannelAdapter::Connect(
   if (!socket_.get()) {
     LOG(WARNING) << "Failed to create socket.";
     return net::ERR_UNEXPECTED;
-  }
-  else {
+  } else {
     return socket_->Connect(callback);
   }
 }
@@ -654,7 +655,8 @@ int MockChannel::Send(const scoped_refptr<Message>& message,
   std::string buffer(message->ToString());
   scoped_refptr<net::IOBuffer> io_buffer(new net::IOBuffer(buffer.size()));
   memcpy(io_buffer->data(), buffer.data(), buffer.size());
-  int result = channel_adapter_->Write(io_buffer.get(), buffer.size(), callback);
+  int result = channel_adapter_->Write(io_buffer.get(),
+      buffer.size(), callback);
   return (result > 0) ? net::OK : result;
 }
 
@@ -698,9 +700,9 @@ void MockChannel::OnConnected(int result) {
 }
 
 void MockChannel::OnRead(int result) {
-  if (result < net::OK)
+  if (result < net::OK) {
     delegate_->OnChannelClosed(this, result);
-  else {
+  } else {
     HandleMessage(result);
     Read();
   }
@@ -721,15 +723,19 @@ int MockChannelFactory::CreateChannel(const EndPoint &destination,
   bool is_stream = true;
   MockChannelAdapter *channel_adapter = 0;
   if (destination.protocol() == Protocol::UDP) {
-    channel_adapter = new UDPChannelAdapter(socket_factory_, net_log_.net_log());
+    channel_adapter = new UDPChannelAdapter(socket_factory_,
+        net_log_.net_log());
     is_stream = false;
+  } else if (destination.protocol() == Protocol::TCP) {
+    channel_adapter = new TCPChannelAdapter(socket_factory_,
+        net_log_.net_log());
+  } else if (destination.protocol() == Protocol::TLS) {
+    channel_adapter = new TCPChannelAdapter(socket_factory_,
+        net_log_.net_log());
   }
-  else if (destination.protocol() == Protocol::TCP)
-    channel_adapter = new TCPChannelAdapter(socket_factory_, net_log_.net_log());
-  else if (destination.protocol() == Protocol::TLS)
-    channel_adapter = new TCPChannelAdapter(socket_factory_, net_log_.net_log());
   if (channel_adapter) {
-    *channel = new MockChannel(channel_adapter, is_stream, delegate, destination);
+    *channel = new MockChannel(channel_adapter, is_stream,
+        delegate, destination);
     return net::OK;
   }
   NOTREACHED();
@@ -816,7 +822,6 @@ MockTransactionFactory::MockTransactionFactory(DataProvider *data_provider)
 }
 
 MockTransactionFactory::~MockTransactionFactory() {
-
 }
 
 MockClientTransaction*
@@ -861,4 +866,4 @@ ServerTransaction *MockTransactionFactory::CreateServerTransaction(
   return server_transaction;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

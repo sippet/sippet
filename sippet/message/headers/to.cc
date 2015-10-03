@@ -4,6 +4,8 @@
 
 #include "sippet/message/headers/to.h"
 
+#include <string>
+
 namespace sippet {
 
 To::To()
@@ -30,4 +32,4 @@ void To::print(raw_ostream &os) const {
   ContactBase::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

@@ -20,7 +20,7 @@ static void PrintUsage() {
 class UserAgentHandler
   : public sippet::ua::UserAgent::Delegate {
  public:
-  UserAgentHandler(sippet::NetworkLayer *network_layer)
+  explicit UserAgentHandler(sippet::NetworkLayer *network_layer)
       : network_layer_(network_layer) {
   }
 
@@ -86,7 +86,7 @@ class UserAgentHandler
   }
 
  private:
-   sippet::NetworkLayer *network_layer_;
+  sippet::NetworkLayer *network_layer_;
 };
 
 void RequestSent(int error) {

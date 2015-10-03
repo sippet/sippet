@@ -59,7 +59,7 @@ TEST_F(HeaderTest, Method) {
   foobar = null;
   EXPECT_EQ(Method::Unknown, foobar.type());
 
-  Method coerce("INVITE"); // coersion test
+  Method coerce("INVITE");  // coersion test
   EXPECT_EQ(Method::INVITE, coerce.type());
   EXPECT_STREQ("INVITE", coerce.str());
 }
@@ -70,9 +70,9 @@ TEST_F(HeaderTest, Accept) {
   Header *h = accept.get();
   EXPECT_TRUE(isa<Accept>(h));
 
-  accept->push_back(MediaRange("application","sdp"));
+  accept->push_back(MediaRange("application", "sdp"));
   accept->back().set_qvalue(1.0);
-  accept->push_back(MediaRange("application","*"));
+  accept->push_back(MediaRange("application", "*"));
 
   EXPECT_FALSE(accept->empty());
 
@@ -129,7 +129,8 @@ TEST_F(HeaderTest, AcceptLanguage) {
 
 TEST_F(HeaderTest, AlertInfo) {
   scoped_ptr<AlertInfo> alert_info(new AlertInfo);
-  alert_info->push_back(AlertParam(GURL("http://www.example.com/sounds/moo.wav")));
+  alert_info->push_back(AlertParam(
+      GURL("http://www.example.com/sounds/moo.wav")));
 
   Header *h = alert_info.get();
   EXPECT_TRUE(isa<AlertInfo>(h));
@@ -186,11 +187,15 @@ TEST_F(HeaderTest, AuthenticationInfo) {
   raw_string_ostream os(buffer);
   authentication_info->print(os);
 
-  EXPECT_EQ("Authentication-Info: nextnonce=\"47364c23432d2e131a5fb210812c\", qop=auth, rspauth=\"xxx\", cnonce=\"0a4f113b\", nc=00000001", os.str());
+  EXPECT_EQ("Authentication-Info: "
+      "nextnonce=\"47364c23432d2e131a5fb210812c\", "
+      "qop=auth, rspauth=\"xxx\", cnonce=\"0a4f113b\", "
+      "nc=00000001", os.str());
 }
 
 TEST_F(HeaderTest, Authorization) {
-  scoped_ptr<Authorization> authorization(new Authorization(Authorization::Digest));
+  scoped_ptr<Authorization> authorization(
+      new Authorization(Authorization::Digest));
   authorization->set_username("Alice");
   authorization->set_realm("atlanta.com");
   authorization->set_nonce("84a4cc6f3082121f32b42a2187831a9e");
@@ -203,11 +208,14 @@ TEST_F(HeaderTest, Authorization) {
   raw_string_ostream os(buffer);
   authorization->print(os);
 
-  EXPECT_EQ("Authorization: Digest username=\"Alice\", realm=\"atlanta.com\", nonce=\"84a4cc6f3082121f32b42a2187831a9e\", response=\"7587245234b3434cc3412213e5f113a5432\"", os.str());
+  EXPECT_EQ("Authorization: Digest username=\"Alice\", "
+      "realm=\"atlanta.com\", nonce=\"84a4cc6f3082121f32b42a2187831a9e\", "
+      "response=\"7587245234b3434cc3412213e5f113a5432\"", os.str());
 }
 
 TEST_F(HeaderTest, CallId) {
-  scoped_ptr<CallId> callid(new CallId("f81d4fae-7dec-11d0-a765-00a0c91e6bf6@biloxi.com"));
+  scoped_ptr<CallId> callid(
+      new CallId("f81d4fae-7dec-11d0-a765-00a0c91e6bf6@biloxi.com"));
 
   Header *h = callid.get();
   EXPECT_TRUE(isa<CallId>(h));
@@ -233,7 +241,9 @@ TEST_F(HeaderTest, CallInfo) {
   raw_string_ostream os(buffer);
   call_info->print(os);
 
-  EXPECT_EQ("Call-Info: <http://wwww.example.com/alice/photo.jpg>;purpose=icon, <http://www.example.com/alice/>;purpose=info", os.str());
+  EXPECT_EQ("Call-Info: "
+      "<http://wwww.example.com/alice/photo.jpg>;purpose=icon, "
+      "<http://www.example.com/alice/>;purpose=info", os.str());
 }
 
 TEST_F(HeaderTest, Contact) {
@@ -242,7 +252,7 @@ TEST_F(HeaderTest, Contact) {
   Header *h = contact.get();
   EXPECT_TRUE(isa<Contact>(h));
 
-  contact->push_back(ContactInfo(GURL("sip:foo@bar.com"),"John Doe"));
+  contact->push_back(ContactInfo(GURL("sip:foo@bar.com"), "John Doe"));
   contact->back().set_qvalue(1.0);
   contact->push_back(ContactInfo(GURL("sip:bar@foo.com")));
   contact->back().set_expires(300);
@@ -253,12 +263,14 @@ TEST_F(HeaderTest, Contact) {
   raw_string_ostream os(buffer);
   contact->print(os);
 
-  EXPECT_EQ("m: \"John Doe\" <sip:foo@bar.com>;q=1.0, <sip:bar@foo.com>;expires=300", os.str());
+  EXPECT_EQ("m: \"John Doe\" <sip:foo@bar.com>;q=1.0, "
+      "<sip:bar@foo.com>;expires=300", os.str());
 }
 
 TEST_F(HeaderTest, ContentDisposition) {
-  scoped_ptr<ContentDisposition> content_disposition(new ContentDisposition("attachment"));
-  content_disposition->param_set("filename","smime.p7m");
+  scoped_ptr<ContentDisposition> content_disposition(
+      new ContentDisposition("attachment"));
+  content_disposition->param_set("filename", "smime.p7m");
   content_disposition->set_handling(ContentDisposition::required);
 
   Header *h = content_disposition.get();
@@ -268,7 +280,8 @@ TEST_F(HeaderTest, ContentDisposition) {
   raw_string_ostream os(buffer);
   content_disposition->print(os);
 
-  EXPECT_EQ("Content-Disposition: attachment;filename=smime.p7m;handling=required", os.str());
+  EXPECT_EQ("Content-Disposition: "
+      "attachment;filename=smime.p7m;handling=required", os.str());
 }
 
 TEST_F(HeaderTest, ContentEncoding) {
@@ -301,7 +314,7 @@ TEST_F(HeaderTest, ContentLanguage) {
 
 TEST_F(HeaderTest, ContentLength) {
   scoped_ptr<ContentLength> content_length(new ContentLength(0));
-  
+
   EXPECT_EQ(0, content_length->value());
 
   Header *h = content_length.get();
@@ -315,7 +328,8 @@ TEST_F(HeaderTest, ContentLength) {
 }
 
 TEST_F(HeaderTest, ContentType) {
-  scoped_ptr<ContentType> content_type(new ContentType(MediaType("application","sdp")));
+  scoped_ptr<ContentType> content_type(
+      new ContentType(MediaType("application", "sdp")));
 
   Header *h = content_type.get();
   EXPECT_TRUE(isa<ContentType>(h));
@@ -361,7 +375,8 @@ TEST_F(HeaderTest, Date) {
 
 TEST_F(HeaderTest, ErrorInfo) {
   scoped_ptr<ErrorInfo> error_info(new ErrorInfo);
-  error_info->push_back(ErrorUri(GURL("sip:not-in-service-recording@atlanta.com")));
+  error_info->push_back(ErrorUri(
+      GURL("sip:not-in-service-recording@atlanta.com")));
 
   Header *h = error_info.get();
   EXPECT_TRUE(isa<ErrorInfo>(h));
@@ -387,7 +402,8 @@ TEST_F(HeaderTest, Expires) {
 }
 
 TEST_F(HeaderTest, From) {
-  scoped_ptr<From> from(new From(GURL("sip:agb@bell-telephone.com"), "A. G. Bell"));
+  scoped_ptr<From> from(
+      new From(GURL("sip:agb@bell-telephone.com"), "A. G. Bell"));
   from->set_tag("a48s");
 
   Header *h = from.get();
@@ -397,7 +413,8 @@ TEST_F(HeaderTest, From) {
   raw_string_ostream os(buffer);
   from->print(os);
 
-  EXPECT_EQ("f: \"A. G. Bell\" <sip:agb@bell-telephone.com>;tag=a48s", os.str());
+  EXPECT_EQ("f: \"A. G. Bell\" <sip:agb@bell-telephone.com>;tag=a48s",
+      os.str());
 }
 
 TEST_F(HeaderTest, InReplyTo) {
@@ -412,7 +429,8 @@ TEST_F(HeaderTest, InReplyTo) {
   raw_string_ostream os(buffer);
   in_reply_to->print(os);
 
-  EXPECT_EQ("In-Reply-To: 70710@saturn.bell-tel.com, 17320@saturn.bell-tel.com", os.str());
+  EXPECT_EQ("In-Reply-To: 70710@saturn.bell-tel.com, "
+      "17320@saturn.bell-tel.com", os.str());
 }
 
 TEST_F(HeaderTest, MaxForwards) {
@@ -431,7 +449,7 @@ TEST_F(HeaderTest, MaxForwards) {
 }
 
 TEST_F(HeaderTest, MimeVersion) {
-  scoped_ptr<MimeVersion> mime_version(new MimeVersion(1,0));
+  scoped_ptr<MimeVersion> mime_version(new MimeVersion(1, 0));
 
   EXPECT_EQ(1, mime_version->major());
   EXPECT_EQ(0, mime_version->minor());
@@ -492,7 +510,8 @@ TEST_F(HeaderTest, Priority) {
 }
 
 TEST_F(HeaderTest, ProxyAuthenticate) {
-  scoped_ptr<ProxyAuthenticate> proxy_authenticate(new ProxyAuthenticate(ProxyAuthenticate::Digest));
+  scoped_ptr<ProxyAuthenticate> proxy_authenticate(
+      new ProxyAuthenticate(ProxyAuthenticate::Digest));
   proxy_authenticate->set_realm("atlanta.com");
   proxy_authenticate->set_domain("sip:ss1.carrier.com");
   proxy_authenticate->set_qop("auth");
@@ -508,11 +527,15 @@ TEST_F(HeaderTest, ProxyAuthenticate) {
   raw_string_ostream os(buffer);
   proxy_authenticate->print(os);
 
-  EXPECT_EQ("Proxy-Authenticate: Digest realm=\"atlanta.com\", domain=\"sip:ss1.carrier.com\", qop=\"auth\", nonce=\"f84f1cec41e6cbe5aea9c8e88d359\", opaque=\"\", stale=false, algorithm=MD5", os.str());
+  EXPECT_EQ("Proxy-Authenticate: Digest realm=\"atlanta.com\", "
+      "domain=\"sip:ss1.carrier.com\", qop=\"auth\", "
+      "nonce=\"f84f1cec41e6cbe5aea9c8e88d359\", opaque=\"\", "
+      "stale=false, algorithm=MD5", os.str());
 }
 
 TEST_F(HeaderTest, ProxyAuthorization) {
-  scoped_ptr<ProxyAuthorization> proxy_authorization(new ProxyAuthorization(ProxyAuthorization::Digest));
+  scoped_ptr<ProxyAuthorization> proxy_authorization(
+      new ProxyAuthorization(ProxyAuthorization::Digest));
   proxy_authorization->set_username("Alice");
   proxy_authorization->set_realm("atlanta.com");
   proxy_authorization->set_nonce("c60f3082ee1212b402a21831ae");
@@ -525,7 +548,9 @@ TEST_F(HeaderTest, ProxyAuthorization) {
   raw_string_ostream os(buffer);
   proxy_authorization->print(os);
 
-  EXPECT_EQ("Proxy-Authorization: Digest username=\"Alice\", realm=\"atlanta.com\", nonce=\"c60f3082ee1212b402a21831ae\", response=\"245f23415f11432b3434341c022\"", os.str());   
+  EXPECT_EQ("Proxy-Authorization: Digest username=\"Alice\", "
+      "realm=\"atlanta.com\", nonce=\"c60f3082ee1212b402a21831ae\", "
+      "response=\"245f23415f11432b3434341c022\"", os.str());
 }
 
 TEST_F(HeaderTest, ProxyRequire) {
@@ -543,7 +568,8 @@ TEST_F(HeaderTest, ProxyRequire) {
 }
 
 TEST_F(HeaderTest, RecordRoute) {
-  scoped_ptr<RecordRoute> record_route(new RecordRoute(RouteParam(GURL("sip:p2.example.com;lr"))));
+  scoped_ptr<RecordRoute> record_route(
+      new RecordRoute(RouteParam(GURL("sip:p2.example.com;lr"))));
   record_route->push_back(RouteParam(GURL("sip:p1.example.com;lr")));
 
   Header *h = record_route.get();
@@ -553,11 +579,13 @@ TEST_F(HeaderTest, RecordRoute) {
   raw_string_ostream os(buffer);
   record_route->print(os);
 
-  EXPECT_EQ("Record-Route: <sip:p2.example.com;lr>, <sip:p1.example.com;lr>", os.str());
+  EXPECT_EQ("Record-Route: <sip:p2.example.com;lr>, "
+      "<sip:p1.example.com;lr>", os.str());
 }
 
 TEST_F(HeaderTest, ReplyTo) {
-  scoped_ptr<ReplyTo> reply_to(new ReplyTo(GURL("sip:bob@biloxi.com"),"Bob"));
+  scoped_ptr<ReplyTo> reply_to(
+      new ReplyTo(GURL("sip:bob@biloxi.com"), "Bob"));
 
   Header *h = reply_to.get();
   EXPECT_TRUE(isa<ReplyTo>(h));
@@ -648,7 +676,8 @@ TEST_F(HeaderTest, Timestamp) {
 }
 
 TEST_F(HeaderTest, To) {
-  scoped_ptr<To> to(new To(GURL("sip:operator@cs.columbia.edu"),"The Operator"));
+  scoped_ptr<To> to(
+      new To(GURL("sip:operator@cs.columbia.edu"), "The Operator"));
   to->set_tag("287447");
 
   Header *h = to.get();
@@ -658,7 +687,8 @@ TEST_F(HeaderTest, To) {
   raw_string_ostream os(buffer);
   to->print(os);
 
-  EXPECT_EQ("t: \"The Operator\" <sip:operator@cs.columbia.edu>;tag=287447", os.str());
+  EXPECT_EQ("t: \"The Operator\" "
+      "<sip:operator@cs.columbia.edu>;tag=287447", os.str());
 }
 
 TEST_F(HeaderTest, Unsupported) {
@@ -689,7 +719,8 @@ TEST_F(HeaderTest, UserAgent) {
 
 TEST_F(HeaderTest, Via) {
   scoped_ptr<Via> via(new Via);
-  via->push_back(ViaParam(Protocol::UDP, net::HostPortPair("pc33.atlanta.com",0)));
+  via->push_back(ViaParam(Protocol::UDP,
+      net::HostPortPair("pc33.atlanta.com", 0)));
   via->back().set_branch("z9hG4bK776asdhds");
 
   Header *h = via.get();
@@ -699,13 +730,16 @@ TEST_F(HeaderTest, Via) {
   raw_string_ostream os(buffer);
   via->print(os);
 
-  EXPECT_EQ("v: SIP/2.0/UDP pc33.atlanta.com;rport;branch=z9hG4bK776asdhds", os.str());
+  EXPECT_EQ("v: SIP/2.0/UDP "
+      "pc33.atlanta.com;rport;branch=z9hG4bK776asdhds", os.str());
 }
 
 TEST_F(HeaderTest, Warning) {
   scoped_ptr<Warning> warning(new Warning);
-  warning->push_back(WarnParam(370, "devnull", "Choose a bigger pipe"));
-  warning->push_back(WarnParam(307, "isi.edu", "Session parameter 'foo' not understood"));
+  warning->push_back(
+      WarnParam(370, "devnull", "Choose a bigger pipe"));
+  warning->push_back(
+      WarnParam(307, "isi.edu", "Session parameter 'foo' not understood"));
 
   Header *h = warning.get();
   EXPECT_TRUE(isa<Warning>(h));
@@ -714,11 +748,13 @@ TEST_F(HeaderTest, Warning) {
   raw_string_ostream os(buffer);
   warning->print(os);
 
-  EXPECT_EQ("Warning: 370 devnull \"Choose a bigger pipe\", 307 isi.edu \"Session parameter 'foo' not understood\"", os.str());
+  EXPECT_EQ("Warning: 370 devnull \"Choose a bigger pipe\", "
+      "307 isi.edu \"Session parameter 'foo' not understood\"", os.str());
 }
 
 TEST_F(HeaderTest, WwwAuthenticate) {
-  scoped_ptr<WwwAuthenticate> www_authenticate(new WwwAuthenticate(WwwAuthenticate::Digest));
+  scoped_ptr<WwwAuthenticate> www_authenticate(
+      new WwwAuthenticate(WwwAuthenticate::Digest));
   www_authenticate->set_realm("atlanta.com");
   www_authenticate->set_domain("sip:boxesbybob.com");
   www_authenticate->set_qop("auth");
@@ -734,7 +770,10 @@ TEST_F(HeaderTest, WwwAuthenticate) {
   raw_string_ostream os(buffer);
   www_authenticate->print(os);
 
-  EXPECT_EQ("WWW-Authenticate: Digest realm=\"atlanta.com\", domain=\"sip:boxesbybob.com\", qop=\"auth\", nonce=\"f84f1cec41e6cbe5aea9c8e88d359\", opaque=\"\", stale=false, algorithm=MD5", os.str());
+  EXPECT_EQ("WWW-Authenticate: Digest realm=\"atlanta.com\", "
+      "domain=\"sip:boxesbybob.com\", qop=\"auth\", "
+      "nonce=\"f84f1cec41e6cbe5aea9c8e88d359\", opaque=\"\", "
+      "stale=false, algorithm=MD5", os.str());
 }
 
 TEST_F(HeaderTest, TortureIpv6Good) {
@@ -746,8 +785,7 @@ TEST_F(HeaderTest, TortureIpv6Good) {
     "Contact: \"Caller\" <sip:caller@[2001:db8::1]>\r\n"
     "Route: <sip:[2001:db8::2]>\r\n"
     "Record-Route: <sip:[2001:db8::3]>\r\n"
-    "\r\n"
-    )));
+    "\r\n")));
 
   EXPECT_EQ(GURL("sip:[2001:db8::10]"), request->request_uri());
 
@@ -830,5 +868,4 @@ TEST_F(HeaderTest, TortureViaReceivedDelims) {
     via->ToString());
 }
 
-} // namespace sippet
-
+}  // namespace sippet

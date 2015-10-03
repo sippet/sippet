@@ -87,10 +87,10 @@ scoped_refptr<Dialog> DefaultDialogController::HandleRequestError(
 static base::LazyInstance<DefaultDialogController>::Leaky
   g_default_dialog_controller = LAZY_INSTANCE_INITIALIZER;
 
-} // End of empty namespace
+}  // namespace
 
 DialogController *DialogController::GetDefaultDialogController() {
   return g_default_dialog_controller.Pointer();
 }
 
-} // End of sippet namespace
+}  // namespace sippet

@@ -29,7 +29,7 @@ net::NetLog::EventType EventTypeFromAuthTarget(Auth::Target target) {
   }
 }
 
-} // namespace
+}  // namespace
 
 AuthHandler::AuthHandler()
   : auth_scheme_(net::HttpAuth::AUTH_SCHEME_MAX),

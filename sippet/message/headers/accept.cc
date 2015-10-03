@@ -4,6 +4,8 @@
 
 #include "sippet/message/headers/accept.h"
 
+#include <string>
+
 namespace sippet {
 
 MediaRange::MediaRange() {
@@ -45,4 +47,4 @@ void Accept::print(raw_ostream &os) const {
   has_multiple::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

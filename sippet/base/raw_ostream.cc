@@ -39,14 +39,18 @@
  */
 
 #include "sippet/base/raw_ostream.h"
-#include "sippet/base/format.h"
-#include "sippet/base/stl_extras.h"
-#include "sippet/base/string_extras.h"
+
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <cctype>
 #include <cerrno>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <algorithm>
+#include <vector>
+
+#include "sippet/base/format.h"
+#include "sippet/base/stl_extras.h"
+#include "sippet/base/string_extras.h"
 
 namespace sippet {
 
@@ -96,7 +100,7 @@ void raw_ostream::SetBufferAndMode(char *BufferStart, size_t Size,
   assert(OutBufStart <= OutBufEnd && "Invalid size!");
 }
 
-raw_ostream &raw_ostream::operator<<(unsigned long N) {
+raw_ostream &raw_ostream::operator<<(uint32 N) {
   // Zero is a special case.
   if (N == 0)
     return *this << '0';
@@ -106,49 +110,49 @@ raw_ostream &raw_ostream::operator<<(unsigned long N) {
   char *CurPtr = EndPtr;
 
   while (N) {
-    *--CurPtr = '0' + char(N % 10);
+    *--CurPtr = '0' + static_cast<char>(N % 10);
     N /= 10;
   }
   return write(CurPtr, EndPtr-CurPtr);
 }
 
-raw_ostream &raw_ostream::operator<<(long N) {
+raw_ostream &raw_ostream::operator<<(int32 N) {
   if (N <  0) {
     *this << '-';
     // Avoid undefined behavior on LONG_MIN with a cast.
-    N = static_cast<unsigned long>(-N);
+    N = static_cast<uint32>(-N);
   }
 
-  return this->operator<<(static_cast<unsigned long>(N));
+  return this->operator<<(static_cast<uint32>(N));
 }
 
-raw_ostream &raw_ostream::operator<<(unsigned long long N) {
+raw_ostream &raw_ostream::operator<<(uint64 N) {
   // Output using 32-bit div/mod when possible.
-  if (N == static_cast<unsigned long>(N))
-    return this->operator<<(static_cast<unsigned long>(N));
+  if (N == static_cast<uint32>(N))
+    return this->operator<<(static_cast<uint32>(N));
 
   char NumberBuffer[20];
   char *EndPtr = NumberBuffer+sizeof(NumberBuffer);
   char *CurPtr = EndPtr;
 
   while (N) {
-    *--CurPtr = '0' + char(N % 10);
+    *--CurPtr = '0' + static_cast<char>(N % 10);
     N /= 10;
   }
   return write(CurPtr, EndPtr-CurPtr);
 }
 
-raw_ostream &raw_ostream::operator<<(long long N) {
+raw_ostream &raw_ostream::operator<<(int64 N) {
   if (N < 0) {
     *this << '-';
     // Avoid undefined behavior on INT64_MIN with a cast.
-    N = static_cast<unsigned long long>(-N);
+    N = static_cast<uint64>(-N);
   }
 
-  return this->operator<<(static_cast<unsigned long long>(N));
+  return this->operator<<(static_cast<uint64>(N));
 }
 
-raw_ostream &raw_ostream::write_hex(unsigned long long N) {
+raw_ostream &raw_ostream::write_hex(uint64 N) {
   // Zero is a special case.
   if (N == 0)
     return *this << '0';
@@ -318,10 +322,10 @@ void raw_ostream::copy_to_buffer(const char *Ptr, size_t Size) {
   // Handle short strings specially, memcpy isn't very good at very short
   // strings.
   switch (Size) {
-  case 4: OutBufCur[3] = Ptr[3]; // FALL THROUGH
-  case 3: OutBufCur[2] = Ptr[2]; // FALL THROUGH
-  case 2: OutBufCur[1] = Ptr[1]; // FALL THROUGH
-  case 1: OutBufCur[0] = Ptr[0]; // FALL THROUGH
+  case 4: OutBufCur[3] = Ptr[3];  // FALL THROUGH
+  case 3: OutBufCur[2] = Ptr[2];  // FALL THROUGH
+  case 2: OutBufCur[1] = Ptr[1];  // FALL THROUGH
+  case 1: OutBufCur[0] = Ptr[0];  // FALL THROUGH
   case 0: break;
   default:
     memcpy(OutBufCur, Ptr, Size);
@@ -373,7 +377,7 @@ raw_ostream &raw_ostream::operator<<(const format_object_base &Fmt) {
 }
 
 /// indent - Insert 'NumSpaces' spaces.
-raw_ostream &raw_ostream::indent(unsigned NumSpaces) {
+raw_ostream &raw_ostream::indent(size_t NumSpaces) {
   static const char Spaces[] = "                                "
                                "                                "
                                "                ";
@@ -383,8 +387,8 @@ raw_ostream &raw_ostream::indent(unsigned NumSpaces) {
     return write(Spaces, NumSpaces);
 
   while (NumSpaces) {
-    unsigned NumToWrite = std::min(NumSpaces,
-                                   (unsigned)array_lengthof(Spaces)-1);
+    size_t NumToWrite = std::min(NumSpaces,
+        (size_t)array_lengthof(Spaces)-1);
     write(Spaces, NumToWrite);
     NumSpaces -= NumToWrite;
   }
@@ -416,4 +420,4 @@ void raw_string_ostream::write_impl(const char *Ptr, size_t Size) {
   OS.append(Ptr, Size);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

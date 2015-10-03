@@ -4,6 +4,8 @@
 
 #include "sippet/phone/android/jni_onload.h"
 
+#include <vector>
+
 #include "base/bind.h"
 #include "base/command_line.h"
 #include "base/message_loop/message_loop.h"
@@ -72,7 +74,9 @@ void InitApplicationContext(JNIEnv* env, jobject context) {
     logging::LoggingSettings settings;
     settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
     logging::InitLogging(settings);
-    // To view log output with IDs and timestamps use "adb logcat -v threadtime".
+
+    // To view log output with IDs and timestamps use "adb logcat -v
+    // threadtime".
     logging::SetLogItems(false,   // Process ID
                          false,   // Thread ID
                          false,   // Timestamp

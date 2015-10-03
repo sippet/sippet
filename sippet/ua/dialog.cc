@@ -3,11 +3,14 @@
 // found in the LICENSE file.
 
 #include "sippet/ua/dialog.h"
+
+#include <algorithm>
+#include <string>
+
 #include "sippet/base/sequences.h"
 #include "sippet/message/request.h"
 #include "sippet/message/response.h"
 #include "sippet/uri/uri.h"
-#include <algorithm>
 
 namespace sippet {
 
@@ -26,7 +29,7 @@ std::vector<GURL> GetRouteSet(
   return result;
 }
 
-}
+}  // namespace
 
 Dialog::Dialog(
         State state,
@@ -96,7 +99,7 @@ scoped_refptr<Request> Dialog::CreateAck(
   scoped_refptr<Request> ack(
       CreateRequestInternal(Method::ACK, local_sequence));
   Via *via = invite->get<Via>();
-  if (via) // Copy topmost Via from INVITE
+  if (via)  // Copy topmost Via from INVITE
     ack->insert(ack->begin(), via->Clone().Pass());
   invite->CloneTo<WwwAuthenticate>(ack.get());
   invite->CloneTo<ProxyAuthenticate>(ack.get());
@@ -151,8 +154,7 @@ unsigned Dialog::GetNewLocalSequence() {
     local_sequence_ = Create16BitRandomInteger();
     has_local_sequence_ = true;
     return local_sequence_;
-  }
-  else {
+  } else {
     return ++local_sequence_;
   }
 }
@@ -163,8 +165,7 @@ scoped_refptr<Request> Dialog::CreateRequestInternal(
   scoped_ptr<Route> route;
   if (route_set().empty()) {
     request_uri = remote_target();
-  }
-  else {
+  } else {
     GURL first(route_set().front());
     SipURI uri(first);
     if (uri.has_parameters() && uri.parameter("lr").first) {
@@ -174,12 +175,11 @@ scoped_refptr<Request> Dialog::CreateRequestInternal(
            ie = route_set().end(); i != ie; i++) {
         route->push_back(RouteParam(*i));
       }
-    }
-    else {
-      request_uri = first; // TODO: strip not allowed parameters
+    } else {
+      request_uri = first;  // TODO(david): strip not allowed parameters
       std::vector<GURL>::const_iterator i = route_set().begin(),
                                         ie = route_set().end();
-      i++; // discard the first
+      i++;  // discard the first
       route.reset(new Route);
       for (; i != ie; i++)
         route->push_back(RouteParam(*i));
@@ -205,5 +205,5 @@ scoped_refptr<Request> Dialog::CreateRequestInternal(
   return request;
 }
 
-} // End of sippet namespace
+}  // namespace sippet
 

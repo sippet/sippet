@@ -151,8 +151,7 @@ void DoParameters(const CHAR* spec,
   if (parameters.len <= 0) {
     // Common case: no parameters.
     *out_parameters = uri::Component();
-  }
-  else {
+  } else {
     // Write the parameters.
     out_parameters->begin = output->length();
     AppendStringOfType(&spec[parameters.begin], parameters.len,
@@ -170,8 +169,7 @@ void DoHeaders(const CHAR* spec,
   if (headers.len <= 0) {
     // Common case: no headers.
     *out_headers = uri::Component();
-  }
-  else {
+  } else {
     // Write the headers.
     output->push_back('?');
     out_headers->begin = output->length();
@@ -181,7 +179,7 @@ void DoHeaders(const CHAR* spec,
   }
 }
 
-} // End of empty namespace
+}  // namespace
 
 bool CanonicalizeUserInfo(const char* username_source,
                           const uri::Component& username,
@@ -294,5 +292,5 @@ bool CanonicalizeTelURI(const base::char16* spec,
                               query_converter, output, new_parsed);
 }
 
-} // End of uri namespace
-} // End of sippet namespace
+}  // namespace uri
+}  // namespace sippet

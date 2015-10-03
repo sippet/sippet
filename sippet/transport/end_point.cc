@@ -3,6 +3,10 @@
 // found in the LICENSE file.
 
 #include "sippet/transport/end_point.h"
+
+#include <utility>
+#include <vector>
+
 #include "base/strings/string_split.h"
 #include "net/base/net_util.h"
 
@@ -83,4 +87,4 @@ std::string EndPoint::ToString() const {
   return hostport_.ToString() + "/" + protocol_.str();
 }
 
-} // End of sippet namespace
+}  // namespace sippet

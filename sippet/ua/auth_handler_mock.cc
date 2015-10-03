@@ -90,4 +90,4 @@ bool AuthHandlerMock::Init(const Challenge& challenge) {
   return true;
 }
 
-} // namespace sippet
+}  // namespace sippet

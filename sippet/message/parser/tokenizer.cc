@@ -14,4 +14,4 @@ Tokenizer::Tokenizer(std::string::const_iterator string_begin,
 Tokenizer::~Tokenizer() {
 }
 
-} // namespace sippet
+}  // namespace sippet

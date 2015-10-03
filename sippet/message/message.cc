@@ -4,6 +4,8 @@
 
 #include "sippet/message/message.h"
 
+#include <string>
+
 namespace sippet {
 
 Message::Message(bool is_request,
@@ -43,4 +45,4 @@ std::string Message::ToString() const {
   return os.str();
 }
 
-}
+}  // namespace sippet

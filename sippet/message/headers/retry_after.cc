@@ -31,4 +31,4 @@ void RetryAfter::print(raw_ostream &os) const {
   has_parameters::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

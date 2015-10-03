@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "sippet/phone/v8/phone_js_wrapper.h"
+
+#include <string>
+
 #include "sippet/phone/v8/call_js_wrapper.h"
 
 namespace gin {
@@ -255,7 +258,7 @@ const char Converter<sippet::phone::Settings>::kRegisterExpires[] =
 const char Converter<sippet::phone::Settings>::kRegistrarServer[] =
     "registrar_server";
 
-} // namespace gin
+}  // namespace gin
 
 namespace sippet {
 namespace phone {
@@ -366,7 +369,7 @@ gin::Handle<CallJsWrapper> PhoneJsWrapper::MakeCall(
 }
 
 void PhoneJsWrapper::On(const std::string& key,
-                        v8::Handle<v8::Function> function) {
+    v8::Handle<v8::Function> function) {
   if ("incomingCall" == key) {
     on_incoming_call_.SetFunction(this, isolate_, function);
   }
@@ -386,14 +389,14 @@ void PhoneJsWrapper::OnRefreshCompleted(int error) {
 
 void PhoneJsWrapper::OnUnregisterCompleted(int error) {
   message_loop_->PostTask(FROM_HERE,
-      base::Bind(&PhoneJsWrapper::RunUnregisterCompleted, base::Unretained(this),
-          error));
+      base::Bind(&PhoneJsWrapper::RunUnregisterCompleted,
+          base::Unretained(this), error));
 }
 
 void PhoneJsWrapper::OnIncomingCall(const scoped_refptr<Call>& call) {
   message_loop_->PostTask(FROM_HERE,
-      base::Bind(&PhoneJsWrapper::RunIncomingCall, base::Unretained(this),
-          call));
+      base::Bind(&PhoneJsWrapper::RunIncomingCall,
+          base::Unretained(this), call));
 }
 
 void PhoneJsWrapper::RunRegisterCompleted(int error) {
@@ -438,9 +441,8 @@ v8::Local<v8::Value> PhoneJsModule::GetModule(v8::Isolate* isolate) {
 gin::ObjectTemplateBuilder PhoneJsModule::GetObjectTemplateBuilder(
     v8::Isolate* isolate) {
   return gin::Wrappable<PhoneJsModule>::GetObjectTemplateBuilder(isolate)
-      .SetMethod("Phone",
-                 &PhoneJsWrapper::Create);
+      .SetMethod("Phone", &PhoneJsWrapper::Create);
 }
 
-} // namespace phone
-} // namespace sippet
+}  // namespace phone
+}  // namespace sippet

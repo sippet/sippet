@@ -4,6 +4,8 @@
 
 #include "sippet/message/headers/reply_to.h"
 
+#include <string>
+
 namespace sippet {
 
 ReplyTo::ReplyTo()
@@ -30,4 +32,4 @@ void ReplyTo::print(raw_ostream &os) const {
   ContactBase::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

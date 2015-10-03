@@ -4,6 +4,8 @@
 
 #include "sippet/message/headers/warning.h"
 
+#include <string>
+
 namespace sippet {
 
 WarnParam::WarnParam()
@@ -61,4 +63,4 @@ void Warning::print(raw_ostream &os) const {
   has_multiple::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

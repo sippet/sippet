@@ -30,4 +30,4 @@ void MimeVersion::print(raw_ostream &os) const {
   os << major_ << "." << minor_;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

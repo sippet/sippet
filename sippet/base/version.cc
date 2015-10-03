@@ -29,4 +29,4 @@ std::string GetSippetRevision() {
   return SIPPET_SVN_REVISION;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

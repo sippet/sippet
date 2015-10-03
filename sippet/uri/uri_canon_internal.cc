@@ -32,7 +32,7 @@ void DoAppendStringOfType(const CHAR* source, int length,
   }
 }
 
-} // End of empty namespace
+}  // namespace
 
 // See the header file for this array's declaration.
 const unsigned char kSharedCharTypeTable[0x100] = {
@@ -147,14 +147,16 @@ const unsigned char kSharedCharTypeTable[0x100] = {
 void AppendStringOfType(const char* source, int length,
                         SharedCharTypes type,
                         CanonOutput* output) {
-  DoAppendStringOfType<char, unsigned char>(source, length, type, output);
+  DoAppendStringOfType<char, unsigned char>(source,
+      length, type, output);
 }
 
 void AppendStringOfType(const base::char16* source, int length,
                         SharedCharTypes type,
                         CanonOutput* output) {
-  DoAppendStringOfType<base::char16, base::char16>(source, length, type, output);
+  DoAppendStringOfType<base::char16, base::char16>(source,
+      length, type, output);
 }
 
-} // End of uri namespace
-} // End of sippet namespace
+}  // namespace uri
+}  // namespace sippet

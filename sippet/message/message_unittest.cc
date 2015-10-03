@@ -4,15 +4,23 @@
 
 #include "sippet/message/message.h"
 
+#include <string>
+
 #include "testing/gtest/include/gtest/gtest.h"
 
-using namespace sippet;
+using sippet::Message;
+using sippet::Header;
+using sippet::raw_ostream;
+using sippet::isa;
+using sippet::dyn_cast;
+using sippet::Request;
+using sippet::Response;
 
 class InstanceOfMessage : public Message {
  public:
   InstanceOfMessage() : Message(true, Outgoing) {}
   std::string GetDialogId() const override {
-    return ""; // It won't be used here
+    return "";  // It won't be used here
   }
  private:
   friend class base::RefCountedThreadSafe<InstanceOfMessage>;
@@ -20,13 +28,14 @@ class InstanceOfMessage : public Message {
 };
 
 class InstanceOfHeader : public Header {
-private:
+ private:
   InstanceOfHeader(const InstanceOfHeader &other) : Header(other) {}
   InstanceOfHeader &operator=(const InstanceOfHeader &other);
   InstanceOfHeader *DoClone() const override {
     return new InstanceOfHeader(*this);
   }
-public:
+
+ public:
   InstanceOfHeader() : Header(Header::HDR_ACCEPT) {}
   virtual scoped_ptr<InstanceOfHeader> Clone() {
     return scoped_ptr<InstanceOfHeader>(DoClone());
@@ -93,7 +102,7 @@ TEST(RequestTest, Basic) {
     "Accept: text /  html;q=1.0, application/sdp ;q=0.9, text/plain   \n"
     "\n\n";
   scoped_refptr<Message> message = Message::Parse(raw_message);
-  
+
   ASSERT_TRUE(isa<Request>(message));
   ASSERT_TRUE(message->IsRequest());
   ASSERT_FALSE(message->IsResponse());

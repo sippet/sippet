@@ -4,12 +4,14 @@
 
 #include "sippet/transport/aliases_map.h"
 
+#include <functional>
+
 namespace sippet {
 
 struct AliasesMap::remove_from
   : std::unary_function<void, EndPoint> {
   ReverseMap &map_;
-  remove_from(ReverseMap &from) : map_(from) {}
+  explicit remove_from(ReverseMap &from) : map_(from) {}
   void operator()(const EndPoint &alias) {
     map_.erase(alias);
   }
@@ -43,4 +45,4 @@ void AliasesMap::RemoveAliases(const EndPoint &target) {
   }
 }
 
-} // End of sippet namespace
+}  // namespace sippet

@@ -299,4 +299,4 @@ TEST(AuthHandlerDigest, HandleAnotherChallenge) {
             handler->HandleAnotherChallenge(*challenge));
 }
 
-} // namespace sippet
+}  // namespace sippet

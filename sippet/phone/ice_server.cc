@@ -16,7 +16,7 @@ IceServer::~IceServer() {
 IceServer::IceServer(const std::string& uri) :
   uri_(uri) {
 }
-  
+
 IceServer::IceServer(const std::string& uri,
                      const std::string& username,
                      const std::string& password) :
@@ -25,5 +25,5 @@ IceServer::IceServer(const std::string& uri,
   password_(password) {
 }
 
-} // namespace sippet
-} // namespace phone
+}  // namespace phone
+}  // namespace sippet

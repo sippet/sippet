@@ -27,10 +27,10 @@ class DefaultBranchFactory : public BranchFactory {
 static base::LazyInstance<DefaultBranchFactory>::Leaky
   g_default_branch_factory = LAZY_INSTANCE_INITIALIZER;
 
-} // End of empty namespace
+}  // namespace
 
 BranchFactory *BranchFactory::GetDefaultBranchFactory() {
   return g_default_branch_factory.Pointer();
 }
 
-} // End of sippet namespace
+}  // namespace sippet

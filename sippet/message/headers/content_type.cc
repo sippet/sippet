@@ -62,4 +62,4 @@ void ContentType::print(raw_ostream &os) const {
   MediaType::print(os);
 }
 
-} // namespace sippet
+}  // namespace sippet

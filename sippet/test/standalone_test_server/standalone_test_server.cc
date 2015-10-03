@@ -4,6 +4,12 @@
 
 #include "sippet/test/standalone_test_server/standalone_test_server.h"
 
+#include <pjsip.h>
+#include <pjlib-util.h>
+#include <pjlib.h>
+
+#include <string>
+
 #include "base/bind.h"
 #include "base/message_loop/message_loop.h"
 #include "base/run_loop.h"
@@ -12,11 +18,7 @@
 #include "base/strings/stringprintf.h"
 #include "base/threading/thread_restrictions.h"
 #include "net/base/ip_endpoint.h"
-#include "net/base/net_errors.h"  
-
-#include <pjsip.h>
-#include <pjlib-util.h>
-#include <pjlib.h>
+#include "net/base/net_errors.h"
 
 #define THIS_FILE "standalone_test_server.cc"
 
@@ -37,7 +39,7 @@ struct StandaloneTestServerCallbacks {
     return PJ_TRUE;
   }
   static pj_bool_t logging_on_rx_msg(pjsip_rx_data *rdata) {
-    PJ_LOG(4,(THIS_FILE, "RX %d bytes %s from %s %s:%d:\n"
+    PJ_LOG(4, (THIS_FILE, "RX %d bytes %s from %s %s:%d:\n"
         "%.*s\n"
         "--end msg--",
         rdata->msg_info.len,
@@ -45,14 +47,12 @@ struct StandaloneTestServerCallbacks {
         rdata->tp_info.transport->type_name,
         rdata->pkt_info.src_name,
         rdata->pkt_info.src_port,
-        (int)rdata->msg_info.len,
+        static_cast<int>(rdata->msg_info.len),
         rdata->msg_info.msg_buf));
     return PJ_FALSE;
   }
-
-  static pj_status_t logging_on_tx_msg(pjsip_tx_data *tdata)
-  {
-    PJ_LOG(4,(THIS_FILE, "TX %d bytes %s to %s %s:%d:\n"
+  static pj_status_t logging_on_tx_msg(pjsip_tx_data *tdata) {
+    PJ_LOG(4, (THIS_FILE, "TX %d bytes %s to %s %s:%d:\n"
         "%.*s\n"
         "--end msg--",
         (tdata->buf.cur - tdata->buf.start),
@@ -60,7 +60,7 @@ struct StandaloneTestServerCallbacks {
         tdata->tp_info.transport->type_name,
         tdata->tp_info.dst_name,
         tdata->tp_info.dst_port,
-        (int)(tdata->buf.cur - tdata->buf.start),
+        static_cast<int>(tdata->buf.cur - tdata->buf.start),
         tdata->buf.start));
     return PJ_SUCCESS;
   }
@@ -68,25 +68,23 @@ struct StandaloneTestServerCallbacks {
 
 namespace {
 
-pjsip_module mod_app =
-{
+pjsip_module mod_app = {
     nullptr, nullptr,
     { "mod-embed-srv", 13 },
     -1,
     PJSIP_MOD_PRIORITY_APPLICATION,
-    nullptr, // load()
-    nullptr,	// start()
-    nullptr, // stop()
-    nullptr, // unload()
-    &StandaloneTestServerCallbacks::on_rx_request,	// on_rx_request()
-    &StandaloneTestServerCallbacks::on_rx_response, // on_rx_response()
-    nullptr, // on_tx_request()
-    nullptr,	// on_tx_response()
-    nullptr,	// on_tsx_state()
+    nullptr,  // load()
+    nullptr,  // start()
+    nullptr,  // stop()
+    nullptr,  // unload()
+    &StandaloneTestServerCallbacks::on_rx_request,   // on_rx_request()
+    &StandaloneTestServerCallbacks::on_rx_response,  // on_rx_response()
+    nullptr,  // on_tx_request()
+    nullptr,  // on_tx_response()
+    nullptr,  // on_tsx_state()
 };
 
-pjsip_module msg_logger =
-{
+pjsip_module msg_logger = {
     nullptr, nullptr,
     { "mod-msg-log", 11 },
     -1,
@@ -117,7 +115,7 @@ pj_status_t LookupCredentials(pj_pool_t *pool,
   return PJ_ENOTFOUND;
 }
 
-} // empty namespace
+}  // namespace
 
 struct StandaloneTestServer::ControlStruct {
   pj_caching_pool caching_pool_;
@@ -172,25 +170,25 @@ struct StandaloneTestServer::ControlStruct {
     pjsip_endpt_register_module(endpoint_, &msg_logger);
 
     pool_ = pj_pool_create(&caching_pool_.factory, "embedsrv",
-			4000, 4000, nullptr);
+        4000, 4000, nullptr);
     return true;
   }
 
-  bool ListenTo(const Protocol& protocol, int &port,
-                StandaloneTestServer::SSLOptions &options) {
+  bool ListenTo(const Protocol& protocol, int* port,
+                const StandaloneTestServer::SSLOptions& options) {
     pj_status_t status;
 
     pj_sockaddr_in addr;
     pj_str_t localhost = pj_str("127.0.0.1");
     addr.sin_family = pj_AF_INET();
     pj_inet_pton(PJ_AF_INET, &localhost, &addr.sin_addr.s_addr);
-    addr.sin_port = pj_htons((pj_uint16_t)port);
+    addr.sin_port = pj_htons(static_cast<pj_uint16_t>(*port));
 
     if (Protocol::UDP == protocol) {
       pjsip_transport *tp = nullptr;
       status = pjsip_udp_transport_start(endpoint_, &addr, nullptr, 1, &tp);
       if (status == PJ_SUCCESS)
-        port = tp->local_name.port;
+        *port = tp->local_name.port;
     } else {
       pjsip_tpfactory *tf = nullptr;
       if (Protocol::TCP == protocol) {
@@ -216,7 +214,7 @@ struct StandaloneTestServer::ControlStruct {
         return false;
       }
       if (status == PJ_SUCCESS)
-        port = tf->addr_name.port;
+        *port = tf->addr_name.port;
     }
 
     return status == PJ_SUCCESS;
@@ -240,7 +238,7 @@ struct StandaloneTestServer::ControlStruct {
     pj_status_t status;
     quit_flag_ = false;
     status = pj_thread_create(pool_, "embedsrv", &WorkerThread,
-			      this, 0, 0, &thread_);
+        this, 0, 0, &thread_);
     return status == PJ_SUCCESS;
   }
 
@@ -254,7 +252,7 @@ struct StandaloneTestServer::ControlStruct {
 
   static int WorkerThread(void *p) {
     pj_time_val delay = {0, 10};
-    ControlStruct *self = (ControlStruct *)p;
+    ControlStruct *self = reinterpret_cast<ControlStruct *>(p);
     while (!quit_flag_)
       pjsip_endpt_handle_events(self->endpoint_, &delay);
     return 0;
@@ -286,13 +284,13 @@ StandaloneTestServer::~StandaloneTestServer() {
   if (Started() && !ShutdownAndWaitUntilComplete()) {
     LOG(ERROR) << "StandaloneTestServer failed to shut down.";
   }
-  
+
   g_server = nullptr;
 }
 
 void StandaloneTestServer::Init(const Protocol &protocol, int port,
     const SSLOptions *ssl_options) {
-  DCHECK(port >= 0);
+  DCHECK_GE(port, 0);
   DCHECK(!g_server);
   DCHECK(thread_checker_.CalledOnValidThread());
   port_ = port;
@@ -310,10 +308,11 @@ bool StandaloneTestServer::InitializeAndWaitUntilReady() {
 
   DCHECK(thread_checker_.CalledOnValidThread());
 
-  if (!PostTaskToIOThreadAndWait(base::Bind(
-          &StandaloneTestServer::InitializeOnIOThread, base::Unretained(this)))) {
+  bool result = PostTaskToIOThreadAndWait(base::Bind(
+      &StandaloneTestServer::InitializeOnIOThread,
+          base::Unretained(this)));
+  if (!result)
     return false;
-  }
 
   return Started();
 }
@@ -355,9 +354,8 @@ void StandaloneTestServer::OnReceiveRequest(pjsip_rx_data *rdata) {
     } while (0);
     if (tdata)
       pjsip_tx_data_dec_ref(tdata);
-	  pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
-					PJSIP_SC_INTERNAL_SERVER_ERROR, 
-					nullptr, nullptr, nullptr);
+    pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
+        PJSIP_SC_INTERNAL_SERVER_ERROR, nullptr, nullptr, nullptr);
   }
 }
 
@@ -416,9 +414,8 @@ bool StandaloneTestServer::VerifyRequest(pjsip_rx_data *rdata) {
     } while (0);
     if (tdata)
       pjsip_tx_data_dec_ref(tdata);
-	  pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
-					PJSIP_SC_INTERNAL_SERVER_ERROR, 
-					nullptr, nullptr, nullptr);
+    pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
+        PJSIP_SC_INTERNAL_SERVER_ERROR, nullptr, nullptr, nullptr);
     return false;
   } else if (status != PJ_SUCCESS) {
     pjsip_endpt_respond_stateless(control_struct_->endpoint_, rdata,
@@ -438,7 +435,7 @@ void StandaloneTestServer::InitializeOnIOThread() {
 
   control_struct_.reset(new ControlStruct);
   if (!control_struct_->Init()
-      || !control_struct_->ListenTo(protocol_, port_, ssl_options_)
+      || !control_struct_->ListenTo(protocol_, &port_, ssl_options_)
       || !control_struct_->RegisterModule()
       || !control_struct_->StartAuthentication()
       || !control_struct_->StartWorkerThread()) {
@@ -467,11 +464,12 @@ void StandaloneTestServer::ShutdownOnIOThread() {
 
 bool StandaloneTestServer::PostTaskToIOThreadAndWait(
     const base::Closure& closure) {
-  // Note that PostTaskAndReply below requires base::MessageLoopProxy::current()
-  // to return a loop for posting the reply task. However, in order to make
-  // StandaloneTestServer universally usable, it needs to cope with the situation
-  // where it's running on a thread on which a message loop is not (yet)
-  // available or as has been destroyed already.
+  // Note that PostTaskAndReply below requires
+  // base::MessageLoopProxy::current() to return a loop for posting the reply
+  // task. However, in order to make StandaloneTestServer universally usable,
+  // it needs to cope with the situation where it's running on a thread on
+  // which a message loop is not (yet) available or as has been destroyed
+  // already.
   //
   // To handle this situation, create temporary message loop to support the
   // PostTaskAndReply operation if the current thread as no message loop.
@@ -489,4 +487,4 @@ bool StandaloneTestServer::PostTaskToIOThreadAndWait(
   return true;
 }
 
-} // namespace sippet
+}  // namespace sippet

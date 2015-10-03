@@ -62,7 +62,7 @@ const char kOptionsResponse[] =
   "l: 0\r\n"
   "\r\n";
 
-}
+}  // namespace
 
 class NetworkLayerTest : public testing::Test {
  public:
@@ -83,7 +83,8 @@ class NetworkLayerTest : public testing::Test {
       settings.set_branch_factory(branch_factory_.get());
     }
     data_provider_.reset(new StaticDataProvider(events, events_count));
-    transaction_factory_.reset(new MockTransactionFactory(data_provider_.get()));
+    transaction_factory_.reset(
+        new MockTransactionFactory(data_provider_.get()));
     settings.set_transaction_factory(transaction_factory_.get());
     delegate_.reset(new StaticNetworkLayerDelegate(data_provider_.get()));
     network_layer_.reset(new NetworkLayer(delegate_.get(), settings));
@@ -93,7 +94,8 @@ class NetworkLayerTest : public testing::Test {
     socket_factory_.reset(new net::DeterministicMockClientSocketFactory);
     socket_factory_->AddSocketDataProvider(data_.get());
     channel_factory_.reset(new MockChannelFactory(socket_factory_.get()));
-    network_layer_->RegisterChannelFactory(Protocol::TCP, channel_factory_.get());
+    network_layer_->RegisterChannelFactory(
+        Protocol::TCP, channel_factory_.get());
   }
 
   scoped_ptr<DataProvider> data_provider_;
@@ -149,43 +151,47 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
 
   EndPoint single_via_request_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_request);
-  EXPECT_EQ(EndPoint("foo.com",5060,Protocol::UDP),
+  EXPECT_EQ(EndPoint("foo.com", 5060, Protocol::UDP),
     single_via_request_endpoint);
 
   single_via_request->set_request_uri(GURL("sip:foobar@foo.com;transport=TCP"));
   single_via_request_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_request);
-  EXPECT_EQ(EndPoint("foo.com",5060,Protocol::TCP),
+  EXPECT_EQ(EndPoint("foo.com", 5060, Protocol::TCP),
     single_via_request_endpoint);
 
-  scoped_refptr<Response> single_via_response = new Response(200, "OK", Message::Outgoing);
+  scoped_refptr<Response> single_via_response =
+      new Response(200, "OK", Message::Outgoing);
   via.reset(new Via);
-  via->push_back(ViaParam(Protocol::TCP, net::HostPortPair("192.168.0.1", 7001)));
+  via->push_back(ViaParam(Protocol::TCP,
+      net::HostPortPair("192.168.0.1", 7001)));
   single_via_response->push_front(via.Pass());
   EndPoint single_via_response_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_response);
-  EXPECT_EQ(EndPoint("192.168.0.1",7001,Protocol::TCP),
+  EXPECT_EQ(EndPoint("192.168.0.1", 7001, Protocol::TCP),
     single_via_response_endpoint);
 
   single_via_response = new Response(200, "OK", Message::Outgoing);
   via.reset(new Via);
-  via->push_back(ViaParam(Protocol::TCP, net::HostPortPair("192.168.0.1", 7001)));
+  via->push_back(ViaParam(Protocol::TCP,
+      net::HostPortPair("192.168.0.1", 7001)));
   via->front().set_received("189.187.200.23");
   single_via_response->push_front(via.Pass());
   single_via_response_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_response);
-  EXPECT_EQ(EndPoint("189.187.200.23",7001,Protocol::TCP),
+  EXPECT_EQ(EndPoint("189.187.200.23", 7001, Protocol::TCP),
     single_via_response_endpoint);
 
   single_via_response = new Response(200, "OK", Message::Outgoing);
   via.reset(new Via);
-  via->push_back(ViaParam(Protocol::TCP, net::HostPortPair("192.168.0.1", 7001)));
+  via->push_back(ViaParam(Protocol::TCP,
+      net::HostPortPair("192.168.0.1", 7001)));
   via->front().set_received("189.187.200.23");
   via->front().set_rport(5002);
   single_via_response->push_front(via.Pass());
   single_via_response_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_response);
-  EXPECT_EQ(EndPoint("189.187.200.23",5002,Protocol::TCP),
+  EXPECT_EQ(EndPoint("189.187.200.23", 5002, Protocol::TCP),
     single_via_response_endpoint);
 
   Finish();
@@ -234,7 +240,7 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
   EXPECT_EQ(net::ERR_IO_PENDING, rv);
 
   data_->RunFor(1);
-  
+
   rv = callback_.WaitForResult();
   EXPECT_EQ(net::OK, rv);
 
@@ -259,4 +265,4 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
   Finish();
 }
 
-} // End of sippet namespace
+}  // namespace sippet

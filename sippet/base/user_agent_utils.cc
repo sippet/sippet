@@ -159,4 +159,4 @@ std::string BuildUserAgentFromProduct(
   return user_agent;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

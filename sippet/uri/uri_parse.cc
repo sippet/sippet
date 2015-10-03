@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "sippet/uri/uri_parse.h"
+
 #include "sippet/uri/uri.h"
 #include "sippet/uri/uri_parse_internal.h"
 
@@ -68,7 +70,7 @@ bool DoExtractHeadersKeyValue(const CHAR* spec,
   return DoExtractKeyValues(spec, query, key, value, '&');
 }
 
-} // End of empty namespace
+}  // namespace
 
 Parsed::Parsed() {
 }
@@ -147,9 +149,10 @@ int Parsed::CountCharactersBefore(ComponentType type,
   if (headers.is_valid()) {
     if (type == HEADERS && !include_delimiter)
       return headers.begin;  // Don't want delimiter counted.
-    
-    // When there are headers and we get here, the component we wanted was before
-    // this and not found, so we always know the beginning of the headers is right.
+
+    // When there are headers and we get here, the component we wanted was
+    // before this and not found, so we always know the beginning of the
+    // headers is right.
     return headers.begin - 1;  // Back over delimiter.
   }
 
@@ -262,7 +265,7 @@ void DoParseAfterScheme(const CHAR* spec,
 // The main parsing function for SIP-URIs.
 template<typename CHAR>
 void DoParseSipURI(const CHAR* spec, int spec_len, Parsed* parsed) {
-  DCHECK(spec_len >= 0);
+  DCHECK_GE(spec_len, 0);
 
   // Strip leading & trailing spaces and control characters.
   int begin = 0;
@@ -281,7 +284,7 @@ void DoParseSipURI(const CHAR* spec, int spec_len, Parsed* parsed) {
 // The main parsing function for SIP-URIs.
 template<typename CHAR>
 void DoParseTelURI(const CHAR* spec, int spec_len, Parsed* parsed) {
-  DCHECK(spec_len >= 0);
+  DCHECK_GE(spec_len, 0);
 
   // Strip leading & trailing spaces and control characters.
   int begin = 0;
@@ -391,5 +394,5 @@ void ParseAfterScheme(const base::char16* spec,
   DoParseAfterScheme(spec, spec_len, after_scheme, parsed);
 }
 
-} // End of uri namespace
-} // End of sippet namespace
+}  // namespace uri
+}  // namespace sippet

@@ -42,6 +42,7 @@
 #define SIPPET_BASE_RAW_OSTREAM_H_
 
 #include <string>
+
 #include "base/strings/string_piece.h"
 #include "base/basictypes.h"
 
@@ -176,22 +177,15 @@ public:
     return *this;
   }
 
-  raw_ostream &operator<<(unsigned long N);
-  raw_ostream &operator<<(long N);
-  raw_ostream &operator<<(unsigned long long N);
-  raw_ostream &operator<<(long long N);
-  raw_ostream &operator<<(unsigned int N) {
-    return this->operator<<(static_cast<unsigned long>(N));
-  }
-
-  raw_ostream &operator<<(int N) {
-    return this->operator<<(static_cast<long>(N));
-  }
+  raw_ostream &operator<<(uint32 N);
+  raw_ostream &operator<<(int32 N);
+  raw_ostream &operator<<(uint64 N);
+  raw_ostream &operator<<(int64 N);
 
   raw_ostream &operator<<(double N);
 
   /// write_hex - Output \p N in hexadecimal, without any prefix or padding.
-  raw_ostream &write_hex(unsigned long long N);
+  raw_ostream &write_hex(uint64 N);
 
   /// write_escaped - Output \p Str, turning '\\', '\t', '\n', '"', and
   /// anything that doesn't satisfy std::isprint into an escape sequence.
@@ -204,7 +198,7 @@ public:
   raw_ostream &operator<<(const format_object_base &Fmt);
 
   /// indent - Insert 'NumSpaces' spaces.
-  raw_ostream &indent(unsigned NumSpaces);
+  raw_ostream &indent(size_t NumSpaces);
 
   //===--------------------------------------------------------------------===//
   // Subclass Interface

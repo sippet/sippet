@@ -30,4 +30,4 @@ void Cseq::print(raw_ostream &os) const {
   os << sequence_ << " " << method_;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

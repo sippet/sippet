@@ -41,10 +41,10 @@ class DefaultTransactionFactory : public TransactionFactory {
 static base::LazyInstance<DefaultTransactionFactory>::Leaky
   g_default_transaction_factory = LAZY_INSTANCE_INITIALIZER;
 
-} // End of empty namespace
+}  // namespace
 
 TransactionFactory *TransactionFactory::GetDefaultTransactionFactory() {
   return g_default_transaction_factory.Pointer();
 }
 
-} // End of sippet namespace
+}  // namespace sippet

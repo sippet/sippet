@@ -4,6 +4,8 @@
 
 #include "sippet/phone/v8/call_js_wrapper.h"
 
+#include <string>
+
 #include "gin/per_context_data.h"
 
 namespace gin {
@@ -90,7 +92,7 @@ struct Converter<base::TimeDelta> {
   }
 };
 
-} // namespace gin
+}  // namespace gin
 
 namespace sippet {
 namespace phone {
@@ -218,5 +220,5 @@ void CallJsWrapper::RunHangupCompleted(int error) {
   on_hangup_completed_.Run(this, error);
 }
 
-} // namespace phone
-} // namespace sippet
+}  // namespace phone
+}  // namespace sippet

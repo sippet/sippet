@@ -262,4 +262,4 @@ void ChromeDatagramChannel::OnReadComplete(int result) {
   }
 }
 
-} // namespace sippet
+}  // namespace sippet

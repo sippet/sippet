@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "sippet/uri/uri_util.h"
+
 #include "sippet/uri/uri.h"
+
 #include "url/url_canon_internal.h"
 
 #include "base/strings/string_piece.h"
@@ -92,7 +95,7 @@ void DoDecodeURIEscapeSequences(const CHAR* input, int length,
   }
 }
 
-} // End of empty namespace
+}  // namespace
 
 bool Canonicalize(const char* spec,
                   int spec_len,
@@ -117,5 +120,5 @@ void DecodeURIEscapeSequences(const char* input, int length,
   DoDecodeURIEscapeSequences(input, length, output);
 }
 
-} // End of uri namespace
-} // End of sippet namespace
+}  // namespace uri
+}  // namespace sippet

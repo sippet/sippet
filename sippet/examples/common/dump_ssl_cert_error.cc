@@ -5,6 +5,9 @@
 #include "sippet/examples/common/dump_ssl_cert_error.h"
 
 #include <iostream>
+#include <string>
+#include <vector>
+
 #include "base/i18n/time_formatting.h"
 #include "net/base/net_errors.h"
 #include "net/ssl/ssl_info.h"
