@@ -17,6 +17,10 @@ vars = {
   # and whatever else without interference from each other.
   'talk_revision': 'adb356c36a4a42028cec57e43bd7126439dba237',
   # Three lines of non-changing comments so that
+  # the commit queue can handle CLs rolling G.729
+  # and whatever else without interference from each other.
+  'g729_revision': '614d96bb2f79db33c33515c8e2d912826fb52fef',
+  # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling PJSIP
   # and whatever else without interference from each other.
   'pjsip_revision': '3dc02a36513e14d8b79139ddc353faa48dcc430b', # version 2.4.5
@@ -33,6 +37,9 @@ deps = {
 
   'src/third_party/webrtc':
     Var('sippet_git') + '/webrtc.git@' + Var('webrtc_revision'),
+
+  'src/third_party/g729':
+    Var('sippet_git') + '/g729.git@' + Var('g729_revision'),
 
   # PJSIP is used for testing purposes
   'src/third_party/pjsip/source':
