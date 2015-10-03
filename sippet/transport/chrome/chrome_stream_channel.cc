@@ -4,6 +4,9 @@
 
 #include "sippet/transport/chrome/chrome_stream_channel.h"
 
+#include <string>
+#include <vector>
+
 #include "base/basictypes.h"
 #include "base/bind.h"
 #include "base/bind_helpers.h"
@@ -63,7 +66,7 @@ ChromeStreamChannel::ChromeStreamChannel(const EndPoint& destination,
   DCHECK_GT(dest_host_port_pair_.port(), 0);
   DCHECK(proxy_url_.is_valid());
   DCHECK(delegate_);
-  
+
   net::HttpNetworkSession::Params session_params;
   session_params.client_socket_factory = client_socket_factory;
   session_params.host_resolver = request_context->host_resolver();
@@ -134,7 +137,7 @@ void ChromeStreamChannel::Connect() {
   DCHECK(!is_connecting_);
 
   tried_direct_connect_fallback_ = false;
- 
+
   // First we try and resolve the proxy.
   int status = network_session_->proxy_service()->ResolveProxy(
       proxy_url_, 0,
@@ -279,7 +282,8 @@ void ChromeStreamChannel::DoTcpConnect() {
   } else {
     int status = net::InitSocketHandleForRawConnect(
         dest_host_port_pair_, network_session_.get(), proxy_info_, ssl_config_,
-        ssl_config_, net::PRIVACY_MODE_DISABLED, bound_net_log_, transport_.get(),
+        ssl_config_, net::PRIVACY_MODE_DISABLED, bound_net_log_,
+        transport_.get(),
         connect_callback_);
     if (status != net::ERR_IO_PENDING) {
       // Since this method is always called asynchronously. It is OK to call
@@ -367,8 +371,8 @@ int ChromeStreamChannel::ReconsiderProxyAfterError(int error) {
   }
 
   int rv = network_session_->proxy_service()->ReconsiderProxyAfterError(
-      proxy_url_, 0, net::OK, &proxy_info_, proxy_resolve_callback_, &pac_request_,
-      nullptr, bound_net_log_);
+      proxy_url_, 0, net::OK, &proxy_info_, proxy_resolve_callback_,
+      &pac_request_, nullptr, bound_net_log_);
   if (rv == net::OK || rv == net::ERR_IO_PENDING) {
     CloseTransportSocket();
   } else {
@@ -452,16 +456,18 @@ void ChromeStreamChannel::StartTls() {
 
     net::SSLClientSocketContext context;
     context.cert_verifier =
-        request_context_getter_->GetURLRequestContext()->cert_verifier();
+        request_context_getter_->GetURLRequestContext()
+            ->cert_verifier();
     context.transport_security_state =
-        request_context_getter_->GetURLRequestContext()->transport_security_state();
+        request_context_getter_->GetURLRequestContext()
+            ->transport_security_state();
 
     DCHECK(context.transport_security_state);
 
     transport_->SetSocket(
         client_socket_factory_->CreateSSLClientSocket(socket_handle.Pass(),
             dest_host_port_pair_, ssl_config_, context).Pass());
-  
+
     int status = transport_->socket()->Connect(
         base::Bind(&ChromeStreamChannel::ProcessSSLConnectDone,
                    weak_ptr_factory_.GetWeakPtr()));
@@ -556,7 +562,8 @@ int ChromeStreamChannel::HandleCertificateError(int result) {
   return net::ERR_IO_PENDING;
 }
 
-bool ChromeStreamChannel::AllowCertErrorForReconnection(net::SSLConfig* ssl_config) {
+bool ChromeStreamChannel::AllowCertErrorForReconnection(
+    net::SSLConfig* ssl_config) {
   DCHECK(ssl_config);
   // The SSL handshake didn't finish, or the server closed the SSL connection.
   // So, we should restart establishing connection with the certificate in
@@ -627,4 +634,4 @@ void ChromeStreamChannel::ProcessSSLConnectDone(int status) {
   // |this| may be deleted after this call.
 }
 
-} // End of sippet namespace
+}  // namespace sippet

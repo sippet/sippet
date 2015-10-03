@@ -25,7 +25,7 @@ std::string ErrorToShortString(int error) {
 
   const char* error_string;
   switch (error) {
-#define NO_SUCCESS // do not include successful cases
+#define NO_SUCCESS  // do not include successful cases
 #define SIP_STATUS(label, code, reason) \
   case ERR_SIP_ ## label: \
     error_string = "SIP_" # label; \
@@ -66,4 +66,4 @@ bool IsHangupCause(int error) {
   return error <= -1700;
 }
 
-} // namespace sippet
+}  // namespace sippet

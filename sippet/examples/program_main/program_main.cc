@@ -62,7 +62,7 @@ bool ProgramMain::Init() {
       static_password_handler_factory_.get(),
       sippet::DialogController::GetDefaultDialogController(),
       net_log_));
-  
+
   sippet::NetworkSettings network_settings;
   ssl_cert_error_handler_factory_.reset(new DumpSSLCertError::Factory(true));
   network_settings.set_ssl_cert_error_handler_factory(

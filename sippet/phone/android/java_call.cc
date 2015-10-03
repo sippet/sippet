@@ -3,10 +3,11 @@
 // found in the LICENSE file.
 
 #include "sippet/phone/android/java_call.h"
-#include "sippet/phone/android/java_phone.h"
-#include "sippet/phone/android/run_completion_callback.h"
 
 #include <jni.h>
+
+#include "sippet/phone/android/java_phone.h"
+#include "sippet/phone/android/run_completion_callback.h"
 
 #include "base/android/jni_android.h"
 #include "base/android/jni_string.h"

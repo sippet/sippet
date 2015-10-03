@@ -13,7 +13,7 @@ namespace {
 
 struct name_is : public std::unary_function<const Header&, bool> {
   std::string name_;
-  name_is(const char *name)
+  explicit name_is(const char *name)
     : name_(name) {
   }
   bool operator() (const Header& h) {
@@ -33,7 +33,7 @@ void ExpectSipURIHaving(const GURL& url,
 }
 
 
-} // empty namespace
+}  // namespace
 
 TEST(SimpleMessages, Message1) {
   const char message_string[] =
@@ -55,7 +55,7 @@ TEST(SimpleMessages, Message1) {
   scoped_refptr<Request> request = dyn_cast<Request>(message);
   EXPECT_EQ(Method::REGISTER, request->method());
   EXPECT_EQ(GURL("sip:registrar.biloxi.com"), request->request_uri());
-  EXPECT_EQ(Version(2,0), request->version());
+  EXPECT_EQ(Version(2, 0), request->version());
 
   Message::iterator via_it = request->find_first<Via>();
   EXPECT_NE(request->end(), via_it);
@@ -92,11 +92,11 @@ TEST(SimpleMessages, Message1) {
   EXPECT_EQ(GURL("sip:bob@192.0.2.4"), contact->front().address());
 
   Expires *expires = request->get<Expires>();
-  EXPECT_FALSE(0 == expires);
+  EXPECT_NE(nullptr, expires);
   EXPECT_EQ(7200, expires->value());
 
   ContentLength *clen = request->get<ContentLength>();
-  EXPECT_FALSE(0 == clen);
+  EXPECT_NE(nullptr, clen);
   EXPECT_EQ(0, clen->value());
 }
 
@@ -137,8 +137,9 @@ TEST(SimpleMessages, TortureMessage1) {
 
   scoped_refptr<Request> request = dyn_cast<Request>(message);
   EXPECT_EQ(Method::INVITE, request->method());
-  EXPECT_EQ(GURL("sip:vivekg@chair-dnrc.example.com;unknownparam"), request->request_uri());
-  EXPECT_EQ(Version(2,0), request->version());
+  EXPECT_EQ(GURL("sip:vivekg@chair-dnrc.example.com;unknownparam"),
+      request->request_uri());
+  EXPECT_EQ(Version(2, 0), request->version());
 
   To *to = request->get<To>();
   EXPECT_EQ("", to->display_name());
@@ -161,7 +162,7 @@ TEST(SimpleMessages, TortureMessage1) {
   EXPECT_EQ(Method::INVITE, cseq->method());
 
   Via *via = request->get<Via>();
-  EXPECT_EQ(Version(2,0), via->front().version());
+  EXPECT_EQ(Version(2, 0), via->front().version());
   EXPECT_EQ(Protocol::UDP, via->front().protocol());
   EXPECT_EQ("192.0.2.2", via->front().sent_by().host());
   EXPECT_EQ(5060, via->front().sent_by().port());
@@ -182,12 +183,15 @@ TEST(SimpleMessages, TortureMessage2) {
     "To: \"BEL:\\\x07 NUL:\\\x00 DEL:\\\x7f\" "
       "<sip:1_unusual.URI~(to-be!sure)&isn't+it$/crazy?,/;;*@example.com>\r\n"
     "From: token1~` token2'+_ token3*%!.- <sip:mundane@example.com>"
-      ";fromParam''~+*_!.-%=\"\xD1\x80\xD0\xB0\xD0\xB1\xD0\xBE\xD1\x82\xD0\xB0\xD1\x8E\xD1\x89\xD0\xB8\xD0\xB9\""
+      ";fromParam''~+*_!.-%="
+      "\"\xD1\x80\xD0\xB0\xD0\xB1\xD0\xBE\xD1\x82\xD0\xB0\xD1\x8E\xD1"
+      "\x89\xD0\xB8\xD0\xB9\""
       ";tag=_token~1'+`*%!-.\r\n"
     "Call-ID: intmeth.word%ZK-!.*_+'@word`~)(><:\\/\"][?}{\r\n"
     "CSeq: 139122385 !interesting-Method0123456789_*+`.%indeed'~\r\n"
     "Max-Forwards: 255\r\n"
-    "extensionHeader-!.%*+_`'~: \xEF\xBB\xBF\xE5\xA4\xA7\xE5\x81\x9C\xE9\x9B\xBB\r\n"
+    "extensionHeader-!.%*+_`'~: \xEF\xBB\xBF\xE5\xA4\xA7\xE5\x81\x9C"
+      "\xE9\x9B\xBB\r\n"
     "Content-Length: 0\r\n"
     "\r\n";
 
@@ -226,8 +230,8 @@ TEST(SimpleMessages, TortureMessage2) {
   has_parameters::const_param_iterator i =
       from->param_find("fromParam''~+*_!.-%");
   ASSERT_NE(i, from->param_end());
-  EXPECT_EQ("\xD1\x80\xD0\xB0\xD0\xB1\xD0\xBE\xD1\x82\xD0\xB0\xD1\x8E\xD1\x89\xD0\xB8\xD0\xB9",
-      i->second);
+  EXPECT_EQ("\xD1\x80\xD0\xB0\xD0\xB1\xD0\xBE\xD1\x82"
+      "\xD0\xB0\xD1\x8E\xD1\x89\xD0\xB8\xD0\xB9", i->second);
   EXPECT_EQ("_token~1'+`*%!-.", from->tag());
 
   CallId *call_id = request->get<CallId>();
@@ -259,7 +263,8 @@ TEST(SimpleMessages, EscapedUris) {
     "INVITE sip:sips%3Auser%40example.com@example.net SIP/2.0\r\n"
     "To: sip:%75se%72@example.com\r\n"
     "From: <sip:I%20have%20spaces@example.net>;tag=938\r\n"
-    "Contact: <sip:cal%6Cer@host5.example.net;%6C%72;n%61me=v%61lue%25%34%31>\r\n"
+    "Contact: "
+      "<sip:cal%6Cer@host5.example.net;%6C%72;n%61me=v%61lue%25%34%31>\r\n"
     "\r\n";
 
   scoped_refptr<Message> message = Message::Parse(message_string);
@@ -322,11 +327,15 @@ TEST(Headers, Contact) {
     { "Contact: <sip:bob@192.0.2.4>", "sip:bob@192.0.2.4", "" },
     { "Contact: sip:bob@192.0.2.4", "sip:bob@192.0.2.4", "" },
     { "Contact: \"\" <sip:bob@192.0.2.4>", "sip:bob@192.0.2.4", "" },
-    { "Contact: \"foo\\\"bar\" <sip:bob@192.0.2.4>", "sip:bob@192.0.2.4", "foo\"bar" },
-    { "Contact: \"\x4f\x60\x59\x7d\" <sip:bob@192.0.2.4>", "sip:bob@192.0.2.4", "\x4f\x60\x59\x7d" },
-    { "Contact: \x4f\x60\x59\x7d <sip:bob@192.0.2.4>", "sip:bob@192.0.2.4", "\x4f\x60\x59\x7d" },
+    { "Contact: \"foo\\\"bar\" <sip:bob@192.0.2.4>",
+          "sip:bob@192.0.2.4", "foo\"bar" },
+    { "Contact: \"\x4f\x60\x59\x7d\" <sip:bob@192.0.2.4>",
+          "sip:bob@192.0.2.4", "\x4f\x60\x59\x7d" },
+    { "Contact: \x4f\x60\x59\x7d <sip:bob@192.0.2.4>",
+          "sip:bob@192.0.2.4", "\x4f\x60\x59\x7d" },
     // No LWS between Display Name
-    { "Contact: caller<sip:caller@example.com>;tag=323", "sip:caller@example.com", "caller" },
+    { "Contact: caller<sip:caller@example.com>;tag=323",
+          "sip:caller@example.com", "caller" },
     // Some torture tests
     { "Contact: < sip:bob@192.0.2.4 >", "sip:bob@192.0.2.4", "" },
   };
@@ -351,15 +360,16 @@ TEST(Headers, Via) {
     const char *hostport;
     const char *branch;
   } cases[] = {
-    { "v: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7", Version(2,0),
-      Protocol::UDP, "bobspc.biloxi.com", 5060, "bobspc.biloxi.com:5060", "z9hG4bKnashds7" },
-    { "v: sip/2.0/udp 127.0.0.1    ; branch=z9hG4bKnashds7", Version(2,0),
+    { "v: SIP/2.0/UDP bobspc.biloxi.com:5060;branch=z9hG4bKnashds7",
+      Version(2, 0), Protocol::UDP, "bobspc.biloxi.com", 5060,
+      "bobspc.biloxi.com:5060", "z9hG4bKnashds7" },
+    { "v: sip/2.0/udp 127.0.0.1    ; branch=z9hG4bKnashds7", Version(2, 0),
       Protocol::UDP, "127.0.0.1", 5060, "127.0.0.1:5060", "z9hG4bKnashds7" },
-    { "v: SiP/2.0/TLS hostname; branch = \"z9hG4bKnashds7\"", Version(2,0),
+    { "v: SiP/2.0/TLS hostname; branch = \"z9hG4bKnashds7\"", Version(2, 0),
       Protocol::TLS, "hostname", 5061, "hostname:5060", "z9hG4bKnashds7" },
-    { "v: SIP/2.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(2,0),
+    { "v: SIP/2.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(2, 0),
       Protocol::TLS, "::1", 5061, "[::1]:5060", "z9hG4bKnashds7" },
-    { "v: SIP/3.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(3,0),
+    { "v: SIP/3.0/TLS [::1]; branch = \"z9hG4bKnashds7\"", Version(3, 0),
       Protocol::TLS, "::1", 5061, "[::1]:5060", "z9hG4bKnashds7" },
   };
 
@@ -375,4 +385,4 @@ TEST(Headers, Via) {
   }
 }
 
-} // namespace sippet
+}  // namespace sippet

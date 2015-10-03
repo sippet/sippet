@@ -3,11 +3,16 @@
 // found in the LICENSE file.
 
 #include "sippet/uri/uri.h"
+
+#include <utility>
+#include <string>
+
 #include "base/basictypes.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-using namespace sippet;
+using sippet::SipURI;
+using sippet::TelURI;
 
 TEST(SipURI, Parser) {
   struct {
@@ -60,8 +65,8 @@ TEST(SipURI, Parser) {
     {"sip:alice@atlanta.com?subject=Project%20X&priority=urgent", true,
      "atlanta.com", -1, 5060, true, "alice", false, "",
      "", "subject=Project%20X&priority=urgent" },
-    {"sip:alice@atlanta.com;param=@route66?subject=Project X&priority=urgent", true,
-     "atlanta.com", -1, 5060, true, "alice", false, "",
+    {"sip:alice@atlanta.com;param=@route66?subject=Project X&priority=urgent",
+     true, "atlanta.com", -1, 5060, true, "alice", false, "",
      ";param=%40route66", "subject=Project%20X&priority=urgent" },
     {"tel:+358-555-1234567;pOstd=pP2;isUb=1411", false },
     {"tel:+358 (555) 1234567;pOstd=pP2;isUb=1411", false },
@@ -102,7 +107,7 @@ TEST(SipURI, Parser) {
 TEST(SipURI, ParameterAndHeaders) {
   SipURI uri("sip:alice@atlanta.com;param=%40route66?subject=Project%20X");
   ASSERT_TRUE(uri.is_valid());
-  
+
   std::pair<bool, std::string> p =
     uri.parameter("param");
   EXPECT_TRUE(p.first);
@@ -115,9 +120,10 @@ TEST(SipURI, ParameterAndHeaders) {
 }
 
 TEST(SipURI, OnlyHeaders) {
-  SipURI uri("sip:alice@atlanta.com?to=sip%3Aalice%40atlanta.com&subject=Project%20X");
+  SipURI uri("sip:alice@atlanta.com?"
+      "to=sip%3Aalice%40atlanta.com&subject=Project%20X");
   ASSERT_TRUE(uri.is_valid());
-  
+
   std::pair<bool, std::string> h1 =
     uri.header("Subject");
   EXPECT_TRUE(h1.first);
@@ -132,7 +138,7 @@ TEST(SipURI, OnlyHeaders) {
 TEST(SipURI, LooseRoutingParameter) {
   SipURI uri("sip:192.168.0.1;lr");
   ASSERT_TRUE(uri.is_valid());
-  
+
   std::pair<bool, std::string> p =
     uri.parameter("lr");
   EXPECT_TRUE(p.first);
@@ -172,14 +178,22 @@ TEST(TelURI, ToSipURI) {
     const char *input;
     const char *output;
   } tests[] = {
-    { "sip:foo.com", "tel:+358-555-1234567", "sip:+358-555-1234567@foo.com;user=phone" },
-    { "sip:foo.com", "tel:+358 (555) 1234567", "sip:+358%20(555)%201234567@foo.com;user=phone" },
-    { "sip:foo.com", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com;user=phone" },
-    { "sip:foo.com", "tel:+358-555-1234567;POSTD=PP22", "sip:+358-555-1234567;POSTD=PP22@foo.com;user=phone" },
-    { "sip:foo.com:5555", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
-    { "sip:foo.com:5555;param=abc", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
-    { "sip:foo.com:5555?header=", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
-    { "sip:foo.com:5555;param=abc?header=", "tel:+358-555-1234567;postd=pp22", "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
+    { "sip:foo.com", "tel:+358-555-1234567",
+      "sip:+358-555-1234567@foo.com;user=phone" },
+    { "sip:foo.com", "tel:+358 (555) 1234567",
+      "sip:+358%20(555)%201234567@foo.com;user=phone" },
+    { "sip:foo.com", "tel:+358-555-1234567;postd=pp22",
+      "sip:+358-555-1234567;postd=pp22@foo.com;user=phone" },
+    { "sip:foo.com", "tel:+358-555-1234567;POSTD=PP22",
+      "sip:+358-555-1234567;POSTD=PP22@foo.com;user=phone" },
+    { "sip:foo.com:5555", "tel:+358-555-1234567;postd=pp22",
+      "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
+    { "sip:foo.com:5555;param=abc", "tel:+358-555-1234567;postd=pp22",
+      "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
+    { "sip:foo.com:5555?header=", "tel:+358-555-1234567;postd=pp22",
+      "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
+    { "sip:foo.com:5555;param=abc?header=", "tel:+358-555-1234567;postd=pp22",
+      "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
   };
 
   for (int i = 0; i < arraysize(tests); ++i) {

@@ -4,6 +4,8 @@
 
 #include "sippet/message/headers/proxy_authenticate.h"
 
+#include <string>
+
 namespace sippet {
 
 ProxyAuthenticate::ProxyAuthenticate()
@@ -34,4 +36,4 @@ void ProxyAuthenticate::print(raw_ostream &os) const {
   Challenge::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

@@ -9,7 +9,6 @@ namespace sippet {
 
 const char* GetReasonPhrase(StatusCode code) {
   switch (code) {
-
 #define SIP_STATUS(label, code, reason) case SIP_ ## label: return reason;
 #include "sippet/message/status_code_list.h"
 #undef SIP_STATUS
@@ -21,4 +20,4 @@ const char* GetReasonPhrase(StatusCode code) {
   return "";
 }
 
-} // End of sippet namespace
+}  // namespace sippet

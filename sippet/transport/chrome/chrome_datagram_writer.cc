@@ -57,9 +57,9 @@ void ChromeDatagramWriter::CloseWithError(int err) {
 void ChromeDatagramWriter::DidWrite(int result) {
   DCHECK(!pending_messages_.empty());
 
-  if (result > 0)
+  if (result > 0) {
     DidConsume();
-  else {
+  } else {
     if (result == 0)
       result = net::ERR_CONNECTION_RESET;
     CloseWithError(result);
@@ -70,7 +70,7 @@ void ChromeDatagramWriter::DidConsume() {
   for (;;) {
     Pop(net::OK);
     if (pending_messages_.empty())
-      break; // done
+      break;  // done
     PendingFrame *pending = pending_messages_.front();
     int result = Drain(pending->buf_.get(), pending->buf_len_);
     if (result < 0) {
@@ -95,12 +95,11 @@ int ChromeDatagramWriter::Drain(net::IOBuffer* buf, int buf_len) {
   if (res > 0) {
     // Pretend the whole buffer has been sent, return OK
     res = net::OK;
-  }
-  else if (res == 0) {
+  } else if (res == 0) {
     // This can happen on ICMP error: emulates a connection reset.
     res = net::ERR_CONNECTION_RESET;
   }
   return res;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

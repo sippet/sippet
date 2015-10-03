@@ -13,7 +13,6 @@
 #include "base/message_loop/message_loop.h"
 #include "sippet/uri/uri.h"
 
-using namespace sippet;
 
 static void PrintUsage() {
   printf("standalone_test_server {--tcp|--udp|--tls} [--port=nnn]\n");
@@ -65,7 +64,8 @@ int main(int argc, char *argv[]) {
 
     base::FilePath certs_dir;
     PathService::Get(base::DIR_SOURCE_ROOT, &certs_dir);
-    certs_dir = certs_dir.Append(FILE_PATH_LITERAL("net/data/ssl/certificates"));
+    certs_dir = certs_dir.Append(
+        FILE_PATH_LITERAL("net/data/ssl/certificates"));
     certs_dir = certs_dir.NormalizePathSeparators();
 
     ssl_options.certificate_file = certs_dir.AppendASCII("ok_cert.pem");

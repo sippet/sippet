@@ -4,6 +4,8 @@
 
 #include "sippet/message/headers/proxy_authorization.h"
 
+#include <string>
+
 namespace sippet {
 
 ProxyAuthorization::ProxyAuthorization()
@@ -34,4 +36,4 @@ void ProxyAuthorization::print(raw_ostream &os) const {
   Credentials::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

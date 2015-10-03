@@ -31,4 +31,4 @@ void Require::print(raw_ostream &os) const {
   has_multiple::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

@@ -32,8 +32,7 @@ int ChromeChannelFactory::CreateChannel(
     *channel = new ChromeStreamChannel(destination, delegate,
         client_socket_factory_, request_context_getter_, ssl_config_);
     return net::OK;
-  }
-  else if (destination.protocol() == sippet::Protocol::UDP) {
+  } else if (destination.protocol() == sippet::Protocol::UDP) {
     *channel = new ChromeDatagramChannel(destination, delegate,
         client_socket_factory_, request_context_getter_);
     return net::OK;
@@ -41,4 +40,4 @@ int ChromeChannelFactory::CreateChannel(
   return net::ERR_NOT_IMPLEMENTED;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

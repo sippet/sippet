@@ -4,10 +4,12 @@
 
 #include "sippet/message/headers/via.h"
 
+#include <string>
+
 namespace sippet {
 
 ViaParam::ViaParam()
-  : version_(2,0) {
+  : version_(2, 0) {
 }
 
 ViaParam::ViaParam(const ViaParam &other)
@@ -17,12 +19,12 @@ ViaParam::ViaParam(const ViaParam &other)
 
 ViaParam::ViaParam(const Protocol &p,
                    const net::HostPortPair &sent_by)
-  : version_(2,0), protocol_(p), sent_by_(sent_by) {
+  : version_(2, 0), protocol_(p), sent_by_(sent_by) {
 }
 
 ViaParam::ViaParam(const std::string &protocol,
                    const net::HostPortPair &sent_by)
-  : version_(2,0), protocol_(protocol), sent_by_(sent_by) {
+  : version_(2, 0), protocol_(protocol), sent_by_(sent_by) {
 }
 
 ViaParam::ViaParam(const Version &version,
@@ -54,7 +56,7 @@ void ViaParam::print(raw_ostream &os) const {
     os << sent_by_.host();
   if (sent_by_.port() != 0)
     os << ":" << sent_by_.port();
-  if (!HasRport()) // RFC 3581
+  if (!HasRport())  // RFC 3581
     os << ";rport";
   has_parameters::print(os);
 }
@@ -84,4 +86,4 @@ void Via::print(raw_ostream &os) const {
   has_multiple::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

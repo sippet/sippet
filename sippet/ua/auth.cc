@@ -3,6 +3,11 @@
 // found in the LICENSE file.
 
 #include "sippet/ua/auth.h"
+
+#include <sstream>
+#include <utility>
+#include <string>
+
 #include "sippet/ua/auth_handler.h"
 #include "sippet/ua/auth_handler_factory.h"
 #include "sippet/message/request.h"
@@ -11,7 +16,6 @@
 #include "sippet/uri/uri.h"
 #include "net/base/net_errors.h"
 
-#include <sstream>
 
 namespace sippet {
 
@@ -72,13 +76,11 @@ Challenge& Auth::GetChallengeFromHeader(Header* header) {
     WwwAuthenticate *www_authenticate =
         dyn_cast<WwwAuthenticate>(header);
     challenge = www_authenticate;
-  }
-  else if (isa<ProxyAuthenticate>(header)) {
+  } else if (isa<ProxyAuthenticate>(header)) {
     ProxyAuthenticate *proxy_authenticate =
         dyn_cast<ProxyAuthenticate>(header);
     challenge = proxy_authenticate;
-  }
-  else {
+  } else {
     static Challenge null;
     NOTREACHED();
     return null;

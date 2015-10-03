@@ -12,13 +12,13 @@
 namespace sippet {
 
 AuthTransaction::AuthTransaction(AuthCache *auth_cache,
-                                 AuthHandlerFactory *auth_handler_factory,
-                                 PasswordHandler::Factory *password_handler_factory,
-                                 const net::BoundNetLog &bound_net_log)
-    : auth_controller_(new AuthController(auth_cache, auth_handler_factory)),
-      next_state_(STATE_NONE),
-      bound_net_log_(bound_net_log),
-      password_handler_factory_(password_handler_factory) {
+    AuthHandlerFactory *auth_handler_factory,
+    PasswordHandler::Factory *password_handler_factory,
+    const net::BoundNetLog &bound_net_log) :
+  auth_controller_(new AuthController(auth_cache, auth_handler_factory)),
+  next_state_(STATE_NONE),
+  bound_net_log_(bound_net_log),
+  password_handler_factory_(password_handler_factory) {
   DCHECK(password_handler_factory_);
 }
 

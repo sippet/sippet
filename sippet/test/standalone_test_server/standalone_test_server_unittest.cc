@@ -9,8 +9,6 @@
 #include "base/threading/thread.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
-#include "testing/gtest/include/gtest/gtest.h"
-
 namespace sippet {
 
 class StandaloneTestServerTest: public testing::Test {
@@ -57,8 +55,10 @@ TEST_F(StandaloneTestServerTest, GetTLSBaseURL) {
   certs_dir.Append(FILE_PATH_LITERAL("net/data/ssl/certificates"));
 
   StandaloneTestServer::SSLOptions ssl_options;
-  ssl_options.certificate_file = certs_dir.AppendASCII("unittest.selfsigned.der");
-  ssl_options.privatekey_file = certs_dir.AppendASCII("unittest.key.bin");
+  ssl_options.certificate_file =
+      certs_dir.AppendASCII("unittest.selfsigned.der");
+  ssl_options.privatekey_file =
+      certs_dir.AppendASCII("unittest.key.bin");
 
   Init(Protocol::TLS, ssl_options);
   EXPECT_EQ(
@@ -66,4 +66,4 @@ TEST_F(StandaloneTestServerTest, GetTLSBaseURL) {
     server_->base_uri().spec());
 }
 
-} // namespace sippet
+}  // namespace sippet

@@ -30,4 +30,4 @@ void Server::print(raw_ostream &os) const {
   single_value::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

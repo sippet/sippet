@@ -51,5 +51,5 @@ bool Settings::is_valid() const {
   return true;
 }
 
-} // namespace phone
-} // namespace sippet
+}  // namespace phone
+}  // namespace sippet

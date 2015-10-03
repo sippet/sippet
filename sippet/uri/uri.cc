@@ -3,13 +3,17 @@
 // found in the LICENSE file.
 
 #include "sippet/uri/uri.h"
+
+#include <sstream>
+#include <utility>
+#include <string>
+#include <algorithm>
+
 #include "sippet/base/stl_extras.h"
 
 #include "base/logging.h"
 #include "base/strings/string_piece.h"
 #include "base/strings/string_util.h"
-
-#include <sstream>
 
 namespace sippet {
 
@@ -91,7 +95,7 @@ std::pair<bool, std::string> LookupKeyValue(
   return std::make_pair(false, "");
 }
 
-} // End of empty namespace
+}  // namespace
 
 // SipURI --------------------------------------------------------------------
 
@@ -165,7 +169,7 @@ const std::string& SipURI::spec() const {
 }
 
 bool SipURI::Equivalent(const SipURI& other) {
-  // TODO
+  // TODO(david)
   return false;
 }
 
@@ -375,7 +379,7 @@ SipURI TelURI::ToSipURI(const SipURI& origin) {
 
   std::string canonical;
   uri::Parsed parsed;
-  
+
   // Reserve enough room in the output for the input, plus some extra so that
   // we have room if we have to escape a few things without reallocating.
   canonical.reserve(origin.spec().size() + 32);
@@ -404,7 +408,7 @@ SipURI TelURI::ToSipURI(const SipURI& origin) {
   output.Append(origin_spec.data() + origin_parsed.host.begin,
     origin_parsed.host.len);
   parsed.host.len = origin_parsed.host.len;
-  
+
   if (origin_parsed.port.len > 0) {
     output.Append(":", 1);
     parsed.port.begin = output.length();
@@ -447,7 +451,7 @@ std::pair<bool, std::string> TelURI::parameter(const std::string &name) const {
       &uri::ExtractParametersKeyValue);
 }
 
-} // End of sippet namespace
+}  // namespace sippet
 
 std::ostream& operator<<(std::ostream& out, const sippet::SipURI& uri) {
   return out << uri.possibly_invalid_spec();

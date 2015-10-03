@@ -35,6 +35,7 @@ class ClientNonInvite : public TimeDeltaProvider {
     // Timer K equal to 5s
     return base::TimeDelta::FromSeconds(5);
   }
+
  private:
   int count_;
 };
@@ -102,6 +103,7 @@ class ServerInvite : public TimeDeltaProvider {
     // Timer I equal to 5s
     return base::TimeDelta::FromSeconds(5);
   }
+
  private:
   int count_;
 };
@@ -131,10 +133,10 @@ class DefaultTimeDeltaFactory : public TimeDeltaFactory {
 static base::LazyInstance<DefaultTimeDeltaFactory>::Leaky
   g_default_time_delta_factory = LAZY_INSTANCE_INITIALIZER;
 
-} // End of empty namespace
+}  // namespace
 
 TimeDeltaFactory *TimeDeltaFactory::GetDefaultFactory() {
   return g_default_time_delta_factory.Pointer();
 }
 
-} // End of sippet namespace
+}  // namespace sippet

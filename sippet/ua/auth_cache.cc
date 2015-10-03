@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "sippet/ua/auth_cache.h"
+
+#include <string>
+
 #include "sippet/uri/uri.h"
 
 namespace sippet {
@@ -24,7 +27,7 @@ void CheckOriginIsValid(const GURL& origin) {
   DCHECK(origin_uri.GetOrigin() == origin_uri);
 }
 
-} // namespace
+}  // namespace
 
 AuthCache::Entry::Entry()
   : scheme_(net::HttpAuth::AUTH_SCHEME_MAX),
@@ -113,5 +116,5 @@ void AuthCache::UpdateAllFrom(const AuthCache& other) {
   }
 }
 
-} // namespace sippet
+}  // namespace sippet
 

@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "sippet/message/request.h"
+
+#include <string>
+
 #include "sippet/base/tags.h"
 #include "net/base/net_errors.h"
 #include "base/guid.h"
@@ -80,7 +83,7 @@ std::string Request::GetDialogId() const {
 scoped_refptr<Request> Request::CloneRequest() const {
   scoped_refptr<Request> result(
     new Request(method(), request_uri(), version()));
-  result->id_ = id_; // A cloned request has the same ID
+  result->id_ = id_;  // A cloned request has the same ID
   for (Message::const_iterator i = begin(), ie = end(); i != ie; ++i) {
     result->push_back(i->Clone().Pass());
   }
@@ -210,4 +213,4 @@ scoped_refptr<Response> Request::CreateResponse(
   return response;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

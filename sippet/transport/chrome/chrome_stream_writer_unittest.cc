@@ -4,12 +4,27 @@
 
 #include "sippet/transport/chrome/chrome_stream_writer.h"
 
+#include <string>
+
 #include "sippet/message/message.h"
 #include "net/socket/socket_test_util.h"
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-using namespace sippet;
+using sippet::Request;
+using sippet::Via;
+using sippet::ViaParam;
+using sippet::Protocol;
+using sippet::MaxForwards;
+using sippet::To;
+using sippet::From;
+using sippet::CallId;
+using sippet::Cseq;
+using sippet::Contact;
+using sippet::Expires;
+using sippet::ContentLength;
+using sippet::ChromeStreamWriter;
+using sippet::Method;
 
 class StreamChannelTest : public testing::Test {
  public:
@@ -27,7 +42,8 @@ class StreamChannelTest : public testing::Test {
       data_->StopAfter(writes_count);
     }
     wrapped_socket_ =
-        new net::DeterministicMockTCPClientSocket(net_log_.net_log(), data_.get());
+        new net::DeterministicMockTCPClientSocket(
+            net_log_.net_log(), data_.get());
     data_->set_delegate(wrapped_socket_->AsWeakPtr());
     writer_.reset(new ChromeStreamWriter(wrapped_socket_));
     wrapped_socket_->Connect(callback_.callback());
@@ -37,8 +53,8 @@ class StreamChannelTest : public testing::Test {
     scoped_refptr<Request> request(
       new Request(Method::REGISTER, GURL("sip:registrar.biloxi.com")));
     scoped_ptr<Via> via(new Via);
-    via->push_back(
-      ViaParam(Protocol::UDP, net::HostPortPair("bobspc.biloxi.com",5060)));
+    via->push_back(ViaParam(Protocol::UDP,
+        net::HostPortPair("bobspc.biloxi.com", 5060)));
     via->back().set_branch("z9hG4bKnashds7");
     request->push_back(via.Pass());
     scoped_ptr<MaxForwards> maxfw(new MaxForwards(70));
@@ -78,7 +94,7 @@ class StreamChannelTest : public testing::Test {
   net::TestCompletionCallback callback_;
 };
 
-static char RegisterRequest[] = 
+static char RegisterRequest[] =
   "REGISTER sip:registrar.biloxi.com SIP/2.0\r\n"
   "v: SIP/2.0/UDP bobspc.biloxi.com:5060;rport;branch=z9hG4bKnashds7\r\n"
   "Max-Forwards: 70\r\n"
@@ -98,7 +114,7 @@ TEST_F(StreamChannelTest, SyncSend) {
   };
 
   Initialize(writes, arraysize(writes));
-  
+
   int rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::OK, rv);
 
@@ -214,7 +230,7 @@ TEST_F(StreamChannelTest, AsyncSendError) {
   // The connection will be reset while sending the message.
   wrapped_socket_->CompleteWrite();
   wrapped_socket_->CompleteWrite();
-  data_->RunFor(2); // there will be a second write attempt
+  data_->RunFor(2);  // there will be a second write attempt
   ASSERT_TRUE(callback_.have_result());
   rv = callback_.WaitForResult();
   ASSERT_EQ(net::ERR_CONNECTION_CLOSED, rv);
@@ -242,7 +258,7 @@ TEST_F(StreamChannelTest, AsyncConnReset) {
   // There will be a result = 0 while sending data.
   wrapped_socket_->CompleteWrite();
   wrapped_socket_->CompleteWrite();
-  data_->RunFor(2); // there will be a second write attempt
+  data_->RunFor(2);  // there will be a second write attempt
   ASSERT_TRUE(callback_.have_result());
   rv = callback_.WaitForResult();
   ASSERT_EQ(net::ERR_CONNECTION_RESET, rv);

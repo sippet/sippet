@@ -4,6 +4,9 @@
 
 #include "sippet/transport/network_layer.h"
 
+#include <string>
+#include <functional>
+
 #include "base/stl_util.h"
 #include "base/strings/string_util.h"
 #include "net/base/net_errors.h"
@@ -135,14 +138,14 @@ int NetworkLayer::Send(const scoped_refptr<Message> &message,
   if (isa<Request>(message)) {
     scoped_refptr<Request> request = dyn_cast<Request>(message);
     return SendRequest(request, callback);
-  }
-  else {
+  } else {
     scoped_refptr<Response> response = dyn_cast<Response>(message);
     return SendResponse(response, callback);
   }
 }
 
-bool NetworkLayer::AddAlias(const EndPoint &destination, const EndPoint &alias) {
+bool NetworkLayer::AddAlias(const EndPoint &destination,
+    const EndPoint &alias) {
   DCHECK(thread_checker_.CalledOnValidThread());
   ChannelContext *channel_context = GetChannelContext(destination);
   if (channel_context)
@@ -151,7 +154,7 @@ bool NetworkLayer::AddAlias(const EndPoint &destination, const EndPoint &alias) 
 }
 
 int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
-                              const net::CompletionCallback& callback) {
+    const net::CompletionCallback& callback) {
   EndPoint destination(GetMessageEndPoint(request));
   if (destination.IsEmpty()) {
     DVLOG(1) << "invalid Request-URI";
@@ -169,8 +172,7 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
   ChannelContext *channel_context = GetChannelContext(destination);
   if (channel_context) {
     return SendRequestUsingChannelContext(request, channel_context, callback);
-  }
-  else {
+  } else {
     if (Method::ACK == request->method()) {
       // ACK requests can't open connections, therefore they will be rejected.
       DVLOG(1) << "ACK requests can't open connections";
@@ -187,7 +189,8 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
   }
 }
 
-int NetworkLayer::SendRequestUsingChannelContext(scoped_refptr<Request> &request,
+int NetworkLayer::SendRequestUsingChannelContext(
+    scoped_refptr<Request> &request,
     ChannelContext *channel_context,
     const net::CompletionCallback& callback) {
   if (!channel_context->channel_->is_connected()) {
@@ -221,8 +224,7 @@ int NetworkLayer::SendResponse(const scoped_refptr<Response> &response,
     GetServerTransaction(response);
   if (server_transaction) {
     server_transaction->Send(response);
-  }
-  else {
+  } else {
     // When there's no server transaction available, tries to send the
     // response directly through an available channel.
     EndPoint destination(GetMessageEndPoint(response));
@@ -257,9 +259,10 @@ void NetworkLayer::ReleaseChannelInternal(ChannelContext *channel_context) {
   // When all references reach zero, start the timer.
   if (channel_context->refs_ == 0) {
     channel_context->timer_.Start(FROM_HERE,
-      base::TimeDelta::FromSeconds(network_settings_.reuse_lifetime()),
-      base::Bind(&NetworkLayer::OnIdleChannelTimedOut, weak_factory_.GetWeakPtr(),
-        channel_context->channel_->destination()));
+        base::TimeDelta::FromSeconds(network_settings_.reuse_lifetime()),
+        base::Bind(&NetworkLayer::OnIdleChannelTimedOut,
+            weak_factory_.GetWeakPtr(),
+            channel_context->channel_->destination()));
   }
 }
 
@@ -334,11 +337,12 @@ int NetworkLayer::CreateChannelContext(
   if (factories_it == factories_.end())
     return net::ERR_ADDRESS_UNREACHABLE;
   int result = factories_it->second->CreateChannel(
-    destination, this, &channel);
+      destination, this, &channel);
   if (result != net::OK)
     return result;
 
-  *created_channel_context = new ChannelContext(channel.get(), request, callback);
+  *created_channel_context =
+      new ChannelContext(channel.get(), request, callback);
   channels_[destination] = *created_channel_context;
   return net::OK;
 }
@@ -389,8 +393,7 @@ void NetworkLayer::StampServerTopmostVia(
     net::HostPortPair hostport(destination.host(), destination.port());
     via->push_back(ViaParam(destination.protocol(), hostport));
     request->push_front(via.Pass());
-  }
-  else {
+  } else {
     Via *via = dyn_cast<Via>(topmost_via);
     if (via->front().sent_by().host() != destination.host())
       via->front().set_received(destination.host());
@@ -441,7 +444,7 @@ std::string NetworkLayer::ClientTransactionId(
   DCHECK(topmost_via != request->end());
   const Via *via = dyn_cast<Via>(topmost_via);
   std::string id;
-  id += "c:"; // Protect against clashes with server transactions
+  id += "c:";   // Protect against clashes with server transactions
   id += via->front().branch();
   id += ":";
   id += request->method().str();
@@ -473,7 +476,7 @@ std::string NetworkLayer::ServerTransactionId(
         && base::StartsWith(via->front().branch(), kMagicCookie,
             base::CompareCase::SENSITIVE)) {
       std::string id;
-      id += "s:"; // Protect against clashes with server transactions
+      id += "s:";  // Protect against clashes with server transactions
       id += via->front().branch();
       id += ":";
       id += via->front().sent_by().ToString();
@@ -534,7 +537,7 @@ std::string NetworkLayer::ServerTransactionId(
         && base::StartsWith(via->front().branch(), kMagicCookie,
             base::CompareCase::SENSITIVE)) {
       std::string id;
-      id += "s:"; // Protect against clashes with server transactions
+      id += "s:";  // Protect against clashes with server transactions
       id += via->front().branch();
       id += ":";
       id += via->front().sent_by().ToString();
@@ -588,8 +591,7 @@ EndPoint NetworkLayer::GetMessageEndPoint(
       return EndPoint::FromGURL(route->front().address());
     else
       return EndPoint::FromGURL(request->request_uri());
-  }
-  else {
+  } else {
     scoped_refptr<Response> response = dyn_cast<Response>(message);
     Message::iterator topmost_via = response->find_first<Via>();
     if (topmost_via == response->end())
@@ -628,8 +630,7 @@ scoped_refptr<ServerTransaction> NetworkLayer::GetServerTransaction(
   if (isa<Request>(message)) {
     scoped_refptr<Request> request = dyn_cast<Request>(message);
     transaction_id = ServerTransactionId(request);
-  }
-  else {
+  } else {
     scoped_refptr<Response> response = dyn_cast<Response>(message);
     transaction_id = ServerTransactionId(response);
   }
@@ -705,8 +706,7 @@ void NetworkLayer::OnIncomingMessage(const scoped_refptr<Channel> &channel,
       server_transaction->HandleIncomingRequest(request);
     else
       HandleIncomingRequest(channel, request);
-  }
-  else { // response
+  } else {  // response
     scoped_refptr<Response> response = dyn_cast<Response>(message);
     scoped_refptr<ClientTransaction> client_transaction =
       GetClientTransaction(response);
@@ -767,8 +767,9 @@ void NetworkLayer::OnSSLCertificateError(const scoped_refptr<Channel> &channel,
     SSLCertErrorTransaction *ssl_cert_error_transaction =
         new SSLCertErrorTransaction(ssl_cert_error_handler_factory_);
     ssl_cert_error_transactions_.push_back(ssl_cert_error_transaction);
-    int rv = ssl_cert_error_transaction->HandleSSLCertError(destination, ssl_info,
-        fatal, base::Bind(&NetworkLayer::OnSSLCertErrorTransactionComplete,
+    int rv = ssl_cert_error_transaction->HandleSSLCertError(
+        destination, ssl_info, fatal,
+        base::Bind(&NetworkLayer::OnSSLCertErrorTransactionComplete,
             base::Unretained(this), ssl_cert_error_transaction));
     if (net::OK == rv) {
       OnSSLCertErrorTransactionComplete(ssl_cert_error_transaction, net::OK);
@@ -827,8 +828,7 @@ void NetworkLayer::OnTransactionTerminated(const std::string &transaction_id) {
     scoped_refptr<ClientTransaction> client_transaction =
       GetClientTransaction(transaction_id);
     DestroyClientTransaction(client_transaction);
-  }
-  else {
+  } else {
     scoped_refptr<ServerTransaction> server_transaction =
       GetServerTransaction(transaction_id);
     DestroyServerTransaction(server_transaction);
@@ -849,4 +849,4 @@ void NetworkLayer::PostOnChannelClosed(const EndPoint &destination) {
           base::Unretained(delegate_), destination));
 }
 
-} // End of sippet namespace
+}  // namespace sippet

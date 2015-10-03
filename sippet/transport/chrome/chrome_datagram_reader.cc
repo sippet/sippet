@@ -41,7 +41,7 @@ int ChromeDatagramReader::DoIORead(
     ReceivedData(result);
     return net::OK;
   } else if (result == net::OK) {
-    return net::ERR_CONNECTION_CLOSED; // ICMP errors
+    return net::ERR_CONNECTION_CLOSED;  // ICMP errors
   } else if (net::ERR_IO_PENDING == result) {
     callback_ = callback;
   }
@@ -91,5 +91,5 @@ void ChromeDatagramReader::DidConsume(int bytes) {
   read_start_ += bytes;
 }
 
-} // namespace sippet
+}  // namespace sippet
 

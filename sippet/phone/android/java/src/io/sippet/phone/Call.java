@@ -6,7 +6,6 @@ package io.sippet.phone;
 
 import org.chromium.base.ThreadUtils;
 import org.chromium.base.annotations.JNINamespace;
-import org.chromium.base.annotations.CalledByNative;
 
 import java.util.Date;
 

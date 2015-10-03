@@ -19,7 +19,8 @@ ChromeStreamReader::ChromeStreamReader(net::Socket* socket_to_wrap)
       read_complete_(base::Bind(&ChromeStreamReader::ReceiveDataComplete,
           base::Unretained(this))) {
   DCHECK(socket_to_wrap);
-  drainable_read_buf_ = new net::DrainableIOBuffer(read_buf_.get(), read_buf_->size());
+  drainable_read_buf_ =
+      new net::DrainableIOBuffer(read_buf_.get(), read_buf_->size());
   read_end_ = drainable_read_buf_->data();
 }
 
@@ -39,7 +40,7 @@ int ChromeStreamReader::DoIORead(
     memmove(read_buf_->data(), drainable_read_buf_->data(), pending_bytes);
 
     // Move the reading buffer after the pending bytes
-    drainable_read_buf_->SetOffset(int(pending_bytes));
+    drainable_read_buf_->SetOffset(static_cast<int>(pending_bytes));
   } else {
     // The next read will take a clean buffer
     drainable_read_buf_->SetOffset(0);
@@ -96,5 +97,4 @@ void ChromeStreamReader::DidConsume(int bytes) {
   drainable_read_buf_->DidConsume(bytes);
 }
 
-} // namespace sippet
-
+}  // namespace sippet

@@ -238,8 +238,7 @@ bool AuthHandlerDigest::ParseChallenge(
       if (base::LowerCaseEqualsASCII(qop_values.value(), "auth")) {
         qop_ = QOP_AUTH;
         break;
-      }
-      else if (base::LowerCaseEqualsASCII(qop_values.value(), "auth-int")) {
+      } else if (base::LowerCaseEqualsASCII(qop_values.value(), "auth-int")) {
         qop_ = QOP_AUTH_INT;
         continue;
       }
@@ -315,7 +314,7 @@ std::string AuthHandlerDigest::AssembleResponseDigest(
   std::string a2 = method + ":" + request_uri;
   if (qop_ == AuthHandlerDigest::QOP_AUTH_INT)
     a2 += ":" + base::MD5String(body);
-  
+
   std::string ha2 = base::MD5String(a2);
 
   std::string nc_part;
@@ -339,8 +338,7 @@ void AuthHandlerDigest::AssembleCredentials(
     ProxyAuthorization *proxy_authorization = new ProxyAuthorization;
     credentials_header.reset(proxy_authorization);
     cred = proxy_authorization;
-  }
-  else {
+  } else {
     Authorization *authorization = new Authorization;
     credentials_header.reset(authorization);
     cred = authorization;
@@ -367,4 +365,4 @@ void AuthHandlerDigest::AssembleCredentials(
   request->push_back(credentials_header.Pass());
 }
 
-} // namespace sippet
+}  // namespace sippet

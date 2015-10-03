@@ -4,6 +4,8 @@
 
 #include "sippet/message/headers/authorization.h"
 
+#include <string>
+
 namespace sippet {
 
 Credentials::Credentials() {
@@ -52,4 +54,4 @@ void Authorization::print(raw_ostream &os) const {
   Credentials::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

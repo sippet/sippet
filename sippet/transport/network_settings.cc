@@ -11,4 +11,4 @@ std::string NetworkSettings::GetDefaultSoftwareName() {
   return BuildUserAgentFromProduct("");
 }
 
-} // End of sippet namespace
+}  // namespace sippet

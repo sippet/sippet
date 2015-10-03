@@ -8,16 +8,16 @@ namespace sippet {
 
 namespace {
 
-void print_double(raw_ostream &os, double v) {
+void print_double(raw_ostream *os, double v) {
   double i;
   double frac = modf(v, &i);
   if (frac == 0)
-    os << static_cast<int>(i);
+    *os << static_cast<int>(i);
   else
-    os << base::DoubleToString(v);
+    *os << base::DoubleToString(v);
 }
 
-} // empty namespace
+}  // namespace
 
 Timestamp::Timestamp()
   : Header(Header::HDR_TIMESTAMP), timestamp_(0), delay_(0) {
@@ -40,11 +40,11 @@ Timestamp *Timestamp::DoClone() const {
 
 void Timestamp::print(raw_ostream &os) const {
   Header::print(os);
-  print_double(os, timestamp_);
+  print_double(&os, timestamp_);
   if (delay_ != 0) {
     os << " ";
-    print_double(os, delay_);
+    print_double(&os, delay_);
   }
 }
 
-} // End of sippet namespace
+}  // namespace sippet

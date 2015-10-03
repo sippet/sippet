@@ -4,6 +4,8 @@
 
 #include "sippet/message/headers/generic.h"
 
+#include <string>
+
 namespace sippet {
 
 Generic::Generic()
@@ -33,4 +35,4 @@ void Generic::print(raw_ostream &os) const {
   os << header_value_;
 }
 
-} // namespace sippet
+}  // namespace sippet

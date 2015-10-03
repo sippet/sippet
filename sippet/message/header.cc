@@ -3,10 +3,11 @@
 // found in the LICENSE file.
 
 #include "sippet/message/header.h"
-#include "sippet/message/headers/generic.h"
 
 #include <cstring>
 #include <algorithm>
+
+#include "sippet/message/headers/generic.h"
 
 #include "base/basictypes.h"
 #include "base/strings/string_util.h"
@@ -31,7 +32,7 @@ namespace {
   bool HeaderNameLess(const char *a, const char *b) {
     return base::strcasecmp(a, b) < 0;
   }
-}
+}  // namespace
 
 Header::Header(Type type)
   : type_(type) {
@@ -79,8 +80,7 @@ AtomTraits<Header::Type>::coerce(const char *str) {
         break;
       }
     }
-  }
-  else {
+  } else {
     // Perform a simple binary search
     const char **first = names;
     const char **last = names + arraysize(names);
@@ -94,4 +94,4 @@ AtomTraits<Header::Type>::coerce(const char *str) {
   return type;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

@@ -60,9 +60,9 @@ void ChromeStreamWriter::CloseWithError(int err) {
 void ChromeStreamWriter::DidWrite(int result) {
   DCHECK(!pending_messages_.empty());
 
-  if (result > 0)
+  if (result > 0) {
     DidConsume(result);
-  else {
+  } else {
     if (result == 0)
       result = net::ERR_CONNECTION_RESET;
     CloseWithError(result);
@@ -76,11 +76,10 @@ void ChromeStreamWriter::DidConsume(int result) {
     if (pending->io_buffer_->BytesRemaining() == 0) {
       Pop(net::OK);
       if (pending_messages_.empty())
-        break; // done
+        break;  // done
       pending = pending_messages_.front();
       continue;
-    }
-    else {
+    } else {
       result = Drain(pending->io_buffer_.get());
       if (result < 0) {
         if (result != net::ERR_IO_PENDING)
@@ -113,8 +112,7 @@ int ChromeStreamWriter::Drain(net::DrainableIOBuffer* buf) {
         break;
       }
       continue;
-    }
-    else if (res == 0) {
+    } else if (res == 0) {
       // Emulates a connection reset.  The net::Socket documentation says
       // the behavior is undefined when writing to a closed socket, but
       // normally a zero is given by the OS to indicate that the connection
@@ -127,4 +125,4 @@ int ChromeStreamWriter::Drain(net::DrainableIOBuffer* buf) {
   return res;
 }
 
-} // End of sippet namespace
+}  // namespace sippet

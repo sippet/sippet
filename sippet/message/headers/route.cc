@@ -4,6 +4,8 @@
 
 #include "sippet/message/headers/route.h"
 
+#include <string>
+
 namespace sippet {
 
 RouteParam::RouteParam() {
@@ -51,4 +53,4 @@ void Route::print(raw_ostream &os) const {
   has_multiple::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

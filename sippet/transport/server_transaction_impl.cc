@@ -4,6 +4,8 @@
 
 #include "sippet/transport/server_transaction_impl.h"
 
+#include <string>
+
 #include "net/base/net_errors.h"
 
 namespace sippet {
@@ -219,7 +221,8 @@ void ServerTransactionImpl::OnTerminated() {
 void ServerTransactionImpl::OnSendProvisionalResponse() {
   DCHECK(MODE_INVITE == mode_ && STATE_PROCEEDING == next_state_);
 
-  scoped_refptr<Response> response = initial_request_->CreateResponse(SIP_TRYING);
+  scoped_refptr<Response> response =
+      initial_request_->CreateResponse(SIP_TRYING);
   int result = channel_->Send(response,
       base::Bind(&ServerTransactionImpl::OnSendProvisionalResponseWriteComplete,
           weak_factory_.GetWeakPtr()));
@@ -285,4 +288,4 @@ void ServerTransactionImpl::Terminate() {
   delegate_->OnTransactionTerminated(id_);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

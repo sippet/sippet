@@ -58,4 +58,4 @@ scoped_refptr<Dialog> DialogStore::GetDialog(const Message *message) {
   return i->second;
 }
 
-} // namespace sippet
+}  // namespace sippet

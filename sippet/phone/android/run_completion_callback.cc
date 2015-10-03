@@ -19,6 +19,6 @@ void RunCompletionCallback(
   }
 }
 
-} // namespace android
-} // namespace phone
-} // namespace sippet
+}  // namespace android
+}  // namespace phone
+}  // namespace sippet

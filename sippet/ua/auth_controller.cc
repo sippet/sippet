@@ -86,7 +86,7 @@ int AuthController::HandleAuthChallenge(
     default:
       auth_origin_ = Auth::GetResponseOrigin(response);
   }
-  
+
   target_ = target;
 
   // Give the existing auth handler first try at the authentication headers.
@@ -175,7 +175,7 @@ int AuthController::HandleAuthChallenge(
     // If we get here and we don't have a handler_, that's because we
     // invalidated it due to not having any viable identities to use with it. Go
     // back and try again.
-  } while(!handler_.get());
+  } while (!handler_.get());
   return net::OK;
 }
 
@@ -349,4 +349,4 @@ void AuthController::OnIOComplete(int result) {
   }
 }
 
-} // namespace sippet
+}  // namespace sippet

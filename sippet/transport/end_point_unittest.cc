@@ -6,7 +6,8 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
-using namespace sippet;
+using sippet::Protocol;
+using sippet::EndPoint;
 
 TEST(EndPoint, FromString) {
   struct {
@@ -30,8 +31,7 @@ TEST(EndPoint, FromString) {
     EndPoint parsed = EndPoint::FromString(cases[i].input);
     if (!cases[i].valid) {
       EXPECT_TRUE(parsed.IsEmpty());
-    }
-    else {
+    } else {
       EXPECT_EQ(cases[i].host, parsed.host());
       EXPECT_EQ(cases[i].port, parsed.port());
       EXPECT_EQ(cases[i].protocol, parsed.protocol());

@@ -4,6 +4,8 @@
 
 #include "sippet/ua/ua_user_agent.h"
 
+#include <string>
+
 #include "base/md5.h"
 #include "base/build_time.h"
 #include "base/stl_util.h"
@@ -65,20 +67,20 @@ scoped_refptr<Request> UserAgent::CreateRequest(
     new Request(method, request_uri));
   scoped_ptr<To> to(new To(to_uri));
   request->push_back(to.Pass());
-  
+
   // Add the From header and a local tag (48-bit random string)
   scoped_ptr<From> from(new From(from_uri));
   from->set_tag(CreateTag());
   request->push_back(from.Pass());
-  
+
   // The Call-ID is formed by a 120-bit random string
   scoped_ptr<CallId> call_id(new CallId(CreateCallId()));
   request->push_back(call_id.Pass());
-  
+
   // Cseq always contain the request method and a new (random) local sequence
   if (local_sequence == 0) {
     local_sequence = Create16BitRandomInteger();
-    if (local_sequence == 0) // Avoiding zero for a question of aesthetics
+    if (local_sequence == 0)  // Avoiding zero for a question of aesthetics
       local_sequence = 1;
   }
 
@@ -342,5 +344,5 @@ void UserAgent::RunUserTransportErrorCallback(
   }
 }
 
-} // End of ua namespace
-} // End of sippet namespace
+}  // namespace ua
+}  // namespace sippet

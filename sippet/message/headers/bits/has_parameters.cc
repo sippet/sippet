@@ -21,4 +21,4 @@ has_parameters &has_parameters::operator=(const has_parameters &other) {
   return *this;
 }
 
-} // namespace sippet
+}  // namespace sippet

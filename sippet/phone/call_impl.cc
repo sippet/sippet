@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/phone/phone.h"
 #include "sippet/phone/call_impl.h"
+
+#include <utility>
+#include <string>
+
+#include "sippet/phone/phone.h"
 #include "sippet/phone/phone_impl.h"
 
 #include "base/callback.h"
@@ -16,12 +20,15 @@ namespace {
 
 class ProxyCreateSessionDescriptionObserver :
   public webrtc::CreateSessionDescriptionObserver {
-public:
+ public:
+  typedef base::Callback<void(webrtc::SessionDescriptionInterface*)>
+      SuccessCallback;
+  typedef base::Callback<void(const std::string&)>
+      FailureCallback;
+
   static ProxyCreateSessionDescriptionObserver* Create(
-      const base::Callback<void(webrtc::SessionDescriptionInterface*)> &on_success =
-          base::Callback<void(webrtc::SessionDescriptionInterface*)>(),
-      const base::Callback<void(const std::string&)> &on_failure =
-          base::Callback<void(const std::string&)>()) {
+      const SuccessCallback& on_success = SuccessCallback(),
+      const FailureCallback& on_failure = FailureCallback()) {
     return
       new rtc::RefCountedObject<ProxyCreateSessionDescriptionObserver>(
           on_success, on_failure);
@@ -35,48 +42,50 @@ public:
     on_failure_.Run(error);
   }
 
-protected:
+ protected:
   ProxyCreateSessionDescriptionObserver(
-      const base::Callback<void(webrtc::SessionDescriptionInterface*)> &on_success,
-      const base::Callback<void(const std::string&)> &on_failure) :
+      const SuccessCallback& on_success,
+      const FailureCallback& on_failure) :
           on_success_(on_success), on_failure_(on_failure) {
   }
   ~ProxyCreateSessionDescriptionObserver() override {}
 
-  base::Callback<void(webrtc::SessionDescriptionInterface*)> on_success_;
-  base::Callback<void(const std::string&)> on_failure_;
+  SuccessCallback on_success_;
+  FailureCallback on_failure_;
 };
 
 class ProxySetSessionDescriptionObserver :
   public webrtc::SetSessionDescriptionObserver {
  public:
+  typedef base::Callback<void()> SuccessCallback;
+  typedef base::Callback<void(const std::string&)> FailureCallback;
+
   static ProxySetSessionDescriptionObserver* Create(
-        const base::Callback<void()> &on_success = base::Callback<void()>(),
-        const base::Callback<void(const std::string&)> &on_failure =
-            base::Callback<void(const std::string&)>()) {
+        const SuccessCallback& on_success = SuccessCallback(),
+        const FailureCallback& on_failure = FailureCallback()) {
     return
       new rtc::RefCountedObject<ProxySetSessionDescriptionObserver>(
             on_success, on_failure);
   }
-  
+
   void OnSuccess() override {
     on_success_.Run();
   }
-  
+
   void OnFailure(const std::string& error) override {
     on_failure_.Run(error);
   }
 
-protected:
+ protected:
   ProxySetSessionDescriptionObserver(
-        const base::Callback<void()> &on_success,
-        const base::Callback<void(const std::string&)> &on_failure) :
+        const SuccessCallback& on_success,
+        const FailureCallback& on_failure) :
             on_success_(on_success), on_failure_(on_failure) {
   }
   ~ProxySetSessionDescriptionObserver() override {}
 
-  base::Callback<void()> on_success_;
-  base::Callback<void(const std::string&)> on_failure_;
+  SuccessCallback on_success_;
+  FailureCallback on_failure_;
 };
 
 void RunIfNotOk(const net::CompletionCallback& c, int rv) {
@@ -85,7 +94,7 @@ void RunIfNotOk(const net::CompletionCallback& c, int rv) {
   }
 }
 
-} // empty namespace
+}  // namespace
 
 namespace sippet {
 namespace phone {
@@ -240,7 +249,7 @@ void CallImpl::DeletePeerConnection() {
 void CallImpl::OnMakeCall(
     webrtc::PeerConnectionFactoryInterface *peer_connection_factory) {
   InitializePeerConnection(peer_connection_factory);
-  // TODO: handle errors
+  // TODO(david): handle errors
 
   CreateOffer();
 
@@ -249,10 +258,12 @@ void CallImpl::OnMakeCall(
 
 void CallImpl::CreateOffer() {
   peer_connection_->CreateOffer(
-    ProxyCreateSessionDescriptionObserver::Create(
-      base::Bind(&CallImpl::OnCreateSessionSuccess, base::Unretained(this)),
-      base::Bind(&CallImpl::OnCreateSessionFailure, base::Unretained(this))
-    ), nullptr);
+      ProxyCreateSessionDescriptionObserver::Create(
+          base::Bind(&CallImpl::OnCreateSessionSuccess,
+              base::Unretained(this)),
+          base::Bind(&CallImpl::OnCreateSessionFailure,
+              base::Unretained(this))),
+      nullptr);
 }
 
 void CallImpl::OnIceComplete() {
@@ -284,32 +295,34 @@ void CallImpl::OnIceComplete() {
     base::Unretained(this), offer));
 }
 
-void CallImpl::OnCreateSessionSuccess(webrtc::SessionDescriptionInterface* desc) {
+void CallImpl::OnCreateSessionSuccess(
+    webrtc::SessionDescriptionInterface* desc) {
   peer_connection_->SetLocalDescription(
-    ProxySetSessionDescriptionObserver::Create(
-      base::Bind(&CallImpl::OnSetLocalSessionSuccess, base::Unretained(this)),
-      base::Bind(&CallImpl::OnSetLocalSessionFailure, base::Unretained(this))
-    ), desc);
+      ProxySetSessionDescriptionObserver::Create(
+          base::Bind(&CallImpl::OnSetLocalSessionSuccess,
+              base::Unretained(this)),
+          base::Bind(&CallImpl::OnSetLocalSessionFailure,
+              base::Unretained(this))), desc);
 }
 
 void CallImpl::OnCreateSessionFailure(const std::string& error) {
-  // TODO
+  // TODO(david)
 }
 
 void CallImpl::OnSetLocalSessionSuccess() {
-  // TODO
+  // TODO(david)
 }
 
 void CallImpl::OnSetLocalSessionFailure(const std::string& error) {
-  // TODO
+  // TODO(david)
 }
 
 void CallImpl::OnSetRemoteSessionSuccess() {
-  // TODO
+  // TODO(david)
 }
 
 void CallImpl::OnSetRemoteSessionFailure(const std::string& error) {
-  // TODO
+  // TODO(david)
 }
 
 void CallImpl::OnCreateOfferCompleted(const std::string& offer) {
@@ -355,10 +368,11 @@ void CallImpl::HandleSessionDescriptionAnswer(
           << "SdpParseError was: " << error.description;
     } else {
       peer_connection_->SetRemoteDescription(
-        ProxySetSessionDescriptionObserver::Create(
-          base::Bind(&CallImpl::OnSetRemoteSessionSuccess, base::Unretained(this)),
-          base::Bind(&CallImpl::OnSetRemoteSessionFailure, base::Unretained(this))
-        ), desc);
+          ProxySetSessionDescriptionObserver::Create(
+              base::Bind(&CallImpl::OnSetRemoteSessionSuccess,
+                  base::Unretained(this)),
+              base::Bind(&CallImpl::OnSetRemoteSessionFailure,
+                  base::Unretained(this))), desc);
     }
   }
 }
@@ -384,8 +398,7 @@ void CallImpl::SendCancel() {
   if (net::OK != rv) {
     LOG(ERROR) << "Unexpected error while creating CANCEL: "
       << net::ErrorToString(rv);
-  }
-  else {
+  } else {
     int rv = phone_->user_agent()->Send(cancel,
         base::Bind(&RunIfNotOk, on_hangup_completed_));
     if (net::OK != rv && net::ERR_IO_PENDING != rv) {
@@ -414,15 +427,15 @@ void CallImpl::HandleCallingOrRingingResponse(
       const scoped_refptr<Dialog> &dialog) {
   DCHECK(CALL_STATE_RINGING == state_ || CALL_STATE_CALLING == state_);
 
-  CallState next_state; // Determine the next state
+  CallState next_state;  // Determine the next state
   int response_code = incoming_response->response_code();
-  if (response_code / 100 == 1) { // 1xx
-    if (response_code / 10 == 18) { // 18x
+  if (response_code / 100 == 1) {  // 1xx
+    if (response_code / 10 == 18) {  // 18x
       next_state = CALL_STATE_RINGING;
     } else {
-      next_state = state_; // Keep on same state
+      next_state = state_;  // Keep on same state
     }
-  } else if (response_code / 100 == 2) { // 2xx
+  } else if (response_code / 100 == 2) {  // 2xx
     next_state = CALL_STATE_ESTABLISHED;
   } else {
     next_state = CALL_STATE_TERMINATED;
@@ -461,14 +474,14 @@ void CallImpl::HandleHungupResponse(
   DCHECK(CALL_STATE_TERMINATED == state_);
   int response_code = incoming_response->response_code();
   if (Method::INVITE == incoming_response->refer_to()->method()) {
-    if (response_code / 100 == 2) { // 2xx
+    if (response_code / 100 == 2) {  // 2xx
       // In that case, we sent CANCEL, but it didn't get through,
       // so we have to send a BYE (it's a normal race condition).
       SendBye();
     }
   } else if (Method::CANCEL == incoming_response->refer_to()->method()
              || Method::BYE == incoming_response->refer_to()->method()) {
-    if (response_code / 100 == 2) { // 2xx for CANCEL or BYE
+    if (response_code / 100 == 2) {  // 2xx for CANCEL or BYE
       // The CANCEL or BYE request concluded
       // successfully, time to release the call.
       phone_->RemoveCall(this);
@@ -483,11 +496,11 @@ void CallImpl::OnDestroy() {
 }
 
 void CallImpl::OnPickUp() {
-  // TODO
+  // TODO(david)
 }
 
 void CallImpl::OnReject() {
-  // TODO
+  // TODO(david)
 }
 
 void CallImpl::OnHangup() {
@@ -528,7 +541,7 @@ void CallImpl::OnIncomingRequest(
     phone_->user_agent()->Send(response,
         net::CompletionCallback());
     state_ = CALL_STATE_TERMINATED;
-    // TODO: get the BYE reason
+    // TODO(david): get the BYE reason
     on_completed_.Run(ERR_HANGUP_NOT_DEFINED);
     phone_->RemoveCall(this);
   }
@@ -537,7 +550,7 @@ void CallImpl::OnIncomingRequest(
 void CallImpl::OnIncomingResponse(
     const scoped_refptr<Response> &incoming_response,
     const scoped_refptr<Dialog> &dialog) {
-  dialog_ = dialog; // Save dialog
+  dialog_ = dialog;  // Save dialog
   if (CALL_STATE_CALLING == state_
       || CALL_STATE_RINGING == state_) {
     HandleCallingOrRingingResponse(incoming_response, dialog);
@@ -568,5 +581,5 @@ void CallImpl::OnTransportError(
   }
 }
 
-} // namespace sippet
-} // namespace phone
+}  // namespace phone
+}  // namespace sippet

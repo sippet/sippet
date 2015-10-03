@@ -38,9 +38,9 @@ static void PrintUsage() {
 
 class Conductor :
     public Phone::Delegate {
-public:
+ public:
   Conductor(const Settings& settings, const std::string& destination,
-    base::MessageLoop& message_loop) :
+    base::MessageLoop* message_loop) :
     settings_(settings), destination_(destination),
     phone_(Phone::Create(this)), message_loop_(message_loop) {
   }
@@ -59,11 +59,11 @@ public:
     return true;
   }
 
-private:
+ private:
   Settings settings_;
   std::string destination_;
   scoped_refptr<Phone> phone_;
-  base::MessageLoop &message_loop_;
+  base::MessageLoop* message_loop_;
   scoped_refptr<Call> call_;
   base::OneShotTimer<Conductor> call_timeout_;
   base::ThreadChecker thread_checker_;
@@ -71,14 +71,14 @@ private:
   void OnNetworkError(int error_code) {
     LOG(ERROR) << "Network error: " << error_code
       << ", " << net::ErrorToString(error_code);
-    message_loop_.PostTask(FROM_HERE,
+    message_loop_->PostTask(FROM_HERE,
         base::Bind(&Conductor::OnAbort,
             base::Unretained(this)));
   }
 
   void OnRegisterCompleted(int error) {
     if (sippet::OK == error) {
-      message_loop_.PostTask(FROM_HERE,
+      message_loop_->PostTask(FROM_HERE,
           base::Bind(&Conductor::OnIOComplete,
               base::Unretained(this), net::OK));
     } else {
@@ -96,7 +96,7 @@ private:
 
   void OnIncomingCall(const scoped_refptr<Call>& call) override {
     LOG(ERROR) << "Unexpected incoming call";
-    message_loop_.PostTask(FROM_HERE,
+    message_loop_->PostTask(FROM_HERE,
         base::Bind(&Conductor::OnAbort,
             base::Unretained(this)));
   }
@@ -120,7 +120,7 @@ private:
   void OnError(int error) {
     LOG(ERROR) << "Error: "
                << sippet::ErrorToShortString(error);
-    message_loop_.PostTask(FROM_HERE,
+    message_loop_->PostTask(FROM_HERE,
         base::Bind(&Conductor::OnIOComplete,
             base::Unretained(this), net::ERR_UNEXPECTED));
   }
@@ -135,7 +135,7 @@ private:
 
   void OnHungUp() {
     LOG(ERROR) << "Hung up call";
-    message_loop_.PostTask(FROM_HERE,
+    message_loop_->PostTask(FROM_HERE,
         base::Bind(&Conductor::OnIOComplete,
             base::Unretained(this), net::ERR_UNEXPECTED));
   }
@@ -255,9 +255,9 @@ private:
   }
 
   int DoCallTimerComplete(int result) {
-    if (result == net::OK)
+    if (result == net::OK) {
       next_state_ = STATE_HANGUP;
-    else {
+    } else {
       next_state_ = STATE_LOGOUT;
       call_timeout_.Stop();
     }
@@ -344,8 +344,7 @@ int main(int argc, char **argv) {
   std::string destination;
   if (command_line->HasSwitch("dial")) {
     destination = command_line->GetSwitchValueASCII("dial");
-  }
-  else {
+  } else {
     PrintUsage();
     return -1;
   }
@@ -381,7 +380,7 @@ int main(int argc, char **argv) {
   }
   if (uri.empty()) {
     uri = base::StringPrintf(args[0].registrar_uri_,
-      username.c_str(), server.c_str()); // Defaults to UDP
+      username.c_str(), server.c_str());  // Defaults to UDP
   }
 
   base::MessageLoopForIO message_loop;

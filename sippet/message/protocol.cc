@@ -17,13 +17,13 @@ namespace {
   #method,
   #include "sippet/message/protocol_list.h"
 #undef SIP_PROTOCOL
-    "", // for Unknown
+    "",  // for Unknown
   };
 
   bool string_less(const char *a, const char *b) {
     return base::strcasecmp(a, b) < 0;
   }
-}
+}  // namespace
 
 const char *AtomTraits<details::Protocol>::string_of(type t) {
   return names[static_cast<int>(t)];
@@ -33,7 +33,7 @@ AtomTraits<details::Protocol>::type
 AtomTraits<details::Protocol>::coerce(const char *str) {
   details::Protocol::Type type = details::Protocol::Unknown;
   const char **first = names;
-  const char **last = names + arraysize(names) - 1; // don't include the last
+  const char **last = names + arraysize(names) - 1;  // don't include the last
   const char **found = std::lower_bound(first, last, str, string_less);
   if (found != last
       && base::strcasecmp(*found, str) == 0) {
@@ -42,4 +42,4 @@ AtomTraits<details::Protocol>::coerce(const char *str) {
   return type;
 }
 
-} // End of empty namespace
+}  // namespace sippet

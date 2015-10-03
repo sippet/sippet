@@ -4,6 +4,8 @@
 
 #include "sippet/message/response.h"
 
+#include <string>
+
 namespace sippet {
 
 Response::Response(int response_code,
@@ -17,7 +19,7 @@ Response::Response(int response_code,
 
 Response::~Response() {
 }
- 
+
 void Response::print(raw_ostream &os) const {
   os << "SIP/" << version_.major_value()
      << "." << version_.minor_value()
@@ -41,4 +43,4 @@ std::string Response::GetDialogId() const {
   return oss.str();
 }
 
-} // End of sippet namespace
+}  // namespace sippet

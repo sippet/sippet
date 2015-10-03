@@ -26,4 +26,4 @@ void AuthenticationInfo::print(raw_ostream &os) const {
   has_auth_params::print(os);
 }
 
-} // End of sippet namespace
+}  // namespace sippet

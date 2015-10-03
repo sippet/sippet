@@ -35,5 +35,5 @@ std::string CreateRandomString(int bits) {
   return random_string;
 }
 
-} // End of sippet namespace
+}  // namespace sippet
 
