@@ -13,7 +13,6 @@
 #include "base/message_loop/message_loop.h"
 #include "sippet/uri/uri.h"
 
-
 using sippet::Protocol;
 using sippet::StandaloneTestServer;
 
