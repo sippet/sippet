@@ -81,6 +81,7 @@
 /third_party/drmemory
 /third_party/expat
 /third_party/gflags/src/
+/third_party/g729
 /third_party/harfbuzz-ng
 /third_party/icu
 /third_party/instrumented_libraries
