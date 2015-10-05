@@ -7,9 +7,37 @@
 
 #include <string>
 
-#include "sippet/phone/completion_status_list.h"
-
 namespace sippet {
+
+// Completion status: the several possible status codes returned on
+// asynchronous completion callbacks.
+enum CompletionStatus {
+  // No error.
+  OK = 0,
+
+  // Network-specific errors
+  #define NET_ERROR(label, value) ERR_ ## label = value,
+  #include "net/base/net_error_list.h"
+  #undef NET_ERROR
+
+  // SIP-specific errors
+  #define NO_SUCCESS // do not include successful cases
+  #define SIP_STATUS(label, code, reason) ERR_SIP_ ## label = -(1000 + code),
+  #include "sippet/message/status_code_list.h"
+  #undef SIP_STATUS
+  #undef NO_SUCCESS
+
+  // Q.850-specific errors
+  #define Q850_CAUSE(label, code) ERR_HANGUP_ ## label = -(1700 + code),
+  #include "sippet/phone/q850.h"
+  #undef Q850_CAUSE
+
+  // The value of the first SIP-specific error code.
+  ERR_SIP_BEGIN = ERR_SIP_TRYING,
+
+  // The value of the first Q.850-specific error code.
+  ERR_HANGUP_BEGIN = ERR_HANGUP_NOT_DEFINED,
+};
 
 // Returns a textual representation of the error code for logging purposes.
 std::string ErrorToString(int error);

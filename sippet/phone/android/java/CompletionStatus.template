@@ -1,0 +1,30 @@
+// Copyright 2015 The Sippet Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+package io.sippet.phone;
+
+public class CompletionStatus {
+  // No error.
+  public static final int OK = 0,
+
+  // Network-specific errors
+#define NET_ERROR(label, value) \
+  public static final int ERR_ ## label = value,
+#include "net/base/net_error_list.h"
+#undef NET_ERROR
+
+  // SIP-specific errors
+#define NO_SUCCESS // do not include successful cases
+#define SIP_STATUS(label, code, reason) \
+  public static final int ERR_SIP_ ## label = -(1000 + code),
+#include "sippet/message/status_code_list.h"
+#undef SIP_STATUS
+#undef NO_SUCCESS
+
+  // Q.850-specific errors
+#define Q850_CAUSE(label, code) \
+  public static final int ERR_HANGUP_ ## label = -(1700 + code),
+#include "sippet/phone/q850.h"
+#undef Q850_CAUSE
+}

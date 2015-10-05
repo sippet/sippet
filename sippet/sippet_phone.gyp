@@ -51,41 +51,30 @@
         {
           'target_name': 'sippet_phone_java_completion_status',
           'type': 'none',
+          'sources': [
+            'phone/android/java/CompletionStatus.template',
+          ],
           'variables': {
-            'source_file': 'phone/completion_status_list.h',
+            'package_name': 'io/sippet/phone',
+            'template_deps': [
+              '../net/base/net_error_list.h',
+              'message/status_code_list.h',
+              'phone/q850.h',
+            ],
           },
-          'includes': [ '../sippet/build/android/java_cpp_enum.gypi' ],
+          'includes': [ '../build/android/java_cpp_template.gypi' ],
         },
         {
           'target_name': 'sippet_phone_jni',
           'type': 'shared_library',
           'sources': [
-            'phone/android/java_phone.h',
-            'phone/android/java_phone.cc',
-            'phone/android/java_call.h',
-            'phone/android/java_call.cc',
-            'phone/android/java_settings.h',
-            'phone/android/java_settings.cc',
-            'phone/android/jni_onload.h',
-            'phone/android/jni_onload.cc',
-            'phone/android/jni_registrar.h',
-            'phone/android/jni_registrar.cc',
             'phone/android/entry_point.cc',
-            'phone/android/run_completion_callback.h',
-            'phone/android/run_completion_callback.cc',
           ],
           'dependencies': [
             'sippet_phone',
-            'sippet_phone_jni_headers',
-            '../base/base.gyp:base',
-            '../base/base.gyp:base_static',
-            '../net/net.gyp:net',
-            '../net/net.gyp:net_resources',
-            '../third_party/webrtc/webrtc.gyp:webrtc',
           ],
           'include_dirs': [
             '<(DEPTH)',
-            '<(SHARED_INTERMEDIATE_DIR)'
           ],
         },
         {
@@ -118,7 +107,8 @@
         '<(DEPTH)/jingle/jingle.gyp:jingle_glue',
         '<(DEPTH)/third_party/libjingle/libjingle.gyp:libjingle_webrtc',
         '<(DEPTH)/third_party/libjingle/libjingle.gyp:libpeerconnection',
-        '<(DEPTH)/third_party/re2/re2.gyp:re2'
+        '<(DEPTH)/third_party/re2/re2.gyp:re2',
+        '<(DEPTH)/third_party/webrtc/webrtc.gyp:webrtc',
       ],
       'include_dirs': [
         '<(DEPTH)/third_party/webrtc/overrides',
@@ -150,6 +140,25 @@
         'phone/completion_status.cc',
         'phone/completion_status_list.h',
         'phone/q850.h',
+        'phone/android/java_phone.h',
+        'phone/android/java_phone.cc',
+        'phone/android/java_call.h',
+        'phone/android/java_call.cc',
+        'phone/android/java_settings.h',
+        'phone/android/java_settings.cc',
+        'phone/android/jni_onload.h',
+        'phone/android/jni_onload.cc',
+        'phone/android/jni_registrar.h',
+        'phone/android/jni_registrar.cc',
+        'phone/android/run_completion_callback.h',
+        'phone/android/run_completion_callback.cc',
+      ],
+      'conditions': [
+        ['OS == "android"', {
+          'dependencies': [
+            'sippet_phone_jni_headers',
+          ],
+        }],
       ],
     },  # target sippet_phone
     {
