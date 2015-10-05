@@ -78,10 +78,24 @@
           ],
         },
         {
+          'target_name': 'sippet_phone_java',
+          'type': 'none',
+          'variables': {
+            'java_in_dir': '../sippet/phone/android/java',
+          },
+          'dependencies': [
+            '../base/base.gyp:base_java',
+            '../third_party/webrtc/modules/modules_java_chromium.gyp:audio_device_module_java',
+            'sippet_phone_java_phone_state',
+            'sippet_phone_java_call_state',
+            'sippet_phone_java_call_direction',
+          ],
+          'includes': [ '../build/java.gypi' ],
+        },
+        {
           'target_name': 'sippet_phone_aar',
           'type': 'none',
           'dependencies': [
-            'sippet_phone_jni',
             '../base/base.gyp:base_java',
             '../third_party/webrtc/modules/modules_java_chromium.gyp:audio_device_module_java',
             'sippet_phone_java_phone_state',
@@ -157,6 +171,7 @@
         ['OS == "android"', {
           'dependencies': [
             'sippet_phone_jni_headers',
+            'sippet_phone_java',
           ],
         }],
       ],
