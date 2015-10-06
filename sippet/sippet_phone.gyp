@@ -160,6 +160,8 @@
         'phone/android/java_call.cc',
         'phone/android/java_settings.h',
         'phone/android/java_settings.cc',
+        'phone/android/jni_helpers.h',
+        'phone/android/jni_helpers.cc',
         'phone/android/jni_onload.h',
         'phone/android/jni_onload.cc',
         'phone/android/jni_registrar.h',

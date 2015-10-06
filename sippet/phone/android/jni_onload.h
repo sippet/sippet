@@ -20,9 +20,6 @@ bool OnJNIOnLoadInit(std::vector<base::android::InitCallback> callback);
 // Initialize the application context
 void InitApplicationContext(JNIEnv* env, jobject context);
 
-// Recover the JavaVM instance passed to JNI_OnLoad
-JavaVM* GetJVM();
-
 }  // namespace android
 }  // namespace sippet
 

@@ -22,6 +22,7 @@
 #include "url/url_util.h"
 #include "webrtc/modules/utility/interface/jvm_android.h"
 #include "sippet/phone/android/jni_registrar.h"
+#include "sippet/phone/android/jni_helpers.h"
 #include "sippet/phone/phone.h"
 
 namespace sippet {
