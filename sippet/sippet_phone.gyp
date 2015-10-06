@@ -175,6 +175,10 @@
             'sippet_phone_jni_headers',
             'sippet_phone_java',
           ],
+        }, {
+          'sources/': [
+            ['exclude', '^phone/android/'],
+          ],
         }],
       ],
     },  # target sippet_phone
