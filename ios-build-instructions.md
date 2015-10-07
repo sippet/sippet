@@ -1,6 +1,6 @@
 ---
 layout: page
-title: iOS build instructions
+title: Build for iOS
 description: Build the Sippet library for iOS
 ---
 

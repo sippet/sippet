@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Android build instructions
+title: Build for Android
 description: Build the Sippet library for Android
 ---
 
