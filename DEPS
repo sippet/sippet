@@ -7,7 +7,7 @@ vars = {
   'extra_gyp_flag': '-Dextra_gyp_flag=0',
   'sippet_git': 'https://github.com/sippet',
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': '877b62cc157d4a07d20edddc9f5adf2fe0d4e2ae',
+  'chromium_revision': '12bfc3360892ec53cd00fc239a47e5298beb063b',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling WebRTC
   # and whatever else without interference from each other.

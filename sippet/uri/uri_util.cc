@@ -36,8 +36,8 @@ inline bool DoCompareSchemeComponent(const CHAR* spec,
   if (!component.is_nonempty())
     return compare_to[0] == 0;  // When component is empty, match empty scheme.
   return base::LowerCaseEqualsASCII(
-      typename CharToStringPiece<CHAR>::Piece(
-          &spec[component.begin], component.len),
+      &spec[component.begin],
+      &spec[component.begin + component.len],
       compare_to);
 }
 

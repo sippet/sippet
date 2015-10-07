@@ -42,8 +42,8 @@ bool SchemeIs(const std::string& spec,
               const uri::Parsed& parsed,
               const char* lower_ascii_scheme) {
   return base::LowerCaseEqualsASCII(
-      base::StringPiece(spec.data() + parsed.scheme.begin,
-                        parsed.scheme.len),
+      spec.data() + parsed.scheme.begin,
+      spec.data() + parsed.scheme.begin + parsed.scheme.len,
       lower_ascii_scheme);
 }
 
@@ -249,9 +249,10 @@ std::string SipURI::HostNoBrackets() const {
   return uri_details::ComponentString(spec_, h);
 }
 
-bool SipURI::DomainIs(base::StringPiece lower_ascii_domain) const {
+bool SipURI::DomainIs(const char* lower_ascii_domain,
+                      int domain_len) const {
   // Return false if this URL is not valid or domain is empty.
-  if (!is_valid_ || lower_ascii_domain.empty())
+  if (!is_valid_ || !domain_len)
     return false;
 
   if (!parsed_.host.is_nonempty())
@@ -261,7 +262,6 @@ bool SipURI::DomainIs(base::StringPiece lower_ascii_domain) const {
   // then we ignore the dot in the host name.
   const char* host_last_pos = spec_.data() + parsed_.host.end() - 1;
   int host_len = parsed_.host.len;
-  int domain_len = lower_ascii_domain.length();
   if ('.' == *host_last_pos && '.' != lower_ascii_domain[domain_len - 1]) {
     host_last_pos--;
     host_len--;
@@ -276,7 +276,7 @@ bool SipURI::DomainIs(base::StringPiece lower_ascii_domain) const {
                                host_len - domain_len;
 
   if (!base::LowerCaseEqualsASCII(
-           base::StringPiece(host_first_pos, domain_len), lower_ascii_domain))
+           host_first_pos, host_first_pos + domain_len, lower_ascii_domain))
     return false;
 
   // Make sure there aren't extra characters in host before the compared part;

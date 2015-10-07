@@ -16,6 +16,8 @@
 #include "net/http/http_util.h"
 #include "net/base/net_util.h"
 
+using base::LowerCaseEqualsASCII;
+
 namespace sippet {
 
 namespace {
@@ -114,7 +116,7 @@ bool IsStatusLine(
       std::string::const_iterator line_end) {
   return ((line_end - line_begin > 4)
       && base::LowerCaseEqualsASCII(
-             base::StringPiece(line_begin, line_begin + 4), "sip/"));
+             line_begin, line_begin + 4, "sip/"));
 }
 
 std::string::const_iterator FindLineEnd(
@@ -133,7 +135,7 @@ Version ParseVersion(
 
   if ((line_end - line_begin < 3) ||
       !LowerCaseEqualsASCII(
-          base::StringPiece(line_begin, line_begin + 3), "sip")) {
+          line_begin, line_begin + 3, "sip")) {
     DVLOG(1) << "missing status line";
     return Version();
   }
@@ -508,7 +510,7 @@ bool ParseVia(Tokenizer* tok, scoped_ptr<HeaderType>* header,
   std::string::const_iterator version_start = tok->Skip(HTTP_LWS);
   if ((tok->end() - tok->current() < 3)
       || !LowerCaseEqualsASCII(
-          base::StringPiece(tok->current(), tok->current() + 3), "sip")) {
+          tok->current(), tok->current() + 3, "sip")) {
     DVLOG(1) << "unknown SIP-version";
     return false;
   }
