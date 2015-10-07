@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "sippet/base/user_agent_utils.h"
+#include "sippet/base/version.h"
 
 #import <UIKit/UIKit.h>
 
