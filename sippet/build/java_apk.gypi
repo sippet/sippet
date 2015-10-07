@@ -163,6 +163,8 @@
     'aar_path': '<(intermediate_dir)/<(aar_name)',
     'aar_jar_stamp': '<(intermediate_dir)/aar_jar.stamp',
     'additional_resource_arr_paths': [],
+    # For Javadoc:
+    'javadoc_dir%': '<(PRODUCT_DIR)/javadoc/<(_target_name)',
     # ---
     'variables': {
       'variables': {
@@ -262,7 +264,7 @@
         'additional_R_text_files': ['<(intermediate_dir)/R.txt'],
       },
     }],
-    ['native_lib_target != "" and android_must_copy_system_libraries == 1', {
+    ['native_lib_target != "" and component == "shared_library"', {
       'dependencies': [
         '<(DEPTH)/build/android/setup.gyp:copy_system_libraries',
       ],
@@ -885,6 +887,22 @@
         '--jar-excluded-classes=<(jar_excluded_classes)',
         '--stamp=<(compile_stamp)',
         '<@(extra_args)',
+        '>@(java_sources)',
+      ],
+    },
+    {
+      'action_name': 'generate javadoc',
+      'message': 'Generating Javadoc',
+      'variables': {
+        'java_sources': ['>!@(find >(java_in_dir)>(java_in_dir_suffix) >(additional_src_dirs) -name "*.java"  # apk)'],
+      },
+      'inputs': ['<(DEPTH)/sippet/build/generate_javadoc.py'] ,
+      'outputs': ['<(javadoc_dir)'],
+      'action': [
+        'python',
+        '<@(_inputs)',
+        '--output-dir=<(javadoc_dir)',
+        '--source-dir=<(java_in_dir)<(java_in_dir_suffix)',
         '>@(java_sources)',
       ],
     },
