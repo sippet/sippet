@@ -32,23 +32,23 @@ instructions. In order to configure GYP to generate build files for iOS certain
 environment variables need to be set. Those variables can be edited for the
 various build configurations as needed.
 
-Building for 64-bit iOS device:
+Building for ARMv7:
 
     cat << EOF > sippet.gyp_env
     { 'GYP_DEFINES':
-        'OS=ios target_arch=arm64 enable_webrtc=1 chromium_ios_signing=0',
+        'OS=ios target_arch=arm arm_version=7 target_subarch=arm32 enable_webrtc=1 chromium_ios_signing=0',
       'GYP_GENERATORS':
-        'ninja,xcode-ninja'
+        'ninja'
     }
     EOF
 
-Building for 64-bit simulator:
+Building for ARM64:
 
     cat << EOF > sippet.gyp_env
     { 'GYP_DEFINES':
-        'OS=ios target_arch=x64 enable_webrtc=1 chromium_ios_signing=0',
+        'OS=ios target_arch=arm64 target_subarch=arm64 enable_webrtc=1 chromium_ios_signing=0',
       'GYP_GENERATORS':
-        'ninja,xcode-ninja'
+        'ninja'
     }
     EOF
 
@@ -65,9 +65,15 @@ added new files, updated gyp files, or sync'ed your repository.
 
 # Build
 
-The following command will generate all needed modules for your application:
+The following commands will generate all needed modules for your application,
+depending on which target you need.
 
-    ninja -C out/Release all
+Building for iPhone device:
+
+    ninja -C out/Release-iphoneos all
+
+Building for iPhone simulator:
+
+    ninja -C out/Release-iphonesimulator all
 
 Replace 'Release' with 'Debug' above if you want to generate a Debug library.
-
