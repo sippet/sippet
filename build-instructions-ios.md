@@ -52,6 +52,16 @@ Building for ARM64:
     }
     EOF
 
+Building for the 64-bits iPhone Simulator:
+
+    cat << EOF > sippet.gyp_env
+    { 'GYP_DEFINES':
+        'OS=ios target_arch=x64 enable_webrtc=1 chromium_ios_signing=0',
+      'GYP_GENERATORS':
+        'ninja'
+    }
+    EOF
+
 **NOTE:** If you are using the `GYP_DEFINES` environment variable, it will
 override any settings in this file. Either clear it or set it to the values
 above before running gclient runhooks.
@@ -72,7 +82,7 @@ Building for iPhone device:
 
     ninja -C out/Release-iphoneos all
 
-Building for iPhone simulator:
+Building for iPhone Simulator:
 
     ninja -C out/Release-iphonesimulator all
 
