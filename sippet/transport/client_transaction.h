@@ -5,7 +5,6 @@
 #ifndef SIPPET_TRANSPORT_CLIENT_TRANSACTION_H_
 #define SIPPET_TRANSPORT_CLIENT_TRANSACTION_H_
 
-#include "base/memory/scoped_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "sippet/message/message.h"
 #include "sippet/transport/channel.h"

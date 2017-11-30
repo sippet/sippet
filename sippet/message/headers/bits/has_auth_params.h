@@ -19,9 +19,10 @@ public:
   has_auth_params() : has_scheme_(false) {}
   has_auth_params(Scheme s) { set_scheme(s); }
   has_auth_params(const std::string &scheme)
-    : scheme_(scheme), has_scheme_(true) {}
+    : has_scheme_(true), scheme_(scheme) {}
   has_auth_params(const has_auth_params &other)
-    : scheme_(other.scheme_), has_scheme_(other.has_scheme_) {}
+    : has_parameters(other), has_scheme_(other.has_scheme_),
+      scheme_(other.scheme_) {}
   ~has_auth_params() {}
 
   has_auth_params &operator=(const has_auth_params &other) {

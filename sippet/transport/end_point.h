@@ -22,8 +22,8 @@ class EndPoint {
   EndPoint(const net::HostPortPair &hostport, Protocol::Type protocol);
 
   // If |host| represents an IPv6 address, it should not bracket the address.
-  EndPoint(const std::string& host, uint16 port, const Protocol &protocol);
-  EndPoint(const std::string& host, uint16 port, Protocol::Type protocol);
+  EndPoint(const std::string& host, uint16_t port, const Protocol &protocol);
+  EndPoint(const std::string& host, uint16_t port, Protocol::Type protocol);
 
   ~EndPoint();
 
@@ -51,7 +51,7 @@ class EndPoint {
     return hostport_.host();
   }
 
-  uint16 port() const {
+  uint16_t port() const {
     return hostport_.port();
   }
 
@@ -67,7 +67,7 @@ class EndPoint {
     hostport_.set_host(host);
   }
 
-  void set_port(uint16 port) {
+  void set_port(uint16_t port) {
     hostport_.set_port(port);
   }
 

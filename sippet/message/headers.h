@@ -36,6 +36,7 @@
 #include "sippet/message/headers/proxy_authenticate.h"
 #include "sippet/message/headers/proxy_authorization.h"
 #include "sippet/message/headers/proxy_require.h"
+#include "sippet/message/headers/reason.h"
 #include "sippet/message/headers/record_route.h"
 #include "sippet/message/headers/reply_to.h"
 #include "sippet/message/headers/require.h"

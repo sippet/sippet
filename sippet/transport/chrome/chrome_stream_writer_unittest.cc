@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "base/run_loop.h"
 #include "sippet/message/message.h"
 #include "net/socket/socket_test_util.h"
 
@@ -29,22 +30,18 @@ using sippet::Method;
 class StreamChannelTest : public testing::Test {
  public:
   void Finish() {
-    base::MessageLoop::current()->RunUntilIdle();
+    base::RunLoop().RunUntilIdle();
     EXPECT_TRUE(data_->AllReadDataConsumed());
     EXPECT_TRUE(data_->AllWriteDataConsumed());
   }
 
   void Initialize(net::MockWrite* writes, size_t writes_count) {
     data_.reset(
-      new net::DeterministicSocketData(nullptr, 0, writes, writes_count));
+      new net::SequencedSocketData(nullptr, 0, writes, writes_count));
     data_->set_connect_data(net::MockConnect(net::SYNCHRONOUS, 0));
-    if (writes_count) {
-      data_->StopAfter(writes_count);
-    }
     wrapped_socket_ =
-        new net::DeterministicMockTCPClientSocket(
-            net_log_.net_log(), data_.get());
-    data_->set_delegate(wrapped_socket_->AsWeakPtr());
+        new net::MockTCPClientSocket(
+            address_list_, net_log_.net_log(), data_.get());
     writer_.reset(new ChromeStreamWriter(wrapped_socket_));
     wrapped_socket_->Connect(callback_.callback());
   }
@@ -52,28 +49,28 @@ class StreamChannelTest : public testing::Test {
   static scoped_refptr<Request> CreateRegisterRequest() {
     scoped_refptr<Request> request(
       new Request(Method::REGISTER, GURL("sip:registrar.biloxi.com")));
-    scoped_ptr<Via> via(new Via);
+    std::unique_ptr<Via> via(new Via);
     via->push_back(ViaParam(Protocol::UDP,
         net::HostPortPair("bobspc.biloxi.com", 5060)));
     via->back().set_branch("z9hG4bKnashds7");
-    request->push_back(via.Pass());
-    scoped_ptr<MaxForwards> maxfw(new MaxForwards(70));
-    request->push_back(maxfw.Pass());
-    scoped_ptr<To> to(new To(GURL("sip:bob@biloxi.com"), "Bob"));
-    request->push_back(to.Pass());
-    scoped_ptr<From> from(new From(GURL("sip:bob@biloxi.com"), "Bob"));
+    request->push_back(std::move(via));
+    std::unique_ptr<MaxForwards> maxfw(new MaxForwards(70));
+    request->push_back(std::move(maxfw));
+    std::unique_ptr<To> to(new To(GURL("sip:bob@biloxi.com"), "Bob"));
+    request->push_back(std::move(to));
+    std::unique_ptr<From> from(new From(GURL("sip:bob@biloxi.com"), "Bob"));
     from->set_tag("456248");
-    request->push_back(from.Pass());
-    scoped_ptr<CallId> callid(new CallId("843817637684230@998sdasdh09"));
-    request->push_back(callid.Pass());
-    scoped_ptr<Cseq> cseq(new Cseq(1826, Method::REGISTER));
-    request->push_back(cseq.Pass());
-    scoped_ptr<Contact> contact(new Contact(GURL("sip:bob@192.0.2.4")));
-    request->push_back(contact.Pass());
-    scoped_ptr<Expires> expires(new Expires(7200));
-    request->push_back(expires.Pass());
-    scoped_ptr<ContentLength> content_length(new ContentLength(0));
-    request->push_back(content_length.Pass());
+    request->push_back(std::move(from));
+    std::unique_ptr<CallId> callid(new CallId("843817637684230@998sdasdh09"));
+    request->push_back(std::move(callid));
+    std::unique_ptr<Cseq> cseq(new Cseq(1826, Method::REGISTER));
+    request->push_back(std::move(cseq));
+    std::unique_ptr<Contact> contact(new Contact(GURL("sip:bob@192.0.2.4")));
+    request->push_back(std::move(contact));
+    std::unique_ptr<Expires> expires(new Expires(7200));
+    request->push_back(std::move(expires));
+    std::unique_ptr<ContentLength> content_length(new ContentLength(0));
+    request->push_back(std::move(content_length));
     return request;
   }
 
@@ -87,10 +84,11 @@ class StreamChannelTest : public testing::Test {
     return writer_->Write(buf.get(), data.size(), callback);
   }
 
-  net::DeterministicMockTCPClientSocket* wrapped_socket_;
-  scoped_ptr<net::DeterministicSocketData> data_;
-  scoped_ptr<ChromeStreamWriter> writer_;
-  net::BoundNetLog net_log_;
+  net::AddressList address_list_;
+  net::MockTCPClientSocket* wrapped_socket_;
+  std::unique_ptr<net::SequencedSocketData> data_;
+  std::unique_ptr<ChromeStreamWriter> writer_;
+  const net::NetLogWithSource net_log_;
   net::TestCompletionCallback callback_;
 };
 
@@ -145,17 +143,6 @@ TEST_F(StreamChannelTest, AsyncSend) {
   int rv = WriteMessage(callback_.callback());
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
-  // For the first time, just a part of the message is sent,
-  wrapped_socket_->CompleteWrite();
-  // and the second part comes after.
-  data_->RunFor(1);
-  ASSERT_FALSE(callback_.have_result());
-
-  // Now the second part completes.
-  wrapped_socket_->CompleteWrite();
-  data_->RunFor(1);
-  ASSERT_TRUE(callback_.have_result());
-
   // The result must be OK now.
   rv = callback_.WaitForResult();
   ASSERT_EQ(net::OK, rv);
@@ -181,16 +168,10 @@ TEST_F(StreamChannelTest, OverlappedSend) {
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
   // First message is sent.
-  wrapped_socket_->CompleteWrite();
-  data_->RunFor(1);
-  ASSERT_TRUE(callback_.have_result());
   rv = callback_.WaitForResult();
   ASSERT_EQ(net::OK, rv);
 
   // Second message is sent.
-  wrapped_socket_->CompleteWrite();
-  data_->RunFor(1);
-  ASSERT_TRUE(callback_.have_result());
   rv = callback_.WaitForResult();
   ASSERT_EQ(net::OK, rv);
 
@@ -228,10 +209,6 @@ TEST_F(StreamChannelTest, AsyncSendError) {
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
   // The connection will be reset while sending the message.
-  wrapped_socket_->CompleteWrite();
-  wrapped_socket_->CompleteWrite();
-  data_->RunFor(2);  // there will be a second write attempt
-  ASSERT_TRUE(callback_.have_result());
   rv = callback_.WaitForResult();
   ASSERT_EQ(net::ERR_CONNECTION_CLOSED, rv);
 
@@ -256,10 +233,6 @@ TEST_F(StreamChannelTest, AsyncConnReset) {
   ASSERT_EQ(net::ERR_IO_PENDING, rv);
 
   // There will be a result = 0 while sending data.
-  wrapped_socket_->CompleteWrite();
-  wrapped_socket_->CompleteWrite();
-  data_->RunFor(2);  // there will be a second write attempt
-  ASSERT_TRUE(callback_.have_result());
   rv = callback_.WaitForResult();
   ASSERT_EQ(net::ERR_CONNECTION_RESET, rv);
 

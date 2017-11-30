@@ -9,12 +9,41 @@
 #include "base/strings/string_util.h"
 #include "base/strings/string_tokenizer.h"
 #include "base/rand_util.h"
+#include "net/base/url_util.h"
+#include "url/gurl.h"
+#include "url/url_canon_ip.h"
 
 #include "third_party/icu/source/i18n/unicode/regex.h"
 
 namespace sippet {
 
 namespace {
+
+bool ParseIPLiteralToBytes(const base::StringPiece& ip_literal,
+                           std::vector<uint8_t>* bytes) {
+  // |ip_literal| could be either an IPv4 or an IPv6 literal. If it contains
+  // a colon however, it must be an IPv6 address.
+  if (ip_literal.find(':') != base::StringPiece::npos) {
+    // GURL expects IPv6 hostnames to be surrounded with brackets.
+    std::string host_brackets = "[";
+    ip_literal.AppendToString(&host_brackets);
+    host_brackets.push_back(']');
+    url::Component host_comp(0, host_brackets.size());
+
+    // Try parsing the hostname as an IPv6 literal.
+    bytes->resize(16);  // 128 bits.
+    return url::IPv6AddressToNumber(host_brackets.data(), host_comp,
+                                    bytes->data());
+  }
+
+  // Otherwise the string is an IPv4 address.
+  bytes->resize(4);  // 32 bits.
+  url::Component host_comp(0, ip_literal.size());
+  int num_components;
+  url::CanonHostInfo::Family family = url::IPv4AddressToNumber(
+      ip_literal.data(), host_comp, bytes->data(), &num_components);
+  return family == url::CanonHostInfo::IPV4;
+}
 
 bool ParseHostPortPair(const net::HostPortPair &destination,
                        net::AddressList *addrlist) {
@@ -26,11 +55,12 @@ bool ParseHostPortPair(const net::HostPortPair &destination,
     return false;
   }
   addrlist->set_canonical_name(host);
-  net::IPAddressNumber ip_number;
-  if (!net::ParseIPLiteralToNumber(host, &ip_number)) {
+  std::vector<uint8_t> bytes;
+  if (!ParseIPLiteralToBytes(host, &bytes)) {
     LOG(WARNING) << "Not a supported IP literal: " << host;
     return false;
   }
+  net::IPAddress ip_number(bytes);
   *addrlist = net::AddressList();
   addrlist->push_back(net::IPEndPoint(ip_number, port));
   return true;
@@ -87,8 +117,8 @@ class ChannelConnectedImpl : public ExpectNothing {
       EXPECT_EQ(error_, error);
   }
  private:
-  EndPoint destination_;
   bool has_error_;
+  EndPoint destination_;
   int error_;
 };
 
@@ -221,12 +251,9 @@ bool MatchMessage(const scoped_refptr<Message> &message,
 
 MockBranchFactory::MockBranchFactory(
           const char *branches[], size_t branches_count)
-  : branches_(branches), branches_index_(0),
-    branches_count_(branches_count) {
-}
+  : branches_(branches), branches_count_(branches_count), branches_index_(0) {}
 
-MockBranchFactory::~MockBranchFactory() {
-}
+MockBranchFactory::~MockBranchFactory() {}
 
 std::string MockBranchFactory::CreateBranch() {
   DCHECK(branches_index_ < branches_count_);
@@ -242,20 +269,16 @@ MockEvent::MockEvent(const MockEvent &other)
     transaction_id_(other.transaction_id_) {
 }
 
-MockEvent::~MockEvent() {
-}
+MockEvent::~MockEvent() {}
 
 StaticDataProvider::StaticDataProvider()
-  : events_(nullptr), events_count_(0), events_index_(0) {
-}
+  : events_(nullptr), events_index_(0), events_count_(0) {}
 
 StaticDataProvider::StaticDataProvider(MockEvent *events,
                                        size_t events_count)
-  : events_(events), events_count_(events_count), events_index_(0) {
-}
+  : events_(events), events_index_(0), events_count_(events_count) {}
 
-StaticDataProvider::~StaticDataProvider() {
-}
+StaticDataProvider::~StaticDataProvider() {}
 
 MockEvent& StaticDataProvider::PeekEvent() {
   return PeekEvent(events_index_);
@@ -449,7 +472,7 @@ int UDPChannelAdapter::Connect(
   if (!ParseHostPortPair(destination, &addrlist))
     return net::ERR_UNEXPECTED;
 
-  net::NetLog::Source no_source;
+  net::NetLogSource no_source;
   socket_ = socket_factory_->CreateDatagramClientSocket(
     net::DatagramSocket::DEFAULT_BIND, base::Bind(&base::RandInt),
     net_log_, no_source);
@@ -493,9 +516,9 @@ int TCPChannelAdapter::Connect(
   net::AddressList addrlist;
   if (!ParseHostPortPair(destination, &addrlist))
     return net::ERR_UNEXPECTED;
-  net::NetLog::Source no_source;
+  net::NetLogSource no_source;
   socket_ = socket_factory_->CreateTransportClientSocket(
-    addrlist, net_log_, no_source);
+    addrlist, nullptr, net_log_, no_source);
   if (!socket_.get()) {
     LOG(WARNING) << "Failed to create socket.";
     return net::ERR_UNEXPECTED;
@@ -522,7 +545,7 @@ TLSChannelAdapter::TLSChannelAdapter(net::ClientSocketFactory *socket_factory,
                                      net::NetLog *net_log)
   : socket_factory_(socket_factory), net_log_(net_log),
     cert_verifier_(new net::MockCertVerifier),
-    weak_factory_(this) {
+    weak_ptr_factory_(this) {
   cert_verifier_->set_default_result(net::OK);
   context_.cert_verifier = cert_verifier_.get();
 }
@@ -539,16 +562,16 @@ int TLSChannelAdapter::Connect(
         const net::CompletionCallback& callback) {
   if (!ParseHostPortPair(destination, &addrlist_))
     return net::ERR_UNEXPECTED;
-  net::NetLog::Source no_source;
-  scoped_ptr<net::StreamSocket> inner_socket;
+  net::NetLogSource no_source;
+  std::unique_ptr<net::StreamSocket> inner_socket;
   tcp_socket_ = socket_factory_->CreateTransportClientSocket(
-    addrlist_, net_log_, no_source);
+    addrlist_, nullptr, net_log_, no_source);
   if (!tcp_socket_.get()) {
     LOG(WARNING) << "Failed to create socket.";
     return net::ERR_UNEXPECTED;
   }
   int result = tcp_socket_->Connect(
-    base::Bind(&TLSChannelAdapter::OnConnected, weak_factory_.GetWeakPtr()));
+    base::Bind(&TLSChannelAdapter::OnConnected, weak_ptr_factory_.GetWeakPtr()));
   if (result == net::ERR_IO_PENDING)
     connect_callback_ = callback;
   return result;
@@ -574,12 +597,12 @@ void TLSChannelAdapter::OnConnected(int result) {
     net::HostPortPair host_and_port(
       net::HostPortPair::FromIPEndPoint(addrlist_.front()));
 
-    scoped_ptr<net::ClientSocketHandle> connection(new net::ClientSocketHandle);
-    connection->SetSocket(tcp_socket_.Pass());
+    std::unique_ptr<net::ClientSocketHandle> connection(new net::ClientSocketHandle);
+    connection->SetSocket(std::move(tcp_socket_));
 
     net::SSLConfig config;
     ssl_socket_ = socket_factory_->CreateSSLClientSocket(
-      connection.Pass(), host_and_port, config, context_);
+      std::move(connection), host_and_port, config, context_);
     if (!ssl_socket_.get()) {
       LOG(WARNING) << "Failed to create socket.";
     }
@@ -593,15 +616,14 @@ MockChannel::MockChannel(MockChannelAdapter *channel_adapter,
                          bool is_stream,
                          Channel::Delegate *delegate,
                          const EndPoint &destination)
-    : channel_adapter_(channel_adapter),
-      delegate_(delegate),
-      is_connected_(false),
-      is_stream_(is_stream),
-      weak_factory_(this),
+    : delegate_(delegate),
       destination_(destination),
       origin_(net::HostPortPair("192.0.2.33", 123),
-              destination.protocol()) {
-}
+              destination.protocol()),
+      is_connected_(false),
+      is_stream_(is_stream),
+      channel_adapter_(channel_adapter),
+      weak_ptr_factory_(this) {}
 
 MockChannel::~MockChannel() {
 }
@@ -635,7 +657,7 @@ void MockChannel::Connect() {
     base::Bind(&MockChannel::OnConnected, this));
   if (result == net::OK) {
     // When using UDP, the connect event will occur in the next event loop.
-    base::MessageLoop::current()->PostTask(FROM_HERE,
+    base::ThreadTaskRunnerHandle::Get()->PostTask(FROM_HERE,
       base::Bind(&MockChannel::OnConnected, this, net::OK));
   }
 }
@@ -644,8 +666,8 @@ int MockChannel::ReconnectIgnoringLastError() {
   return net::ERR_NOT_IMPLEMENTED;
 }
 
-int MockChannel::ReconnectWithCertificate(
-      net::X509Certificate* client_cert) {
+int MockChannel::ReconnectWithCertificate(net::X509Certificate* client_cert,
+      net::SSLPrivateKey* private_key) {
   return net::ERR_NOT_IMPLEMENTED;
 }
 
@@ -672,11 +694,15 @@ void MockChannel::DetachDelegate() {
   delegate_ = 0;
 }
 
+void MockChannel::SetKeepAlive(int seconds) {
+  // do nothing
+}
+
 void MockChannel::Read() {
   int result;
   for (;;) {
     result = channel_adapter_->Read(io_buffer_.get(), io_buffer_->size(),
-      base::Bind(&MockChannel::OnRead, weak_factory_.GetWeakPtr()));
+      base::Bind(&MockChannel::OnRead, weak_ptr_factory_.GetWeakPtr()));
     if (result < net::OK)
       break;
     HandleMessage(result);

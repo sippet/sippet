@@ -5,7 +5,8 @@
 #ifndef SIPPET_TRANSPORT_SSL_CERT_ERROR_TRANSACTION_H_
 #define SIPPET_TRANSPORT_SSL_CERT_ERROR_TRANSACTION_H_
 
-#include "base/memory/scoped_ptr.h"
+#include <memory>
+
 #include "base/memory/ref_counted.h"
 #include "net/base/completion_callback.h"
 #include "net/ssl/ssl_info.h"
@@ -14,7 +15,8 @@
 
 namespace net {
 class X509Certificate;
-}
+class SSLPrivateKey;
+}  // namespace net
 
 namespace sippet {
 
@@ -39,6 +41,9 @@ class SSLCertErrorTransaction {
 
   scoped_refptr<net::X509Certificate> client_cert() const {
     return client_cert_;
+  }
+  scoped_refptr<net::SSLPrivateKey> private_key() const {
+    return private_key_;
   }
 
  private:
@@ -69,10 +74,11 @@ class SSLCertErrorTransaction {
   EndPoint destination_;
   net::SSLInfo ssl_info_;
   SSLCertErrorHandler::Factory* ssl_cert_error_handler_factory_;
-  scoped_ptr<SSLCertErrorHandler> ssl_cert_error_handler_;
+  std::unique_ptr<SSLCertErrorHandler> ssl_cert_error_handler_;
   bool fatal_;
   bool is_accepted_;
   scoped_refptr<net::X509Certificate> client_cert_;
+  scoped_refptr<net::SSLPrivateKey> private_key_;
   net::CompletionCallback io_callback_;
   net::CompletionCallback callback_;
 

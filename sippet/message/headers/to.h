@@ -23,8 +23,8 @@ class To :
   To(const GURL &address, const std::string &displayName="");
   ~To() override;
 
-  scoped_ptr<To> Clone() const {
-    return scoped_ptr<To>(DoClone());
+  std::unique_ptr<To> Clone() const {
+    return std::unique_ptr<To>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

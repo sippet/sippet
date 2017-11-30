@@ -8,21 +8,16 @@
 
 namespace sippet {
 
-AuthHandlerMock::Factory::Factory() {
-}
+AuthHandlerMock::Factory::Factory() {}
 
-AuthHandlerMock::Factory::~Factory() {
-  for (int i = 0; i < net::HttpAuth::AUTH_NUM_TARGETS; i++) {
-    STLDeleteContainerPairSecondPointers(
-      handlers_[i].begin(), handlers_[i].end());
-  }
-}
+AuthHandlerMock::Factory::~Factory() {}
 
-void AuthHandlerMock::Factory::AddMockHandler(AuthHandler* handler,
-    Auth::Target target, bool call_init_from_challenge) {
+void AuthHandlerMock::Factory::AddMockHandler(
+    std::unique_ptr<AuthHandler> handler, Auth::Target target,
+    bool call_init_from_challenge) {
   DCHECK(target != net::HttpAuth::AUTH_NONE);
   handlers_[target].push_back(
-    std::make_pair(call_init_from_challenge, handler));
+    std::make_pair(call_init_from_challenge, std::move(handler)));
 }
 
 int AuthHandlerMock::Factory::CreateAuthHandler(
@@ -31,12 +26,13 @@ int AuthHandlerMock::Factory::CreateAuthHandler(
         const GURL& origin,
         CreateReason create_reason,
         int digest_nonce_count,
-        const net::BoundNetLog& net_log,
-        scoped_ptr<AuthHandler>* handler) {
+        const net::NetLogWithSource& net_log,
+        std::unique_ptr<AuthHandler>* handler) {
   if (handlers_[target].empty())
     return net::ERR_UNEXPECTED;
   bool call_init_from_challenge = handlers_[target].front().first;
-  scoped_ptr<AuthHandler> tmp_handler(handlers_[target].front().second);
+  std::unique_ptr<AuthHandler> tmp_handler(
+      std::move(handlers_[target].front().second));
   handlers_[target].pop_front();
   if (call_init_from_challenge &&
       !tmp_handler->InitFromChallenge(challenge, target, origin, net_log))

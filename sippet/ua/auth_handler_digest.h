@@ -7,8 +7,7 @@
 
 #include <string>
 
-#include "base/basictypes.h"
-#include "base/memory/scoped_ptr.h"
+#include "base/macros.h"
 #include "sippet/message/headers/authorization.h"
 #include "sippet/ua/auth_handler.h"
 #include "sippet/ua/auth_handler_factory.h"
@@ -76,11 +75,11 @@ class AuthHandlerDigest : public AuthHandler {
         const GURL& origin,
         CreateReason create_reason,
         int digest_nonce_count,
-        const net::BoundNetLog& net_log,
-        scoped_ptr<AuthHandler>* handler) override;
+        const net::NetLogWithSource& net_log,
+        std::unique_ptr<AuthHandler>* handler) override;
 
    private:
-    scoped_ptr<const NonceGenerator> nonce_generator_;
+    std::unique_ptr<const NonceGenerator> nonce_generator_;
   };
 
   Auth::AuthorizationResult HandleAnotherChallenge(

@@ -4,27 +4,12 @@
 
 package io.sippet.phone;
 
-import org.chromium.base.ThreadUtils;
-import org.chromium.base.JNINamespace;
-import org.chromium.base.CalledByNative;
-
 /**
  * Callbacks executed on async network executions.
  */
-@JNINamespace("sippet::phone::android")
-abstract public class CompletionCallback {
+public interface CompletionCallback {
     /**
      * Called to inform completion of the last async attempt.
      */
-    abstract public void onCompleted(int statusCode);
-
-    @CalledByNative
-    private void runOnCompleted(final int statusCode) {
-        ThreadUtils.postOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                onCompleted(statusCode);
-            }
-        });
-    }
+    void onCompleted(int statusCode);
 }

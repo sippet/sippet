@@ -25,8 +25,8 @@ class Subject :
   Subject(const single_value::value_type &subject);
   ~Subject() override;
 
-  scoped_ptr<Subject> Clone() const {
-    return scoped_ptr<Subject>(DoClone());
+  std::unique_ptr<Subject> Clone() const {
+    return std::unique_ptr<Subject>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

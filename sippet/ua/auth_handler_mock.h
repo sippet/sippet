@@ -25,8 +25,8 @@ class AuthHandlerMock : public AuthHandler {
     Factory();
     ~Factory() override;
 
-    void AddMockHandler(AuthHandler* handler, Auth::Target target,
-      bool call_init_from_challenge);
+    void AddMockHandler(std::unique_ptr<AuthHandler> handler,
+        Auth::Target target, bool call_init_from_challenge);
 
     // AuthHandlerFactory:
     int CreateAuthHandler(
@@ -35,11 +35,11 @@ class AuthHandlerMock : public AuthHandler {
         const GURL& origin,
         CreateReason create_reason,
         int digest_nonce_count,
-        const net::BoundNetLog& net_log,
-        scoped_ptr<AuthHandler>* handler) override;
+        const net::NetLogWithSource& net_log,
+        std::unique_ptr<AuthHandler>* handler) override;
 
    private:
-    typedef std::deque<std::pair<bool, AuthHandler*> > Handlers;
+    typedef std::deque<std::pair<bool, std::unique_ptr<AuthHandler>>> Handlers;
     Handlers handlers_[net::HttpAuth::AUTH_NUM_TARGETS];
   };
 

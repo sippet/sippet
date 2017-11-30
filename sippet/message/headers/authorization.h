@@ -45,8 +45,8 @@ class Authorization :
   Authorization(const std::string &scheme);
   ~Authorization() override;
 
-  scoped_ptr<Authorization> Clone() const {
-    return scoped_ptr<Authorization>(DoClone());
+  std::unique_ptr<Authorization> Clone() const {
+    return std::unique_ptr<Authorization>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

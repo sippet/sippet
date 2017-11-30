@@ -100,7 +100,7 @@ void raw_ostream::SetBufferAndMode(char *BufferStart, size_t Size,
   assert(OutBufStart <= OutBufEnd && "Invalid size!");
 }
 
-raw_ostream &raw_ostream::operator<<(uint32 N) {
+raw_ostream &raw_ostream::operator<<(uint32_t N) {
   // Zero is a special case.
   if (N == 0)
     return *this << '0';
@@ -116,20 +116,20 @@ raw_ostream &raw_ostream::operator<<(uint32 N) {
   return write(CurPtr, EndPtr-CurPtr);
 }
 
-raw_ostream &raw_ostream::operator<<(int32 N) {
+raw_ostream &raw_ostream::operator<<(int32_t N) {
   if (N <  0) {
     *this << '-';
     // Avoid undefined behavior on LONG_MIN with a cast.
-    N = static_cast<uint32>(-N);
+    N = static_cast<uint32_t>(-N);
   }
 
-  return this->operator<<(static_cast<uint32>(N));
+  return this->operator<<(static_cast<uint32_t>(N));
 }
 
-raw_ostream &raw_ostream::operator<<(uint64 N) {
+raw_ostream &raw_ostream::operator<<(uint64_t N) {
   // Output using 32-bit div/mod when possible.
-  if (N == static_cast<uint32>(N))
-    return this->operator<<(static_cast<uint32>(N));
+  if (N == static_cast<uint32_t>(N))
+    return this->operator<<(static_cast<uint32_t>(N));
 
   char NumberBuffer[20];
   char *EndPtr = NumberBuffer+sizeof(NumberBuffer);
@@ -142,17 +142,17 @@ raw_ostream &raw_ostream::operator<<(uint64 N) {
   return write(CurPtr, EndPtr-CurPtr);
 }
 
-raw_ostream &raw_ostream::operator<<(int64 N) {
+raw_ostream &raw_ostream::operator<<(int64_t N) {
   if (N < 0) {
     *this << '-';
     // Avoid undefined behavior on INT64_MIN with a cast.
-    N = static_cast<uint64>(-N);
+    N = static_cast<uint64_t>(-N);
   }
 
-  return this->operator<<(static_cast<uint64>(N));
+  return this->operator<<(static_cast<uint64_t>(N));
 }
 
-raw_ostream &raw_ostream::write_hex(uint64 N) {
+raw_ostream &raw_ostream::write_hex(uint64_t N) {
   // Zero is a special case.
   if (N == 0)
     return *this << '0';
@@ -412,7 +412,7 @@ raw_string_ostream::~raw_string_ostream() {
   flush();
 }
 
-uint64 raw_string_ostream::current_pos() const {
+uint64_t raw_string_ostream::current_pos() const {
   return OS.size();
 }
 

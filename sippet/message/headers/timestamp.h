@@ -27,8 +27,8 @@ class Timestamp :
   Timestamp(const double &timestamp, const double &delay=.0);
   ~Timestamp() override;
 
-  scoped_ptr<Timestamp> Clone() const {
-    return scoped_ptr<Timestamp>(DoClone());
+  std::unique_ptr<Timestamp> Clone() const {
+    return std::unique_ptr<Timestamp>(DoClone());
   }
 
   void set_timestamp(double timestamp) { timestamp_ = timestamp; }

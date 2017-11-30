@@ -24,8 +24,8 @@ class MaxForwards :
   MaxForwards(const single_value::value_type &n);
   ~MaxForwards() override;
 
-  scoped_ptr<MaxForwards> Clone() const {
-    return scoped_ptr<MaxForwards>(DoClone());
+  std::unique_ptr<MaxForwards> Clone() const {
+    return std::unique_ptr<MaxForwards>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

@@ -22,8 +22,8 @@ class ReplyTo :
   ReplyTo(const GURL &address, const std::string &displayName="");
   ~ReplyTo() override;
 
-  scoped_ptr<ReplyTo> Clone() const {
-    return scoped_ptr<ReplyTo>(DoClone());
+  std::unique_ptr<ReplyTo> Clone() const {
+    return std::unique_ptr<ReplyTo>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

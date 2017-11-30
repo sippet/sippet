@@ -48,13 +48,15 @@ inline
 const char* RemoveURIWhitespace(const char* input, int input_len,
                                 CanonOutput* buffer,
                                 int* output_len) {
-  return url::RemoveURLWhitespace(input, input_len, buffer, output_len);
+  return url::RemoveURLWhitespace(input, input_len, buffer, output_len,
+      nullptr);
 }
 inline
 const base::char16* RemoveURLWhitespace(const base::char16* input, int input_len,
                                         CanonOutputW* buffer,
                                         int* output_len) {
-  return url::RemoveURLWhitespace(input, input_len, buffer, output_len);
+  return url::RemoveURLWhitespace(input, input_len, buffer, output_len,
+      nullptr);
 }
 
 // IDN ------------------------------------------------------------------------

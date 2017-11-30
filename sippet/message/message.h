@@ -7,11 +7,12 @@
 
 #include <algorithm>
 #include <vector>
+#include <memory>
+
 #include "sippet/base/ilist.h"
 #include "sippet/base/casting.h"
 #include "sippet/message/header.h"
 #include "base/memory/ref_counted.h"
-#include "base/memory/scoped_ptr.h"
 #include "base/gtest_prod_util.h"
 
 namespace sippet {
@@ -118,23 +119,23 @@ class Message
   const_reference back() const  { return headers_.back();  }
 
   // Insert a header before a specific position in the message.
-  iterator insert(iterator where, scoped_ptr<Header> header) {
+  iterator insert(iterator where, std::unique_ptr<Header> header) {
     return header ? headers_.insert(where, header.release()) : where;
   }
 
   // Insert a header after a specific position in the message.
-  iterator insertAfter(iterator where, scoped_ptr<Header> header) {
+  iterator insertAfter(iterator where, std::unique_ptr<Header> header) {
     return header ? headers_.insertAfter(where, header.release()) : where;
   }
 
   // Insert a header to the beginning of the message.
-  void push_front(scoped_ptr<Header> header) {
+  void push_front(std::unique_ptr<Header> header) {
     if (header)
       headers_.push_front(header.release());
   }
 
   // Insert a header to the end of the message.
-  void push_back(scoped_ptr<Header> header) {
+  void push_back(std::unique_ptr<Header> header) {
     if (header)
       headers_.push_back(header.release());
   }
@@ -219,12 +220,12 @@ class Message
   template<class HeaderType>
   HeaderType *get() {
     iterator it = find_first<HeaderType>();
-    return it != end() ? dyn_cast<HeaderType>(it) : 0;
+    return it != end() ? cast<HeaderType>(it) : nullptr;
   }
   template<class HeaderType>
   const HeaderType *get() const {
     const_iterator it = find_first<HeaderType>();
-    return it != end() ? dyn_cast<HeaderType>(it) : 0;
+    return it != end() ? cast<HeaderType>(it) : nullptr;
   }
 
   // Print this message to the output.
@@ -254,7 +255,7 @@ class Message
     std::vector<HeaderType*> result;
     for (iterator i = find_first<HeaderType>(), ie = end();
         i != ie; i = find_next<HeaderType>(i)) {
-      result.push_back(dyn_cast<HeaderType>(i));
+      result.push_back(cast<HeaderType>(i));
     }
     return result;
   }
@@ -264,18 +265,18 @@ class Message
   void CloneTo(Message *message) {
     for (Message::iterator i = find_first<HeaderType>(),
          ie = end(); i != ie; i = find_next<HeaderType>(i)) {
-      message->push_back(i->Clone().Pass());
+      message->push_back(i->Clone());
     }
   }
 
   // Clone the first matching header, if exists.
   template<class HeaderType>
-  scoped_ptr<HeaderType> Clone() {
+  std::unique_ptr<HeaderType> Clone() {
     Message::iterator i = find_first<HeaderType>();
     if (i == end())
-      return scoped_ptr<HeaderType>();
+      return std::unique_ptr<HeaderType>();
     Header *clone = i->Clone().release();
-    return scoped_ptr<HeaderType>(dyn_cast<HeaderType>(clone));
+    return std::unique_ptr<HeaderType>(dyn_cast<HeaderType>(clone));
   }
 
   // Get a the dialog identifier.

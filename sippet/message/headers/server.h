@@ -25,8 +25,8 @@ class Server :
   Server(const single_value::value_type &subject);
   ~Server() override;
 
-  scoped_ptr<Server> Clone() const {
-    return scoped_ptr<Server>(DoClone());
+  std::unique_ptr<Server> Clone() const {
+    return std::unique_ptr<Server>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

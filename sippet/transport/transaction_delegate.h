@@ -5,7 +5,7 @@
 #ifndef SIPPET_TRANSPORT_TRANSACTION_DELEGATE_H_
 #define SIPPET_TRANSPORT_TRANSACTION_DELEGATE_H_
 
-#include "base/memory/scoped_ptr.h"
+#include "base/memory/ref_counted.h"
 #include "sippet/message/message.h"
 
 namespace sippet {

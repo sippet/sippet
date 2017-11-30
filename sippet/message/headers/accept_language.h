@@ -50,8 +50,8 @@ class AcceptLanguage :
   AcceptLanguage();
   ~AcceptLanguage() override;
 
-  scoped_ptr<AcceptLanguage> Clone() const {
-    return scoped_ptr<AcceptLanguage>(DoClone());
+  std::unique_ptr<AcceptLanguage> Clone() const {
+    return std::unique_ptr<AcceptLanguage>(DoClone());
   }
 
   bool AllowsAll() const {

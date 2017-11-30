@@ -21,8 +21,8 @@ class Generic :
   Generic(const std::string &header_name, const std::string &header_value);
   ~Generic() override;
 
-  scoped_ptr<Generic> Clone() const {
-    return scoped_ptr<Generic>(DoClone());
+  std::unique_ptr<Generic> Clone() const {
+    return std::unique_ptr<Generic>(DoClone());
   }
 
   std::string header_name() const {

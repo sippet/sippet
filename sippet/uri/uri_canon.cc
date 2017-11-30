@@ -51,11 +51,8 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
                                                output, &new_parsed->scheme);
 
   // Authority (username, password, host, port)
-  bool have_authority;
   if (parsed.username.is_valid() || parsed.password.is_valid() ||
       parsed.host.is_nonempty() || parsed.port.is_valid()) {
-    have_authority = true;
-
     // User info: the canonicalizer will handle the : and @.
     success &= uri::CanonicalizeUserInfo(
         source.username, parsed.username, source.password, parsed.password,
@@ -87,7 +84,6 @@ bool DoCanonicalizeSipURI(const URIComponentSource<CHAR>& source,
 
   } else {
     // No authority, clear the components.
-    have_authority = false;
     new_parsed->host.reset();
     new_parsed->username.reset();
     new_parsed->password.reset();

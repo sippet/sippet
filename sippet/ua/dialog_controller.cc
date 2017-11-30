@@ -34,6 +34,9 @@ scoped_refptr<Dialog> DefaultDialogController::HandleRequest(
   if (Method::BYE == request->method()) {
     // Terminate dialog on BYE requests
     dialog = store->TerminateDialog(request);
+  } else {
+    // Check if the request has been sent inside an existing dialog
+    dialog = store->GetDialog(request.get());
   }
   return dialog;
 }
@@ -43,7 +46,7 @@ scoped_refptr<Dialog> DefaultDialogController::HandleResponse(
   Message::iterator i = response->find_first<Cseq>();
   if (response->end() == i)
     return nullptr;
-  Method method(dyn_cast<Cseq>(i)->method());
+  Method method(cast<Cseq>(i)->method());
   scoped_refptr<Dialog> dialog;
   int response_code = response->response_code();
   // Create dialog on response_code > 100 for INVITE requests with to-tag

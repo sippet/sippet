@@ -7,14 +7,13 @@
 #include <algorithm>
 
 #include "sippet/message/parser/tokenizer.h"
-#include "base/basictypes.h"
 #include "base/strings/string_split.h"
 #include "base/logging.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_util.h"
 #include "base/strings/string_piece.h"
 #include "net/http/http_util.h"
-#include "net/base/net_util.h"
+#include "net/base/url_util.h"
 
 using base::LowerCaseEqualsASCII;
 
@@ -116,7 +115,7 @@ bool IsStatusLine(
       std::string::const_iterator line_end) {
   return ((line_end - line_begin > 4)
       && base::LowerCaseEqualsASCII(
-             line_begin, line_begin + 4, "sip/"));
+             base::StringPiece(line_begin, line_begin + 4), "sip/"));
 }
 
 std::string::const_iterator FindLineEnd(
@@ -135,7 +134,7 @@ Version ParseVersion(
 
   if ((line_end - line_begin < 3) ||
       !LowerCaseEqualsASCII(
-          line_begin, line_begin + 3, "sip")) {
+          base::StringPiece(line_begin, line_begin + 3), "sip")) {
     DVLOG(1) << "missing status line";
     return Version();
   }
@@ -164,8 +163,8 @@ Version ParseVersion(
     return Version();
   }
 
-  uint16 major = *major_start - '0';
-  uint16 minor = *minor_start - '0';
+  uint16_t major = *major_start - '0';
+  uint16_t minor = *minor_start - '0';
 
   return Version(major, minor);
 }
@@ -279,7 +278,7 @@ bool ParseRequestLine(
 }
 
 template<class HeaderType, typename Builder>
-bool ParseToken(Tokenizer* tok, scoped_ptr<HeaderType>* header,
+bool ParseToken(Tokenizer* tok, std::unique_ptr<HeaderType>* header,
     Builder builder) {
   std::string::const_iterator token_start = tok->Skip(HTTP_LWS);
   if (tok->EndOfInput()) {
@@ -292,7 +291,7 @@ bool ParseToken(Tokenizer* tok, scoped_ptr<HeaderType>* header,
 }
 
 template<class HeaderType, typename Builder>
-bool ParseTypeSubtype(Tokenizer* tok, scoped_ptr<HeaderType>* header,
+bool ParseTypeSubtype(Tokenizer* tok, std::unique_ptr<HeaderType>* header,
     Builder builder) {
   std::string::const_iterator type_start = tok->Skip(HTTP_LWS);
   if (tok->EndOfInput()) {
@@ -324,10 +323,9 @@ bool ParseTypeSubtype(Tokenizer* tok, scoped_ptr<HeaderType>* header,
 }
 
 template<class HeaderType, typename Setter>
-bool ParseParameters(Tokenizer* tok, scoped_ptr<HeaderType>* header,
+bool ParseParameters(Tokenizer* tok, std::unique_ptr<HeaderType>* header,
     Setter setter) {
   // TODO(david): accept generic param such as ";token"
-  std::string::const_iterator param_start = tok->SkipTo(';');
   if (tok->EndOfInput())
     return true;
   tok->Skip();
@@ -339,7 +337,7 @@ bool ParseParameters(Tokenizer* tok, scoped_ptr<HeaderType>* header,
 }
 
 template<class HeaderType>
-bool ParseAuthScheme(Tokenizer* tok, scoped_ptr<HeaderType>* header) {
+bool ParseAuthScheme(Tokenizer* tok, std::unique_ptr<HeaderType>* header) {
   std::string::const_iterator scheme_start = tok->Skip(HTTP_LWS);
   if (tok->EndOfInput()) {
     DVLOG(1) << "missing authentication scheme";
@@ -351,7 +349,7 @@ bool ParseAuthScheme(Tokenizer* tok, scoped_ptr<HeaderType>* header) {
 }
 
 template<class HeaderType>
-bool ParseAuthParams(Tokenizer* tok, scoped_ptr<HeaderType>* header) {
+bool ParseAuthParams(Tokenizer* tok, std::unique_ptr<HeaderType>* header) {
   net::HttpUtil::NameValuePairsIterator it(tok->current(), tok->end(), ',');
   while (it.GetNext()) {
     (*header)->param_set(it.name(), it.raw_value());
@@ -360,7 +358,7 @@ bool ParseAuthParams(Tokenizer* tok, scoped_ptr<HeaderType>* header) {
 }
 
 template<class HeaderType>
-bool ParseUri(Tokenizer* tok, scoped_ptr<HeaderType>* header) {
+bool ParseUri(Tokenizer* tok, std::unique_ptr<HeaderType>* header) {
   tok->SkipTo('<');
   if (tok->EndOfInput()) {
     DVLOG(1) << "invalid uri";
@@ -379,7 +377,7 @@ bool ParseUri(Tokenizer* tok, scoped_ptr<HeaderType>* header) {
 }
 
 template<class HeaderType, typename Builder>
-bool ParseContact(Tokenizer* tok, scoped_ptr<HeaderType>* header,
+bool ParseContact(Tokenizer* tok, std::unique_ptr<HeaderType>* header,
     Builder builder) {
   std::string display_name;
   GURL address;
@@ -428,7 +426,8 @@ bool ParseContact(Tokenizer* tok, scoped_ptr<HeaderType>* header,
       }
       address = GURL(std::string(address_start, laquot.current()));
       tok->set_current(laquot.Skip());
-    } else if (net::HttpUtil::IsToken(tok->current(), tok->current()+1)) {
+    } else if (net::HttpUtil::IsToken(
+          base::StringPiece(tok->current(), tok->current()+1))) {
       std::string::const_iterator address_start = tok->current();
       address = GURL(std::string(address_start, tok->SkipNotIn(HTTP_LWS ";")));
     } else {
@@ -443,7 +442,7 @@ bool ParseContact(Tokenizer* tok, scoped_ptr<HeaderType>* header,
 }
 
 template<class HeaderType>
-bool ParseStar(Tokenizer* tok, scoped_ptr<HeaderType>* header) {
+bool ParseStar(Tokenizer* tok, std::unique_ptr<HeaderType>* header) {
   Tokenizer star(tok->current(), tok->end());
   star.Skip(HTTP_LWS);
   if (star.EndOfInput())
@@ -455,7 +454,7 @@ bool ParseStar(Tokenizer* tok, scoped_ptr<HeaderType>* header) {
 }
 
 template<class HeaderType, typename Builder>
-bool ParseWarning(Tokenizer* tok, scoped_ptr<HeaderType>* header,
+bool ParseWarning(Tokenizer* tok, std::unique_ptr<HeaderType>* header,
     Builder builder) {
   std::string::const_iterator code_start = tok->Skip(HTTP_LWS);
   if (tok->EndOfInput()) {
@@ -505,12 +504,12 @@ bool ParseWarning(Tokenizer* tok, scoped_ptr<HeaderType>* header,
 }
 
 template<class HeaderType, typename Builder>
-bool ParseVia(Tokenizer* tok, scoped_ptr<HeaderType>* header,
+bool ParseVia(Tokenizer* tok, std::unique_ptr<HeaderType>* header,
     Builder builder) {
   std::string::const_iterator version_start = tok->Skip(HTTP_LWS);
   if ((tok->end() - tok->current() < 3)
       || !LowerCaseEqualsASCII(
-          tok->current(), tok->current() + 3, "sip")) {
+          base::StringPiece(tok->current(), tok->current() + 3), "sip")) {
     DVLOG(1) << "unknown SIP-version";
     return false;
   }
@@ -531,7 +530,7 @@ bool ParseVia(Tokenizer* tok, scoped_ptr<HeaderType>* header,
     return false;
   }
   std::string protocol(protocol_start, tok->SkipNotIn(HTTP_LWS));
-  base::StringToUpperASCII(&protocol);
+  protocol = base::ToUpperASCII(protocol);
   std::string::const_iterator sentby_start = tok->Skip(HTTP_LWS);
   if (tok->EndOfInput()) {
     DVLOG(1) << "missing sent-by";
@@ -567,14 +566,14 @@ bool ParseVia(Tokenizer* tok, scoped_ptr<HeaderType>* header,
 template<class HeaderType>
 struct SingleBuilder {
   template<typename... Args>
-  void operator()(scoped_ptr<HeaderType>* header, const Args&... args) {
+  void operator()(std::unique_ptr<HeaderType>* header, const Args&... args) {
     header->reset(new HeaderType(args...));
   }
 };
 
 template<class HeaderType>
 struct SingleParamSetter {
-  void operator()(scoped_ptr<HeaderType>* header,
+  void operator()(std::unique_ptr<HeaderType>* header,
       const std::string &key, const std::string &value) {
     (*header)->param_set(key, value);
   }
@@ -583,114 +582,115 @@ struct SingleParamSetter {
 template<class HeaderType>
 struct MultipleBuilder {
   template<typename... Args>
-  void operator()(scoped_ptr<HeaderType>* header, const Args&... args) {
+  void operator()(std::unique_ptr<HeaderType>* header, const Args&... args) {
     (*header)->push_back(typename HeaderType::value_type(args...));
   }
 };
 
 template<class HeaderType>
 struct MultipleParamSetter {
-  void operator()(scoped_ptr<HeaderType>* header,
+  void operator()(std::unique_ptr<HeaderType>* header,
       const std::string &key, const std::string &value) {
     (*header)->back().param_set(key, value);
   }
 };
 
 template<class HeaderType>
-scoped_ptr<Header> ParseSingleToken(
+std::unique_ptr<Header> ParseSingleToken(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval;
+  std::unique_ptr<HeaderType> retval;
   Tokenizer tok(values_begin, values_end);
   if (!ParseToken(&tok, &retval, SingleBuilder<HeaderType>()))
-    return scoped_ptr<Header>();
-  return retval.Pass();
+    return std::unique_ptr<Header>();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseSingleTokenParams(
+std::unique_ptr<Header> ParseSingleTokenParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval;
+  std::unique_ptr<HeaderType> retval;
   Tokenizer tok(values_begin, values_end);
-  if (!ParseToken(&tok, &retval, SingleBuilder<HeaderType>()))
-    return scoped_ptr<Header>();
-  return retval.Pass();
+  if (!ParseToken(&tok, &retval, SingleBuilder<HeaderType>())
+      || !ParseParameters(&tok, &retval, SingleParamSetter<HeaderType>()))
+    return std::unique_ptr<Header>();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseMultipleTokens(
+std::unique_ptr<Header> ParseMultipleTokens(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval(new HeaderType);
+  std::unique_ptr<HeaderType> retval(new HeaderType);
   net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
   while (it.GetNext()) {
     Tokenizer tok(it.value_begin(), it.value_end());
     if (!ParseToken(&tok, &retval, MultipleBuilder<HeaderType>()))
-      return scoped_ptr<Header>();
+      return std::unique_ptr<Header>();
   }
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseMultipleTokenParams(
+std::unique_ptr<Header> ParseMultipleTokenParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval(new HeaderType);
+  std::unique_ptr<HeaderType> retval(new HeaderType);
   net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
   while (it.GetNext()) {
     Tokenizer tok(it.value_begin(), it.value_end());
     if (!ParseToken(&tok, &retval, MultipleBuilder<HeaderType>())
         || !ParseParameters(&tok, &retval, MultipleParamSetter<HeaderType>()))
-      return scoped_ptr<Header>();
+      return std::unique_ptr<Header>();
   }
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseSingleTypeSubtypeParams(
+std::unique_ptr<Header> ParseSingleTypeSubtypeParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval;
+  std::unique_ptr<HeaderType> retval;
   Tokenizer tok(values_begin, values_end);
   if (!ParseTypeSubtype(&tok, &retval, SingleBuilder<HeaderType>())
       || !ParseParameters(&tok, &retval, SingleParamSetter<HeaderType>()))
-    return scoped_ptr<Header>();
-  return retval.Pass();
+    return std::unique_ptr<Header>();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseMultipleTypeSubtypeParams(
+std::unique_ptr<Header> ParseMultipleTypeSubtypeParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval(new HeaderType);
+  std::unique_ptr<HeaderType> retval(new HeaderType);
   net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
   while (it.GetNext()) {
     Tokenizer tok(it.value_begin(), it.value_end());
     if (!ParseTypeSubtype(&tok, &retval, MultipleBuilder<HeaderType>())
         || !ParseParameters(&tok, &retval, MultipleParamSetter<HeaderType>()))
-      return scoped_ptr<Header>();
+      return std::unique_ptr<Header>();
   }
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseMultipleUriParams(
+std::unique_ptr<Header> ParseMultipleUriParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval(new HeaderType);
+  std::unique_ptr<HeaderType> retval(new HeaderType);
   net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
   while (it.GetNext()) {
     Tokenizer tok(it.value_begin(), it.value_end());
     if (!ParseUri(&tok, &retval)
         || !ParseParameters(&tok, &retval, MultipleParamSetter<HeaderType>()))
-      return scoped_ptr<Header>();
+      return std::unique_ptr<Header>();
   }
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseSingleInteger(
+std::unique_ptr<Header> ParseSingleInteger(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
   Tokenizer tok(values_begin, values_end);
@@ -699,94 +699,94 @@ scoped_ptr<Header> ParseSingleInteger(
   int output = 0;
   if (!base::StringToInt(digits, &output)) {
     DVLOG(1) << "invalid digits";
-    return scoped_ptr<Header>();
+    return std::unique_ptr<Header>();
   }
   unsigned integer = static_cast<unsigned>(output);
-  scoped_ptr<HeaderType> header(new HeaderType(integer));
-  return header.Pass();
+  std::unique_ptr<HeaderType> header(new HeaderType(integer));
+  return std::move(header);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseOnlyAuthParams(
+std::unique_ptr<Header> ParseOnlyAuthParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> header(new HeaderType);
+  std::unique_ptr<HeaderType> header(new HeaderType);
   Tokenizer tok(values_begin, values_end);
   if (!ParseAuthParams(&tok, &header))
-      return scoped_ptr<Header>();
-  return header.Pass();
+      return std::unique_ptr<Header>();
+  return std::move(header);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseSchemeAndAuthParams(
+std::unique_ptr<Header> ParseSchemeAndAuthParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> header;
+  std::unique_ptr<HeaderType> header;
   Tokenizer tok(values_begin, values_end);
   if (!ParseAuthScheme(&tok, &header)
       || !ParseAuthParams(&tok, &header))
-      return scoped_ptr<Header>();
-  return header.Pass();
+      return std::unique_ptr<Header>();
+  return std::move(header);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseSingleContactParams(
+std::unique_ptr<Header> ParseSingleContactParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval;
+  std::unique_ptr<HeaderType> retval;
   Tokenizer tok(values_begin, values_end);
   if (!ParseContact(&tok, &retval, SingleBuilder<HeaderType>())
       || !ParseParameters(&tok, &retval, SingleParamSetter<HeaderType>()))
-    return scoped_ptr<Header>();
-  return retval.Pass();
+    return std::unique_ptr<Header>();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseMultipleContactParams(
+std::unique_ptr<Header> ParseMultipleContactParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval(new HeaderType);
+  std::unique_ptr<HeaderType> retval(new HeaderType);
   net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
   while (it.GetNext()) {
     Tokenizer tok(it.value_begin(), it.value_end());
     if (!ParseContact(&tok, &retval, MultipleBuilder<HeaderType>())
         || !ParseParameters(&tok, &retval, MultipleParamSetter<HeaderType>()))
-      return scoped_ptr<Header>();
+      return std::unique_ptr<Header>();
   }
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseStarOrMultipleContactParams(
+std::unique_ptr<Header> ParseStarOrMultipleContactParams(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval(new HeaderType);
+  std::unique_ptr<HeaderType> retval(new HeaderType);
   net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
   while (it.GetNext()) {
     Tokenizer tok(it.value_begin(), it.value_end());
     if (!ParseStar(&tok, &retval)) {
       if (!ParseContact(&tok, &retval, MultipleBuilder<HeaderType>())
           || !ParseParameters(&tok, &retval, MultipleParamSetter<HeaderType>()))
-        return scoped_ptr<Header>();
+        return std::unique_ptr<Header>();
     }
   }
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseTrimmedUtf8(
+std::unique_ptr<Header> ParseTrimmedUtf8(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
   std::string value(values_begin, values_end);
   base::TrimString(value, HTTP_LWS, &value);
-  return scoped_ptr<HeaderType>(new HeaderType(value)).Pass();
+  return std::unique_ptr<Header>(new HeaderType(value));
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseCseq(
+std::unique_ptr<Header> ParseCseq(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval;
+  std::unique_ptr<HeaderType> retval;
   Tokenizer tok(values_begin, values_end);
   do {
     std::string::const_iterator integer_start = tok.Skip(HTTP_LWS);
@@ -809,14 +809,14 @@ scoped_ptr<Header> ParseCseq(
     Method method(method_name);
     retval.reset(new HeaderType(sequence, method));
   } while (false);
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseDate(
+std::unique_ptr<Header> ParseDate(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval;
+  std::unique_ptr<HeaderType> retval;
   do {
     std::string date(values_begin, values_end);
     base::Time parsed_time;
@@ -826,14 +826,14 @@ scoped_ptr<Header> ParseDate(
     }
     retval.reset(new HeaderType(parsed_time));
   } while (false);
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseTimestamp(
+std::unique_ptr<Header> ParseTimestamp(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval;
+  std::unique_ptr<HeaderType> retval;
   Tokenizer tok(values_begin, values_end);
   do {
     std::string::const_iterator timestamp_start = tok.Skip(HTTP_LWS);
@@ -857,14 +857,14 @@ scoped_ptr<Header> ParseTimestamp(
     }
     retval.reset(new HeaderType(timestamp, delay));
   } while (false);
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseMimeVersion(
+std::unique_ptr<Header> ParseMimeVersion(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval;
+  std::unique_ptr<HeaderType> retval;
   Tokenizer tok(values_begin, values_end);
   do {
     std::string::const_iterator major_start = tok.Skip(HTTP_LWS);
@@ -891,14 +891,14 @@ scoped_ptr<Header> ParseMimeVersion(
     retval.reset(new HeaderType(static_cast<unsigned>(major),
                                 static_cast<unsigned>(minor)));
   } while (false);
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseRetryAfter(
+std::unique_ptr<Header> ParseRetryAfter(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval;
+  std::unique_ptr<HeaderType> retval;
   Tokenizer tok(values_begin, values_end);
   do {
     std::string::const_iterator delta_start = tok.Skip(HTTP_LWS);
@@ -920,41 +920,41 @@ scoped_ptr<Header> ParseRetryAfter(
       ParseParameters(&tok, &retval, SingleParamSetter<HeaderType>());
     }
   } while (false);
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseMultipleWarnings(
+std::unique_ptr<Header> ParseMultipleWarnings(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval(new HeaderType);
+  std::unique_ptr<HeaderType> retval(new HeaderType);
   net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
   while (it.GetNext()) {
     Tokenizer tok(it.value_begin(), it.value_end());
     if (!ParseWarning(&tok, &retval, MultipleBuilder<HeaderType>())) {
-      return scoped_ptr<Header>();
+      return std::unique_ptr<Header>();
     }
   }
-  return retval.Pass();
+  return std::move(retval);
 }
 
 template<class HeaderType>
-scoped_ptr<Header> ParseMultipleVias(
+std::unique_ptr<Header> ParseMultipleVias(
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<HeaderType> retval(new HeaderType);
+  std::unique_ptr<HeaderType> retval(new HeaderType);
   net::HttpUtil::ValuesIterator it(values_begin, values_end, ',');
   while (it.GetNext()) {
     Tokenizer tok(it.value_begin(), it.value_end());
     if (!ParseVia(&tok, &retval, MultipleBuilder<HeaderType>())
         || !ParseParameters(&tok, &retval, MultipleParamSetter<HeaderType>())) {
-      return scoped_ptr<Header>();
+      return std::unique_ptr<Header>();
     }
   }
-  return retval.Pass();
+  return std::move(retval);
 }
 
-typedef scoped_ptr<Header> (*ParseFunction)(std::string::const_iterator,
+typedef std::unique_ptr<Header> (*ParseFunction)(std::string::const_iterator,
                                             std::string::const_iterator);
 
 // Attention here: those headers should be sorted
@@ -965,12 +965,12 @@ const ParseFunction parsers[] = {
 #undef X
 };
 
-scoped_ptr<Header> ParseHeader(
+std::unique_ptr<Header> ParseHeader(
     std::string::const_iterator name_begin,
     std::string::const_iterator name_end,
     std::string::const_iterator values_begin,
     std::string::const_iterator values_end) {
-  scoped_ptr<Header> retval;
+  std::unique_ptr<Header> retval;
   std::string header_name(name_begin, name_end);
   Header::Type t = AtomTraits<Header::Type>::coerce(header_name.c_str());
   if (t == sippet::Header::HDR_GENERIC) {
@@ -981,7 +981,7 @@ scoped_ptr<Header> ParseHeader(
     ParseFunction f = parsers[static_cast<Header::Type>(t)];
     return (*f)(values_begin, values_end);
   }
-  return retval.Pass();
+  return retval;
 }
 
 bool AssembleRawHeaders(const std::string &input, std::string *output) {
@@ -1016,15 +1016,15 @@ bool AssembleRawHeaders(const std::string &input, std::string *output) {
 
 }  // namespace
 
-scoped_ptr<Header> Header::Parse(const std::string &raw_header) {
-  scoped_ptr<Header> header;
+std::unique_ptr<Header> Header::Parse(const std::string &raw_header) {
+  std::unique_ptr<Header> header;
   net::HttpUtil::HeadersIterator it(raw_header.begin(),
     raw_header.end(), "\r\n");
   if (it.GetNext()) {
     header = ParseHeader(it.name_begin(), it.name_end(),
       it.values_begin(), it.values_end());
   }
-  return header.Pass();
+  return header;
 }
 
 scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
@@ -1065,11 +1065,11 @@ scoped_refptr<Message> Message::Parse(const std::string &raw_message) {
   if (message) {
     net::HttpUtil::HeadersIterator it(i, end, "\r\n");
     while (it.GetNext()) {
-      scoped_ptr<Header> header =
+      std::unique_ptr<Header> header =
         ParseHeader(it.name_begin(), it.name_end(),
                     it.values_begin(), it.values_end());
       if (header)
-        message->push_back(header.Pass());
+        message->push_back(std::move(header));
     }
   }
 

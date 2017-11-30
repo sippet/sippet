@@ -72,7 +72,7 @@ bool DoExtractHeadersKeyValue(const CHAR* spec,
 
 }  // namespace
 
-Parsed::Parsed() {
+Parsed::Parsed() : potentially_dangling_markup(false) {
 }
 
 Parsed::Parsed(const Parsed& other) :
@@ -82,7 +82,8 @@ Parsed::Parsed(const Parsed& other) :
     host(other.host),
     port(other.port),
     parameters(other.parameters),
-    headers(other.headers) {
+    headers(other.headers),
+    potentially_dangling_markup(other.potentially_dangling_markup) {
 }
 
 Parsed& Parsed::operator=(const Parsed& other) {
@@ -94,6 +95,7 @@ Parsed& Parsed::operator=(const Parsed& other) {
     port = other.port;
     parameters = other.parameters;
     headers = other.headers;
+    potentially_dangling_markup = other.potentially_dangling_markup;
   }
   return *this;
 }

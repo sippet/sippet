@@ -62,8 +62,8 @@ class Warning :
   Warning(const WarnParam &param);
   ~Warning() override;
 
-  scoped_ptr<Warning> Clone() const {
-    return scoped_ptr<Warning>(DoClone());
+  std::unique_ptr<Warning> Clone() const {
+    return std::unique_ptr<Warning>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

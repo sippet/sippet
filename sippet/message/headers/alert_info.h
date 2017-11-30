@@ -48,8 +48,8 @@ class AlertInfo :
   AlertInfo();
   ~AlertInfo() override;
 
-  scoped_ptr<AlertInfo> Clone() const {
-    return scoped_ptr<AlertInfo>(DoClone());
+  std::unique_ptr<AlertInfo> Clone() const {
+    return std::unique_ptr<AlertInfo>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

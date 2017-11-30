@@ -11,11 +11,11 @@ Encoding::Encoding() {
 }
 
 Encoding::Encoding(const Encoding &other)
-  : has_parameters(other), single_value(other) {
+  : single_value(other), has_parameters(other) {
 }
 
 Encoding::Encoding(const single_value::value_type &value)
-  : single_value(base::StringToLowerASCII(value)) {
+  : single_value(base::ToLowerASCII(value)) {
 }
 
 Encoding &Encoding::operator=(const Encoding &other) {

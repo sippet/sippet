@@ -88,12 +88,12 @@ static inline char *utohex_buffer(IntTy X, char *BufferEnd) {
   return BufPtr;
 }
 
-static inline std::string utohexstr(uint64 X) {
+static inline std::string utohexstr(uint64_t X) {
   char Buffer[17];
   return utohex_buffer(X, Buffer+17);
 }
 
-static inline std::string utostr_32(uint32 X, bool isNeg = false) {
+static inline std::string utostr_32(uint32_t X, bool isNeg = false) {
   char Buffer[11];
   char *BufPtr = Buffer+11;
 
@@ -109,7 +109,7 @@ static inline std::string utostr_32(uint32 X, bool isNeg = false) {
   return std::string(BufPtr, Buffer+11);
 }
 
-static inline std::string utostr(uint64 X, bool isNeg = false) {
+static inline std::string utostr(uint64_t X, bool isNeg = false) {
   char Buffer[21];
   char *BufPtr = Buffer+21;
 
@@ -125,11 +125,11 @@ static inline std::string utostr(uint64 X, bool isNeg = false) {
 }
 
 
-static inline std::string itostr(int64 X) {
+static inline std::string itostr(int64_t X) {
   if (X < 0)
-    return utostr(static_cast<uint64>(-X), true);
+    return utostr(static_cast<uint64_t>(-X), true);
   else
-    return utostr(static_cast<uint64>(X));
+    return utostr(static_cast<uint64_t>(X));
 }
 
 /// StrInStrNoCase - Portable version of strcasestr.  Locates the first

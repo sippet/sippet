@@ -6,9 +6,10 @@
 #define SIPPET_UA_AUTH_HANDLER_FACTORY_H_
 
 #include <map>
+#include <memory>
 
-#include "base/memory/scoped_ptr.h"
 #include "net/dns/host_resolver.h"
+#include "net/log/net_log_with_source.h"
 #include "sippet/ua/auth.h"
 
 namespace sippet {
@@ -62,16 +63,16 @@ class AuthHandlerFactory {
                                 const GURL& origin,
                                 CreateReason create_reason,
                                 int digest_nonce_count,
-                                const net::BoundNetLog& net_log,
-                                scoped_ptr<AuthHandler>* handler) = 0;
+                                const net::NetLogWithSource& net_log,
+                                std::unique_ptr<AuthHandler>* handler) = 0;
 
   // Creates a SIP authentication handler based on the authentication
   // |challenge|. See |CreateAuthHandler| for more details on return values.
   int CreateChallengeAuthHandler(const Challenge &challenge,
                                  Auth::Target target,
                                  const GURL& origin,
-                                 const net::BoundNetLog& net_log,
-                                 scoped_ptr<AuthHandler>* handler);
+                                 const net::NetLogWithSource& net_log,
+                                 std::unique_ptr<AuthHandler>* handler);
 
   // Creates a SIP authentication handler based on the authentication
   // |challenge|. See |CreateAuthHandler| for more details on return values.
@@ -79,8 +80,8 @@ class AuthHandlerFactory {
                                   Auth::Target target,
                                   const GURL& origin,
                                   int digest_nonce_count,
-                                  const net::BoundNetLog& net_log,
-                                  scoped_ptr<AuthHandler>* handler);
+                                  const net::NetLogWithSource& net_log,
+                                  std::unique_ptr<AuthHandler>* handler);
 
   // Creates a standard AuthHandlerRegistryFactory. The caller is responsible
   // for deleting the factory.
@@ -108,14 +109,11 @@ class AuthHandlerRegistryFactory
 
   // Registers a |factory| that will be used for a particular SIP
   // authentication scheme such as Digest, or Negotiate.
-  // The |*factory| object is assumed to be new-allocated, and its lifetime
-  // will be managed by this AuthHandlerRegistryFactory object (including
-  // deleting it when it is no longer used.
   // A NULL |factory| value means that AuthHandlers's will not be created
   // for |scheme|. If a factory object used to exist for |scheme|, it will be
   // deleted.
   void RegisterSchemeFactory(const std::string& scheme,
-                             AuthHandlerFactory* factory);
+                             std::unique_ptr<AuthHandlerFactory> factory);
 
   // Retrieve the factory for the specified |scheme|. If no factory exists
   // for the |scheme|, NULL is returned. The returned factory must not be
@@ -157,11 +155,12 @@ class AuthHandlerRegistryFactory
                         const GURL& origin,
                         CreateReason reason,
                         int digest_nonce_count,
-                        const net::BoundNetLog& net_log,
-                        scoped_ptr<AuthHandler>* handler) override;
+                        const net::NetLogWithSource& net_log,
+                        std::unique_ptr<AuthHandler>* handler) override;
 
  private:
-  typedef std::map<std::string, AuthHandlerFactory*> FactoryMap;
+  typedef std::map<std::string, std::unique_ptr<AuthHandlerFactory>>
+      FactoryMap;
 
   FactoryMap factory_map_;
   DISALLOW_COPY_AND_ASSIGN(AuthHandlerRegistryFactory);

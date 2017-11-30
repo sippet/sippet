@@ -25,8 +25,8 @@ class ProxyRequire :
   ProxyRequire(const std::string &value);
   ~ProxyRequire() override;
 
-  scoped_ptr<ProxyRequire> Clone() const {
-    return scoped_ptr<ProxyRequire>(DoClone());
+  std::unique_ptr<ProxyRequire> Clone() const {
+    return std::unique_ptr<ProxyRequire>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

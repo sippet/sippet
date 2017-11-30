@@ -266,33 +266,36 @@ void CallImpl::CreateOffer() {
       nullptr);
 }
 
-void CallImpl::OnIceComplete() {
-  std::string offer;
-  const webrtc::SessionDescriptionInterface* desc =
-    peer_connection_->local_description();
-  desc->ToString(&offer);
-
-  static std::pair<const char*, const char*> replacements[] {
-    std::make_pair("a=group:[^\r\n]*\r?\n", ""),
-    std::make_pair("a=msid-[^\r\n]*\r?\n", ""),
-    std::make_pair("RTP/AVPF", "RTP/AVP"),
-    std::make_pair("a=ice-[^\r\n]*\r?\n", ""),
-    std::make_pair("a=mid:[^\r\n]*\r?\n", ""),
-    std::make_pair("a=rtcp-mux[^\r\n]*\r?\n", ""),
-    std::make_pair("a=extmap:[^\r\n]*\r?\n", ""),
-    std::make_pair("a=ssrc:[^\r\n]*\r?\n", ""),
-    std::make_pair("a=candidate:[^\r\n]*\r?\n", ""),
-  };
-
-  for (int i = 0; i < arraysize(replacements); ++i) {
-    std::pair<const char*, const char*> &elem = replacements[i];
-    RE2::GlobalReplace(&offer, elem.first, elem.second);
+void CallImpl::OnSignalingChange(
+    webrtc::PeerConnectionInterface::SignalingState new_state) {
+  if (new_state == webrtc::PeerConnectionInterface::kHaveLocalOffer) {
+    std::string offer;
+    const webrtc::SessionDescriptionInterface* desc =
+      peer_connection_->local_description();
+    desc->ToString(&offer);
+ 
+    static std::pair<const char*, const char*> replacements[] {
+      std::make_pair("a=group:[^\r\n]*\r?\n", ""),
+      std::make_pair("a=msid-[^\r\n]*\r?\n", ""),
+      std::make_pair("RTP/AVPF", "RTP/AVP"),
+      std::make_pair("a=ice-[^\r\n]*\r?\n", ""),
+      std::make_pair("a=mid:[^\r\n]*\r?\n", ""),
+      std::make_pair("a=rtcp-mux[^\r\n]*\r?\n", ""),
+      std::make_pair("a=extmap:[^\r\n]*\r?\n", ""),
+      std::make_pair("a=ssrc:[^\r\n]*\r?\n", ""),
+      std::make_pair("a=candidate:[^\r\n]*\r?\n", ""),
+    };
+ 
+    for (int i = 0; i < arraysize(replacements); ++i) {
+      std::pair<const char*, const char*> &elem = replacements[i];
+      RE2::GlobalReplace(&offer, elem.first, elem.second);
+    }
+ 
+    phone_->GetNetworkMessageLoop()->PostTask(
+      FROM_HERE,
+      base::Bind(&CallImpl::OnCreateOfferCompleted,
+      base::Unretained(this), offer));
   }
-
-  phone_->GetNetworkMessageLoop()->PostTask(
-    FROM_HERE,
-    base::Bind(&CallImpl::OnCreateOfferCompleted,
-    base::Unretained(this), offer));
 }
 
 void CallImpl::OnCreateSessionSuccess(
@@ -336,9 +339,9 @@ void CallImpl::OnCreateOfferCompleted(const std::string& offer) {
         phone_->settings().uri(),
         GURL(to));
 
-  scoped_ptr<ContentType> content_type(
+  std::unique_ptr<ContentType> content_type(
     new ContentType("application", "sdp"));
-  last_request_->push_back(content_type.Pass());
+  last_request_->push_back(std::move(content_type));
   last_request_->set_content(offer);
 
   int rv = phone_->user_agent()->Send(last_request_,
@@ -560,8 +563,7 @@ void CallImpl::OnIncomingResponse(
 }
 
 void CallImpl::OnTimedOut(
-    const scoped_refptr<Request> &request,
-    const scoped_refptr<Dialog> &dialog) {
+    const scoped_refptr<Request> &request) {
   if (CALL_STATE_CALLING == state_
       || CALL_STATE_RINGING == state_) {
     state_ = CALL_STATE_TERMINATED;
@@ -571,8 +573,7 @@ void CallImpl::OnTimedOut(
 }
 
 void CallImpl::OnTransportError(
-    const scoped_refptr<Request> &request, int error,
-    const scoped_refptr<Dialog> &dialog) {
+    const scoped_refptr<Request> &request, int error) {
   if (CALL_STATE_CALLING == state_
       || CALL_STATE_RINGING == state_) {
     state_ = CALL_STATE_TERMINATED;

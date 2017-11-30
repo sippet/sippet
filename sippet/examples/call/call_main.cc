@@ -65,7 +65,7 @@ class Conductor :
   scoped_refptr<Phone> phone_;
   base::MessageLoop* message_loop_;
   scoped_refptr<Call> call_;
-  base::OneShotTimer<Conductor> call_timeout_;
+  base::OneShotTimer call_timeout_;
   base::ThreadChecker thread_checker_;
 
   void OnNetworkError(int error_code) {
@@ -391,8 +391,9 @@ int main(int argc, char **argv) {
   settings.set_uri(GURL(uri));
   settings.set_password(password);
   if (route_set.size() > 0) {
-    std::vector<std::string> set;
-    base::SplitString(route_set, ',', &set);
+    std::vector<std::string> set(
+        base::SplitString(route_set, ",",
+            base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY));
     for (std::vector<std::string>::iterator i = set.begin(), ie = set.end();
          i != ie; i++) {
       settings.route_set().push_back(GURL(*i));

@@ -23,8 +23,8 @@ public:
   From(const GURL &address, const std::string &displayName="");
   ~From() override;
 
-  scoped_ptr<From> Clone() const {
-    return scoped_ptr<From>(DoClone());
+  std::unique_ptr<From> Clone() const {
+    return std::unique_ptr<From>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

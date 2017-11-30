@@ -7,8 +7,6 @@
 #include <utility>
 #include <string>
 
-#include "base/basictypes.h"
-
 #include "testing/gtest/include/gtest/gtest.h"
 
 using sippet::SipURI;
@@ -81,7 +79,7 @@ TEST(SipURI, Parser) {
      "", ";lr", ""},
   };
 
-  for (int i = 0; i < arraysize(tests); ++i) {
+  for (size_t i = 0; i < arraysize(tests); ++i) {
     SipURI uri(tests[i].input);
     EXPECT_EQ(tests[i].valid, uri.is_valid());
     if (tests[i].valid) {
@@ -160,7 +158,7 @@ TEST(TelURI, Parser) {
     {"*", false},
   };
 
-  for (int i = 0; i < arraysize(tests); ++i) {
+  for (size_t i = 0; i < arraysize(tests); ++i) {
     TelURI uri(tests[i].input);
     EXPECT_EQ(tests[i].valid, uri.is_valid());
     if (tests[i].valid) {
@@ -196,7 +194,7 @@ TEST(TelURI, ToSipURI) {
       "sip:+358-555-1234567;postd=pp22@foo.com:5555;user=phone" },
   };
 
-  for (int i = 0; i < arraysize(tests); ++i) {
+  for (size_t i = 0; i < arraysize(tests); ++i) {
     SipURI origin(tests[i].origin);
     TelURI uri(tests[i].input);
     EXPECT_EQ(tests[i].output, uri.ToSipURI(origin).spec());

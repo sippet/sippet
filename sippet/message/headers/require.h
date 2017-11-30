@@ -26,8 +26,8 @@ class Require :
   Require(const std::string &value);
   ~Require() override;
 
-  scoped_ptr<Require> Clone() const {
-    return scoped_ptr<Require>(DoClone());
+  std::unique_ptr<Require> Clone() const {
+    return std::unique_ptr<Require>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

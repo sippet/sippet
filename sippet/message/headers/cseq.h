@@ -24,8 +24,8 @@ class Cseq :
   Cseq(unsigned sequence, const Method &method);
   ~Cseq() override;
 
-  scoped_ptr<Cseq> Clone() const {
-    return scoped_ptr<Cseq>(DoClone());
+  std::unique_ptr<Cseq> Clone() const {
+    return std::unique_ptr<Cseq>(DoClone());
   }
 
   unsigned sequence() const { return sequence_; }

@@ -6,6 +6,8 @@
 #define SIPPET_TRANSPORT_CHROME_CHROME_DATAGRAM_WRITER_H_
 
 #include <deque>
+#include <memory>
+
 #include "base/memory/weak_ptr.h"
 #include "net/base/completion_callback.h"
 
@@ -50,14 +52,14 @@ class ChromeDatagramWriter {
     net::CompletionCallback callback_;
   };
 
-  std::deque<PendingFrame*> pending_messages_;
+  std::deque<std::unique_ptr<PendingFrame>> pending_messages_;
 
   void DidWrite(int result);
   void DidConsume();
   void Pop(int result);
   int Drain(net::IOBuffer* buf, int buf_len);
 
-  base::WeakPtrFactory<ChromeDatagramWriter> weak_factory_;
+  base::WeakPtrFactory<ChromeDatagramWriter> weak_ptr_factory_;
 };
 
 } // End of sippet namespace

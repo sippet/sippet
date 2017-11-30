@@ -14,6 +14,26 @@
 
 namespace sippet {
 
+namespace {
+
+std::string EscapeParameter(const std::string input) {
+  if (input.find(' ') == std::string::npos) {
+    return input;
+  } else {
+    std::string result;
+    result.append(1, '"');
+    for (char c : input) {
+      if (c == '"')
+        result.append(1, '\\');
+      result.append(1, c);
+    }
+    result.append(1, '"');
+    return result;
+  }
+}
+
+}  // namespace
+
 class has_parameters {
  public:
   typedef std::pair<std::string, std::string> param_type;
@@ -71,7 +91,7 @@ class has_parameters {
       // TODO: value should be escaped
       os << ";" << i->first;
       if (!i->second.empty())
-        os << "=" << i->second;
+        os << "=" << EscapeParameter(i->second);
     }
   }
 private:

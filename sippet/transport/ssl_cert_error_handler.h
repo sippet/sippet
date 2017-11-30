@@ -5,14 +5,16 @@
 #ifndef SIPPET_TRANSPORT_SSL_CERT_ERROR_HANDLER_H_
 #define SIPPET_TRANSPORT_SSL_CERT_ERROR_HANDLER_H_
 
-#include "base/memory/scoped_ptr.h"
+#include <memory>
+
 #include "base/memory/ref_counted.h"
 #include "net/base/completion_callback.h"
 
 namespace net {
 class SSLInfo;
 class X509Certificate;
-}
+class SSLPrivateKey;
+}  // namespace net
 
 namespace sippet {
 
@@ -29,7 +31,7 @@ class SSLCertErrorHandler {
 
     // Returns the application-specific |SSLCertErrorHandler|
     // implementation.
-    virtual scoped_ptr<SSLCertErrorHandler>
+    virtual std::unique_ptr<SSLCertErrorHandler>
         CreateSSLCertificateErrorHandler() = 0;
   };
 
@@ -50,10 +52,12 @@ class SSLCertErrorHandler {
   // application has to display a UI dialog to the user, this function shall
   // forward the request to the UI thread and return |ERR_IO_PENDING|, calling
   // the provided callback when done. Otherwise, this function must return
-  // |OK|, and the parameter |client_cert| must have been set.
+  // |OK|, and the parameter |client_cert| must have been set. |private_key|
+  // mey be NULL.
   virtual int GetClientCert(const EndPoint &destination,
                             const net::SSLInfo &ssl_info,
                             scoped_refptr<net::X509Certificate> *client_cert,
+                            scoped_refptr<net::SSLPrivateKey> *private_key,
                             const net::CompletionCallback& callback) = 0;
 };
 

@@ -10,7 +10,7 @@ ErrorUri::ErrorUri() {
 }
 
 ErrorUri::ErrorUri(const ErrorUri &other)
-  : has_parameters(other), single_value(other) {
+  : single_value(other), has_parameters(other) {
 }
 
 ErrorUri::ErrorUri(const single_value::value_type &type)

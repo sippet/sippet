@@ -34,8 +34,8 @@ class Route :
   Route(const RouteParam &param);
   ~Route() override;
 
-  scoped_ptr<Route> Clone() const {
-    return scoped_ptr<Route>(DoClone());
+  std::unique_ptr<Route> Clone() const {
+    return std::unique_ptr<Route>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

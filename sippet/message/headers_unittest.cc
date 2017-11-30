@@ -32,7 +32,7 @@ class HeaderTest : public testing::Test {
 
   void HasViaReceived(const char *via_header,
                       const char *expected_received_parameter) {
-    scoped_ptr<Header> header(Header::Parse(via_header));
+    std::unique_ptr<Header> header(Header::Parse(via_header));
     Via *via = dyn_cast<Via>(header);
 
     ASSERT_FALSE(via->empty());
@@ -65,7 +65,7 @@ TEST_F(HeaderTest, Method) {
 }
 
 TEST_F(HeaderTest, Accept) {
-  scoped_ptr<Accept> accept(new Accept);
+  std::unique_ptr<Accept> accept(new Accept);
 
   Header *h = accept.get();
   EXPECT_TRUE(isa<Accept>(h));
@@ -87,7 +87,7 @@ TEST_F(HeaderTest, Accept) {
 }
 
 TEST_F(HeaderTest, AcceptEncoding) {
-  scoped_ptr<AcceptEncoding> accept_encoding(new AcceptEncoding);
+  std::unique_ptr<AcceptEncoding> accept_encoding(new AcceptEncoding);
 
   Header *h = accept_encoding.get();
   EXPECT_TRUE(isa<AcceptEncoding>(h));
@@ -106,7 +106,7 @@ TEST_F(HeaderTest, AcceptEncoding) {
 }
 
 TEST_F(HeaderTest, AcceptLanguage) {
-  scoped_ptr<AcceptLanguage> accept_language(new AcceptLanguage);
+  std::unique_ptr<AcceptLanguage> accept_language(new AcceptLanguage);
 
   Header *h = accept_language.get();
   EXPECT_TRUE(isa<AcceptLanguage>(h));
@@ -128,7 +128,7 @@ TEST_F(HeaderTest, AcceptLanguage) {
 }
 
 TEST_F(HeaderTest, AlertInfo) {
-  scoped_ptr<AlertInfo> alert_info(new AlertInfo);
+  std::unique_ptr<AlertInfo> alert_info(new AlertInfo);
   alert_info->push_back(AlertParam(
       GURL("http://www.example.com/sounds/moo.wav")));
 
@@ -143,7 +143,7 @@ TEST_F(HeaderTest, AlertInfo) {
 }
 
 TEST_F(HeaderTest, Allow) {
-  scoped_ptr<Allow> allow(new Allow);
+  std::unique_ptr<Allow> allow(new Allow);
   allow->push_back(Method("INVITE"));
   allow->push_back(Method::ACK);
   allow->push_back(Method::BYE);
@@ -173,7 +173,7 @@ TEST_F(HeaderTest, Allow) {
 }
 
 TEST_F(HeaderTest, AuthenticationInfo) {
-  scoped_ptr<AuthenticationInfo> authentication_info(new AuthenticationInfo);
+  std::unique_ptr<AuthenticationInfo> authentication_info(new AuthenticationInfo);
   authentication_info->set_nextnonce("47364c23432d2e131a5fb210812c");
   authentication_info->set_qop(AuthenticationInfo::auth);
   authentication_info->set_rspauth("xxx");
@@ -194,7 +194,7 @@ TEST_F(HeaderTest, AuthenticationInfo) {
 }
 
 TEST_F(HeaderTest, Authorization) {
-  scoped_ptr<Authorization> authorization(
+  std::unique_ptr<Authorization> authorization(
       new Authorization(Authorization::Digest));
   authorization->set_username("Alice");
   authorization->set_realm("atlanta.com");
@@ -214,7 +214,7 @@ TEST_F(HeaderTest, Authorization) {
 }
 
 TEST_F(HeaderTest, CallId) {
-  scoped_ptr<CallId> callid(
+  std::unique_ptr<CallId> callid(
       new CallId("f81d4fae-7dec-11d0-a765-00a0c91e6bf6@biloxi.com"));
 
   Header *h = callid.get();
@@ -228,7 +228,7 @@ TEST_F(HeaderTest, CallId) {
 }
 
 TEST_F(HeaderTest, CallInfo) {
-  scoped_ptr<CallInfo> call_info(new CallInfo);
+  std::unique_ptr<CallInfo> call_info(new CallInfo);
   call_info->push_back(Info(GURL("http://wwww.example.com/alice/photo.jpg")));
   call_info->back().set_purpose(Info::icon);
   call_info->push_back(Info(GURL("http://www.example.com/alice/")));
@@ -247,7 +247,7 @@ TEST_F(HeaderTest, CallInfo) {
 }
 
 TEST_F(HeaderTest, Contact) {
-  scoped_ptr<Contact> contact(new Contact);
+  std::unique_ptr<Contact> contact(new Contact);
 
   Header *h = contact.get();
   EXPECT_TRUE(isa<Contact>(h));
@@ -268,7 +268,7 @@ TEST_F(HeaderTest, Contact) {
 }
 
 TEST_F(HeaderTest, ContentDisposition) {
-  scoped_ptr<ContentDisposition> content_disposition(
+  std::unique_ptr<ContentDisposition> content_disposition(
       new ContentDisposition("attachment"));
   content_disposition->param_set("filename", "smime.p7m");
   content_disposition->set_handling(ContentDisposition::required);
@@ -285,7 +285,7 @@ TEST_F(HeaderTest, ContentDisposition) {
 }
 
 TEST_F(HeaderTest, ContentEncoding) {
-  scoped_ptr<ContentEncoding> content_encoding(new ContentEncoding("gzip"));
+  std::unique_ptr<ContentEncoding> content_encoding(new ContentEncoding("gzip"));
 
   Header *h = content_encoding.get();
   EXPECT_TRUE(isa<ContentEncoding>(h));
@@ -298,7 +298,7 @@ TEST_F(HeaderTest, ContentEncoding) {
 }
 
 TEST_F(HeaderTest, ContentLanguage) {
-  scoped_ptr<ContentLanguage> content_language(new ContentLanguage);
+  std::unique_ptr<ContentLanguage> content_language(new ContentLanguage);
   content_language->push_back("en");
   content_language->push_back("pt-br");
 
@@ -313,9 +313,9 @@ TEST_F(HeaderTest, ContentLanguage) {
 }
 
 TEST_F(HeaderTest, ContentLength) {
-  scoped_ptr<ContentLength> content_length(new ContentLength(0));
+  std::unique_ptr<ContentLength> content_length(new ContentLength(0));
 
-  EXPECT_EQ(0, content_length->value());
+  EXPECT_EQ(0ul, content_length->value());
 
   Header *h = content_length.get();
   EXPECT_TRUE(isa<ContentLength>(h));
@@ -328,7 +328,7 @@ TEST_F(HeaderTest, ContentLength) {
 }
 
 TEST_F(HeaderTest, ContentType) {
-  scoped_ptr<ContentType> content_type(
+  std::unique_ptr<ContentType> content_type(
       new ContentType(MediaType("application", "sdp")));
 
   Header *h = content_type.get();
@@ -342,9 +342,9 @@ TEST_F(HeaderTest, ContentType) {
 }
 
 TEST_F(HeaderTest, Cseq) {
-  scoped_ptr<Cseq> cseq(new Cseq(1, Method::REGISTER));
+  std::unique_ptr<Cseq> cseq(new Cseq(1, Method::REGISTER));
 
-  EXPECT_EQ(1, cseq->sequence());
+  EXPECT_EQ(1ul, cseq->sequence());
   EXPECT_EQ(Method::REGISTER, cseq->method());
 
   Header *h = cseq.get();
@@ -359,7 +359,7 @@ TEST_F(HeaderTest, Cseq) {
 
 TEST_F(HeaderTest, Date) {
   base::Time t(base::Time::FromJsTime(62123.4512345));
-  scoped_ptr<Date> date(new Date(t));
+  std::unique_ptr<Date> date(new Date(t));
 
   EXPECT_EQ(date->value(), t);
 
@@ -374,7 +374,7 @@ TEST_F(HeaderTest, Date) {
 }
 
 TEST_F(HeaderTest, ErrorInfo) {
-  scoped_ptr<ErrorInfo> error_info(new ErrorInfo);
+  std::unique_ptr<ErrorInfo> error_info(new ErrorInfo);
   error_info->push_back(ErrorUri(
       GURL("sip:not-in-service-recording@atlanta.com")));
 
@@ -389,7 +389,7 @@ TEST_F(HeaderTest, ErrorInfo) {
 }
 
 TEST_F(HeaderTest, Expires) {
-  scoped_ptr<Expires> expires(new Expires(300));
+  std::unique_ptr<Expires> expires(new Expires(300));
 
   Header *h = expires.get();
   EXPECT_TRUE(isa<Expires>(h));
@@ -402,7 +402,7 @@ TEST_F(HeaderTest, Expires) {
 }
 
 TEST_F(HeaderTest, From) {
-  scoped_ptr<From> from(
+  std::unique_ptr<From> from(
       new From(GURL("sip:agb@bell-telephone.com"), "A. G. Bell"));
   from->set_tag("a48s");
 
@@ -418,7 +418,7 @@ TEST_F(HeaderTest, From) {
 }
 
 TEST_F(HeaderTest, InReplyTo) {
-  scoped_ptr<InReplyTo> in_reply_to(new InReplyTo);
+  std::unique_ptr<InReplyTo> in_reply_to(new InReplyTo);
   in_reply_to->push_back("70710@saturn.bell-tel.com");
   in_reply_to->push_back("17320@saturn.bell-tel.com");
 
@@ -434,9 +434,9 @@ TEST_F(HeaderTest, InReplyTo) {
 }
 
 TEST_F(HeaderTest, MaxForwards) {
-  scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
+  std::unique_ptr<MaxForwards> max_forwards(new MaxForwards(70));
 
-  EXPECT_EQ(70, max_forwards->value());
+  EXPECT_EQ(70ul, max_forwards->value());
 
   Header *h = max_forwards.get();
   EXPECT_TRUE(isa<MaxForwards>(h));
@@ -449,7 +449,7 @@ TEST_F(HeaderTest, MaxForwards) {
 }
 
 TEST_F(HeaderTest, MimeVersion) {
-  scoped_ptr<MimeVersion> mime_version(new MimeVersion(1, 0));
+  std::unique_ptr<MimeVersion> mime_version(new MimeVersion(1, 0));
 
   EXPECT_EQ(1, mime_version->major());
   EXPECT_EQ(0, mime_version->minor());
@@ -465,9 +465,9 @@ TEST_F(HeaderTest, MimeVersion) {
 }
 
 TEST_F(HeaderTest, MinExpires) {
-  scoped_ptr<MinExpires> min_expires(new MinExpires(5));
+  std::unique_ptr<MinExpires> min_expires(new MinExpires(5));
 
-  EXPECT_EQ(5, min_expires->value());
+  EXPECT_EQ(5ul, min_expires->value());
 
   Header *h = min_expires.get();
   EXPECT_TRUE(isa<MinExpires>(h));
@@ -480,7 +480,7 @@ TEST_F(HeaderTest, MinExpires) {
 }
 
 TEST_F(HeaderTest, Organization) {
-  scoped_ptr<Organization> organization(new Organization("Boxes by Bob"));
+  std::unique_ptr<Organization> organization(new Organization("Boxes by Bob"));
 
   EXPECT_EQ("Boxes by Bob", organization->value());
 
@@ -495,7 +495,7 @@ TEST_F(HeaderTest, Organization) {
 }
 
 TEST_F(HeaderTest, Priority) {
-  scoped_ptr<Priority> priority(new Priority(Priority::emergency));
+  std::unique_ptr<Priority> priority(new Priority(Priority::emergency));
 
   EXPECT_EQ("emergency", priority->value());
 
@@ -510,7 +510,7 @@ TEST_F(HeaderTest, Priority) {
 }
 
 TEST_F(HeaderTest, ProxyAuthenticate) {
-  scoped_ptr<ProxyAuthenticate> proxy_authenticate(
+  std::unique_ptr<ProxyAuthenticate> proxy_authenticate(
       new ProxyAuthenticate(ProxyAuthenticate::Digest));
   proxy_authenticate->set_realm("atlanta.com");
   proxy_authenticate->set_domain("sip:ss1.carrier.com");
@@ -534,7 +534,7 @@ TEST_F(HeaderTest, ProxyAuthenticate) {
 }
 
 TEST_F(HeaderTest, ProxyAuthorization) {
-  scoped_ptr<ProxyAuthorization> proxy_authorization(
+  std::unique_ptr<ProxyAuthorization> proxy_authorization(
       new ProxyAuthorization(ProxyAuthorization::Digest));
   proxy_authorization->set_username("Alice");
   proxy_authorization->set_realm("atlanta.com");
@@ -554,7 +554,7 @@ TEST_F(HeaderTest, ProxyAuthorization) {
 }
 
 TEST_F(HeaderTest, ProxyRequire) {
-  scoped_ptr<ProxyRequire> proxy_require(new ProxyRequire);
+  std::unique_ptr<ProxyRequire> proxy_require(new ProxyRequire);
   proxy_require->push_back("foo");
 
   Header *h = proxy_require.get();
@@ -568,7 +568,7 @@ TEST_F(HeaderTest, ProxyRequire) {
 }
 
 TEST_F(HeaderTest, RecordRoute) {
-  scoped_ptr<RecordRoute> record_route(
+  std::unique_ptr<RecordRoute> record_route(
       new RecordRoute(RouteParam(GURL("sip:p2.example.com;lr"))));
   record_route->push_back(RouteParam(GURL("sip:p1.example.com;lr")));
 
@@ -584,7 +584,7 @@ TEST_F(HeaderTest, RecordRoute) {
 }
 
 TEST_F(HeaderTest, ReplyTo) {
-  scoped_ptr<ReplyTo> reply_to(
+  std::unique_ptr<ReplyTo> reply_to(
       new ReplyTo(GURL("sip:bob@biloxi.com"), "Bob"));
 
   Header *h = reply_to.get();
@@ -598,7 +598,7 @@ TEST_F(HeaderTest, ReplyTo) {
 }
 
 TEST_F(HeaderTest, Require) {
-  scoped_ptr<Require> require(new Require("100rel"));
+  std::unique_ptr<Require> require(new Require("100rel"));
 
   Header *h = require.get();
   EXPECT_TRUE(isa<Require>(h));
@@ -611,7 +611,7 @@ TEST_F(HeaderTest, Require) {
 }
 
 TEST_F(HeaderTest, RetryAfter) {
-  scoped_ptr<RetryAfter> retry_after(new RetryAfter(300));
+  std::unique_ptr<RetryAfter> retry_after(new RetryAfter(300));
 
   Header *h = retry_after.get();
   EXPECT_TRUE(isa<RetryAfter>(h));
@@ -624,7 +624,7 @@ TEST_F(HeaderTest, RetryAfter) {
 }
 
 TEST_F(HeaderTest, Route) {
-  scoped_ptr<Route> route(new Route(RouteParam(GURL("sip:alice@atlanta.com"))));
+  std::unique_ptr<Route> route(new Route(RouteParam(GURL("sip:alice@atlanta.com"))));
 
   Header *h = route.get();
   EXPECT_TRUE(isa<Route>(h));
@@ -637,7 +637,7 @@ TEST_F(HeaderTest, Route) {
 }
 
 TEST_F(HeaderTest, Subject) {
-  scoped_ptr<Subject> subject(new Subject("Need more boxes"));
+  std::unique_ptr<Subject> subject(new Subject("Need more boxes"));
 
   Header *h = subject.get();
   EXPECT_TRUE(isa<Subject>(h));
@@ -650,7 +650,7 @@ TEST_F(HeaderTest, Subject) {
 }
 
 TEST_F(HeaderTest, Supported) {
-  scoped_ptr<Supported> supported(new Supported("100rel"));
+  std::unique_ptr<Supported> supported(new Supported("100rel"));
 
   Header *h = supported.get();
   EXPECT_TRUE(isa<Supported>(h));
@@ -663,7 +663,7 @@ TEST_F(HeaderTest, Supported) {
 }
 
 TEST_F(HeaderTest, Timestamp) {
-  scoped_ptr<Timestamp> timestamp(new Timestamp(100, 2.2345));
+  std::unique_ptr<Timestamp> timestamp(new Timestamp(100, 2.2345));
 
   Header *h = timestamp.get();
   EXPECT_TRUE(isa<Timestamp>(h));
@@ -676,7 +676,7 @@ TEST_F(HeaderTest, Timestamp) {
 }
 
 TEST_F(HeaderTest, To) {
-  scoped_ptr<To> to(
+  std::unique_ptr<To> to(
       new To(GURL("sip:operator@cs.columbia.edu"), "The Operator"));
   to->set_tag("287447");
 
@@ -692,7 +692,7 @@ TEST_F(HeaderTest, To) {
 }
 
 TEST_F(HeaderTest, Unsupported) {
-  scoped_ptr<Unsupported> unsupported(new Unsupported("foo"));
+  std::unique_ptr<Unsupported> unsupported(new Unsupported("foo"));
 
   Header *h = unsupported.get();
   EXPECT_TRUE(isa<Unsupported>(h));
@@ -705,7 +705,7 @@ TEST_F(HeaderTest, Unsupported) {
 }
 
 TEST_F(HeaderTest, UserAgent) {
-  scoped_ptr<UserAgent> user_agent(new UserAgent("Softphone Beta1.5"));
+  std::unique_ptr<UserAgent> user_agent(new UserAgent("Softphone Beta1.5"));
 
   Header *h = user_agent.get();
   EXPECT_TRUE(isa<UserAgent>(h));
@@ -718,7 +718,7 @@ TEST_F(HeaderTest, UserAgent) {
 }
 
 TEST_F(HeaderTest, Via) {
-  scoped_ptr<Via> via(new Via);
+  std::unique_ptr<Via> via(new Via);
   via->push_back(ViaParam(Protocol::UDP,
       net::HostPortPair("pc33.atlanta.com", 0)));
   via->back().set_branch("z9hG4bK776asdhds");
@@ -735,7 +735,7 @@ TEST_F(HeaderTest, Via) {
 }
 
 TEST_F(HeaderTest, Warning) {
-  scoped_ptr<Warning> warning(new Warning);
+  std::unique_ptr<Warning> warning(new Warning);
   warning->push_back(
       WarnParam(370, "devnull", "Choose a bigger pipe"));
   warning->push_back(
@@ -753,7 +753,7 @@ TEST_F(HeaderTest, Warning) {
 }
 
 TEST_F(HeaderTest, WwwAuthenticate) {
-  scoped_ptr<WwwAuthenticate> www_authenticate(
+  std::unique_ptr<WwwAuthenticate> www_authenticate(
       new WwwAuthenticate(WwwAuthenticate::Digest));
   www_authenticate->set_realm("atlanta.com");
   www_authenticate->set_domain("sip:boxesbybob.com");
@@ -774,6 +774,47 @@ TEST_F(HeaderTest, WwwAuthenticate) {
       "domain=\"sip:boxesbybob.com\", qop=\"auth\", "
       "nonce=\"f84f1cec41e6cbe5aea9c8e88d359\", opaque=\"\", "
       "stale=false, algorithm=MD5", os.str());
+}
+
+TEST_F(HeaderTest, Reason) {
+  std::unique_ptr<Reason> reason(
+      new Reason(StatusCode::SIP_BUSY_EVERYWHERE));
+
+  Header *h = reason.get();
+  EXPECT_TRUE(isa<Reason>(h));
+
+  std::string buffer;
+  raw_string_ostream os(buffer);
+  reason->print(os);
+
+  EXPECT_EQ("Reason: SIP;cause=600;text=\"Busy Everywhere\"", os.str());
+}
+
+TEST_F(HeaderTest, Generic) {
+  std::unique_ptr<Generic> g1(
+      new Generic("X-Apple-ID",
+          "411164599ff074b3963b27c7c9d4e470fc2ca9f29922cf5a3bcf902f136edcd1"));
+
+  Header *h = g1.get();
+  EXPECT_TRUE(isa<Generic>(h));
+
+  std::string buffer;
+  raw_string_ostream os1(buffer);
+  g1->print(os1);
+
+  EXPECT_EQ("X-Apple-ID: "
+      "411164599ff074b3963b27c7c9d4e470fc2ca9f29922cf5a3bcf902f136edcd1",
+      os1.str());
+
+  std::unique_ptr<Generic> g2(g1->Clone());
+
+  buffer.clear();
+  raw_string_ostream os2(buffer);
+  g1->print(os2);
+
+  EXPECT_EQ("X-Apple-ID: "
+      "411164599ff074b3963b27c7c9d4e470fc2ca9f29922cf5a3bcf902f136edcd1",
+      os2.str());
 }
 
 TEST_F(HeaderTest, TortureIpv6Good) {
@@ -861,7 +902,7 @@ TEST_F(HeaderTest, TortureViaReceivedDelims) {
 
   // When sending a request, implementations must not put the delimiting "["
   // and "]" tokens.
-  scoped_ptr<Via> via(new Via(ViaParam(Protocol::UDP,
+  std::unique_ptr<Via> via(new Via(ViaParam(Protocol::UDP,
     net::HostPortPair("2001:db8::9:1", 0))));
   via->front().set_received("[2001:db8::9:255]");
   EXPECT_EQ("v: SIP/2.0/UDP [2001:db8::9:1];rport;received=2001:db8::9:255",

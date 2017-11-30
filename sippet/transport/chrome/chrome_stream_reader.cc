@@ -4,6 +4,8 @@
 
 #include "sippet/transport/chrome/chrome_stream_reader.h"
 
+#include <cstddef>
+
 #include "net/base/net_errors.h"
 #include "net/base/io_buffer.h"
 #include "net/socket/socket.h"
@@ -89,11 +91,15 @@ size_t ChromeStreamReader::max_size() {
   return kReadBufSize;
 }
 
-int ChromeStreamReader::BytesRemaining() const {
-  return read_end_ - drainable_read_buf_->data();
+size_t ChromeStreamReader::BytesRemaining() const {
+  DCHECK_GE(read_end_, drainable_read_buf_->data());
+  ptrdiff_t result = read_end_ - drainable_read_buf_->data();
+  if (result < 0)
+    return 0;
+  return static_cast<size_t>(result);
 }
 
-void ChromeStreamReader::DidConsume(int bytes) {
+void ChromeStreamReader::DidConsume(size_t bytes) {
   drainable_read_buf_->DidConsume(bytes);
 }
 

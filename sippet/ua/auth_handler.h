@@ -34,7 +34,7 @@ class AuthHandler {
   bool InitFromChallenge(const Challenge& challenge,
                          Auth::Target target,
                          const GURL& origin,
-                         const net::BoundNetLog& net_log);
+                         const net::NetLogWithSource& net_log);
 
   // Determines how the previous authorization attempt was received.
   //
@@ -147,7 +147,7 @@ class AuthHandler {
   // origin server.
   Auth::Target target_;
 
-  net::BoundNetLog net_log_;
+  net::NetLogWithSource net_log_;
 
  private:
   void OnGenerateAuthComplete(int rv);

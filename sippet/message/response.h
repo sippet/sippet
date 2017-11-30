@@ -5,9 +5,9 @@
 #ifndef SIPPET_MESSAGE_RESPONSE_H_
 #define SIPPET_MESSAGE_RESPONSE_H_
 
+#include "base/gtest_prod_util.h"
 #include "sippet/message/message.h"
 #include "sippet/message/version.h"
-#include "base/gtest_prod_util.h"
 
 namespace sippet {
 
@@ -62,6 +62,7 @@ private:
   int response_code_;
   scoped_refptr<Request> refer_to_;
   std::string reason_phrase_;
+  base::WeakPtrFactory<Response> weakptr_factory_;
 
   Response(int response_code,
            const std::string &reason_phrase,

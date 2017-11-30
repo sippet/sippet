@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     ssl_options.privatekey_file = certs_dir.AppendASCII("ok_cert.pem");
   }
 
-  scoped_ptr<StandaloneTestServer> server(
+  std::unique_ptr<StandaloneTestServer> server(
     new StandaloneTestServer(protocol, ssl_options, port));
 
   if (!server->InitializeAndWaitUntilReady()) {

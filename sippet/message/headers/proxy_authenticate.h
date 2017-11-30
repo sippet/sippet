@@ -23,8 +23,8 @@ class ProxyAuthenticate :
   ProxyAuthenticate(const std::string &scheme);
   ~ProxyAuthenticate() override;
 
-  scoped_ptr<ProxyAuthenticate> Clone() const {
-    return scoped_ptr<ProxyAuthenticate>(DoClone());
+  std::unique_ptr<ProxyAuthenticate> Clone() const {
+    return std::unique_ptr<ProxyAuthenticate>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

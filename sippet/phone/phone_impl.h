@@ -22,14 +22,14 @@
 #include "sippet/ua/ua_user_agent.h"
 #include "sippet/phone/call_impl.h"
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 
 namespace sippet {
 namespace phone {
 
 class PhoneImpl :
   public Phone,
-  public ua::UserAgent::Delegate {
+  public ua::UserAgent::Observer {
  private:
   DISALLOW_COPY_AND_ASSIGN(PhoneImpl);
  public:
@@ -76,7 +76,7 @@ class PhoneImpl :
 
       const Settings *settings() const { return settings_;  }
 
-      scoped_ptr<sippet::PasswordHandler> CreatePasswordHandler() override;
+      std::unique_ptr<sippet::PasswordHandler> CreatePasswordHandler() override;
 
     private:
       Settings *settings_;
@@ -95,14 +95,14 @@ class PhoneImpl :
   };
 
   scoped_refptr<net::URLRequestContextGetter> request_context_getter_;
-  scoped_ptr<net::HostResolver> host_resolver_;
-  scoped_ptr<AuthHandlerFactory> auth_handler_factory_;
+  std::unique_ptr<net::HostResolver> host_resolver_;
+  std::unique_ptr<AuthHandlerFactory> auth_handler_factory_;
   net::BoundNetLog net_log_;
-  scoped_ptr<PasswordHandler::Factory> password_handler_factory_;
-  scoped_ptr<ua::UserAgent> user_agent_;
-  scoped_ptr<NetworkLayer> network_layer_;
-  scoped_ptr<ChromeChannelFactory> channel_factory_;
-  scoped_ptr<base::OneShotTimer<PhoneImpl>> refresh_timer_;
+  std::unique_ptr<PasswordHandler::Factory> password_handler_factory_;
+  std::unique_ptr<ua::UserAgent> user_agent_;
+  std::unique_ptr<NetworkLayer> network_layer_;
+  std::unique_ptr<ChromeChannelFactory> channel_factory_;
+  std::unique_ptr<base::OneShotTimer> refresh_timer_;
   Settings::IceServers ice_servers_;
   base::Time register_expires_;
   net::CompletionCallback on_register_completed_;
@@ -138,7 +138,7 @@ class PhoneImpl :
   static void OnRequestSent(const net::CompletionCallback& callback, int rv);
 
   //
-  // ua::UserAgent::Delegate implementation
+  // ua::UserAgent::Observer implementation
   //
   void OnChannelConnected(const EndPoint &destination, int err) override;
   void OnChannelClosed(const EndPoint &destination) override;
@@ -149,11 +149,9 @@ class PhoneImpl :
       const scoped_refptr<Response> &incoming_response,
       const scoped_refptr<Dialog> &dialog) override;
   void OnTimedOut(
-      const scoped_refptr<Request> &request,
-      const scoped_refptr<Dialog> &dialog) override;
+      const scoped_refptr<Request> &request) override;
   void OnTransportError(
-      const scoped_refptr<Request> &request, int error,
-      const scoped_refptr<Dialog> &dialog) override;
+      const scoped_refptr<Request> &request, int error) override;
 
   //
   // Refresh register timer callback

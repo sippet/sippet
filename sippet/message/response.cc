@@ -12,9 +12,9 @@ Response::Response(int response_code,
     const std::string &reason_phrase,
     Direction direction,
     const Version &version)
-  : Message(false, direction), response_code_(response_code),
-    reason_phrase_(reason_phrase),
-    version_(version) {
+  : Message(false, direction), version_(version),
+    response_code_(response_code), reason_phrase_(reason_phrase),
+    weakptr_factory_(this) {
 }
 
 Response::~Response() {

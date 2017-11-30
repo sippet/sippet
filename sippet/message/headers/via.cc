@@ -13,8 +13,8 @@ ViaParam::ViaParam()
 }
 
 ViaParam::ViaParam(const ViaParam &other)
-  : version_(other.version_), protocol_(other.protocol_),
-    sent_by_(other.sent_by_), has_parameters(other) {
+  : has_parameters(other), version_(other.version_),
+    protocol_(other.protocol_), sent_by_(other.sent_by_) {
 }
 
 ViaParam::ViaParam(const Protocol &p,

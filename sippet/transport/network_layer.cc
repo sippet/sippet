@@ -40,12 +40,14 @@ NetworkLayer::ChannelContext::~ChannelContext() {
 
 NetworkLayer::NetworkLayer(Delegate *delegate,
                            const NetworkSettings &network_settings)
-  : delegate_(delegate),
-    network_settings_(network_settings),
-    weak_factory_(this),
+  : network_settings_(network_settings),
+    delegate_(delegate),
     ssl_cert_error_handler_factory_(
-        network_settings.ssl_cert_error_handler_factory()) {
+        network_settings.ssl_cert_error_handler_factory()),
+    network_task_runner_(base::ThreadTaskRunnerHandle::Get()),
+    weak_ptr_factory_(this) {
   DCHECK(delegate);
+  net::NetworkChangeNotifier::AddNetworkChangeObserver(this);
 }
 
 NetworkLayer::~NetworkLayer() {
@@ -54,6 +56,7 @@ NetworkLayer::~NetworkLayer() {
   while (!channels_.empty()) {
     DestroyChannelContext(channels_.begin()->second);
   }
+  net::NetworkChangeNotifier::RemoveNetworkChangeObserver(this);
 }
 
 void NetworkLayer::RegisterChannelFactory(const Protocol &protocol,
@@ -99,12 +102,14 @@ int NetworkLayer::ReconnectIgnoringLastError(const EndPoint &destination) {
 }
 
 int NetworkLayer::ReconnectWithCertificate(const EndPoint &destination,
-                                           net::X509Certificate* client_cert) {
+                                           net::X509Certificate* client_cert,
+                                           net::SSLPrivateKey* private_key) {
   DCHECK(thread_checker_.CalledOnValidThread());
   ChannelContext *channel_context = GetChannelContext(destination);
   if (!channel_context)
     return net::ERR_CONNECTION_CLOSED;
-  return channel_context->channel_->ReconnectWithCertificate(client_cert);
+  return channel_context->channel_->ReconnectWithCertificate(client_cert,
+      private_key);
 }
 
 int NetworkLayer::DismissLastConnectionAttempt(const EndPoint &destination) {
@@ -130,7 +135,6 @@ int NetworkLayer::GetOriginOf(const EndPoint& destination, EndPoint *origin) {
 int NetworkLayer::Send(const scoped_refptr<Message> &message,
                        const net::CompletionCallback& callback) {
   DCHECK(thread_checker_.CalledOnValidThread());
-  LOG(INFO) << message->ToString();
   if (Message::Outgoing != message->direction()) {
     DVLOG(1) << "Trying to send an incoming message";
     return net::ERR_UNEXPECTED;
@@ -160,13 +164,12 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
     DVLOG(1) << "invalid Request-URI";
     return net::ERR_INVALID_ARGUMENT;
   }
-  LOG(INFO) << "Sent to " << destination.ToString();
 
   // Add a User-Agent header if there's none
   if (!request->get<UserAgent>()) {
-    scoped_ptr<UserAgent> user_agent(
+    std::unique_ptr<UserAgent> user_agent(
         new UserAgent(network_settings_.software_name()));
-    request->push_back(user_agent.Pass());
+    request->push_back(std::move(user_agent));
   }
 
   ChannelContext *channel_context = GetChannelContext(destination);
@@ -175,9 +178,11 @@ int NetworkLayer::SendRequest(scoped_refptr<Request> &request,
   } else {
     if (Method::ACK == request->method()) {
       // ACK requests can't open connections, therefore they will be rejected.
-      DVLOG(1) << "ACK requests can't open connections";
+      LOG(WARNING) << "ACK requests can't open connections\n"
+                   << request->ToString();
       return net::ERR_ABORTED;
     }
+    DVLOG(1) << "Creating new channel context for " << destination.ToString();
     int result = CreateChannelContext(
       destination, request, callback, &channel_context);
     if (result != net::OK)
@@ -207,6 +212,10 @@ int NetworkLayer::SendRequestUsingChannelContext(
     // The created transaction will handle the response processing.
     // Requests don't need to be passed to client transactions.
     ignore_result(CreateClientTransaction(request, channel_context));
+  } else {
+    LOG(INFO) << "Sent request to "
+              << channel_context->channel_->destination().ToString() << ":\n"
+              << request->ToString();
   }
   return channel_context->channel_->Send(request, callback);
 }
@@ -215,9 +224,9 @@ int NetworkLayer::SendResponse(const scoped_refptr<Response> &response,
                                const net::CompletionCallback& callback) {
   // Add a Server header if there's none
   if (!response->get<Server>()) {
-    scoped_ptr<Server> server(
+    std::unique_ptr<Server> server(
         new Server(network_settings_.software_name()));
-    response->push_back(server.Pass());
+    response->push_back(std::move(server));
   }
 
   scoped_refptr<ServerTransaction> server_transaction =
@@ -261,7 +270,7 @@ void NetworkLayer::ReleaseChannelInternal(ChannelContext *channel_context) {
     channel_context->timer_.Start(FROM_HERE,
         base::TimeDelta::FromSeconds(network_settings_.reuse_lifetime()),
         base::Bind(&NetworkLayer::OnIdleChannelTimedOut,
-            weak_factory_.GetWeakPtr(),
+            weak_ptr_factory_.GetWeakPtr(),
             channel_context->channel_->destination()));
   }
 }
@@ -341,6 +350,12 @@ int NetworkLayer::CreateChannelContext(
   if (result != net::OK)
     return result;
 
+  // Turn on keep-alive if requested
+  if (network_settings_.crlf_keep_alive()) {
+    LOG(INFO) << "Turning CRLF keep-live on";
+    channel->SetKeepAlive(network_settings_.crlf_keep_alive_interval());
+  }
+
   *created_channel_context =
       new ChannelContext(channel.get(), request, callback);
   channels_[destination] = *created_channel_context;
@@ -374,11 +389,11 @@ void NetworkLayer::StampClientTopmostVia(
   EndPoint origin;
   int rv = channel->origin(&origin);
   CHECK(net::OK == rv);
-  scoped_ptr<Via> via(new Via);
+  std::unique_ptr<Via> via(new Via);
   net::HostPortPair hostport(origin.host(), origin.port());
   via->push_back(ViaParam(origin.protocol(), hostport));
   via->back().set_branch(CreateBranch());
-  request->push_front(via.Pass());
+  request->push_front(std::move(via));
 }
 
 void NetworkLayer::StampServerTopmostVia(
@@ -389,12 +404,12 @@ void NetworkLayer::StampServerTopmostVia(
   if (topmost_via == request->end()) {
     // When there's no Via header, we create one
     // using the channel destination and empty branch
-    scoped_ptr<Via> via(new Via);
+    std::unique_ptr<Via> via(new Via);
     net::HostPortPair hostport(destination.host(), destination.port());
     via->push_back(ViaParam(destination.protocol(), hostport));
-    request->push_front(via.Pass());
+    request->push_front(std::move(via));
   } else {
-    Via *via = dyn_cast<Via>(topmost_via);
+    Via *via = cast<Via>(topmost_via);
     if (via->front().sent_by().host() != destination.host())
       via->front().set_received(destination.host());
     if (via->front().sent_by().port() != destination.port())
@@ -424,6 +439,8 @@ void NetworkLayer::StampContact(
     contact_address += ";transport=ws";
   } else if (Protocol::WSS == channel->destination().protocol()) {
     contact_address += ";transport=wss";
+  } else if (Protocol::STOMP == channel->destination().protocol()) {
+    contact_address += ";transport=stomp";
   }
   if (Method::REGISTER != request->method()) {
     contact_address += ";ob";
@@ -442,7 +459,7 @@ std::string NetworkLayer::ClientTransactionId(
               const scoped_refptr<Request> &request) {
   Message::const_iterator topmost_via = request->find_first<Via>();
   DCHECK(topmost_via != request->end());
-  const Via *via = dyn_cast<Via>(topmost_via);
+  const Via *via = cast<Via>(topmost_via);
   std::string id;
   id += "c:";   // Protect against clashes with server transactions
   id += via->front().branch();
@@ -457,8 +474,8 @@ std::string NetworkLayer::ClientTransactionId(
   Message::const_iterator cseq_it = response->find_first<Cseq>();
   DCHECK(topmost_via != response->end());
   DCHECK(cseq_it != response->end());
-  const Via *via = dyn_cast<Via>(topmost_via);
-  const Cseq *cseq = dyn_cast<Cseq>(cseq_it);
+  const Via *via = cast<Via>(topmost_via);
+  const Cseq *cseq = cast<Cseq>(cseq_it);
   std::string id;
   id += "c:";
   id += via->front().branch();
@@ -471,7 +488,7 @@ std::string NetworkLayer::ServerTransactionId(
               const scoped_refptr<Request> &request) {
   Message::const_iterator topmost_via = request->find_first<Via>();
   if (topmost_via != request->end()) {
-    const Via *via = dyn_cast<Via>(topmost_via);
+    const Via *via = cast<Via>(topmost_via);
     if (via->front().HasBranch()
         && base::StartsWith(via->front().branch(), kMagicCookie,
             base::CompareCase::SENSITIVE)) {
@@ -501,15 +518,15 @@ std::string NetworkLayer::ServerTransactionId(
   // to exist clashes, but in practice they will be very rare.
   std::string id;
   id += "s:";
-  if (dyn_cast<To>(to_it)->HasTag())
-    id += dyn_cast<To>(to_it)->tag();
+  if (cast<To>(to_it)->HasTag())
+    id += cast<To>(to_it)->tag();
   id += ":";
-  if (dyn_cast<From>(from_it)->HasTag())
-    id += dyn_cast<From>(from_it)->tag();
+  if (cast<From>(from_it)->HasTag())
+    id += cast<From>(from_it)->tag();
   id += ":";
-  id += dyn_cast<CallId>(callid_it)->value();
+  id += cast<CallId>(callid_it)->value();
   id += ":";
-  id += base::IntToString(dyn_cast<Cseq>(cseq_it)->sequence());
+  id += base::IntToString(cast<Cseq>(cseq_it)->sequence());
   id += ":";
   Method method(request->method());
   if (method == Method::ACK)
@@ -517,7 +534,7 @@ std::string NetworkLayer::ServerTransactionId(
   id += method.str();
   id += ":";
   if (topmost_via != request->end()) {
-    const Via *via = dyn_cast<Via>(topmost_via);
+    const Via *via = cast<Via>(topmost_via);
     id += via->front().sent_by().ToString();
     id += ":";
     if (via->front().HasBranch())
@@ -532,7 +549,7 @@ std::string NetworkLayer::ServerTransactionId(
   Message::const_iterator cseq_it = response->find_first<Cseq>();
   DCHECK(cseq_it != response->end());
   if (topmost_via != response->end()) {
-    const Via *via = dyn_cast<Via>(topmost_via);
+    const Via *via = cast<Via>(topmost_via);
     if (via->front().HasBranch()
         && base::StartsWith(via->front().branch(), kMagicCookie,
             base::CompareCase::SENSITIVE)) {
@@ -543,7 +560,7 @@ std::string NetworkLayer::ServerTransactionId(
       id += via->front().sent_by().ToString();
       id += ":";
       // Remember ACKs normally doesn't get answers from UAS's
-      id += dyn_cast<Cseq>(cseq_it)->method().str();
+      id += cast<Cseq>(cseq_it)->method().str();
       return id;
     }
   }
@@ -556,23 +573,23 @@ std::string NetworkLayer::ServerTransactionId(
   // This is the fallback compatibility with ancient RFC 2543 implementations
   std::string id;
   id += "s:";
-  if (dyn_cast<To>(to_it)->HasTag())
-    id += dyn_cast<To>(to_it)->tag();
+  if (cast<To>(to_it)->HasTag())
+    id += cast<To>(to_it)->tag();
   id += ":";
-  if (dyn_cast<From>(from_it)->HasTag())
-    id += dyn_cast<From>(from_it)->tag();
+  if (cast<From>(from_it)->HasTag())
+    id += cast<From>(from_it)->tag();
   id += ":";
-  id += dyn_cast<CallId>(callid_it)->value();
+  id += cast<CallId>(callid_it)->value();
   id += ":";
-  id += base::IntToString(dyn_cast<Cseq>(cseq_it)->sequence());
+  id += base::IntToString(cast<Cseq>(cseq_it)->sequence());
   id += ":";
-  Method method(dyn_cast<Cseq>(cseq_it)->method());
+  Method method(cast<Cseq>(cseq_it)->method());
   if (method == Method::ACK)
     method = Method::INVITE;
   id += method.str();
   id += ":";
   if (topmost_via != response->end()) {
-    const Via *via = dyn_cast<Via>(topmost_via);
+    const Via *via = cast<Via>(topmost_via);
     id += via->front().sent_by().ToString();
     id += ":";
     if (via->front().HasBranch())
@@ -596,7 +613,7 @@ EndPoint NetworkLayer::GetMessageEndPoint(
     Message::iterator topmost_via = response->find_first<Via>();
     if (topmost_via == response->end())
       return EndPoint();
-    Via *via = dyn_cast<Via>(topmost_via);
+    Via *via = cast<Via>(topmost_via);
     EndPoint result(via->front().sent_by(), via->front().protocol());
     if (via->front().HasReceived())
       result.set_host(via->front().received());
@@ -723,7 +740,18 @@ void NetworkLayer::HandleIncomingRequest(
   ChannelContext *channel_context =
     GetChannelContext(channel->destination());
 
-  DCHECK(channel_context);
+  // For new incoming channels, create a context now
+  if (!channel_context) {
+    LOG(INFO) << "Detected a request coming from a new channel";
+    // Turn on keep-alive if requested
+    if (network_settings_.crlf_keep_alive()) {
+      LOG(INFO) << "Turning CRLF keep-live on";
+      channel->SetKeepAlive(network_settings_.crlf_keep_alive_interval());
+    }
+    channel_context =
+        new ChannelContext(channel.get(), request, net::CompletionCallback());
+    channels_[channel->destination()] = channel_context;
+  }
 
   // Server transactions are created in advance
   CreateServerTransaction(request, channel_context);
@@ -733,11 +761,6 @@ void NetworkLayer::HandleIncomingRequest(
 void NetworkLayer::HandleIncomingResponse(
                                  const scoped_refptr<Channel> &channel,
                                  const scoped_refptr<Response> &response) {
-  ChannelContext *channel_context =
-    GetChannelContext(channel->destination());
-
-  DCHECK(channel_context);
-
   // It's not a good idea to pass these responses up, as they aren't related
   // to an initiated request, so we're going to discard them at this point.
 
@@ -788,7 +811,8 @@ void NetworkLayer::OnSSLCertErrorTransactionComplete(
     if (ssl_cert_error_transaction->client_cert()) {
       rv = ReconnectWithCertificate(
           ssl_cert_error_transaction->destination(),
-          ssl_cert_error_transaction->client_cert().get());
+          ssl_cert_error_transaction->client_cert().get(),
+          ssl_cert_error_transaction->private_key().get());
       if (net::ERR_IO_PENDING == rv)
         return;
     } else if (ssl_cert_error_transaction->is_accepted()) {
@@ -835,15 +859,35 @@ void NetworkLayer::OnTransactionTerminated(const std::string &transaction_id) {
   }
 }
 
+void NetworkLayer::OnNetworkChanged(
+    net::NetworkChangeNotifier::ConnectionType type) {
+  ScheduleChannelsShutdown();
+}
+
+void NetworkLayer::ScheduleChannelsShutdown() {
+  network_task_runner_->PostTask(FROM_HERE,
+      base::Bind(&NetworkLayer::ShutdownChannels,
+                 weak_ptr_factory_.GetWeakPtr()));
+}
+
+void NetworkLayer::ShutdownChannels() {
+  DCHECK(thread_checker_.CalledOnValidThread());
+  LOG(INFO) << "Network changed, closing channels";
+  ChannelsMap::iterator channel_it;
+  while ((channel_it = channels_.begin()) != channels_.end()) {
+    ChannelContext *channel_context = channel_it->second;
+    OnChannelClosed(channel_context->channel_, net::ERR_INTERNET_DISCONNECTED);
+  }
+}
+
 void NetworkLayer::OnIdleChannelTimedOut(const EndPoint &endpoint) {
+  LOG(INFO) << "Channel " << endpoint.ToString() << " is idle, closed";
   ChannelContext *channel_context = GetChannelContext(endpoint);
   OnChannelClosed(channel_context->channel_, net::ERR_TIMED_OUT);
 }
 
 void NetworkLayer::PostOnChannelClosed(const EndPoint &destination) {
-  base::MessageLoop* message_loop = base::MessageLoop::current();
-  CHECK(message_loop);
-  message_loop->PostTask(
+  base::ThreadTaskRunnerHandle::Get()->PostTask(
       FROM_HERE,
       base::Bind(&NetworkLayer::Delegate::OnChannelClosed,
           base::Unretained(delegate_), destination));

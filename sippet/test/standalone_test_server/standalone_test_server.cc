@@ -473,7 +473,7 @@ bool StandaloneTestServer::PostTaskToIOThreadAndWait(
   //
   // To handle this situation, create temporary message loop to support the
   // PostTaskAndReply operation if the current thread as no message loop.
-  scoped_ptr<base::MessageLoop> temporary_loop;
+  std::unique_ptr<base::MessageLoop> temporary_loop;
   if (!base::MessageLoop::current())
     temporary_loop.reset(new base::MessageLoop());
 

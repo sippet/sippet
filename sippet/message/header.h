@@ -5,10 +5,11 @@
 #ifndef SIPPET_MESSAGE_HEADER_H_
 #define SIPPET_MESSAGE_HEADER_H_
 
+#include <memory>
+
 #include "sippet/base/ilist.h"
 #include "sippet/base/ilist_node.h"
 #include "sippet/base/casting.h"
-#include "base/memory/scoped_ptr.h"
 #include "sippet/message/atom.h"
 
 namespace sippet {
@@ -30,6 +31,7 @@ class Header : public ilist_node<Header> {
     #undef X
     HDR_GENERIC
   };
+  virtual ~Header();
 
  private:
   Type type_;
@@ -37,23 +39,20 @@ class Header : public ilist_node<Header> {
   Header &operator=(const Header &);
 
  protected:
-  friend struct base::DefaultDeleter<Header>;
   friend struct ilist_node_traits<Header>;
 
   Header(const Header &other);
   Header(Type type);
-  virtual ~Header();
 
   virtual Header *DoClone() const = 0;
 
  public:
-  static scoped_ptr<Header> Parse(const std::string &raw_header);
+  static std::unique_ptr<Header> Parse(const std::string &raw_header);
 
   Type type() const { return type_; }
-  const char *name() const;
-  const char compact_form() const;
+  char compact_form() const;
 
-  scoped_ptr<Header> Clone() const { return scoped_ptr<Header>(DoClone()); }
+  std::unique_ptr<Header> Clone() const { return std::unique_ptr<Header>(DoClone()); }
 
   virtual void print(raw_ostream &os) const;
 

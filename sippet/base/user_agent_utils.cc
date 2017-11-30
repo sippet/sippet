@@ -4,6 +4,7 @@
 
 #include "sippet/base/user_agent_utils.h"
 #include "sippet/base/version.h"
+#include "build/build_config.h"
 
 #if defined(OS_POSIX) && !defined(OS_MACOSX)
 #include <sys/utsname.h>
@@ -18,9 +19,13 @@
 #include "base/win/windows_version.h"
 #endif
 
+#if defined(OS_IOS)
+#error This implementation file is not intended to be used by iOS
+#endif
+
 namespace sippet {
 
-std::string BuildOSCpuInfo() {
+std::string BuildOSCpuInfo(const std::string& device) {
   std::string os_cpu;
 
   const char kUserAgentPlatform[] =
@@ -38,9 +43,9 @@ std::string BuildOSCpuInfo() {
 
 #if defined(OS_WIN) || defined(OS_MACOSX) || defined(OS_CHROMEOS) ||\
     defined(OS_ANDROID)
-  int32 os_major_version = 0;
-  int32 os_minor_version = 0;
-  int32 os_bugfix_version = 0;
+  int32_t os_major_version = 0;
+  int32_t os_minor_version = 0;
+  int32_t os_bugfix_version = 0;
   base::SysInfo::OperatingSystemVersionNumbers(&os_major_version,
                                                &os_minor_version,
                                                &os_bugfix_version);
@@ -54,7 +59,7 @@ std::string BuildOSCpuInfo() {
   std::string cputype;
   // special case for biarch systems
   if (strcmp(unixinfo.machine, "x86_64") == 0 &&
-      sizeof(void*) == sizeof(int32)) {  // NOLINT
+      sizeof(void*) == sizeof(int32_t)) {  // NOLINT
     cputype.assign("i686 (x86_64)");
   } else {
     cputype.assign(unixinfo.machine);
@@ -140,7 +145,8 @@ std::string BuildOSCpuInfo() {
 }
 
 std::string BuildUserAgentFromProduct(
-    const std::string& product) {
+    const std::string& product,
+    const std::string& device) {
   std::string user_agent;
   base::StringAppendF(
       &user_agent,

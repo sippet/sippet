@@ -14,7 +14,7 @@
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "net/base/net_errors.h"
-#include "net/base/net_util.h"
+#include "net/base/url_util.h"
 #include "sippet/ua/auth.h"
 #include "sippet/message/request.h"
 #include "url/gurl.h"
@@ -99,9 +99,9 @@ int AuthHandlerDigest::Factory::CreateAuthHandler(
     const GURL& origin,
     CreateReason create_reason,
     int digest_nonce_count,
-    const net::BoundNetLog& net_log,
-    scoped_ptr<AuthHandler>* handler) {
-  scoped_ptr<AuthHandler> tmp_handler(
+    const net::NetLogWithSource& net_log,
+    std::unique_ptr<AuthHandler>* handler) {
+  std::unique_ptr<AuthHandler> tmp_handler(
       new AuthHandlerDigest(digest_nonce_count, nonce_generator_.get()));
   if (!tmp_handler->InitFromChallenge(challenge, target, origin, net_log))
     return net::ERR_INVALID_RESPONSE;
@@ -333,7 +333,7 @@ void AuthHandlerDigest::AssembleCredentials(
     int nonce_count,
     const scoped_refptr<Request> &request) const {
   Credentials *cred;
-  scoped_ptr<Header> credentials_header;
+  std::unique_ptr<Header> credentials_header;
   if (net::HttpAuth::AUTH_PROXY == target_) {
     ProxyAuthorization *proxy_authorization = new ProxyAuthorization;
     credentials_header.reset(proxy_authorization);
@@ -362,7 +362,7 @@ void AuthHandlerDigest::AssembleCredentials(
     cred->set_nc(nonce_count);
     cred->set_cnonce(cnonce);
   }
-  request->push_back(credentials_header.Pass());
+  request->push_back(std::move(credentials_header));
 }
 
 }  // namespace sippet

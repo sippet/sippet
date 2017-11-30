@@ -25,8 +25,8 @@ class InReplyTo :
   InReplyTo();
   ~InReplyTo() override;
 
-  scoped_ptr<InReplyTo> Clone() const {
-    return scoped_ptr<InReplyTo>(DoClone());
+  std::unique_ptr<InReplyTo> Clone() const {
+    return std::unique_ptr<InReplyTo>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

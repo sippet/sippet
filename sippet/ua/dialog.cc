@@ -79,7 +79,7 @@ scoped_refptr<Response> Dialog::CreateResponse(
     int response_code,
     const std::string &reason_phrase,
     const scoped_refptr<Request> &request) {
-  return request->CreateResponse(response_code, reason_phrase, remote_tag_);
+  return request->CreateResponse(response_code, reason_phrase, local_tag_);
 }
 
 scoped_refptr<Response> Dialog::CreateResponse(
@@ -100,7 +100,7 @@ scoped_refptr<Request> Dialog::CreateAck(
       CreateRequestInternal(Method::ACK, local_sequence));
   Via *via = invite->get<Via>();
   if (via)  // Copy topmost Via from INVITE
-    ack->insert(ack->begin(), via->Clone().Pass());
+    ack->insert(ack->begin(), via->Clone());
   invite->CloneTo<WwwAuthenticate>(ack.get());
   invite->CloneTo<ProxyAuthenticate>(ack.get());
   return ack;
@@ -121,8 +121,10 @@ scoped_refptr<Dialog> Dialog::Create(
   std::string call_id(request->get<CallId>()->value());
   std::string local_tag, remote_tag;
   if (Message::Outgoing == request->direction()) {
-    route_set = GetRouteSet(response->filter<RecordRoute>());
-    std::reverse(route_set.begin(), route_set.end());
+    if (response->get<RecordRoute>()) {
+      route_set = GetRouteSet(response->filter<RecordRoute>());
+      std::reverse(route_set.begin(), route_set.end());
+    }
     remote_target = response->get<Contact>()->front().address();
     has_local_sequence = true;
     local_sequence = request->get<Cseq>()->sequence();
@@ -133,7 +135,9 @@ scoped_refptr<Dialog> Dialog::Create(
     remote_uri = request->get<To>()->address();
     local_uri = request->get<From>()->address();
   } else {
-    route_set = GetRouteSet(request->filter<RecordRoute>());
+    if (response->get<RecordRoute>()) {
+      route_set = GetRouteSet(request->filter<RecordRoute>());
+    }
     remote_target = request->get<Contact>()->front().address();
     has_remote_sequence = true;
     remote_sequence = request->get<Cseq>()->sequence();
@@ -162,7 +166,7 @@ unsigned Dialog::GetNewLocalSequence() {
 scoped_refptr<Request> Dialog::CreateRequestInternal(
     const Method &method, unsigned local_sequence) {
   GURL request_uri;
-  scoped_ptr<Route> route;
+  std::unique_ptr<Route> route;
   if (route_set().empty()) {
     request_uri = remote_target();
   } else {
@@ -187,21 +191,21 @@ scoped_refptr<Request> Dialog::CreateRequestInternal(
     }
   }
   scoped_refptr<Request> request = new Request(method, request_uri);
-  scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  request->push_back(max_forwards.Pass());
-  scoped_ptr<From> from(new From(local_uri()));
+  std::unique_ptr<MaxForwards> max_forwards(new MaxForwards(70));
+  request->push_back(std::move(max_forwards));
+  std::unique_ptr<From> from(new From(local_uri()));
   from->set_tag(local_tag());
-  request->push_back(from.Pass());
-  scoped_ptr<To> to(new To(remote_uri()));
+  request->push_back(std::move(from));
+  std::unique_ptr<To> to(new To(remote_uri()));
   if (!remote_tag().empty())
     to->set_tag(remote_tag());
-  request->push_back(to.Pass());
-  scoped_ptr<CallId> callid(new CallId(call_id()));
-  request->push_back(callid.Pass());
-  scoped_ptr<Cseq> cseq(new Cseq(local_sequence, method));
-  request->push_back(cseq.Pass());
+  request->push_back(std::move(to));
+  std::unique_ptr<CallId> callid(new CallId(call_id()));
+  request->push_back(std::move(callid));
+  std::unique_ptr<Cseq> cseq(new Cseq(local_sequence, method));
+  request->push_back(std::move(cseq));
   if (route)
-    request->push_back(route.Pass());
+    request->push_back(std::move(route));
   return request;
 }
 

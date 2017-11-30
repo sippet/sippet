@@ -26,8 +26,8 @@ class RetryAfter :
   RetryAfter(single_value::value_type seconds);
   ~RetryAfter() override;
 
-  scoped_ptr<RetryAfter> Clone() const {
-    return scoped_ptr<RetryAfter>(DoClone());
+  std::unique_ptr<RetryAfter> Clone() const {
+    return std::unique_ptr<RetryAfter>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

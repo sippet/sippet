@@ -6,7 +6,6 @@
 #define SIPPET_BASE_VERSION_H_
 
 #include <string>
-#include "base/basictypes.h"
 
 namespace sippet {
 

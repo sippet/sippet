@@ -59,10 +59,10 @@ class ServerTransactionImpl : public ServerTransaction {
   TransactionDelegate *delegate_;
   scoped_refptr<Request> initial_request_;
   scoped_refptr<Response> latest_response_;
-  base::OneShotTimer<ServerTransactionImpl> retryTimer_;
-  base::OneShotTimer<ServerTransactionImpl> timedOutTimer_;
-  base::OneShotTimer<ServerTransactionImpl> terminateTimer_;
-  base::OneShotTimer<ServerTransactionImpl> provisionalTimer_;
+  base::OneShotTimer retryTimer_;
+  base::OneShotTimer timedOutTimer_;
+  base::OneShotTimer terminateTimer_;
+  base::OneShotTimer provisionalTimer_;
 
   void OnRetransmit();
   void OnTimedOut();
@@ -83,8 +83,8 @@ class ServerTransactionImpl : public ServerTransaction {
   void Terminate();
 
   TimeDeltaFactory *time_delta_factory_;
-  scoped_ptr<TimeDeltaProvider> time_delta_provider_;
-  base::WeakPtrFactory<ServerTransactionImpl> weak_factory_;
+  std::unique_ptr<TimeDeltaProvider> time_delta_provider_;
+  base::WeakPtrFactory<ServerTransactionImpl> weak_ptr_factory_;
 };
 
 } /// End of sippet namespace

@@ -4,7 +4,7 @@
 
 package io.sippet.phone;
 
-import org.chromium.base.CalledByNative;
+import org.chromium.base.annotations.CalledByNative;
 
 public class IceServer {
     private String uri;

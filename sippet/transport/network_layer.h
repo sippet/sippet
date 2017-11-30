@@ -14,6 +14,7 @@
 #include "base/gtest_prod_util.h"
 #include "base/threading/thread_checker.h"
 #include "net/base/completion_callback.h"
+#include "net/base/network_change_notifier.h"
 #include "sippet/message/protocol.h"
 #include "sippet/message/message.h"
 #include "sippet/transport/channel.h"
@@ -96,7 +97,8 @@ class SSLCertErrorTransaction;
 //   
 class NetworkLayer :
   public TransactionDelegate,
-  public Channel::Delegate {
+  public Channel::Delegate,
+  public net::NetworkChangeNotifier::NetworkChangeObserver {
  private:
   DISALLOW_COPY_AND_ASSIGN(NetworkLayer);
  public:
@@ -148,6 +150,7 @@ class NetworkLayer :
   // Construct a |NetworkLayer|.
   NetworkLayer(Delegate *delegate,
                const NetworkSettings &network_settings = NetworkSettings());
+  ~NetworkLayer() override;
 
   // Register a ChannelFactory, responsible for opening client channels.
   // Registered managers are not owned and won't be deleted on |NetworkLayer|
@@ -209,9 +212,6 @@ class NetworkLayer :
   static EndPoint GetMessageEndPoint(const scoped_refptr<Message> &message);
 
  private:
-  friend struct base::DefaultDeleter<NetworkLayer>;
-  ~NetworkLayer() override;
-
   FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
 
   // Just for testing purposes
@@ -223,7 +223,7 @@ class NetworkLayer :
     // Used to count number of current uses.
     int refs_;
     // Used to keep the channel opened so they can be reused.
-    base::OneShotTimer<NetworkLayer> timer_;
+    base::OneShotTimer timer_;
     // Keep the request used to open the channel.
     scoped_refptr<Request> initial_request_;
     // Keep the first callback to be called after connected and sent.
@@ -347,9 +347,11 @@ class NetworkLayer :
   // This method is used to continue past various SSL related errors.
   int ReconnectIgnoringLastError(const EndPoint &destination);
 
-  // Restarts the internal channel with a client certificate.
+  // Restarts the internal channel with a client certificate. |private_key| may
+  // be NULL.
   int ReconnectWithCertificate(const EndPoint &destination,
-                               net::X509Certificate* client_cert);
+                               net::X509Certificate* client_cert,
+                               net::SSLPrivateKey* private_key);
 
   // Dismiss previous connection attempt, forwarding the last error. This
   // method is used to clean up past various SSL related errors.
@@ -362,13 +364,23 @@ class NetworkLayer :
       const scoped_refptr<Request> &request, int error) override;
   void OnTransactionTerminated(const std::string &) override;
 
+  // net::NetworkChangeNotifier::NetworkChangeObserver overrides:
+  void OnNetworkChanged(
+      net::NetworkChangeNotifier::ConnectionType type) override;
+
+  // Shutdown all opened channels, as the network has changed, and they would
+  // have became invalid.
+  void ScheduleChannelsShutdown();
+  void ShutdownChannels();
+
   // Timer callbacks
   void OnIdleChannelTimedOut(const EndPoint &endpoint);
 
   void PostOnChannelClosed(const EndPoint &destination);
 
   base::ThreadChecker thread_checker_;
-  base::WeakPtrFactory<NetworkLayer> weak_factory_;
+  scoped_refptr<base::SingleThreadTaskRunner> network_task_runner_;
+  base::WeakPtrFactory<NetworkLayer> weak_ptr_factory_;
 };
 
 } // End of sippet namespace

@@ -26,8 +26,8 @@ class ChromeDatagramReader
   int DoIORead(const net::CompletionCallback& callback) override;
   char *data() override;
   size_t max_size() override;
-  int BytesRemaining() const override;
-  void DidConsume(int bytes) override;
+  size_t BytesRemaining() const override;
+  void DidConsume(size_t bytes) override;
 
   void OnReceiveDataComplete(int result);
   void ReceivedData(size_t bytes);

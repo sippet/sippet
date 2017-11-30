@@ -6,6 +6,8 @@
 #define SIPPET_TRANSPORT_CHROME_CHROME_STREAM_WRITER_H_
 
 #include <deque>
+#include <memory>
+
 #include "base/memory/weak_ptr.h"
 #include "net/base/completion_callback.h"
 
@@ -49,14 +51,14 @@ class ChromeStreamWriter {
     net::CompletionCallback callback_;
   };
 
-  std::deque<PendingBlock*> pending_messages_;
+  std::deque<std::unique_ptr<PendingBlock>> pending_messages_;
 
   void DidWrite(int result);
   void DidConsume(int result);
   void Pop(int result);
   int Drain(net::DrainableIOBuffer* buf);
 
-  base::WeakPtrFactory<ChromeStreamWriter> weak_factory_;
+  base::WeakPtrFactory<ChromeStreamWriter> weak_ptr_factory_;
 };
 
 } // End of sippet namespace

@@ -4,7 +4,7 @@
 
 #include "sippet/transport/chrome/chrome_stream_writer.h"
 
-#include "base/stl_util.h"
+#include "base/memory/ptr_util.h"
 #include "net/base/io_buffer.h"
 #include "net/base/net_errors.h"
 #include "net/socket/socket.h"
@@ -20,16 +20,13 @@ ChromeStreamWriter::PendingBlock::PendingBlock(
 ChromeStreamWriter::PendingBlock::~PendingBlock() {
 }
 
-ChromeStreamWriter::ChromeStreamWriter(
-    net::Socket *socket_to_wrap)
-    : wrapped_socket_(socket_to_wrap),
-      weak_factory_(this),
-      error_(net::OK) {
+ChromeStreamWriter::ChromeStreamWriter(net::Socket *socket_to_wrap)
+  : wrapped_socket_(socket_to_wrap),
+    error_(net::OK),
+    weak_ptr_factory_(this) {
 }
 
-ChromeStreamWriter::~ChromeStreamWriter() {
-  STLDeleteElements(&pending_messages_);
-}
+ChromeStreamWriter::~ChromeStreamWriter() {}
 
 int ChromeStreamWriter::Write(
     net::IOBuffer* buf, int buf_len,
@@ -47,7 +44,8 @@ int ChromeStreamWriter::Write(
     }
   }
 
-  pending_messages_.push_back(new PendingBlock(io_buffer.get(), callback));
+  pending_messages_.push_back(base::WrapUnique(new PendingBlock(
+          io_buffer.get(), callback)));
   return net::ERR_IO_PENDING;
 }
 
@@ -70,14 +68,14 @@ void ChromeStreamWriter::DidWrite(int result) {
 }
 
 void ChromeStreamWriter::DidConsume(int result) {
-  PendingBlock *pending = pending_messages_.front();
+  PendingBlock *pending = pending_messages_.front().get();
   pending->io_buffer_->DidConsume(result);
   for (;;) {
     if (pending->io_buffer_->BytesRemaining() == 0) {
       Pop(net::OK);
       if (pending_messages_.empty())
         break;  // done
-      pending = pending_messages_.front();
+      pending = pending_messages_.front().get();
       continue;
     } else {
       result = Drain(pending->io_buffer_.get());
@@ -91,9 +89,7 @@ void ChromeStreamWriter::DidConsume(int result) {
 }
 
 void ChromeStreamWriter::Pop(int result) {
-  PendingBlock *pending = pending_messages_.front();
-  pending->callback_.Run(result);
-  delete pending;
+  pending_messages_.front()->callback_.Run(result);
   pending_messages_.pop_front();
 }
 

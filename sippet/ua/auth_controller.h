@@ -8,6 +8,7 @@
 #include "base/memory/ref_counted.h"
 #include "net/base/auth.h"
 #include "net/log/net_log.h"
+#include "net/log/net_log_with_source.h"
 #include "net/base/completion_callback.h"
 #include "sippet/ua/auth.h"
 
@@ -36,7 +37,7 @@ class AuthController :
   // Checks for and handles SIP status code 401 or 407. |HandleAuthChallenge()|
   // returns OK on success, or a network error code otherwise.
   int HandleAuthChallenge(const scoped_refptr<Response> &response,
-                          const net::BoundNetLog& net_log);
+                          const net::NetLogWithSource& net_log);
 
   // Store the supplied credentials and prepare to restart the auth.
   void ResetAuth(const net::AuthCredentials& credentials);
@@ -47,7 +48,7 @@ class AuthController :
   // synchronously, as well as when no tokens were necessary.
   int AddAuthorizationHeaders(const scoped_refptr<Request> &request,
                               const net::CompletionCallback& callback,
-                              const net::BoundNetLog& net_log);
+                              const net::NetLogWithSource& net_log);
 
   // Take the authentication challenge information.
   scoped_refptr<net::AuthChallengeInfo> auth_info();
@@ -119,7 +120,7 @@ class AuthController :
   // |handler_| encapsulates the logic for the particular auth-scheme.
   // This includes the challenge's parameters. If NULL, then there is no
   // associated auth handler.
-  scoped_ptr<AuthHandler> handler_;
+  std::unique_ptr<AuthHandler> handler_;
 
   // |identity_| holds the credentials that should be used by
   // the handler_ to generate challenge responses. This identity can come from

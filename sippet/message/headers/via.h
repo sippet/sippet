@@ -75,8 +75,8 @@ class Via :
   Via(const ViaParam &param);
   ~Via() override;
 
-  scoped_ptr<Via> Clone() const {
-    return scoped_ptr<Via>(DoClone());
+  std::unique_ptr<Via> Clone() const {
+    return std::unique_ptr<Via>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

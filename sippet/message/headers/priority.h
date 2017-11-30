@@ -30,8 +30,8 @@ class Priority :
   Priority(const single_value::value_type &priority);
   ~Priority() override;
 
-  scoped_ptr<Priority> Clone() const {
-    return scoped_ptr<Priority>(DoClone());
+  std::unique_ptr<Priority> Clone() const {
+    return std::unique_ptr<Priority>(DoClone());
   }
 
   void set_value(Level l) {

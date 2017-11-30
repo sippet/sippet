@@ -4,6 +4,8 @@
 
 #include "sippet/transport/chrome/chrome_datagram_reader.h"
 
+#include <cstddef>
+
 #include "net/base/net_errors.h"
 #include "net/base/io_buffer.h"
 #include "net/socket/socket.h"
@@ -82,11 +84,15 @@ size_t ChromeDatagramReader::max_size() {
   return kReadBufSize;
 }
 
-int ChromeDatagramReader::BytesRemaining() const {
-  return read_end_ - read_start_;
+size_t ChromeDatagramReader::BytesRemaining() const {
+  ptrdiff_t result = read_end_ - read_start_;
+  DCHECK_GE(result, 0);
+  if (result < 0)
+    return 0;
+  return static_cast<size_t>(result);
 }
 
-void ChromeDatagramReader::DidConsume(int bytes) {
+void ChromeDatagramReader::DidConsume(size_t bytes) {
   DCHECK_LE(bytes, BytesRemaining());
   read_start_ += bytes;
 }

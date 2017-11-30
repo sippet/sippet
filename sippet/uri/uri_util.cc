@@ -36,8 +36,8 @@ inline bool DoCompareSchemeComponent(const CHAR* spec,
   if (!component.is_nonempty())
     return compare_to[0] == 0;  // When component is empty, match empty scheme.
   return base::LowerCaseEqualsASCII(
-      &spec[component.begin],
-      &spec[component.begin + component.len],
+      typename CharToStringPiece<CHAR>::Piece(
+          spec + component.begin, component.len),
       compare_to);
 }
 
@@ -51,7 +51,8 @@ bool DoCanonicalize(const CHAR* in_spec, int in_spec_len,
   url::RawCanonOutputT<CHAR> whitespace_buffer;
   int spec_len;
   const CHAR* spec = url::RemoveURLWhitespace(in_spec, in_spec_len,
-                                              &whitespace_buffer, &spec_len);
+      &whitespace_buffer, &spec_len,
+      &output_parsed->potentially_dangling_markup);
 
   uri::Parsed parsed_input;
   uri::Component scheme;

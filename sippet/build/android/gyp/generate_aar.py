@@ -90,7 +90,7 @@ def main():
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="%s">
 
-    <uses-sdk android:minSdkVersion="14" android:targetSdkVersion="19" />
+    <uses-sdk android:minSdkVersion="14" android:targetSdkVersion="24" />
 
 </manifest>
 """ % (package))

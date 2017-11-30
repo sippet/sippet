@@ -24,8 +24,8 @@ class Expires :
   Expires(const single_value::value_type &seconds);
   ~Expires() override;
 
-  scoped_ptr<Expires> Clone() const {
-    return scoped_ptr<Expires>(DoClone());
+  std::unique_ptr<Expires> Clone() const {
+    return std::unique_ptr<Expires>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

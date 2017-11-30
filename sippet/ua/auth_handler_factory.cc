@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "base/stl_util.h"
+#include "base/memory/ptr_util.h"
 #include "base/strings/string_util.h"
 #include "net/base/net_errors.h"
 #include "sippet/message/headers.h"
@@ -27,8 +27,8 @@ int AuthHandlerFactory::CreateChallengeAuthHandler(
     const Challenge &challenge,
     Auth::Target target,
     const GURL& origin,
-    const net::BoundNetLog& net_log,
-    scoped_ptr<AuthHandler>* handler) {
+    const net::NetLogWithSource& net_log,
+    std::unique_ptr<AuthHandler>* handler) {
   return CreateAuthHandler(challenge, target, origin, CREATE_CHALLENGE, 1,
                            net_log, handler);
 }
@@ -38,8 +38,8 @@ int AuthHandlerFactory::CreatePreemptiveAuthHandler(
     Auth::Target target,
     const GURL& origin,
     int digest_nonce_count,
-    const net::BoundNetLog& net_log,
-    scoped_ptr<AuthHandler>* handler) {
+    const net::NetLogWithSource& net_log,
+    std::unique_ptr<AuthHandler>* handler) {
   return CreateAuthHandler(challenge, target, origin, CREATE_PREEMPTIVE,
                            digest_nonce_count, net_log, handler);
 }
@@ -51,7 +51,7 @@ AuthHandlerRegistryFactory* AuthHandlerFactory::CreateDefault(
   AuthHandlerRegistryFactory* registry_factory =
       new AuthHandlerRegistryFactory();
   registry_factory->RegisterSchemeFactory(
-      "digest", new AuthHandlerDigest::Factory());
+      "digest", base::WrapUnique(new AuthHandlerDigest::Factory()));
   return registry_factory;
 }
 
@@ -66,36 +66,28 @@ bool IsSupportedScheme(const std::vector<std::string>& supported_schemes,
 
 }  // namespace
 
-AuthHandlerRegistryFactory::AuthHandlerRegistryFactory() {
-}
+AuthHandlerRegistryFactory::AuthHandlerRegistryFactory() {}
 
-AuthHandlerRegistryFactory::~AuthHandlerRegistryFactory() {
-  STLDeleteContainerPairSecondPointers(factory_map_.begin(),
-                                       factory_map_.end());
-}
+AuthHandlerRegistryFactory::~AuthHandlerRegistryFactory() {}
 
 void AuthHandlerRegistryFactory::RegisterSchemeFactory(
     const std::string& scheme,
-    AuthHandlerFactory* factory) {
-  std::string lower_scheme = base::StringToLowerASCII(scheme);
-  FactoryMap::iterator it = factory_map_.find(lower_scheme);
-  if (it != factory_map_.end()) {
-    delete it->second;
-  }
+    std::unique_ptr<AuthHandlerFactory> factory) {
+  std::string lower_scheme = base::ToLowerASCII(scheme);
   if (factory)
-    factory_map_[lower_scheme] = factory;
+    factory_map_.insert(std::make_pair(lower_scheme, std::move(factory)));
   else
-    factory_map_.erase(it);
+    factory_map_.erase(lower_scheme);
 }
 
 AuthHandlerFactory* AuthHandlerRegistryFactory::GetSchemeFactory(
     const std::string& scheme) const {
-  std::string lower_scheme = base::StringToLowerASCII(scheme);
+  std::string lower_scheme = base::ToLowerASCII(scheme);
   FactoryMap::const_iterator it = factory_map_.find(lower_scheme);
   if (it == factory_map_.end()) {
     return nullptr;  // |scheme| is not registered.
   }
-  return it->second;
+  return it->second.get();
 }
 
 // static
@@ -109,7 +101,7 @@ AuthHandlerRegistryFactory* AuthHandlerRegistryFactory::Create(
       new AuthHandlerRegistryFactory();
   if (IsSupportedScheme(supported_schemes, "digest"))
     registry_factory->RegisterSchemeFactory(
-        "digest", new AuthHandlerDigest::Factory());
+        "digest", base::WrapUnique(new AuthHandlerDigest::Factory()));
   return registry_factory;
 }
 
@@ -119,14 +111,14 @@ int AuthHandlerRegistryFactory::CreateAuthHandler(
     const GURL& origin,
     CreateReason reason,
     int digest_nonce_count,
-    const net::BoundNetLog& net_log,
-    scoped_ptr<AuthHandler>* handler) {
+    const net::NetLogWithSource& net_log,
+    std::unique_ptr<AuthHandler>* handler) {
   std::string scheme = challenge.scheme();
   if (scheme.empty()) {
     handler->reset();
     return net::ERR_INVALID_RESPONSE;
   }
-  std::string lower_scheme = base::StringToLowerASCII(scheme);
+  std::string lower_scheme = base::ToLowerASCII(scheme);
   FactoryMap::iterator it = factory_map_.find(lower_scheme);
   if (it == factory_map_.end()) {
     handler->reset();

@@ -86,8 +86,8 @@ class Contact :
           const std::string &displayName="");
   ~Contact() override;
 
-  scoped_ptr<Contact> Clone() const {
-    return scoped_ptr<Contact>(DoClone());
+  std::unique_ptr<Contact> Clone() const {
+    return std::unique_ptr<Contact>(DoClone());
   }
 
   bool is_all() const {

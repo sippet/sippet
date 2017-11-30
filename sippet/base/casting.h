@@ -42,8 +42,9 @@
 #define SIPPET_BASE_CASTING_H_
 
 #include "sippet/base/type_traits.h"
-#include "base/memory/scoped_ptr.h"
 #include "base/memory/ref_counted.h"
+
+#include <memory>
 #include <cassert>
 
 namespace sippet {
@@ -164,7 +165,7 @@ inline bool isa(const Y &Val) {
                        typename simplify_type<const Y>::SimpleType>::doit(Val);
 }
 template <class X, class Y>
-inline bool isa(const scoped_ptr<Y> &Val) {
+inline bool isa(const std::unique_ptr<Y> &Val) {
   return isa_impl_wrap<X, const Y*,
                        typename simplify_type<const Y*>::SimpleType>::doit(Val.get());
 }
@@ -202,7 +203,7 @@ template<class To, class From> struct cast_retty_impl<To, const From*const> {
   typedef const To* ret_type;   // Constant pointer arg case, return const Ty*
 };
 
-template<class To, class From> struct cast_retty_impl<To, scoped_ptr<From> > {
+template<class To, class From> struct cast_retty_impl<To, std::unique_ptr<From> > {
   typedef To *ret_type;         // Reference is not passed
 };
 
@@ -292,8 +293,8 @@ inline typename enable_if<
 }
 
 template <class X, class Y>
-inline typename cast_retty<X, const scoped_ptr<Y> >::ret_type
-  cast(const scoped_ptr<Y> &Val) {
+inline typename cast_retty<X, const std::unique_ptr<Y> >::ret_type
+  cast(const std::unique_ptr<Y> &Val) {
   assert(isa<X>(Val) && "cast<Ty>() argument of incompatible type!");
   return cast<X>(Val.get());
 }
@@ -325,31 +326,21 @@ inline typename cast_retty<X, Y*>::ret_type cast_or_null(Y *Val) {
 //
 
 template <class X, class Y>
-inline typename cast_retty<X, const Y>::ret_type dyn_cast(const Y &Val) {
-  return isa<X>(Val) ? cast<X>(Val) : 0;
-}
-
-template <class X, class Y>
-inline typename cast_retty<X, Y>::ret_type dyn_cast(Y &Val) {
-  return isa<X>(Val) ? cast<X>(Val) : 0;
-}
-
-template <class X, class Y>
-inline typename cast_retty<X, scoped_ptr<Y> >::ret_type
-  dyn_cast(scoped_ptr<Y> &Val) {
-  return isa<X>(Val) ? cast<X>(Val.get()) : 0;
+inline typename cast_retty<X, std::unique_ptr<Y> >::ret_type
+  dyn_cast(std::unique_ptr<Y> &Val) {
+  return isa<X>(Val) ? cast<X>(Val.get()) : nullptr;
 }
 
 template <class X, class Y>
 inline typename cast_retty<X, scoped_refptr<Y> >::ret_type
   dyn_cast(scoped_refptr<Y> &Val) {
-  return isa<X>(Val) ? cast<X>(Val.get()) : 0;
+  return isa<X>(Val) ? cast<X>(Val.get()) : nullptr;
 }
 
 template <class X, class Y>
 inline typename cast_retty<X, scoped_refptr<Y> >::ret_type
   dyn_cast(const scoped_refptr<Y> &Val) {
-  return isa<X>(Val) ? cast<X>(Val.get()) : 0;
+  return isa<X>(Val) ? cast<X>(Val.get()) : nullptr;
 }
 
 template <class X, class Y>
@@ -357,7 +348,7 @@ inline typename enable_if<
   is_same<Y, typename simplify_type<Y>::SimpleType>,
   typename cast_retty<X, Y*>::ret_type
 >::type dyn_cast(Y *Val) {
-  return isa<X>(Val) ? cast<X>(Val) : 0;
+  return isa<X>(Val) ? cast<X>(Val) : nullptr;
 }
 
 // dyn_cast_or_null<X> - Functionally identical to dyn_cast, except that a null
@@ -365,7 +356,7 @@ inline typename enable_if<
 //
 template <class X, class Y>
 inline typename cast_retty<X, Y*>::ret_type dyn_cast_or_null(Y *Val) {
-  return (Val && isa<X>(Val)) ? cast<X>(Val) : 0;
+  return (Val && isa<X>(Val)) ? cast<X>(Val) : nullptr;
 }
 
 } // End of sippet namespace

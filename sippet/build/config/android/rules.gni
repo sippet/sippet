@@ -1,0 +1,465 @@
+# Copyright (c) 2013-2017 The Sippet Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/config/android/config.gni")
+import("//build/config/android/rules.gni")
+
+template("android_aar") {
+  set_sources_assignment_filter([])
+
+  assert(defined(invoker.final_aar_path) || defined(invoker.aar_name))
+  assert(defined(invoker.android_manifest))
+  gen_dir = "$target_gen_dir/$target_name"
+  base_path = "$gen_dir/$target_name"
+  _build_config = "$target_gen_dir/$target_name.build_config"
+  resources_zip_path = "$base_path.resources.zip"
+  _all_resources_zip_path = "$base_path.resources.all.zip"
+  _jar_path = "$base_path.jar"
+  _lib_dex_path = "$base_path.dex.jar"
+  _template_name = target_name
+  if (defined(invoker.java_files)) {
+    _java_sources_file = "$base_path.sources"
+  }
+
+  enable_multidex = false
+  final_dex_path = "$gen_dir/classes.dex"
+
+  _final_aar_path = ""
+  if (defined(invoker.final_aar_path)) {
+    _final_aar_path = invoker.final_aar_path
+  } else if (defined(invoker.aar_name)) {
+    _final_aar_path = "$root_build_dir/aar/" + invoker.aar_name + ".aar"
+  }
+  _final_aar_path_no_ext_list =
+      process_file_template([ _final_aar_path ],
+                            "{{source_dir}}/{{source_name_part}}")
+  _final_aar_path_no_ext = _final_aar_path_no_ext_list[0]
+  assert(_final_aar_path_no_ext != "")  # Mark as used.
+
+  _install_script_name = "install_$_template_name"
+  if (defined(invoker.install_script_name)) {
+    _install_script_name = invoker.install_script_name
+  }
+  _incremental_install_script_path =
+      "${root_out_dir}/bin/${_install_script_name}"
+
+  _srcjar_deps = []
+  if (defined(invoker.srcjar_deps)) {
+    _srcjar_deps += invoker.srcjar_deps
+  }
+
+  _use_chromium_linker =
+      defined(invoker.use_chromium_linker) && invoker.use_chromium_linker
+  _enable_relocation_packing = defined(invoker.enable_relocation_packing) &&
+                               invoker.enable_relocation_packing
+  _load_library_from_aar =
+      defined(invoker.load_library_from_aar) && invoker.load_library_from_aar
+  _requires_sdk_api_level_23 = defined(invoker.requires_sdk_api_level_23) &&
+                               invoker.requires_sdk_api_level_23
+
+  assert(_use_chromium_linker || true)  # Mark as used.
+  assert(_requires_sdk_api_level_23 || true)
+  if (_enable_relocation_packing) {
+    assert(_use_chromium_linker || _requires_sdk_api_level_23,
+           "enable_relocation_packing requires either use_chromium_linker " +
+               "or requires_sdk_api_level_23")
+  }
+  if (_load_library_from_aar) {
+    assert(_use_chromium_linker || _requires_sdk_api_level_23,
+           "load_library_from_aar requires use_chromium_linker " +
+               "or requires_sdk_api_level_23")
+  }
+
+  # The dependency that makes the chromium linker, if any is needed.
+  _native_libs_deps = []
+  _shared_libraries_is_valid =
+      defined(invoker.shared_libraries) && invoker.shared_libraries != []
+  _secondary_abi_native_libs_deps = []
+  assert(_secondary_abi_native_libs_deps == [])  # mark as used.
+  _secondary_abi_shared_libraries_is_valid =
+      defined(invoker.secondary_abi_shared_libraries) &&
+      invoker.secondary_abi_shared_libraries != []
+
+  if (is_component_build || is_asan) {
+    if (_shared_libraries_is_valid) {
+      _native_libs_deps += [ "//build/android:cpplib_stripped" ]
+    }
+    if (_secondary_abi_shared_libraries_is_valid) {
+      _secondary_abi_native_libs_deps += [ "//build/android:cpplib_stripped($android_secondary_abi_toolchain)" ]
+    }
+  }
+
+  if (_shared_libraries_is_valid) {
+    _native_libs_deps += invoker.shared_libraries
+
+    # To determine the filenames of all dependent shared libraries, write the
+    # runtime deps of |shared_libraries| to a file during "gn gen".
+    # write_build_config.py will then grep this file for *.so to obtain the
+    # complete list.
+    _runtime_deps_file =
+        "$target_gen_dir/${_template_name}.native.runtimedeps"
+    group("${_template_name}__runtime_deps") {
+      deps = _native_libs_deps
+      write_runtime_deps = _runtime_deps_file
+    }
+
+    _native_lib_version_rule = ""
+    if (defined(invoker.native_lib_version_rule)) {
+      _native_lib_version_rule = invoker.native_lib_version_rule
+    }
+    _native_lib_version_arg = "\"\""
+    if (defined(invoker.native_lib_version_arg)) {
+      _native_lib_version_arg = invoker.native_lib_version_arg
+    }
+  }
+
+  if (_secondary_abi_shared_libraries_is_valid) {
+    _secondary_abi_native_libs_deps += invoker.secondary_abi_shared_libraries
+
+    # To determine the filenames of all dependent shared libraries, write the
+    # runtime deps of |shared_libraries| to a file during "gn gen".
+    # write_build_config.py will then grep this file for *.so to obtain the
+    # complete list.
+    _secondary_abi_runtime_deps_file =
+        "$target_gen_dir/${_template_name}.secondary.abi.native.runtimedeps"
+    group("${_template_name}_secondary_abi__runtime_deps") {
+      deps = _secondary_abi_native_libs_deps
+      write_runtime_deps = _secondary_abi_runtime_deps_file
+    }
+  }
+
+  if (defined(invoker.deps)) {
+    set_sources_assignment_filter([ "*manifest*" ])
+    sources = invoker.deps
+    set_sources_assignment_filter([])
+    if (sources != invoker.deps) {
+      _bad_deps = invoker.deps - sources
+      assert(
+          false,
+          "Possible manifest-generating dep found in deps. Use android_manifest_dep for this instead. Found: $_bad_deps")
+    }
+    sources = []
+  }
+  _android_manifest_deps = []
+  if (defined(invoker.android_manifest_dep)) {
+    _android_manifest_deps = [ invoker.android_manifest_dep ]
+  }
+  _android_manifest = invoker.android_manifest
+
+  _rebased_build_config = rebase_path(_build_config, root_build_dir)
+  _generate_buildconfig_java = true
+  if (defined(invoker.generate_buildconfig_java)) {
+    _generate_buildconfig_java = invoker.generate_buildconfig_java
+  }
+
+  build_config_target = "${_template_name}__build_config"
+  write_build_config(build_config_target) {
+    type = "android_apk"
+    jar_path = _jar_path
+    dex_path = final_dex_path
+    apk_path = _final_aar_path
+    incremental_allowed = false
+    incremental_apk_path = "${_final_aar_path_no_ext}_incremental.aar"
+    incremental_install_script_path = _incremental_install_script_path
+    resources_zip = resources_zip_path
+    build_config = _build_config
+    android_manifest = _android_manifest
+
+    if (defined(_java_sources_file)) {
+      java_sources_file = _java_sources_file
+    }
+
+    deps = _android_manifest_deps
+
+    if (defined(invoker.deps)) {
+      possible_config_deps = invoker.deps
+    }
+
+    # Added emma to the target's classpath via its .build_config.
+    if (emma_coverage) {
+      possible_config_deps +=
+          [ "//third_party/android_tools:emma_device_java" ]
+    }
+
+    proguard_enabled = false
+
+    # Don't depend on the runtime_deps target in order to avoid having to
+    # build the native libraries just to create the .build_config file.
+    # The dep is unnecessary since the runtime_deps file is created by gn gen
+    # and the runtime_deps file is added to write_build_config.py's depfile.
+    if (_native_libs_deps != []) {
+      shared_libraries_runtime_deps_file = _runtime_deps_file
+    }
+    if (_secondary_abi_native_libs_deps != []) {
+      secondary_abi_shared_libraries_runtime_deps_file =
+          _secondary_abi_runtime_deps_file
+    }
+  }
+
+  _r_text_out_path = "${target_gen_dir}/${target_name}_R.txt"
+  process_resources_target = "${_template_name}__process_resources"
+  process_resources(process_resources_target) {
+    forward_variables_from(invoker,
+                           [
+                             "alternative_android_sdk_jar",
+                             "android_aapt_path",
+                             "app_as_shared_lib",
+                             "include_all_resources",
+                             "shared_resources",
+                           ])
+    srcjar_path = "${target_gen_dir}/${target_name}.srcjar"
+    r_text_out_path = _r_text_out_path
+    android_manifest = _android_manifest
+    resource_dirs = [ "//build/android/ant/empty/res" ]
+    zip_path = resources_zip_path
+    all_resources_zip_path = _all_resources_zip_path
+    generate_constant_ids = true
+    if (enable_multidex) {
+      proguard_file_main_dex = _generated_proguard_main_dex_config
+    }
+
+    build_config = _build_config
+    deps = _android_manifest_deps + [ ":$build_config_target" ]
+    if (defined(invoker.deps)) {
+      deps += invoker.deps
+    }
+  }
+  _srcjar_deps += [ ":$process_resources_target" ]
+
+  if (_native_libs_deps != []) {
+    _enable_chromium_linker_tests = false
+    if (defined(invoker.enable_chromium_linker_tests)) {
+      _enable_chromium_linker_tests = invoker.enable_chromium_linker_tests
+    }
+    _ordered_libraries_json =
+        "$target_gen_dir/$target_name.ordered_libraries.json"
+    _rebased_ordered_libraries_json =
+        rebase_path(_ordered_libraries_json, root_build_dir)
+    _ordered_libraries_target = "${_template_name}__write_ordered_libraries"
+
+    # TODO(agrieve): Make GN write runtime deps in dependency order so as to
+    # not need this manual sorting step.
+    action(_ordered_libraries_target) {
+      script = "//build/android/gyp/write_ordered_libraries.py"
+      deps = _native_libs_deps + [ ":$build_config_target" ]
+      outputs = [
+        _ordered_libraries_json,
+      ]
+      _rebased_android_readelf = rebase_path(android_readelf, root_build_dir)
+      args = [
+        "--readelf=$_rebased_android_readelf",
+        "--output=$_rebased_ordered_libraries_json",
+        "--libraries-dir=.",
+        "--input-libraries=@FileArg($_rebased_build_config:native:libraries)",
+      ]
+    }
+
+    java_cpp_template("${_template_name}__native_libraries_java") {
+      package_name = "org/chromium/base/library_loader"
+      sources = [
+        "//base/android/java/templates/NativeLibraries.template",
+      ]
+      inputs = [
+        _ordered_libraries_json,
+      ]
+      deps = [
+        ":${_ordered_libraries_target}",
+      ]
+      if (_native_lib_version_rule != "") {
+        deps += [ _native_lib_version_rule ]
+      }
+
+      defines = [
+        "NATIVE_LIBRARIES_LIST=" +
+            "@FileArg($_rebased_ordered_libraries_json:java_libraries_list)",
+        "NATIVE_LIBRARIES_VERSION_NUMBER=$_native_lib_version_arg",
+      ]
+      if (_use_chromium_linker) {
+        defines += [ "ENABLE_CHROMIUM_LINKER" ]
+      }
+      if (_load_library_from_aar) {
+        defines += [ "ENABLE_CHROMIUM_LINKER_LIBRARY_IN_ZIP_FILE" ]
+      }
+      if (_enable_chromium_linker_tests) {
+        defines += [ "ENABLE_CHROMIUM_LINKER_TESTS" ]
+      }
+    }
+    _srcjar_deps += [ ":${_template_name}__native_libraries_java" ]
+  }
+
+  if (_generate_buildconfig_java) {
+    java_cpp_template("${_template_name}__build_config_java") {
+      package_name = "org/chromium/base"
+      sources = [
+        "//base/android/java/templates/BuildConfig.template",
+      ]
+      deps = [
+        ":$build_config_target",
+      ]
+
+      defines = []
+      if (is_java_debug || dcheck_always_on) {
+        defines += [ "_DCHECK_IS_ON" ]
+      }
+      defines += [
+        "COMPRESSED_LOCALE_LIST=" +
+            "@FileArg($_rebased_build_config:compressed_locales_java_list)",
+        "UNCOMPRESSED_LOCALE_LIST=" +
+            "@FileArg($_rebased_build_config:uncompressed_locales_java_list)",
+      ]
+    }
+    _srcjar_deps += [ ":${_template_name}__build_config_java" ]
+  }
+
+  java_target = "${_template_name}__java"
+  java_library_impl(java_target) {
+    forward_variables_from(invoker,
+                           [
+                             "chromium_code",
+                             "java_files",
+                             "run_findbugs_override",
+                             "jar_excluded_patterns",
+                           ])
+    supports_android = true
+    requires_android = true
+    override_build_config = _build_config
+    deps = _android_manifest_deps + [ ":$build_config_target" ]
+
+    android_manifest = _android_manifest
+    srcjar_deps = _srcjar_deps
+    jar_path = _jar_path
+    dex_path = _lib_dex_path
+    emma_never_instrument = false
+    if (defined(_java_sources_file)) {
+      java_sources_file = _java_sources_file
+    }
+
+    if (defined(invoker.deps)) {
+      deps += invoker.deps
+    }
+    if (emma_coverage && !_emma_never_instrument) {
+      deps += [ "//third_party/android_tools:emma_device_java" ]
+    }
+
+    if (!defined(jar_excluded_patterns)) {
+      jar_excluded_patterns = []
+    }
+    jar_excluded_patterns += [
+      "*/R.class",
+      "*/R\$*.class",
+      "*/Manifest.class",
+      "*/Manifest\$*.class",
+    ]
+  }
+
+  _secondary_abi_native_libs_file_arg_dep = ":$build_config_target"
+  _secondary_abi_native_libs_file_arg =
+      "@FileArg($_rebased_build_config:native:secondary_abi_libraries)"
+  assert(_secondary_abi_native_libs_file_arg != "" &&
+         _secondary_abi_native_libs_file_arg_dep != "")  # Mark as used.
+
+  if (_native_libs_deps != [] && _enable_relocation_packing) {
+    _prepare_native_target_name = "${_template_name}__prepare_native"
+    _native_libs_json = "$gen_dir/packed-libs/filelist.json"
+    _rebased_native_libs_json = rebase_path(_native_libs_json, root_build_dir)
+    _native_libs_file_arg_dep = ":$_prepare_native_target_name"
+
+    pack_relocation_section(_prepare_native_target_name) {
+      forward_variables_from(invoker,
+                             [
+                               "deps",
+                               "public_deps",
+                             ])
+      file_list_json = _native_libs_json
+      libraries_filearg =
+          "@FileArg(${_rebased_build_config}:native:libraries)"
+      inputs = [
+        _build_config,
+      ]
+
+      deps += _native_libs_deps
+      deps += [ ":$build_config_target" ]
+    }
+    if (_secondary_abi_native_libs_deps != []) {
+      _prepare_native_target_name =
+          "${_template_name}_secondary_abi__prepare_native"
+      _native_libs_json =
+          "$gen_dir/packed-libs/$android_secondary_abi_cpu/filelist.json"
+      _rebased_native_libs_json =
+          rebase_path(_native_libs_json, root_build_dir)
+      _secondary_abi_native_libs_file_arg_dep =
+          ":$_prepare_native_target_name"
+      _secondary_abi_native_libs_file_arg =
+          "@FileArg($_rebased_native_libs_json:files)"
+
+      pack_relocation_section(_prepare_native_target_name) {
+        forward_variables_from(invoker,
+                               [
+                                 "deps",
+                                 "public_deps",
+                               ])
+        file_list_json = _native_libs_json
+        libraries_filearg = "@FileArg(${_rebased_build_config}:native:secondary_abi_libraries)"
+        inputs = [
+          _build_config,
+        ]
+
+        deps += _secondary_abi_native_libs_deps
+        deps += [ ":$build_config_target" ]
+      }
+    }
+  }
+
+  _extra_native_libs = []
+  assert(_extra_native_libs == [])  # Mark as used.
+  _extra_native_libs_deps = []
+  assert(_extra_native_libs_deps == [])  # Mark as used.
+  if (_native_libs_deps != []) {
+    if (_use_chromium_linker) {
+      _extra_native_libs =
+          [ "$root_shlib_dir/libchromium_android_linker$shlib_extension" ]
+      _extra_native_libs_deps +=
+          [ "//base/android/linker:chromium_android_linker" ]
+    }
+  }
+  if (defined(invoker.loadable_modules) && invoker.loadable_modules != []) {
+    _extra_native_libs += invoker.loadable_modules
+  }
+
+  action(target_name) {
+    forward_variables_from(invoker,
+                           [
+                             "deps",
+                             "public_deps",
+                           ])
+
+    if (!defined(deps)) {
+      deps = []
+    }
+    deps += [
+      ":$process_resources_target",
+      ":$java_target",
+    ]
+
+    script = "//sippet/build/android/generate_aar.py"
+    depfile = "${target_gen_dir}/${target_name}.d"
+    inputs = [
+      _r_text_out_path,
+    ]
+
+    args = [
+      "--android-abi=$android_app_abi",
+      "--native-libs=@FileArg(${_rebased_build_config}:native:libraries)",
+      "--android-manifest=@FileArg(${_rebased_build_config}:gradle:android_manifest)",
+      "--R-txt=" + rebase_path(_r_text_out_path, root_build_dir),
+      "--jar-path=" + rebase_path(_jar_path, root_build_dir),
+      "--extra-jar-libs=@FileArg(${_rebased_build_config}:dist_jar:dependency_jars)",
+      "--aar-path=" + rebase_path(_final_aar_path, root_build_dir),
+    ]
+
+    outputs = [
+      _final_aar_path
+    ]
+  }
+}

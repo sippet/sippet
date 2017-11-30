@@ -4,7 +4,7 @@
 
 #include "sippet/transport/chrome/chrome_datagram_writer.h"
 
-#include "base/stl_util.h"
+#include "base/memory/ptr_util.h"
 #include "net/base/io_buffer.h"
 #include "net/base/net_errors.h"
 #include "net/socket/socket.h"
@@ -14,22 +14,16 @@ namespace sippet {
 ChromeDatagramWriter::PendingFrame::PendingFrame(
         net::IOBuffer *buf, int buf_len,
         const net::CompletionCallback& callback)
-  : buf_(buf), buf_len_(buf_len), callback_(callback) {
-}
+  : buf_(buf), buf_len_(buf_len), callback_(callback) {}
 
-ChromeDatagramWriter::PendingFrame::~PendingFrame() {
-}
+ChromeDatagramWriter::PendingFrame::~PendingFrame() {}
 
-ChromeDatagramWriter::ChromeDatagramWriter(
-    net::Socket *socket_to_wrap)
-    : wrapped_socket_(socket_to_wrap),
-      weak_factory_(this),
-      error_(net::OK) {
-}
+ChromeDatagramWriter::ChromeDatagramWriter(net::Socket *socket_to_wrap)
+  : wrapped_socket_(socket_to_wrap),
+    error_(net::OK),
+    weak_ptr_factory_(this) {}
 
-ChromeDatagramWriter::~ChromeDatagramWriter() {
-  STLDeleteElements(&pending_messages_);
-}
+ChromeDatagramWriter::~ChromeDatagramWriter() {}
 
 int ChromeDatagramWriter::Write(net::IOBuffer* buf, int buf_len,
                                    const net::CompletionCallback& callback) {
@@ -44,7 +38,8 @@ int ChromeDatagramWriter::Write(net::IOBuffer* buf, int buf_len,
     }
   }
 
-  pending_messages_.push_back(new PendingFrame(buf, buf_len, callback));
+  pending_messages_.push_back(base::WrapUnique(
+        new PendingFrame(buf, buf_len, callback)));
   return net::ERR_IO_PENDING;
 }
 
@@ -71,7 +66,7 @@ void ChromeDatagramWriter::DidConsume() {
     Pop(net::OK);
     if (pending_messages_.empty())
       break;  // done
-    PendingFrame *pending = pending_messages_.front();
+    PendingFrame *pending = pending_messages_.front().get();
     int result = Drain(pending->buf_.get(), pending->buf_len_);
     if (result < 0) {
       if (result != net::ERR_IO_PENDING)
@@ -82,9 +77,7 @@ void ChromeDatagramWriter::DidConsume() {
 }
 
 void ChromeDatagramWriter::Pop(int result) {
-  PendingFrame *pending = pending_messages_.front();
-  pending->callback_.Run(result);
-  delete pending;
+  pending_messages_.front()->callback_.Run(result);
   pending_messages_.pop_front();
 }
 

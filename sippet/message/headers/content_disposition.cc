@@ -20,7 +20,7 @@ ContentDisposition::ContentDisposition(const single_value::value_type &value)
 }
 
 ContentDisposition::ContentDisposition(const ContentDisposition &other)
-  : Header(other), has_parameters(other), single_value(other) {
+  : Header(other), single_value(other), has_parameters(other) {
 }
 
 ContentDisposition::~ContentDisposition() {

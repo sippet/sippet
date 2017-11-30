@@ -14,7 +14,7 @@ class StaticPasswordHandler : public sippet::PasswordHandler {
     Factory(const base::string16 &username, const base::string16 &password);
     ~Factory() override;
 
-    scoped_ptr<sippet::PasswordHandler>
+    std::unique_ptr<sippet::PasswordHandler>
         CreatePasswordHandler() override;
 
    private:

@@ -5,7 +5,7 @@
 #ifndef SIPPET_TRANSPORT_TIME_DELTA_PROVIDER_H_
 #define SIPPET_TRANSPORT_TIME_DELTA_PROVIDER_H_
 
-#include "base/basictypes.h"
+#include "base/macros.h"
 #include "base/time/time.h"
 
 namespace sippet {

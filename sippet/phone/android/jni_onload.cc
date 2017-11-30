@@ -12,6 +12,7 @@
 #include "base/i18n/icu_util.h"
 #include "base/logging.h"
 #include "base/lazy_instance.h"
+#include "base/android/context_utils.h"
 #include "base/android/base_jni_onload.h"
 #include "base/android/base_jni_registrar.h"
 #include "base/android/jni_android.h"
@@ -20,7 +21,7 @@
 #include "net/android/net_jni_registrar.h"
 #include "url/android/url_jni_registrar.h"
 #include "url/url_util.h"
-#include "webrtc/modules/utility/interface/jvm_android.h"
+#include "webrtc/modules/utility/include/jvm_android.h"
 #include "sippet/phone/android/jni_registrar.h"
 #include "sippet/phone/android/jni_helpers.h"
 #include "sippet/phone/phone.h"
@@ -30,7 +31,7 @@ namespace android {
 
 namespace {
 
-base::LazyInstance<scoped_ptr<base::MessageLoop>> g_java_message_loop =
+base::LazyInstance<std::unique_ptr<base::MessageLoop>> g_java_message_loop =
     LAZY_INSTANCE_INITIALIZER;
 
 const base::android::RegistrationMethod kSippetRegisteredMethods[] = {
@@ -65,9 +66,6 @@ bool OnJNIOnLoadInit(std::vector<base::android::InitCallback> callbacks) {
 
 void InitApplicationContext(JNIEnv* env, jobject context) {
   if (g_java_message_loop.Get() == nullptr) {
-    base::android::ScopedJavaLocalRef<jobject> scoped_context(env, context);
-    base::android::InitApplicationContext(env, scoped_context);
-
     base::i18n::InitializeICU();
 
     base::CommandLine::Init(0, nullptr);

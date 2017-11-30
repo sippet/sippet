@@ -34,8 +34,8 @@ class ContentDisposition :
   ContentDisposition(const single_value::value_type &value);
   ~ContentDisposition() override;
 
-  scoped_ptr<ContentDisposition> Clone() const {
-    return scoped_ptr<ContentDisposition>(DoClone());
+  std::unique_ptr<ContentDisposition> Clone() const {
+    return std::unique_ptr<ContentDisposition>(DoClone());
   }
 
   void set_value(Type t) {

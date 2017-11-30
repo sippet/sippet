@@ -5,7 +5,7 @@
 #ifndef SIPPET_MESSAGE_VERSION_H_
 #define SIPPET_MESSAGE_VERSION_H_
 
-#include "base/basictypes.h"
+#include <cstdint>
 
 namespace sippet {
 
@@ -16,15 +16,15 @@ class Version {
   Version() : value_(0) { }
 
   // Build from unsigned major/minor pair.
-  Version(uint16 major, uint16 minor) : value_(major << 16 | minor) { }
+  Version(uint16_t major, uint16_t minor) : value_(major << 16 | minor) { }
 
   // Major version number.
-  uint16 major_value() const {
+  uint16_t major_value() const {
     return value_ >> 16;
   }
 
   // Minor version number.
-  uint16 minor_value() const {
+  uint16_t minor_value() const {
     return value_ & 0xffff;
   }
 
@@ -50,7 +50,7 @@ class Version {
   }
 
  private:
-  uint32 value_; // Packed as <major>:<minor>
+  uint32_t value_; // Packed as <major>:<minor>
 };
 
 } // End of sippet namespace

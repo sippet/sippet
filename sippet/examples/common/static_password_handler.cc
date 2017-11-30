@@ -13,9 +13,9 @@ StaticPasswordHandler::Factory::Factory(const base::string16 &username,
 
 StaticPasswordHandler::Factory::~Factory() {}
 
-scoped_ptr<sippet::PasswordHandler>
+std::unique_ptr<sippet::PasswordHandler>
     StaticPasswordHandler::Factory::CreatePasswordHandler() {
-  scoped_ptr<PasswordHandler> password_handler(
+  std::unique_ptr<PasswordHandler> password_handler(
     new StaticPasswordHandler(username_, password_));
   return password_handler.Pass();
 }

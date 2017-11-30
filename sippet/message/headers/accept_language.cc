@@ -11,11 +11,11 @@ LanguageRange::LanguageRange() {
 }
 
 LanguageRange::LanguageRange(const LanguageRange &other)
-  : has_parameters(other), single_value(other) {
+  : single_value(other), has_parameters(other) {
 }
 
 LanguageRange::LanguageRange(const std::string &value)
-  : single_value(base::StringToLowerASCII(value)) {
+  : single_value(base::ToLowerASCII(value)) {
 }
 
 LanguageRange::~LanguageRange() {

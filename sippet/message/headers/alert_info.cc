@@ -10,7 +10,7 @@ AlertParam::AlertParam() {
 }
 
 AlertParam::AlertParam(const AlertParam &other)
-  : has_parameters(other), single_value(other) {
+  : single_value(other), has_parameters(other) {
 }
 
 AlertParam::AlertParam(const single_value::value_type &type)

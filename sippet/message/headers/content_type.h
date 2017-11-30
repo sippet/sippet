@@ -52,8 +52,8 @@ class ContentType :
   explicit ContentType(const MediaType &mediaType);
   ~ContentType() override;
 
-  scoped_ptr<ContentType> Clone() const {
-    return scoped_ptr<ContentType>(DoClone());
+  std::unique_ptr<ContentType> Clone() const {
+    return std::unique_ptr<ContentType>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

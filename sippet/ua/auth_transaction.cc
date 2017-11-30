@@ -14,11 +14,11 @@ namespace sippet {
 AuthTransaction::AuthTransaction(AuthCache *auth_cache,
     AuthHandlerFactory *auth_handler_factory,
     PasswordHandler::Factory *password_handler_factory,
-    const net::BoundNetLog &bound_net_log) :
-  auth_controller_(new AuthController(auth_cache, auth_handler_factory)),
-  next_state_(STATE_NONE),
-  bound_net_log_(bound_net_log),
-  password_handler_factory_(password_handler_factory) {
+    const net::NetLogWithSource &net_log)
+  : next_state_(STATE_NONE),
+    net_log_(net_log),
+    auth_controller_(new AuthController(auth_cache, auth_handler_factory)),
+    password_handler_factory_(password_handler_factory) {
   DCHECK(password_handler_factory_);
 }
 
@@ -85,7 +85,7 @@ int AuthTransaction::DoLoop(int last_io_result) {
 int AuthTransaction::DoHandleAuthChallenge() {
   next_state_ = STATE_HANDLE_AUTH_CHALLENGE_COMPLETE;
   return auth_controller_->HandleAuthChallenge(incoming_response_,
-      bound_net_log_);
+      net_log_);
 }
 
 int AuthTransaction::DoHandleAuthChallengeComplete() {
@@ -103,7 +103,7 @@ int AuthTransaction::DoHandleAuthChallengeComplete() {
 int AuthTransaction::DoGetCredentials() {
   DCHECK(auth_controller_->auth_info());
   next_state_ = STATE_GET_CREDENTIALS_COMPLETE;
-  scoped_ptr<PasswordHandler> password_handler =
+  std::unique_ptr<PasswordHandler> password_handler =
       password_handler_factory_->CreatePasswordHandler();
   return password_handler->GetCredentials(
       auth_controller_->auth_info().get(),
@@ -130,7 +130,7 @@ int AuthTransaction::DoAddAuthorizationHeaders() {
   next_state_ = STATE_ADD_AUTHORIZATION_HEADERS_COMPLETE;
   return auth_controller_->AddAuthorizationHeaders(outgoing_request_,
       base::Bind(&AuthTransaction::OnIOComplete,
-          base::Unretained(this)), bound_net_log_);
+          base::Unretained(this)), net_log_);
 }
 
 int AuthTransaction::DoAddAuthorizationHeadersComplete(int result) {

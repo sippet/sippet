@@ -8,8 +8,8 @@
 #include "base/strings/string16.h"
 
 namespace url {
-struct CharsetConverter;
-template<typename T> struct CanonOutputT;
+class CharsetConverter;
+template<typename T> class CanonOutputT;
 struct Parsed;
 }  // namespace url
 

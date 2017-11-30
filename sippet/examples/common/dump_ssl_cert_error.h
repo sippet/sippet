@@ -14,7 +14,7 @@ class DumpSSLCertError : public sippet::SSLCertErrorHandler {
     Factory(bool ignore_non_fatal);
     ~Factory() override;
 
-    scoped_ptr<sippet::SSLCertErrorHandler>
+    std::unique_ptr<sippet::SSLCertErrorHandler>
          CreateSSLCertificateErrorHandler() override;
 
    private:

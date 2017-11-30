@@ -21,9 +21,9 @@ DumpSSLCertError::Factory::Factory(bool ignore_non_fatal)
 DumpSSLCertError::Factory::~Factory() {
 }
 
-scoped_ptr<sippet::SSLCertErrorHandler>
+std::unique_ptr<sippet::SSLCertErrorHandler>
     DumpSSLCertError::Factory::CreateSSLCertificateErrorHandler() {
-  scoped_ptr<sippet::SSLCertErrorHandler> ssl_cert_error_handler(
+  std::unique_ptr<sippet::SSLCertErrorHandler> ssl_cert_error_handler(
     new DumpSSLCertError(ignore_non_fatal_));
   return ssl_cert_error_handler.Pass();
 }

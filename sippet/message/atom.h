@@ -9,7 +9,7 @@
 #include <memory>
 #include <functional>
 #include <cstring>
-#include "base/memory/scoped_ptr.h"
+
 #include "sippet/base/raw_ostream.h"
 
 namespace sippet {
@@ -75,6 +75,7 @@ public:
   }
 private:
   struct AtomImp {
+    virtual ~AtomImp() {}
     virtual Type type() = 0;
     virtual const char *str() = 0;
     virtual AtomImp *clone() = 0;
@@ -110,7 +111,7 @@ private:
     inline void operator()(AtomImp* ptr) const { ptr->release(); }
   };
 
-  scoped_ptr<AtomImp, AtomRelease> atom_;
+  std::unique_ptr<AtomImp, AtomRelease> atom_;
 };
 
 template<typename T>

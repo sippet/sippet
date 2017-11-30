@@ -51,7 +51,7 @@ bool ProgramMain::Init() {
   net::ClientSocketFactory *client_socket_factory =
       net::ClientSocketFactory::GetDefaultFactory();
   host_resolver_ = net::HostResolver::CreateDefaultResolver(nullptr);
-  scoped_ptr<sippet::AuthHandlerRegistryFactory> auth_handler_factory(
+  std::unique_ptr<sippet::AuthHandlerRegistryFactory> auth_handler_factory(
       sippet::AuthHandlerFactory::CreateDefault(host_resolver_.get()));
   auth_handler_factory_ =
       auth_handler_factory.Pass();
@@ -87,8 +87,12 @@ bool ProgramMain::Init() {
   return true;
 }
 
-void ProgramMain::AppendHandler(sippet::ua::UserAgent::Delegate *delegate) {
-  user_agent_->AppendHandler(delegate);
+void ProgramMain::AddObserver(sippet::ua::UserAgent::Observer* observer) {
+  user_agent_->AddObserver(observer);
+}
+
+void ProgramMain::RemoveObserver(sippet::ua::UserAgent::Observer* observer) {
+  user_agent_->RemoveObserver(observer);
 }
 
 sippet::ua::UserAgent *ProgramMain::user_agent() {

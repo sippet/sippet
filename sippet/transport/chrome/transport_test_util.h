@@ -269,7 +269,7 @@ class UDPChannelAdapter : public MockChannelAdapter {
             const net::CompletionCallback& callback) override;
  private:
   net::ClientSocketFactory *socket_factory_;
-  scoped_ptr<net::DatagramClientSocket> socket_;
+  std::unique_ptr<net::DatagramClientSocket> socket_;
   net::NetLog *net_log_;
 };
              
@@ -289,7 +289,7 @@ class TCPChannelAdapter : public MockChannelAdapter {
             const net::CompletionCallback& callback) override;
  private:
   net::ClientSocketFactory *socket_factory_;
-  scoped_ptr<net::StreamSocket> socket_;
+  std::unique_ptr<net::StreamSocket> socket_;
   net::NetLog *net_log_;
 };
              
@@ -309,14 +309,14 @@ class TLSChannelAdapter : public MockChannelAdapter {
             const net::CompletionCallback& callback) override;
  private:
   net::ClientSocketFactory *socket_factory_;
-  scoped_ptr<net::StreamSocket> tcp_socket_;
-  scoped_ptr<net::SSLClientSocket> ssl_socket_;
+  std::unique_ptr<net::StreamSocket> tcp_socket_;
+  std::unique_ptr<net::SSLClientSocket> ssl_socket_;
   net::CompletionCallback connect_callback_;
   net::NetLog *net_log_;
   net::AddressList addrlist_;
-  scoped_ptr<net::MockCertVerifier> cert_verifier_;
+  std::unique_ptr<net::MockCertVerifier> cert_verifier_;
   net::SSLClientSocketContext context_;
-  base::WeakPtrFactory<TLSChannelAdapter> weak_factory_;
+  base::WeakPtrFactory<TLSChannelAdapter> weak_ptr_factory_;
 
   void OnConnected(int result);
 };
@@ -338,12 +338,14 @@ class MockChannel : public Channel {
   bool is_stream() const override;
   void Connect() override;
   int ReconnectIgnoringLastError() override;
-  int ReconnectWithCertificate(net::X509Certificate* client_cert) override;
+  int ReconnectWithCertificate(net::X509Certificate* client_cert,
+      net::SSLPrivateKey* private_key) override;
   int Send(const scoped_refptr<Message>& message,
-           const net::CompletionCallback& callback) override;
+      const net::CompletionCallback& callback) override;
   void Close() override;
   void CloseWithError(int error) override;
   void DetachDelegate() override;
+  void SetKeepAlive(int seconds) override;
 
  private:
   friend class base::RefCountedThreadSafe<MockChannel>;
@@ -354,11 +356,11 @@ class MockChannel : public Channel {
   EndPoint origin_;
   bool is_connected_;
   bool is_stream_;
-  net::BoundNetLog net_log_;
-  scoped_ptr<MockChannelAdapter> channel_adapter_;
-  scoped_ptr<net::DeterministicSocketData> data_;
+  const net::NetLogWithSource net_log_;
+  std::unique_ptr<MockChannelAdapter> channel_adapter_;
+  std::unique_ptr<net::SequencedSocketData> data_;
   scoped_refptr<net::IOBufferWithSize> io_buffer_;
-  base::WeakPtrFactory<MockChannel> weak_factory_;
+  base::WeakPtrFactory<MockChannel> weak_ptr_factory_;
 
   void Read();
   void HandleMessage(int read_bytes);
@@ -380,7 +382,7 @@ class MockChannelFactory : public ChannelFactory {
 
  private:
   net::ClientSocketFactory *socket_factory_;
-  net::BoundNetLog net_log_;
+  const net::NetLogWithSource net_log_;
 };
 
 class MockClientTransaction : public ClientTransaction {

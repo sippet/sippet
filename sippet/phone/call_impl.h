@@ -12,7 +12,7 @@
 #include "sippet/message/request.h"
 #include "sippet/ua/dialog.h"
 
-#include "talk/app/webrtc/peerconnectioninterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
 
 namespace sippet {
 namespace phone {
@@ -84,13 +84,18 @@ class CallImpl :
   //
   // PeerConnectionObserver implementation.
   //
+  void OnSignalingChange(
+      webrtc::PeerConnectionInterface::SignalingState new_state) override;
   void OnAddStream(webrtc::MediaStreamInterface* stream) override {}
   void OnRemoveStream(webrtc::MediaStreamInterface* stream) override {}
   void OnDataChannel(webrtc::DataChannelInterface* data_channel) override {}
   void OnRenegotiationNeeded() override {/* TODO*/}
   void OnIceCandidate(
-        const webrtc::IceCandidateInterface* candidate) override {}
-  void OnIceComplete() override;
+      const webrtc::IceCandidateInterface* candidate) override {}
+  void OnIceConnectionChange(
+      webrtc::PeerConnectionInterface::IceConnectionState new_state) override {}
+  void OnIceGatheringChange(
+      webrtc::PeerConnectionInterface::IceGatheringState new_state) override {}
 
   //
   // CreateSessionDescriptionObserver callbacks.
@@ -133,11 +138,9 @@ class CallImpl :
       const scoped_refptr<Response> &incoming_response,
       const scoped_refptr<Dialog> &dialog);
   void OnTimedOut(
-      const scoped_refptr<Request> &request,
-      const scoped_refptr<Dialog> &dialog);
+      const scoped_refptr<Request> &request);
   void OnTransportError(
-      const scoped_refptr<Request> &request, int error,
-      const scoped_refptr<Dialog> &dialog);
+      const scoped_refptr<Request> &request, int error);
 };
 
 } // namespace sippet

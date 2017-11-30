@@ -4,6 +4,7 @@
 
 #include "sippet/transport/chrome/transport_test_util.h"
 
+#include "base/run_loop.h"
 #include "sippet/base/tags.h"
 
 namespace sippet {
@@ -67,7 +68,7 @@ const char kOptionsResponse[] =
 class NetworkLayerTest : public testing::Test {
  public:
   void Finish() {
-    base::MessageLoop::current()->RunUntilIdle();
+    base::RunLoop().RunUntilIdle();
     EXPECT_TRUE(data_provider_->at_events_end());
     EXPECT_TRUE(data_->AllReadDataConsumed());
     EXPECT_TRUE(data_->AllWriteDataConsumed());
@@ -88,24 +89,24 @@ class NetworkLayerTest : public testing::Test {
     settings.set_transaction_factory(transaction_factory_.get());
     delegate_.reset(new StaticNetworkLayerDelegate(data_provider_.get()));
     network_layer_.reset(new NetworkLayer(delegate_.get(), settings));
-    data_.reset(new net::DeterministicSocketData(reads, reads_count,
-                                                 writes, writes_count));
+    data_.reset(new net::SequencedSocketData(reads, reads_count,
+                                             writes, writes_count));
     data_->set_connect_data(net::MockConnect(net::ASYNC, 0));
-    socket_factory_.reset(new net::DeterministicMockClientSocketFactory);
+    socket_factory_.reset(new net::MockClientSocketFactory);
     socket_factory_->AddSocketDataProvider(data_.get());
     channel_factory_.reset(new MockChannelFactory(socket_factory_.get()));
     network_layer_->RegisterChannelFactory(
         Protocol::TCP, channel_factory_.get());
   }
 
-  scoped_ptr<DataProvider> data_provider_;
-  scoped_ptr<net::DeterministicSocketData> data_;
-  scoped_ptr<net::DeterministicMockClientSocketFactory> socket_factory_;
-  scoped_ptr<MockChannelFactory> channel_factory_;
-  scoped_ptr<NetworkLayer::Delegate> delegate_;
-  scoped_ptr<MockTransactionFactory> transaction_factory_;
-  scoped_ptr<NetworkLayer> network_layer_;
-  scoped_ptr<MockBranchFactory> branch_factory_;
+  std::unique_ptr<DataProvider> data_provider_;
+  std::unique_ptr<net::SequencedSocketData> data_;
+  std::unique_ptr<net::MockClientSocketFactory> socket_factory_;
+  std::unique_ptr<MockChannelFactory> channel_factory_;
+  std::unique_ptr<NetworkLayer::Delegate> delegate_;
+  std::unique_ptr<MockTransactionFactory> transaction_factory_;
+  std::unique_ptr<NetworkLayer> network_layer_;
+  std::unique_ptr<MockBranchFactory> branch_factory_;
   net::TestCompletionCallback callback_;
 };
 
@@ -139,10 +140,10 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
 
   scoped_refptr<Request> single_via_request =
     new Request(Method::INVITE, GURL("sip:foobar@foo.com"));
-  scoped_ptr<Via> via(new Via);
+  std::unique_ptr<Via> via(new Via);
   net::HostPortPair hostport("192.168.0.1", 7001);
   via->push_back(ViaParam(Protocol::TCP, hostport));
-  single_via_request->push_front(via.Pass());
+  single_via_request->push_front(std::move(via));
   network_layer_->StampServerTopmostVia(single_via_request, channel);
   EXPECT_TRUE(base::StartsWith(single_via_request->ToString(),
     "INVITE sip:foobar@foo.com SIP/2.0\r\n"
@@ -165,7 +166,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   via.reset(new Via);
   via->push_back(ViaParam(Protocol::TCP,
       net::HostPortPair("192.168.0.1", 7001)));
-  single_via_response->push_front(via.Pass());
+  single_via_response->push_front(std::move(via));
   EndPoint single_via_response_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_response);
   EXPECT_EQ(EndPoint("192.168.0.1", 7001, Protocol::TCP),
@@ -176,7 +177,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
   via->push_back(ViaParam(Protocol::TCP,
       net::HostPortPair("192.168.0.1", 7001)));
   via->front().set_received("189.187.200.23");
-  single_via_response->push_front(via.Pass());
+  single_via_response->push_front(std::move(via));
   single_via_response_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_response);
   EXPECT_EQ(EndPoint("189.187.200.23", 7001, Protocol::TCP),
@@ -188,7 +189,7 @@ TEST_F(NetworkLayerTest, StaticFunctions) {
       net::HostPortPair("192.168.0.1", 7001)));
   via->front().set_received("189.187.200.23");
   via->front().set_rport(5002);
-  single_via_response->push_front(via.Pass());
+  single_via_response->push_front(std::move(via));
   single_via_response_endpoint =
     NetworkLayer::GetMessageEndPoint(single_via_response);
   EXPECT_EQ(EndPoint("189.187.200.23", 5002, Protocol::TCP),
@@ -239,12 +240,8 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
   int rv = network_layer_->Send(request, callback_.callback());
   EXPECT_EQ(net::ERR_IO_PENDING, rv);
 
-  data_->RunFor(1);
-
   rv = callback_.WaitForResult();
   EXPECT_EQ(net::OK, rv);
-
-  data_->RunFor(1);
 
   // The mock transaction doesn't terminate automatically
   // when the response arrives, so we have to close it
@@ -253,14 +250,10 @@ TEST_F(NetworkLayerTest, OutgoingRequest) {
     transaction_factory_->client_transaction(0);
   client_transaction->Terminate();
 
-  data_->RunFor(1);
-
   scoped_refptr<Message> response(Message::Parse(kOptionsResponse));
   response->set_direction(Message::Outgoing);
   rv = network_layer_->Send(response, callback_.callback());
   EXPECT_EQ(net::OK, rv);
-
-  data_->RunFor(2);
 
   Finish();
 }

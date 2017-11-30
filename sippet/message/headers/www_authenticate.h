@@ -45,8 +45,8 @@ class WwwAuthenticate :
   WwwAuthenticate(const std::string &scheme);
   ~WwwAuthenticate() override;
 
-  scoped_ptr<WwwAuthenticate> Clone() const {
-    return scoped_ptr<WwwAuthenticate>(DoClone());
+  std::unique_ptr<WwwAuthenticate> Clone() const {
+    return std::unique_ptr<WwwAuthenticate>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

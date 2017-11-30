@@ -51,8 +51,8 @@ class AcceptEncoding :
   AcceptEncoding();
   ~AcceptEncoding() override;
 
-  scoped_ptr<AcceptEncoding> Clone() const {
-    return scoped_ptr<AcceptEncoding>(DoClone());
+  std::unique_ptr<AcceptEncoding> Clone() const {
+    return std::unique_ptr<AcceptEncoding>(DoClone());
   }
 
   bool AllowsAll() const {

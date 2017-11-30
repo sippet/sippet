@@ -18,14 +18,14 @@ class ClientNonInvite : public TimeDeltaProvider {
   ~ClientNonInvite() override {}
   base::TimeDelta GetNextRetryDelay() override {
     // Implement the exponential backoff up to 4 seconds
-    int64 seconds;
+    int64_t milliseconds;
     switch (count_++) {
-      case 0: seconds = 500; break;
-      case 1: seconds = 1000; break;
-      case 2: seconds = 2000; break;
-      default: seconds = 4000; break;
+      case 0: milliseconds = 500; break;
+      case 1: milliseconds = 1000; break;
+      case 2: milliseconds = 2000; break;
+      default: milliseconds = 4000; break;
     }
-    return base::TimeDelta::FromMilliseconds(seconds);
+    return base::TimeDelta::FromMilliseconds(milliseconds);
   }
   base::TimeDelta GetTimeoutDelay() override {
     // This is 64*T1, where T1 = 500ms
@@ -46,9 +46,9 @@ class ClientInvite : public TimeDeltaProvider {
   ~ClientInvite() override {}
   base::TimeDelta GetNextRetryDelay() override {
     // Implement the exponential backoff *2 at each retransmission
-    int64 seconds = multiply_ * 500;
+    int64_t milliseconds = multiply_ * 500;
     multiply_ <<= 1;
-    return base::TimeDelta::FromMilliseconds(seconds);
+    return base::TimeDelta::FromMilliseconds(milliseconds);
   }
   base::TimeDelta GetTimeoutDelay() override {
     // This is 64*T1, where T1 = 500ms
@@ -75,7 +75,7 @@ class ServerNonInvite : public TimeDeltaProvider {
     return base::TimeDelta();
   }
   base::TimeDelta GetTerminateDelay() override {
-    // Timer J equal to 5s
+    // Timer J is 64*T1, where T1 = 500ms
     return base::TimeDelta::FromSeconds(32);
   }
 };
@@ -86,14 +86,14 @@ class ServerInvite : public TimeDeltaProvider {
   ~ServerInvite() override {}
   base::TimeDelta GetNextRetryDelay() override {
     // Timer G: implement the exponential backoff up to 4 seconds
-    int64 seconds;
+    int64_t milliseconds;
     switch (count_++) {
-      case 0: seconds = 500; break;
-      case 1: seconds = 1000; break;
-      case 2: seconds = 2000; break;
-      default: seconds = 4000; break;
+      case 0: milliseconds = 500; break;
+      case 1: milliseconds = 1000; break;
+      case 2: milliseconds = 2000; break;
+      default: milliseconds = 4000; break;
     }
-    return base::TimeDelta::FromMilliseconds(seconds);
+    return base::TimeDelta::FromMilliseconds(milliseconds);
   }
   base::TimeDelta GetTimeoutDelay() override {
     // Timer H is 64*T1, where T1 = 500ms

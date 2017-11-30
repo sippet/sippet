@@ -24,7 +24,8 @@ class ProgramMain {
   void set_username(const base::string16& username);
   void set_password(const base::string16& password);
   bool Init();
-  void AppendHandler(sippet::ua::UserAgent::Delegate *delegate);
+  void AddObserver(sippet::ua::UserAgent::Observer *observer);
+  void RemoveObserver(sippet::ua::UserAgent::Observer *observer);
   sippet::ua::UserAgent *user_agent();
   sippet::NetworkLayer* network_layer();
   void Run();
@@ -35,14 +36,14 @@ class ProgramMain {
   base::AtExitManager at_exit_manager_;
   base::MessageLoopForIO message_loop_;
   scoped_refptr<net::URLRequestContextGetter> request_context_getter_;
-  scoped_ptr<net::HostResolver> host_resolver_;
-  scoped_ptr<sippet::AuthHandlerFactory> auth_handler_factory_;
+  std::unique_ptr<net::HostResolver> host_resolver_;
+  std::unique_ptr<sippet::AuthHandlerFactory> auth_handler_factory_;
   net::BoundNetLog net_log_;
-  scoped_ptr<StaticPasswordHandler::Factory> static_password_handler_factory_;
-  scoped_ptr<sippet::ua::UserAgent> user_agent_;
-  scoped_ptr<DumpSSLCertError::Factory> ssl_cert_error_handler_factory_;
-  scoped_ptr<sippet::NetworkLayer> network_layer_;
-  scoped_ptr<sippet::ChromeChannelFactory> channel_factory_;
+  std::unique_ptr<StaticPasswordHandler::Factory> static_password_handler_factory_;
+  std::unique_ptr<sippet::ua::UserAgent> user_agent_;
+  std::unique_ptr<DumpSSLCertError::Factory> ssl_cert_error_handler_factory_;
+  std::unique_ptr<sippet::NetworkLayer> network_layer_;
+  std::unique_ptr<sippet::ChromeChannelFactory> channel_factory_;
 };
 
 #endif // SIPPET_EXAMPLES_PROGRAM_MAIN_PROGRAM_MAIN_H_

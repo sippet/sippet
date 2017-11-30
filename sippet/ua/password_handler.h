@@ -5,7 +5,8 @@
 #ifndef SIPPET_UA_PASSWORD_HANDLER_H_
 #define SIPPET_UA_PASSWORD_HANDLER_H_
 
-#include "base/memory/scoped_ptr.h"
+#include <memory>
+
 #include "base/strings/string16.h"
 #include "net/base/completion_callback.h"
 
@@ -24,7 +25,7 @@ class PasswordHandler {
     virtual ~Factory() {}
 
     // Returns the application-specific |PasswordHandler| implementation.
-    virtual scoped_ptr<PasswordHandler> CreatePasswordHandler() = 0;
+    virtual std::unique_ptr<PasswordHandler> CreatePasswordHandler() = 0;
   };
 
   virtual ~PasswordHandler() {}

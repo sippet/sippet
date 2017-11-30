@@ -25,7 +25,7 @@ void Message::print(raw_ostream &os) const {
   }
 
   // Force the Content Length to match the content size
-  scoped_ptr<ContentLength> content_length(
+  std::unique_ptr<ContentLength> content_length(
     new ContentLength(unsigned(content_.length())));
   content_length->print(os);
   os << "\r\n";

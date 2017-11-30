@@ -10,7 +10,7 @@ Info::Info() {
 }
 
 Info::Info(const Info &other)
-  : has_parameters(other), single_value(other) {
+  : single_value(other), has_parameters(other) {
 }
 
 Info::Info(const single_value::value_type &type)

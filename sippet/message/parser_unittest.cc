@@ -17,7 +17,10 @@ struct name_is : public std::unary_function<const Header&, bool> {
     : name_(name) {
   }
   bool operator() (const Header& h) {
-    return name_ == h.name();
+    if (!isa<Generic>(h))
+      return false;
+    const Generic& generic = cast<Generic>(h);
+    return name_ == generic.header_name();
   }
 };
 
@@ -52,14 +55,14 @@ TEST(SimpleMessages, Message1) {
   scoped_refptr<Message> message = Message::Parse(message_string);
   ASSERT_TRUE(isa<Request>(message));
 
-  scoped_refptr<Request> request = dyn_cast<Request>(message);
+  scoped_refptr<Request> request = cast<Request>(message.get());
   EXPECT_EQ(Method::REGISTER, request->method());
   EXPECT_EQ(GURL("sip:registrar.biloxi.com"), request->request_uri());
   EXPECT_EQ(Version(2, 0), request->version());
 
   Message::iterator via_it = request->find_first<Via>();
   EXPECT_NE(request->end(), via_it);
-  Via *via = dyn_cast<Via>(via_it);
+  Via *via = cast<Via>(via_it);
   EXPECT_FALSE(via->empty());
   EXPECT_EQ(Protocol::UDP, via->front().protocol());
   EXPECT_TRUE(net::HostPortPair::FromString("bobspc.biloxi.com:5060")
@@ -68,8 +71,8 @@ TEST(SimpleMessages, Message1) {
 
   Message::iterator maxfw_it = request->find_first<MaxForwards>();
   EXPECT_NE(request->end(), maxfw_it);
-  MaxForwards *maxfw = dyn_cast<MaxForwards>(maxfw_it);
-  EXPECT_EQ(70, maxfw->value());
+  MaxForwards *maxfw = cast<MaxForwards>(maxfw_it);
+  EXPECT_EQ(70ul, maxfw->value());
 
   To *to = request->get<To>();
   EXPECT_EQ("Bob", to->display_name());
@@ -84,7 +87,7 @@ TEST(SimpleMessages, Message1) {
   EXPECT_EQ("843817637684230@998sdasdh09", callid->value());
 
   Cseq *cseq = request->get<Cseq>();
-  EXPECT_EQ(1826, cseq->sequence());
+  EXPECT_EQ(1826ul, cseq->sequence());
   EXPECT_EQ(Method::REGISTER, cseq->method());
 
   Contact *contact = request->get<Contact>();
@@ -93,11 +96,11 @@ TEST(SimpleMessages, Message1) {
 
   Expires *expires = request->get<Expires>();
   EXPECT_NE(nullptr, expires);
-  EXPECT_EQ(7200, expires->value());
+  EXPECT_EQ(7200ul, expires->value());
 
   ContentLength *clen = request->get<ContentLength>();
   EXPECT_NE(nullptr, clen);
-  EXPECT_EQ(0, clen->value());
+  EXPECT_EQ(0ul, clen->value());
 }
 
 TEST(SimpleMessages, TortureMessage1) {
@@ -135,7 +138,7 @@ TEST(SimpleMessages, TortureMessage1) {
   scoped_refptr<Message> message = Message::Parse(message_string);
   ASSERT_TRUE(isa<Request>(message));
 
-  scoped_refptr<Request> request = dyn_cast<Request>(message);
+  scoped_refptr<Request> request = dyn_cast<Request>(message.get());
   EXPECT_EQ(Method::INVITE, request->method());
   EXPECT_EQ(GURL("sip:vivekg@chair-dnrc.example.com;unknownparam"),
       request->request_uri());
@@ -152,13 +155,13 @@ TEST(SimpleMessages, TortureMessage1) {
   EXPECT_EQ("98asjd8", from->tag());
 
   MaxForwards *maxfw = request->get<MaxForwards>();
-  EXPECT_EQ(68, maxfw->value());
+  EXPECT_EQ(68ul, maxfw->value());
 
   ContentLength *clen = request->get<ContentLength>();
-  EXPECT_EQ(150, clen->value());
+  EXPECT_EQ(150ul, clen->value());
 
   Cseq *cseq = request->get<Cseq>();
-  EXPECT_EQ(9, cseq->sequence());
+  EXPECT_EQ(9ul, cseq->sequence());
   EXPECT_EQ(Method::INVITE, cseq->method());
 
   Via *via = request->get<Via>();
@@ -199,7 +202,7 @@ TEST(SimpleMessages, TortureMessage2) {
     std::string(message_string, arraysize(message_string)-1));
   ASSERT_TRUE(isa<Request>(message));
 
-  Request *request = dyn_cast<Request>(message).get();
+  Request *request = cast<Request>(message.get());
   EXPECT_TRUE(base::LowerCaseEqualsASCII(request->method().str(),
     "!interesting-method0123456789_*+`.%indeed'~"));
   EXPECT_EQ(GURL("sip:1_unusual.URI~(to-be!sure)"
@@ -242,18 +245,18 @@ TEST(SimpleMessages, TortureMessage2) {
   ASSERT_TRUE(cseq);
   EXPECT_TRUE(base::LowerCaseEqualsASCII(cseq->method().str(),
     "!interesting-method0123456789_*+`.%indeed'~"));
-  EXPECT_EQ(139122385, cseq->sequence());
+  EXPECT_EQ(139122385ul, cseq->sequence());
 
   MaxForwards *max_forwards = request->get<MaxForwards>();
   ASSERT_TRUE(max_forwards);
-  EXPECT_EQ(255, max_forwards->value());
+  EXPECT_EQ(255ul, max_forwards->value());
 
   Message::iterator j =
       std::find_if(request->begin(), request->end(),
           name_is("extensionHeader-!.%*+_`'~"));
   ASSERT_NE(request->end(), j);
   ASSERT_TRUE(isa<Generic>(j));
-  Generic *g = dyn_cast<Generic>(j);
+  Generic *g = cast<Generic>(j);
   ASSERT_EQ("\xEF\xBB\xBF\xE5\xA4\xA7\xE5\x81\x9C\xE9\x9B\xBB",
       g->header_value());
 }
@@ -270,7 +273,7 @@ TEST(SimpleMessages, EscapedUris) {
   scoped_refptr<Message> message = Message::Parse(message_string);
   ASSERT_TRUE(isa<Request>(message));
 
-  Request *request = dyn_cast<Request>(message).get();
+  Request *request = cast<Request>(message.get());
   ExpectSipURIHaving(request->request_uri(),
       "sip:sips%3Auser%40example.com@example.net",
       "sips:user@example.com",
@@ -341,7 +344,7 @@ TEST(Headers, Contact) {
   };
 
   for (size_t i = 0; i < arraysize(cases); ++i) {
-    scoped_ptr<Header> header(Header::Parse(cases[i].input));
+    std::unique_ptr<Header> header(Header::Parse(cases[i].input));
     ASSERT_TRUE(isa<Contact>(header));
     Contact *contact = dyn_cast<Contact>(header);
     ASSERT_FALSE(contact->empty());
@@ -374,7 +377,7 @@ TEST(Headers, Via) {
   };
 
   for (size_t i = 0; i < arraysize(cases); ++i) {
-    scoped_ptr<Header> header(Header::Parse(cases[i].input));
+    std::unique_ptr<Header> header(Header::Parse(cases[i].input));
     ASSERT_TRUE(isa<Via>(header));
     Via *via = dyn_cast<Via>(header);
     ASSERT_FALSE(via->empty());
@@ -382,6 +385,37 @@ TEST(Headers, Via) {
     EXPECT_EQ(cases[i].protocol, via->front().protocol());
     EXPECT_EQ(cases[i].host, via->front().sent_by().host());
     EXPECT_EQ(cases[i].port, via->front().sent_by().port());
+  }
+}
+
+TEST(Headers, Reason) {
+  struct {
+    const char* input;
+    const char* value;
+    int cause;
+    const char* text;
+  } cases[] = {
+    { "Reason: SIP ;cause=200 ;text=\"Call completed elsewhere\"",
+      "SIP", 200, "Call completed elsewhere" },
+    { "Reason: Q.850 ;text=\"Terminated\" ;cause=16 ",
+      "Q.850", 16, "Terminated" },
+    { "Reason: Q.850 ;cause=16 ",
+      "Q.850", 16, "" },
+  };
+
+  for (size_t i = 0; i < arraysize(cases); ++i) {
+    std::unique_ptr<Header> header(Header::Parse(cases[i].input));
+    ASSERT_TRUE(isa<Reason>(header));
+    Reason *reason = dyn_cast<Reason>(header);
+    EXPECT_EQ(cases[i].value, reason->value());
+    ASSERT_TRUE(reason->HasCause());
+    EXPECT_EQ(cases[i].cause, reason->cause());
+    if (cases[i].text[0] != '\0') {
+      ASSERT_TRUE(reason->HasText());
+      EXPECT_EQ(cases[i].text, reason->text());
+    } else {
+      ASSERT_FALSE(reason->HasText());
+    }
   }
 }
 

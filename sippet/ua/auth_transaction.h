@@ -10,6 +10,7 @@
 
 #include "net/base/completion_callback.h"
 #include "net/log/net_log.h"
+#include "net/log/net_log_with_source.h"
 
 #include "sippet/ua/password_handler.h"
 
@@ -28,7 +29,7 @@ class AuthTransaction {
   AuthTransaction(AuthCache *auth_cache,
                   AuthHandlerFactory *auth_handler_factory,
                   PasswordHandler::Factory *password_handler_factory,
-                  const net::BoundNetLog &bound_net_log);
+                  const net::NetLogWithSource &net_log);
   virtual ~AuthTransaction();
 
   int HandleChallengeAuthentication(
@@ -62,13 +63,13 @@ class AuthTransaction {
   State next_state_;
 
   net::CompletionCallback callback_;
-  net::BoundNetLog bound_net_log_;
+  const net::NetLogWithSource net_log_;
 
   scoped_refptr<Request> outgoing_request_;
   scoped_refptr<Response> incoming_response_;
   scoped_refptr<AuthController> auth_controller_;
   PasswordHandler::Factory *password_handler_factory_;
-  scoped_ptr<PasswordHandler> password_handler_;
+  std::unique_ptr<PasswordHandler> password_handler_;
 
   base::string16 username_;
   base::string16 password_;

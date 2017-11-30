@@ -15,8 +15,8 @@ MediaType::MediaType(const MediaType &other)
 }
 
 MediaType::MediaType(const std::string &type, const std::string &subtype)
-  : type_(base::StringToLowerASCII(type)),
-    subtype_(base::StringToLowerASCII(subtype)) {
+  : type_(base::ToLowerASCII(type)),
+    subtype_(base::ToLowerASCII(subtype)) {
 }
 
 MediaType::~MediaType() {

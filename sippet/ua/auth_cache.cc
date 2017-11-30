@@ -17,18 +17,6 @@ namespace sippet {
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-namespace {
-
-// Debug helper to check that |origin| arguments are properly formed.
-void CheckOriginIsValid(const GURL& origin) {
-  DCHECK(origin.SchemeIs("sip") || origin.SchemeIs("sips"));
-  SipURI origin_uri(origin);
-  DCHECK(origin_uri.is_valid());
-  DCHECK(origin_uri.GetOrigin() == origin_uri);
-}
-
-}  // namespace
-
 AuthCache::Entry::Entry()
   : scheme_(net::HttpAuth::AUTH_SCHEME_MAX),
     nonce_count_(0) {

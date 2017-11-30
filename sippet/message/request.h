@@ -5,12 +5,13 @@
 #ifndef SIPPET_MESSAGE_REQUEST_H_
 #define SIPPET_MESSAGE_REQUEST_H_
 
+#include "base/time/time.h"
+#include "base/memory/weak_ptr.h"
+#include "url/gurl.h"
 #include "sippet/message/message.h"
 #include "sippet/message/method.h"
 #include "sippet/message/version.h"
 #include "sippet/message/status_code.h"
-#include "url/gurl.h"
-#include "base/time/time.h"
 
 namespace sippet {
 
@@ -24,6 +25,11 @@ class Request :
   Request(const Method &method,
           const GURL &request_uri,
           const Version &version = Version(2,0));
+
+  // Every answered |Request| refers to its corresponding |Response|.
+  scoped_refptr<Response> referred_by() const {
+    return referred_by_.get() ? referred_by_.get() : nullptr;
+  }
 
   // Every SIP request has an unique associated ID.
   const std::string &id() const { return id_; }
@@ -77,6 +83,7 @@ class Request :
   GURL request_uri_;
   Version version_;
   base::Time time_stamp_;
+  base::WeakPtr<Response> referred_by_;
 
   // Used by the parser.
   Request(const Method &method,
@@ -100,7 +107,7 @@ class Request :
   scoped_refptr<Response> CreateResponse(
       int response_code,
       const std::string &reason_phrase,
-      const std::string &remote_tag);
+      const std::string &to_tag);
 };
 
 } // End of sippet namespace

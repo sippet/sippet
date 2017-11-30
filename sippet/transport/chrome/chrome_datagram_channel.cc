@@ -5,38 +5,43 @@
 #include "sippet/transport/chrome/chrome_datagram_channel.h"
 
 #include "base/rand_util.h"
+#include "base/timer/timer.h"
 #include "net/base/net_errors.h"
 #include "net/base/ip_endpoint.h"
 #include "net/socket/client_socket_handle.h"
 #include "net/socket/client_socket_factory.h"
 #include "net/socket/client_socket_pool_manager.h"
-#include "net/udp/datagram_client_socket.h"
+#include "net/socket/datagram_client_socket.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "sippet/message/message.h"
 
 namespace sippet {
 
-// This is actually the theoretical max MTU of an UDP packet. The size without
-// fragmentation is actually around 1500 bytes.
-const size_t kReadBufSize = 64U * 1024U;
+namespace {
+
+void Ignore(int rv) {
+  // just do nothing!
+}
+
+}  // namespace
 
 ChromeDatagramChannel::ChromeDatagramChannel(const EndPoint& destination,
-      Channel::Delegate *delegate,
-      net::ClientSocketFactory* client_socket_factory,
-      const scoped_refptr<net::URLRequestContextGetter>& request_context_getter)
-  : destination_(destination),
+    Channel::Delegate *delegate,
+    net::ClientSocketFactory* client_socket_factory,
+    const scoped_refptr<net::URLRequestContextGetter>& request_context_getter)
+  : next_state_(STATE_NONE),
+    destination_(destination),
     delegate_(delegate),
-    client_socket_factory_(client_socket_factory),
-    weak_ptr_factory_(this),
-    is_connected_(false),
-    host_resolver_(
+    resolver_(
         request_context_getter->GetURLRequestContext()->host_resolver()),
-    bound_net_log_(
-        net::BoundNetLog::Make(
+    client_socket_factory_(client_socket_factory),
+    net_log_(
+        net::NetLogWithSource::Make(
             request_context_getter->GetURLRequestContext()->net_log(),
-            net::NetLog::SOURCE_SOCKET)),
-    next_state_(STATE_NONE) {
+            net::NetLogSourceType::SOCKET)),
+    is_connected_(false),
+    weak_ptr_factory_(this) {
   DCHECK(!destination_.IsEmpty());
   DCHECK(client_socket_factory_);
   DCHECK(delegate_);
@@ -80,9 +85,7 @@ void ChromeDatagramChannel::Connect() {
   DCHECK_EQ(STATE_NONE, next_state_);
 
   next_state_ = STATE_RESOLVE_HOST;
-  base::MessageLoop* message_loop = base::MessageLoop::current();
-  CHECK(message_loop);
-  message_loop->PostTask(
+  base::ThreadTaskRunnerHandle::Get()->PostTask(
       FROM_HERE,
       base::Bind(&ChromeDatagramChannel::OnIOComplete,
                   weak_ptr_factory_.GetWeakPtr(), net::OK));
@@ -95,7 +98,8 @@ int ChromeDatagramChannel::ReconnectIgnoringLastError() {
 }
 
 int ChromeDatagramChannel::ReconnectWithCertificate(
-    net::X509Certificate* client_cert) {
+    net::X509Certificate* client_cert,
+    net::SSLPrivateKey* private_key) {
   // If we're going to support DTLS, this will need to be changed
   VLOG(1) << "Trying to add certificate to a raw UDP channel";
   return net::ERR_ADD_USER_CERT_FAILED;
@@ -149,12 +153,12 @@ int ChromeDatagramChannel::DoLoop(int last_io_result) {
 int ChromeDatagramChannel::DoResolveHost() {
   next_state_ = STATE_RESOLVE_HOST_COMPLETE;
   net::HostResolver::RequestInfo host_request_info(destination_.hostport());
-  return host_resolver_.Resolve(
+  return resolver_->Resolve(
       host_request_info,
       net::DEFAULT_PRIORITY,
       &addresses_,
       base::Bind(&ChromeDatagramChannel::OnIOComplete, base::Unretained(this)),
-      bound_net_log_);
+      &resolve_request_, net_log_);
 }
 
 int ChromeDatagramChannel::DoResolveHostComplete(int result) {
@@ -163,13 +167,13 @@ int ChromeDatagramChannel::DoResolveHostComplete(int result) {
   if (net::OK != result)
     return result;
 
-  net::NetLog::Source no_source;
-  scoped_ptr<net::DatagramClientSocket> socket =
+  net::NetLogSource no_source;
+  std::unique_ptr<net::DatagramClientSocket> socket =
       client_socket_factory_->CreateDatagramClientSocket(
           net::DatagramSocket::RANDOM_BIND, base::Bind(&base::RandInt),
-          bound_net_log_.net_log(), no_source);
+          net_log_.net_log(), no_source);
 
-  int rv;
+  int rv = net::OK;
   if (!socket.get()) {
     LOG(WARNING) << "Failed to create socket.";
     rv = net::ERR_UNEXPECTED;
@@ -222,6 +226,13 @@ void ChromeDatagramChannel::DetachDelegate() {
   delegate_ = nullptr;
 }
 
+void ChromeDatagramChannel::SetKeepAlive(int seconds) {
+  keep_alive_timer_.reset(new base::RepeatingTimer);
+  keep_alive_timer_->Start(FROM_HERE,
+      base::TimeDelta::FromSeconds(seconds),
+      this, &ChromeDatagramChannel::SendKeepAlive);
+}
+
 void ChromeDatagramChannel::CloseTransportSocket() {
   if (socket_.get())
     socket_->Close();
@@ -233,9 +244,7 @@ void ChromeDatagramChannel::CloseTransportSocket() {
 }
 
 void ChromeDatagramChannel::PostDoRead() {
-  base::MessageLoop* message_loop = base::MessageLoop::current();
-  CHECK(message_loop);
-  message_loop->PostTask(
+  base::ThreadTaskRunnerHandle::Get()->PostTask(
       FROM_HERE,
       base::Bind(&ChromeDatagramChannel::DoRead,
                  weak_ptr_factory_.GetWeakPtr()));
@@ -260,6 +269,15 @@ void ChromeDatagramChannel::OnReadComplete(int result) {
     RunUserChannelClosed(result);
     // |this| may be deleted after this call.
   }
+}
+
+void ChromeDatagramChannel::SendKeepAlive() {
+  scoped_refptr<net::StringIOBuffer> string_buffer =
+      new net::StringIOBuffer("\r\n");
+  datagram_writer_->Write(
+      string_buffer.get(),
+      string_buffer->size(),
+      base::Bind(&Ignore));
 }
 
 }  // namespace sippet

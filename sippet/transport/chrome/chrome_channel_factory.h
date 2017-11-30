@@ -21,7 +21,7 @@ class ChromeChannelFactory : public ChannelFactory {
   ChromeChannelFactory(net::ClientSocketFactory* client_socket_factory,
       const scoped_refptr<net::URLRequestContextGetter>& request_context_getter,
       const net::SSLConfig& ssl_config);
-  ~ChromeChannelFactory();
+  virtual ~ChromeChannelFactory();
 
   int CreateChannel(
     const EndPoint &destination,

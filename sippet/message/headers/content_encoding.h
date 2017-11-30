@@ -26,8 +26,8 @@ class ContentEncoding :
   ContentEncoding(const std::string &encoding);
   ~ContentEncoding() override;
 
-  scoped_ptr<ContentEncoding> Clone() const {
-    return scoped_ptr<ContentEncoding>(DoClone());
+  std::unique_ptr<ContentEncoding> Clone() const {
+    return std::unique_ptr<ContentEncoding>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

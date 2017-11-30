@@ -22,10 +22,10 @@ namespace sippet {
 AuthController::AuthController(
     AuthCache* auth_cache,
     AuthHandlerFactory* auth_handler_factory)
-    : target_(net::HttpAuth::AUTH_NONE),
-      auth_cache_(auth_cache),
-      auth_handler_factory_(auth_handler_factory),
-      default_credentials_used_(false) {
+  : target_(net::HttpAuth::AUTH_NONE),
+    default_credentials_used_(false),
+    auth_cache_(auth_cache),
+    auth_handler_factory_(auth_handler_factory) {
 }
 
 AuthController::~AuthController() {
@@ -33,7 +33,7 @@ AuthController::~AuthController() {
 
 int AuthController::HandleAuthChallenge(
     const scoped_refptr<Response> &response,
-    const net::BoundNetLog& net_log) {
+    const net::NetLogWithSource& net_log) {
   DCHECK(response.get());
 
   // If response code is 401, then it's a Server auth; otherwise,
@@ -212,7 +212,7 @@ void AuthController::ResetAuth(const net::AuthCredentials& credentials) {
 int AuthController::AddAuthorizationHeaders(
     const scoped_refptr<Request> &request,
     const net::CompletionCallback& callback,
-    const net::BoundNetLog& net_log) {
+    const net::NetLogWithSource& net_log) {
   const net::AuthCredentials* credentials = nullptr;
   if (identity_.source != net::HttpAuth::IDENT_SRC_DEFAULT_CREDENTIALS)
     credentials = &identity_.credentials;
@@ -307,7 +307,7 @@ void AuthController::PopulateAuthChallenge() {
 
   auth_info_ = new net::AuthChallengeInfo;
   auth_info_->is_proxy = (target_ == net::HttpAuth::AUTH_PROXY);
-  auth_info_->challenger = net::HostPortPair::FromURL(auth_origin_);
+  auth_info_->challenger = url::Origin(auth_origin_);
   auth_info_->scheme = Auth::SchemeToString(handler_->auth_scheme());
   auth_info_->realm = handler_->realm();
 }

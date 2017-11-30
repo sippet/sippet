@@ -32,7 +32,7 @@ class StandaloneTestServerTest: public testing::Test {
   }
 
  protected:
-  scoped_ptr<StandaloneTestServer> server_;
+  std::unique_ptr<StandaloneTestServer> server_;
 };
 
 TEST_F(StandaloneTestServerTest, GetUDPBaseURL) {

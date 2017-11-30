@@ -9,17 +9,22 @@
 #include "sippet/transport/chrome/chrome_stream_writer.h"
 #include "sippet/transport/chrome/chrome_stream_reader.h"
 #include "base/memory/weak_ptr.h"
+#include "net/log/net_log_with_source.h"
 #include "net/proxy/proxy_info.h"
 #include "net/proxy/proxy_service.h"
 #include "net/ssl/ssl_config_service.h"
 #include "url/gurl.h"
+
+namespace base {
+class RepeatingTimer;
+}  // namespace base
 
 namespace net {
 class ClientSocketFactory;
 class ClientSocketHandle;
 class URLRequestContextGetter;
 class HttpNetworkSession;
-}
+}  // namespace net
 
 namespace sippet {
 
@@ -42,7 +47,8 @@ class ChromeStreamChannel : public Channel {
 
   void Connect() override;
   int ReconnectIgnoringLastError() override;
-  int ReconnectWithCertificate(net::X509Certificate* client_cert) override;
+  int ReconnectWithCertificate(net::X509Certificate* client_cert,
+                               net::SSLPrivateKey* private_key) override;
 
   int Send(const scoped_refptr<Message> &message,
            const net::CompletionCallback& callback) override;
@@ -52,6 +58,8 @@ class ChromeStreamChannel : public Channel {
   void CloseWithError(int err) override;
 
   void DetachDelegate() override;
+
+  void SetKeepAlive(int seconds) override;
 
  private:
   friend class base::RefCountedThreadSafe<Channel>;
@@ -79,6 +87,9 @@ class ChromeStreamChannel : public Channel {
   void StartTls();
   void ProcessSSLConnectDone(int status);
 
+  // Keep-Alive related function
+  void SendKeepAlive();
+
   EndPoint destination_;
   Channel::Delegate *delegate_;
 
@@ -86,14 +97,14 @@ class ChromeStreamChannel : public Channel {
   net::CompletionCallback proxy_resolve_callback_;
   net::CompletionCallback connect_callback_;
 
-  scoped_refptr<net::HttpNetworkSession> network_session_;
+  std::unique_ptr<net::HttpNetworkSession> network_session_;
   scoped_refptr<net::URLRequestContextGetter> request_context_getter_;
   net::ClientSocketFactory* client_socket_factory_;
 
   // The transport socket.
-  scoped_ptr<net::ClientSocketHandle> transport_;
-  scoped_ptr<ChromeStreamReader> stream_reader_;
-  scoped_ptr<ChromeStreamWriter> stream_writer_;
+  std::unique_ptr<net::ClientSocketHandle> transport_;
+  std::unique_ptr<ChromeStreamReader> stream_reader_;
+  std::unique_ptr<ChromeStreamWriter> stream_writer_;
 
   bool is_connecting_;
   net::SSLConfig ssl_config_;
@@ -102,7 +113,8 @@ class ChromeStreamChannel : public Channel {
   const net::HostPortPair dest_host_port_pair_;
   const GURL proxy_url_;
   bool tried_direct_connect_fallback_;
-  net::BoundNetLog bound_net_log_;
+  const net::NetLogWithSource net_log_;
+  std::unique_ptr<base::RepeatingTimer> keep_alive_timer_;
 
   base::WeakPtrFactory<ChromeStreamChannel> weak_ptr_factory_;
 

@@ -5,10 +5,11 @@
 #ifndef SIPPET_EXAMPLES_COMMON_URL_REQUEST_CONTEXT_GETTER_H_
 #define SIPPET_EXAMPLES_COMMON_URL_REQUEST_CONTEXT_GETTER_H_
 
+#include <memory>
+
 #include "base/basictypes.h"
 #include "base/compiler_specific.h"
 #include "base/memory/ref_counted.h"
-#include "base/memory/scoped_ptr.h"
 #include "net/url_request/url_request_context_getter.h"
 
 namespace base {
@@ -35,7 +36,7 @@ class URLRequestContextGetter : public net::URLRequestContextGetter {
   scoped_refptr<base::SingleThreadTaskRunner> network_task_runner_;
 
   // Only accessed on the IO thread.
-  scoped_ptr<net::URLRequestContext> url_request_context_;
+  std::unique_ptr<net::URLRequestContext> url_request_context_;
 
   DISALLOW_COPY_AND_ASSIGN(URLRequestContextGetter);
 };

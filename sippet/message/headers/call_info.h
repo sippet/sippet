@@ -49,8 +49,8 @@ class CallInfo :
   CallInfo();
   ~CallInfo() override;
 
-  scoped_ptr<CallInfo> Clone() const {
-    return scoped_ptr<CallInfo>(DoClone());
+  std::unique_ptr<CallInfo> Clone() const {
+    return std::unique_ptr<CallInfo>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

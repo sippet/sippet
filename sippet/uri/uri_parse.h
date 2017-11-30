@@ -169,6 +169,10 @@ struct Parsed {
   // Length will be -1 if unspecified, 0 if there is a question mark but no
   // headers.
   Component headers;
+
+  // True if the URL's source contained a raw `<` character, and whitespace was
+  // removed from the URL during parsing
+  bool potentially_dangling_markup;
 };
 
 // SipURI is for sip: and sips: uris.

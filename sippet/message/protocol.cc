@@ -21,7 +21,7 @@ namespace {
   };
 
   bool string_less(const char *a, const char *b) {
-    return base::strcasecmp(a, b) < 0;
+    return base::CompareCaseInsensitiveASCII(a, b) < 0;
   }
 }  // namespace
 
@@ -36,7 +36,7 @@ AtomTraits<details::Protocol>::coerce(const char *str) {
   const char **last = names + arraysize(names) - 1;  // don't include the last
   const char **found = std::lower_bound(first, last, str, string_less);
   if (found != last
-      && base::strcasecmp(*found, str) == 0) {
+      && base::CompareCaseInsensitiveASCII(*found, str) == 0) {
     type = static_cast<details::Protocol::Type>(found - first);
   }
   return type;

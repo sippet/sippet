@@ -18,10 +18,10 @@
 
 namespace sippet {
 
-std::string BuildOSCpuInfo() {
-  int32 os_major_version = 0;
-  int32 os_minor_version = 0;
-  int32 os_bugfix_version = 0;
+std::string BuildOSCpuInfo(const std::string& device) {
+  int32_t os_major_version = 0;
+  int32_t os_minor_version = 0;
+  int32_t os_bugfix_version = 0;
   base::SysInfo::OperatingSystemVersionNumbers(&os_major_version,
                                                &os_minor_version,
                                                &os_bugfix_version);
@@ -48,17 +48,29 @@ std::string BuildOSCpuInfo() {
     platform = platform.substr(0, position);
 
   std::string os_cpu;
-  base::StringAppendF(
-      &os_cpu,
-      "%s; CPU %s %s like Mac OS X",
-      platform.c_str(),
-      (platform == "iPad") ? "OS" : "iPhone OS",
-      os_version.c_str());
+  if (!device.empty()) {
+    base::StringAppendF(
+        &os_cpu,
+        "%s; %s; CPU %s %s like Mac OS X",
+        platform.c_str(),
+        device.c_str(),
+        (platform == "iPad") ? "OS" : "iPhone OS",
+        os_version.c_str());
+  }
+  else {
+    base::StringAppendF(
+        &os_cpu,
+        "%s; CPU %s %s like Mac OS X",
+        platform.c_str(),
+        (platform == "iPad") ? "OS" : "iPhone OS",
+        os_version.c_str());
+  }
 
   return os_cpu;
 }
 
-std::string BuildUserAgentFromProduct(const std::string& product) {
+std::string BuildUserAgentFromProduct(const std::string& product,
+                                      const std::string& device) {
   // Retrieve the kernel build number.
   int mib[2] = {CTL_KERN, KERN_OSVERSION};
   unsigned int namelen = sizeof(mib) / sizeof(mib[0]);
@@ -74,7 +86,7 @@ std::string BuildUserAgentFromProduct(const std::string& product) {
       "Sippet/%d.%d (%s)",
       GetSippetMajorVersion(),
       GetSippetMinorVersion(),
-      BuildOSCpuInfo().c_str());
+      BuildOSCpuInfo(device).c_str());
 
   if (!product.empty()) {
     base::StringAppendF(

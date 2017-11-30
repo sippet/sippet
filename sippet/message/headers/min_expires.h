@@ -24,8 +24,8 @@ class MinExpires :
   MinExpires(const single_value::value_type &seconds);
   ~MinExpires() override;
 
-  scoped_ptr<MinExpires> Clone() const {
-    return scoped_ptr<MinExpires>(DoClone());
+  std::unique_ptr<MinExpires> Clone() const {
+    return std::unique_ptr<MinExpires>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

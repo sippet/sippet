@@ -5,6 +5,7 @@
 #ifndef SIPPET_UA_USER_AGENT_H_
 #define SIPPET_UA_USER_AGENT_H_
 
+#include "base/observer_list.h"
 #include "sippet/transport/network_layer.h"
 #include "sippet/ua/dialog.h"
 #include "sippet/ua/auth_transaction.h"
@@ -43,11 +44,11 @@ namespace ua {
 class UserAgent :
   public NetworkLayer::Delegate {
  public:
-  class Delegate {
+  class Observer {
    public:
-    virtual ~Delegate() {}
+    virtual ~Observer() {}
 
-    // A new channel has connected (or not). This function is always called,
+    // A new channel has connected (or not). This function is always called, no
     // matter if the connection was succeeded or not; in the latter case, the
     // provided |err| is not |net::OK|.
     virtual void OnChannelConnected(const EndPoint &destination, int err) = 0;
@@ -70,22 +71,20 @@ class UserAgent :
         const scoped_refptr<Dialog> &dialog) = 0;
 
     // The sent request didn't get a response in a reasonable time.
-    virtual void OnTimedOut(
-        const scoped_refptr<Request> &request,
-        const scoped_refptr<Dialog> &dialog) = 0;
+    virtual void OnTimedOut(const scoped_refptr<Request> &request) = 0;
 
     // While sending the request or receiving a response, a network error
     // happened.
-    virtual void OnTransportError(
-        const scoped_refptr<Request> &request, int error,
-        const scoped_refptr<Dialog> &dialog) = 0;
+    virtual void OnTransportError(const scoped_refptr<Request> &request,
+        int error) = 0;
   };
 
   // Construct a |UserAgent|.
   UserAgent(AuthHandlerFactory *auth_handler_factory,
             PasswordHandler::Factory *password_handler_factory,
             DialogController *dialog_controller,
-            const net::BoundNetLog &net_log);
+            const net::NetLogWithSource &net_log);
+  ~UserAgent() override;
 
   // The |NetworkLayer| must be set before using the other functions.
   void SetNetworkLayer(NetworkLayer *network_layer) {
@@ -102,9 +101,9 @@ class UserAgent :
     return route_set_;
   }
 
-  // Append an User Agent handler. Handlers receive events in the same order
-  // they were registered.
-  void AppendHandler(Delegate *delegate);
+  // Adds/Removes an User Agent observer.
+  void AddObserver(Observer* observer);
+  void RemoveObserver(Observer* observer);
 
   // Creates a minimum valid SIP request, containing |To|, |From|, |Cseq|,
   // |CallId| and |MaxForwards|. Remember that the topmost |Via| header is
@@ -115,7 +114,8 @@ class UserAgent :
       const GURL &request_uri,
       const GURL &from,
       const GURL &to,
-      unsigned local_sequence=0);
+      unsigned local_sequence = 0,
+      bool use_route_set = true);
 
   // Send a message throughout the nextwork layer. This function encapsulates
   // the dialog creation/destruction handling.
@@ -123,32 +123,41 @@ class UserAgent :
       const scoped_refptr<Message> &message,
       const net::CompletionCallback& callback);
 
- private:
-  friend struct base::DefaultDeleter<UserAgent>;
-  ~UserAgent() override;
+  // Send a message throughout the network layer. If the message refers to an
+  // existing dialog or creates a dialog, it will be returned on the |dialog|
+  // parameter.
+  int SendReturningDialog(const scoped_refptr<Message> &message,
+      scoped_refptr<Dialog>* dialog, const net::CompletionCallback& callback);
 
+  // Send a message throughout the network layer, but ignoring completion.
+  // Should be used with care.
+  void SendIgnoringCompletion(const scoped_refptr<Message>& message);
+
+  // Send a message throughout the network, returning the dialog and ignoring
+  // completion. Should be used with care.
+  void SendReturningDialogOnly(const scoped_refptr<Message>& message,
+      scoped_refptr<Dialog>* dialog);
+
+ private:
   typedef std::vector<GURL> UrlListType;
-  typedef std::vector<Delegate*> HandlerListType;
 
   struct OutgoingRequestContext {
     // Holds the outgoing request instance.
-    scoped_refptr<Request> original_request_;
-    // Holds the outgoing request instances.
-    std::vector<scoped_refptr<Request> > outgoing_requests_;
+    scoped_refptr<Request> challenged_request_;
     // First sent time
     base::Time parted_time_;
     // Used to manage authentication
-    scoped_ptr<AuthTransaction> auth_transaction_;
+    std::unique_ptr<AuthTransaction> auth_transaction_;
     // Used to hold the last matched dialog (when authenticating)
     scoped_refptr<Dialog> last_dialog_;
     // Used to hold the last received response
     scoped_refptr<Response> last_response_;
 
-    OutgoingRequestContext(const scoped_refptr<Request>& original_request);
+    OutgoingRequestContext(const scoped_refptr<Request>& challenged_request);
     ~OutgoingRequestContext();
   };
 
-  typedef std::map<std::string, OutgoingRequestContext*>
+  typedef std::map<std::string, std::unique_ptr<OutgoingRequestContext>>
       OutgoingRequestMap;
 
   bool HandleChallengeAuthentication(
@@ -174,22 +183,21 @@ class UserAgent :
       const scoped_refptr<Dialog> &dialog);
   void RunUserTransportErrorCallback(
       const scoped_refptr<Request> &request,
-      int error,
-      const scoped_refptr<Dialog> &dialog);
+      int error);
 
   NetworkLayer *network_layer_;
   UrlListType route_set_;
-  HandlerListType handlers_;
+  base::ObserverList<Observer> observer_list_;
   AuthCache auth_cache_;
   AuthHandlerFactory *auth_handler_factory_;
-  net::BoundNetLog net_log_;
+  const net::NetLogWithSource net_log_;
   PasswordHandler::Factory *password_handler_factory_;
   
-  scoped_ptr<DialogStore> dialog_store_;
+  std::unique_ptr<DialogStore> dialog_store_;
   DialogController *dialog_controller_;
   OutgoingRequestMap outgoing_requests_;
 
-  base::WeakPtrFactory<UserAgent> weak_factory_;
+  base::WeakPtrFactory<UserAgent> weak_ptr_factory_;
   DISALLOW_COPY_AND_ASSIGN(UserAgent);
 };
 

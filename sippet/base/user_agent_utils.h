@@ -6,17 +6,17 @@
 #define SIPPET_BASE_USER_AGENT_UTILS_H_
 
 #include <string>
-#include "base/basictypes.h"
 
 namespace sippet {
 
 // Builds a User-agent compatible string that describes the OS and CPU type.
-std::string BuildOSCpuInfo();
+std::string BuildOSCpuInfo(const std::string& device = "");
 
 // Helper function to generate a full user agent string from a short
 // product name.
 std::string BuildUserAgentFromProduct(
-    const std::string& product);
+    const std::string& product,
+    const std::string& device = "");
 
 } // namespace sippet
 

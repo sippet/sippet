@@ -15,19 +15,22 @@ namespace sippet {
 Request::Request(const Method &method,
                  const GURL &request_uri,
                  const Version &version)
-  : Message(true, Outgoing), method_(method), request_uri_(request_uri),
-    version_(version), time_stamp_(base::Time::Now()),
-    id_(base::GenerateGUID()) {}
+  : Message(true, Outgoing), method_(method),
+    id_(base::GenerateGUID()), request_uri_(request_uri),
+    version_(version), time_stamp_(base::Time::Now()) {
+}
 
 Request::Request(const Method &method,
                  const GURL &request_uri,
                  Direction direction,
                  const Version &version)
-  : Message(true, direction), method_(method), request_uri_(request_uri),
-    version_(version), time_stamp_(base::Time::Now()),
-    id_(base::GenerateGUID()) {}
+  : Message(true, direction), method_(method),
+    id_(base::GenerateGUID()), request_uri_(request_uri),
+    version_(version), time_stamp_(base::Time::Now()) {
+}
 
-Request::~Request() {}
+Request::~Request() {
+}
 
 Method Request::method() const {
   return method_;
@@ -85,13 +88,13 @@ scoped_refptr<Request> Request::CloneRequest() const {
     new Request(method(), request_uri(), version()));
   result->id_ = id_;  // A cloned request has the same ID
   for (Message::const_iterator i = begin(), ie = end(); i != ie; ++i) {
-    result->push_back(i->Clone().Pass());
+    result->push_back(i->Clone());
   }
   if (has_content())
     result->set_content(content());
   Message::iterator j = result->find_first<Cseq>();
   if (result->end() != j) {
-    Cseq *cseq = dyn_cast<Cseq>(j);
+    Cseq *cseq = cast<Cseq>(j);
     cseq->set_sequence(cseq->sequence() + 1);
   }
   return result;
@@ -122,55 +125,55 @@ int Request::CreateAck(const std::string &remote_tag,
       || end() == find_first<To>()
       || end() == find_first<Cseq>()
       || end() == find_first<CallId>()) {
-    DVLOG(1) << "Incomplete INVITE request, cannot create the ACK";
+    DVLOG(1) << "Incomplete INVITE request, cannot ACK";
     return net::ERR_UNEXPECTED;
   }
   if (end() == find_first<Via>()) {
-    DVLOG(1) << "INVITE request was not sent yet, cannot create the ACK";
+    DVLOG(1) << "INVITE request was not sent yet, cannot ACK";
     return net::ERR_UNEXPECTED;
   }
   ack = new Request(Method::ACK, request_uri());
   CloneTo<Via>(ack.get());
-  scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  ack->push_back(max_forwards.Pass());
+  std::unique_ptr<MaxForwards> max_forwards(new MaxForwards(70));
+  ack->push_back(std::move(max_forwards));
   CloneTo<From>(ack.get());
-  scoped_ptr<To> to(Clone<To>().Pass());
+  std::unique_ptr<To> to(Clone<To>());
   if (to && remote_tag.length() > 0) to->set_tag(remote_tag);
-  ack->push_back(to.Pass());
+  ack->push_back(std::move(to));
   CloneTo<CallId>(ack.get());
-  scoped_ptr<Cseq> cseq(Clone<Cseq>().Pass());
+  std::unique_ptr<Cseq> cseq(Clone<Cseq>());
   if (cseq) cseq->set_method(Method::ACK);
-  ack->push_back(cseq.Pass());
+  ack->push_back(std::move(cseq));
   CloneTo<Route>(ack.get());
   return net::OK;
 }
 
 int Request::CreateCancel(scoped_refptr<Request> &cancel) {
   if (Method::INVITE != method()) {
-    DVLOG(1) << "Cannot create an ACK from a non-INVITE request";
+    DVLOG(1) << "Cannot create a CANCEL from a non-INVITE request";
     return net::ERR_NOT_IMPLEMENTED;
   }
   if (end() == find_first<From>()
       || end() == find_first<To>()
       || end() == find_first<Cseq>()
       || end() == find_first<CallId>()) {
-    DVLOG(1) << "Incomplete INVITE request, cannot create the ACK";
+    DVLOG(1) << "Incomplete INVITE request, cannot CANCEL";
     return net::ERR_UNEXPECTED;
   }
   if (end() == find_first<Via>()) {
-    DVLOG(1) << "INVITE request was not sent yet, cannot create the ACK";
+    DVLOG(1) << "INVITE request was not sent yet, cannot CANCEL";
     return net::ERR_UNEXPECTED;
   }
   cancel = new Request(Method::CANCEL, request_uri());
   CloneTo<Via>(cancel.get());
-  scoped_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  cancel->push_back(max_forwards.Pass());
+  std::unique_ptr<MaxForwards> max_forwards(new MaxForwards(70));
+  cancel->push_back(std::move(max_forwards));
   CloneTo<From>(cancel.get());
   CloneTo<To>(cancel.get());
   CloneTo<CallId>(cancel.get());
-  scoped_ptr<Cseq> cseq(Clone<Cseq>());
+  std::unique_ptr<Cseq> cseq(Clone<Cseq>());
   if (cseq) cseq->set_method(Method::CANCEL);
-  cancel->push_back(cseq.Pass());
+  cancel->push_back(std::move(cseq));
   CloneTo<Route>(cancel.get());
   return net::OK;
 }
@@ -190,26 +193,27 @@ scoped_refptr<Response> Request::CreateResponseInternal(
   CloneTo<CallId>(response.get());
   CloneTo<Cseq>(response.get());
   if (response_code == 100) {
-    scoped_ptr<Timestamp> timestamp(Clone<Timestamp>());
+    std::unique_ptr<Timestamp> timestamp(Clone<Timestamp>());
     if (timestamp) {
       double delay = (base::Time::Now() - time_stamp_).InSecondsF();
       timestamp->set_delay(delay);
-      response->push_back(timestamp.Pass());
+      response->push_back(std::move(timestamp));
     }
   }
   CloneTo<RecordRoute>(response.get());
   response->set_refer_to(this);
+  referred_by_ = response->weakptr_factory_.GetWeakPtr();
   return response;
 }
 
 scoped_refptr<Response> Request::CreateResponse(
     int response_code,
     const std::string &reason_phrase,
-    const std::string &remote_tag) {
+    const std::string &to_tag) {
   scoped_refptr<Response> response(
       CreateResponseInternal(response_code, reason_phrase));
   To *to = response->get<To>();
-  if (to) to->set_tag(remote_tag);
+  if (to) to->set_tag(to_tag);
   return response;
 }
 

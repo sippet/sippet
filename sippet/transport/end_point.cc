@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "base/strings/string_split.h"
-#include "net/base/net_util.h"
+#include "net/base/url_util.h"
 
 namespace sippet {
 
@@ -28,12 +28,12 @@ EndPoint::EndPoint(const net::HostPortPair &hostport, Protocol::Type protocol)
   : hostport_(hostport), protocol_(protocol) {
 }
 
-EndPoint::EndPoint(const std::string& host, uint16 port,
+EndPoint::EndPoint(const std::string& host, uint16_t port,
                    const Protocol &protocol)
   : hostport_(host, port), protocol_(protocol) {
 }
 
-EndPoint::EndPoint(const std::string& host, uint16 port,
+EndPoint::EndPoint(const std::string& host, uint16_t port,
                    Protocol::Type protocol)
   : hostport_(host, port), protocol_(protocol) {
 }
@@ -42,8 +42,9 @@ EndPoint::~EndPoint() {
 }
 
 EndPoint EndPoint::FromString(const std::string& str) {
-  std::vector<std::string> hostport_protocol;
-  base::SplitString(str, '/', &hostport_protocol);
+  std::vector<std::string> hostport_protocol(
+      base::SplitString(str, "/",
+          base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY));
   if (hostport_protocol.size() != 2)
     return EndPoint();
   int port;

@@ -7,10 +7,8 @@
 #include <cstring>
 #include <algorithm>
 
-#include "sippet/message/headers/generic.h"
-
-#include "base/basictypes.h"
 #include "base/strings/string_util.h"
+#include "sippet/message/headers/generic.h"
 
 namespace sippet {
 
@@ -30,7 +28,7 @@ namespace {
   };
 
   bool HeaderNameLess(const char *a, const char *b) {
-    return base::strcasecmp(a, b) < 0;
+    return base::CompareCaseInsensitiveASCII(a, b) < 0;
   }
 }  // namespace
 
@@ -45,13 +43,7 @@ Header::Header(const Header &other)
 Header::~Header() {
 }
 
-const char *Header::name() const {
-  if (isa<Generic>(this))
-    return dyn_cast<Generic>(this)->header_name_.c_str();
-  return AtomTraits<Header::Type>::string_of(type());
-}
-
-const char Header::compact_form() const {
+char Header::compact_form() const {
   return compact_forms[static_cast<int>(type_)];
 }
 
@@ -59,22 +51,20 @@ void Header::print(raw_ostream &os) const {
   if (compact_form() != 0)
     os << static_cast<signed char>(compact_form());
   else
-    os << name();
+    os << names[static_cast<size_t>(type())];
   os << ": ";
 }
 
 const char *AtomTraits<Header::Type>::string_of(type t) {
-  return names[static_cast<int>(t)];
+  return names[static_cast<size_t>(t)];
 }
 
 AtomTraits<Header::Type>::type
 AtomTraits<Header::Type>::coerce(const char *str) {
   Header::Type type = Header::HDR_GENERIC;
-  size_t len = strlen(str);
-
   if (strlen(str) == 1) {
     char h = tolower(str[0]);
-    for (int i = 0; i < arraysize(compact_forms); ++i) {
+    for (size_t i = 0; i < arraysize(compact_forms); ++i) {
       if (h == compact_forms[i]) {
         type = static_cast<Header::Type>(i);
         break;
@@ -86,7 +76,7 @@ AtomTraits<Header::Type>::coerce(const char *str) {
     const char **last = names + arraysize(names);
     const char **found = std::lower_bound(first, last, str, HeaderNameLess);
     if (found != last
-        && base::strcasecmp(*found, str) == 0) {
+        && base::CompareCaseInsensitiveASCII(*found, str) == 0) {
       type = static_cast<Header::Type>(found - first);
     }
   }

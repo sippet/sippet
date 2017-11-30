@@ -6,7 +6,8 @@
 #define SIPPET_TRANSPORT_TRANSACTION_FACTORY_H_
 
 #include <string>
-#include "base/memory/scoped_ptr.h"
+
+#include "base/memory/ref_counted.h"
 #include "sippet/message/method.h"
 #include "sippet/transport/channel.h"
 

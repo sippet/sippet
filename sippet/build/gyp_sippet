@@ -11,6 +11,7 @@
 # This script is used to run GYP for Sippet. It contains selected parts of the
 # main function from the src/build/gyp_chromium file.
 
+import gc
 import glob
 import os
 import shlex
@@ -20,12 +21,41 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 checkout_root = os.path.abspath(os.path.join(script_dir, os.pardir, os.pardir))
 
 sys.path.insert(0, os.path.join(checkout_root, 'build'))
+import gyp_environment
 import gyp_chromium
 import gyp_helper
 import vs_toolchain
 
 sys.path.insert(0, os.path.join(checkout_root, 'tools', 'gyp', 'pylib'))
 import gyp
+
+# Assume this file is in a two-level-deep subdirectory of the source root.
+SRC_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Add paths so that pymod_do_main(...) can import files.
+sys.path.insert(1, os.path.join(checkout_root, 'build', 'android', 'gyp'))
+sys.path.insert(1, os.path.join(checkout_root, 'tools'))
+sys.path.insert(1, os.path.join(checkout_root, 'tools', 'grit'))
+
+# On Windows, Psyco shortens warm runs of build/gyp_chromium by about
+# 20 seconds on a z600 machine with 12 GB of RAM, from 90 down to 70
+# seconds.  Conversely, memory usage of build/gyp_chromium with Psyco
+# maxes out at about 158 MB vs. 132 MB without it.
+#
+# Psyco uses native libraries, so we need to load a different
+# installation depending on which OS we are running under. It has not
+# been tested whether using Psyco on our Mac and Linux builds is worth
+# it (the GYP running time is a lot shorter, so the JIT startup cost
+# may not be worth it).
+if sys.platform == 'win32':
+  try:
+    sys.path.insert(0, os.path.join(checkout_root, 'third_party', 'psyco_win32'))
+    import psyco
+  except:
+    psyco = None
+else:
+  psyco = None
+
 
 def GetSupplementalFiles():
   """Returns a list of the supplemental files that are included in all GYP
@@ -36,11 +66,42 @@ def GetSupplementalFiles():
 
 
 if __name__ == '__main__':
+  # Disabling garbage collection saves about 1 second out of 16 on a Linux
+  # z620 workstation. Since this is a short-lived process it's not a problem to
+  # leak a few cyclyc references in order to spare the CPU cycles for
+  # scanning the heap.
+  gc.disable()
+
   args = sys.argv[1:]
+
+  use_analyzer = len(args) and args[0] == '--analyzer'
+  if use_analyzer:
+    args.pop(0)
+    os.environ['GYP_GENERATORS'] = 'analyzer'
+    args.append('-Gconfig_path=' + args.pop(0))
+    args.append('-Ganalyzer_output_path=' + args.pop(0))
 
   if int(os.environ.get('GYP_CHROMIUM_NO_ACTION', 0)):
     print 'Skipping gyp_sippet due to GYP_CHROMIUM_NO_ACTION env var.'
     sys.exit(0)
+
+  # Use the Psyco JIT if available.
+  if psyco:
+    psyco.profile()
+    print "Enabled Psyco JIT."
+
+  # Fall back on hermetic python if we happen to get run under cygwin.
+  # TODO(bradnelson): take this out once this issue is fixed:
+  #    http://code.google.com/p/gyp/issues/detail?id=177
+  if sys.platform == 'cygwin':
+    import find_depot_tools
+    depot_tools_path = find_depot_tools.add_depot_tools_to_path()
+    python_dir = sorted(glob.glob(os.path.join(depot_tools_path,
+                                               'python2*_bin')))[-1]
+    env = os.environ.copy()
+    env['PATH'] = python_dir + os.pathsep + env.get('PATH', '')
+    cmd = [os.path.join(python_dir, 'python.exe')] + sys.argv
+    sys.exit(subprocess.call(cmd, env=env))
 
   if 'SKIP_SIPPET_GYP_ENV' not in os.environ:
     # Update the environment based on sippet.gyp_env
@@ -50,21 +111,54 @@ if __name__ == '__main__':
 
   # This could give false positives since it doesn't actually do real option
   # parsing.  Oh well.
-  gyp_file_specified = False
-  for arg in args:
-    if arg.endswith('.gyp'):
-      gyp_file_specified = True
-      break
+  gyp_file_specified = any(arg.endswith('.gyp') for arg in args)
+
+  gyp_environment.SetEnvironment()
 
   # If we didn't get a file, assume 'sippet/all.gyp' as default
   if not gyp_file_specified:
     # Because of a bug in gyp, simply adding the abspath to all.gyp doesn't
     # work, but chdir'ing and adding the relative path does. Spooky :/
     os.chdir(checkout_root)
-    args.append('sippet/all.gyp')
+    args.append(os.path.join('sippet', 'all.gyp'))
 
+  supplemental_includes = GetSupplementalFiles()
+  gyp_vars_dict = gyp_chromium.GetGypVars(supplemental_includes)
   # There shouldn't be a circular dependency relationship between .gyp files,
+  # but in Chromium's .gyp files, on non-Mac platforms, circular relationships
+  # currently exist.  The check for circular dependencies is currently
+  # bypassed on other platforms, but is left enabled on iOS, where a violation
+  # of the rule causes Xcode to misbehave badly.
+  # TODO(mark): Find and kill remaining circular dependencies, and remove this
+  # option.  http://crbug.com/35878.
+  # TODO(tc): Fix circular dependencies in ChromiumOS then add linux2 to the
+  # list.
+  #if gyp_vars_dict.get('OS') != 'ios':
   args.append('--no-circular-check')
+
+  # libtool on Mac warns about duplicate basenames in static libraries, so
+  # they're disallowed in general by gyp. We are lax on this point, so disable
+  # this check other than on Mac. GN does not use static libraries as heavily,
+  # so over time this restriction will mostly go away anyway, even on Mac.
+  # https://code.google.com/p/gyp/issues/detail?id=384
+  if sys.platform != 'darwin':
+    args.append('--no-duplicate-basename-check')
+
+  # If SIPPET_GYP_SYNTAX_CHECK is set to 1, it will invoke gyp with --check
+  # to enfore syntax checking.
+  syntax_check = os.environ.get('SIPPET_GYP_SYNTAX_CHECK')
+  if syntax_check and int(syntax_check):
+    args.append('--check')
+
+  # Automatically turn on crosscompile support for platforms that need it.
+  # (The Chrome OS build sets CC_host / CC_target which implicitly enables
+  # this mode.)
+  if all(('ninja' in os.environ.get('GYP_GENERATORS', ''),
+          gyp_vars_dict.get('OS') in ['android', 'ios'],
+          'GYP_CROSSCOMPILE' not in os.environ)):
+    os.environ['GYP_CROSSCOMPILE'] = '1'
+  if gyp_vars_dict.get('OS') == 'android':
+    args.append('--check')
 
   # Default to ninja unless GYP_GENERATORS is set.
   if not os.environ.get('GYP_GENERATORS'):
@@ -74,35 +168,31 @@ if __name__ == '__main__':
   if int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', '1')):
     vs2013_runtime_dll_dirs = vs_toolchain.SetEnvironmentAndGetRuntimeDllDirs()
 
-  # Enforce gyp syntax checking. This adds about 20% execution time.
-  args.append('--check')
-
-  supplemental_includes = GetSupplementalFiles()
-  gn_vars_dict = gyp_chromium.GetGypVars(supplemental_includes)
-
-  # Automatically turn on crosscompile support for platforms that need it.
-  if all(('ninja' in os.environ.get('GYP_GENERATORS', ''),
-          gn_vars_dict.get('OS') in ['android', 'ios'],
-          'GYP_CROSSCOMPILE' not in os.environ)):
-    os.environ['GYP_CROSSCOMPILE'] = '1'
-
   args.extend(['-I' + i for i in
                gyp_chromium.additional_include_files(supplemental_includes,
                                                      args)])
 
+  args.extend(['-D', 'gyp_output_dir=' + gyp_chromium.GetOutputDirectory()])
+
   # Set the gyp depth variable to the root of the checkout.
   args.append('--depth=' + os.path.relpath(checkout_root))
 
-  print 'Updating projects from gyp files...'
-  sys.stdout.flush()
+  if not use_analyzer:
+    print 'Updating projects from gyp files...'
+    sys.stdout.flush()
 
   # Off we go...
   gyp_rc = gyp.main(args)
 
-  if vs2013_runtime_dll_dirs:
-    x64_runtime, x86_runtime = vs2013_runtime_dll_dirs
-    vs_toolchain.CopyVsRuntimeDlls(
-        os.path.join(checkout_root, gyp_chromium.GetOutputDirectory()),
+  if not use_analyzer:
+    vs2013_runtime_dll_dirs = vs_toolchain.SetEnvironmentAndGetRuntimeDllDirs()
+    if vs2013_runtime_dll_dirs:
+      x64_runtime, x86_runtime = vs2013_runtime_dll_dirs
+      vs_toolchain.CopyVsRuntimeDlls(
+        os.path.join(chrome_src, gyp_chromium.GetOutputDirectory()),
         (x86_runtime, x64_runtime))
 
   sys.exit(gyp_rc)
+
+if __name__ == '__main__':
+  sys.exit(main())

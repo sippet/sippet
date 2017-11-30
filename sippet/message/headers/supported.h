@@ -26,8 +26,8 @@ class Supported :
   Supported(const std::string &value);
   ~Supported() override;
 
-  scoped_ptr<Supported> Clone() const {
-    return scoped_ptr<Supported>(DoClone());
+  std::unique_ptr<Supported> Clone() const {
+    return std::unique_ptr<Supported>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

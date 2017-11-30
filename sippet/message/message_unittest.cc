@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "base/memory/ptr_util.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 using sippet::Message;
@@ -37,8 +38,8 @@ class InstanceOfHeader : public Header {
 
  public:
   InstanceOfHeader() : Header(Header::HDR_ACCEPT) {}
-  virtual scoped_ptr<InstanceOfHeader> Clone() {
-    return scoped_ptr<InstanceOfHeader>(DoClone());
+  virtual std::unique_ptr<InstanceOfHeader> Clone() {
+    return std::unique_ptr<InstanceOfHeader>(DoClone());
   }
   void print(raw_ostream &os) const override { }
 };
@@ -55,22 +56,21 @@ TEST_F(MessageTest, Basic) {
   EXPECT_TRUE(message_->empty());
 
   // Just mark the first header
-  message_->push_back(scoped_ptr<Header>(new InstanceOfHeader()));
-  message_->push_back(scoped_ptr<Header>(new InstanceOfHeader()).Pass());
+  message_->push_back(base::WrapUnique(new InstanceOfHeader()));
 
-  scoped_ptr<Header> one[] = {
-    scoped_ptr<Header>(new InstanceOfHeader()),
+  std::unique_ptr<Header> one[] = {
+    std::unique_ptr<Header>(new InstanceOfHeader()),
   };
   message_->insert(message_->begin(), one, one+1);
 
-  scoped_ptr<Header> set_of[] = {
-    scoped_ptr<Header>(new InstanceOfHeader()),
-    scoped_ptr<Header>(new InstanceOfHeader()),
+  std::unique_ptr<Header> set_of[] = {
+    std::unique_ptr<Header>(new InstanceOfHeader()),
+    std::unique_ptr<Header>(new InstanceOfHeader()),
   };
   message_->insert(message_->begin(), set_of, set_of+2);
 
   EXPECT_FALSE(message_->empty());
-  EXPECT_EQ(5, message_->size());
+  EXPECT_EQ(4ul, message_->size());
 
   // They should have been cloned
   EXPECT_TRUE(one[0].get());
@@ -84,13 +84,10 @@ TEST_F(MessageTest, Basic) {
   it++;
 
   message_->erase(it, message_->end());
-  EXPECT_EQ(3, message_->size());
+  EXPECT_EQ(2ul, message_->size());
 
   message_->pop_front();
-  EXPECT_EQ(2, message_->size());
-
-  message_->pop_back();
-  EXPECT_EQ(1, message_->size());
+  EXPECT_EQ(1ul, message_->size());
 
   message_->clear();
   EXPECT_TRUE(message_->empty());

@@ -28,8 +28,8 @@ class AuthenticationInfo :
   AuthenticationInfo();
   ~AuthenticationInfo() override;
 
-  scoped_ptr<AuthenticationInfo> Clone() const {
-    return scoped_ptr<AuthenticationInfo>(DoClone());
+  std::unique_ptr<AuthenticationInfo> Clone() const {
+    return std::unique_ptr<AuthenticationInfo>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

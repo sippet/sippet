@@ -5,5 +5,5 @@
 // sippet_version.h is generated from sippet_version.h.in.  Edit the source!
 
 #define SIPPET_VERSION_MAJOR 1
-#define SIPPET_VERSION_MINOR 0
+#define SIPPET_VERSION_MINOR 2
 #define SIPPET_SVN_REVISION "@@LASTCHANGE@"

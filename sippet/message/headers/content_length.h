@@ -24,8 +24,8 @@ class ContentLength :
   ContentLength(const single_value::value_type &length);
   ~ContentLength() override;
 
-  scoped_ptr<ContentLength> Clone() const {
-    return scoped_ptr<ContentLength>(DoClone());
+  std::unique_ptr<ContentLength> Clone() const {
+    return std::unique_ptr<ContentLength>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

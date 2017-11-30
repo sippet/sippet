@@ -31,8 +31,7 @@ Generic::Generic(const std::string &header_name,
 }
 
 void Generic::print(raw_ostream &os) const {
-  Header::print(os);
-  os << header_value_;
+  os << header_name_ << ": " << header_value_;
 }
 
 }  // namespace sippet

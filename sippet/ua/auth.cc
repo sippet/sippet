@@ -110,8 +110,8 @@ void Auth::ChooseBestChallenge(
     AuthHandlerFactory* auth_handler_factory,
     const scoped_refptr<Response> &response,
     const std::set<Scheme>& disabled_schemes,
-    const net::BoundNetLog& net_log,
-    scoped_ptr<AuthHandler>* handler) {
+    const net::NetLogWithSource& net_log,
+    std::unique_ptr<AuthHandler>* handler) {
   DCHECK(auth_handler_factory);
   DCHECK(handler->get() == nullptr);
 
@@ -120,14 +120,14 @@ void Auth::ChooseBestChallenge(
     return;
 
   // Choose the challenge whose authentication handler gives the maximum score.
-  scoped_ptr<AuthHandler> best;
+  std::unique_ptr<AuthHandler> best;
   GURL origin(GetResponseOrigin(response));
   Header::Type header_type = GetChallengeHeaderType(target);
   for (Message::iterator i = response->begin(), ie = response->end();
        i != ie; i++) {
     if (header_type == i->type()) {
       Challenge& cur_challenge = GetChallengeFromHeader(i);
-      scoped_ptr<AuthHandler> cur;
+      std::unique_ptr<AuthHandler> cur;
       int rv = auth_handler_factory->CreateChallengeAuthHandler(
           cur_challenge, target, origin, net_log, &cur);
       if (rv != net::OK) {

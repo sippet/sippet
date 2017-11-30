@@ -25,8 +25,8 @@ class Organization :
   Organization(const single_value::value_type &organization);
   ~Organization() override;
 
-  scoped_ptr<Organization> Clone() const {
-    return scoped_ptr<Organization>(DoClone());
+  std::unique_ptr<Organization> Clone() const {
+    return std::unique_ptr<Organization>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

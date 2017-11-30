@@ -26,8 +26,8 @@ class Unsupported :
   Unsupported(const std::string &value);
   ~Unsupported() override;
 
-  scoped_ptr<Unsupported> Clone() const {
-    return scoped_ptr<Unsupported>(DoClone());
+  std::unique_ptr<Unsupported> Clone() const {
+    return std::unique_ptr<Unsupported>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

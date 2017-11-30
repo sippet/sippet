@@ -25,8 +25,8 @@ class ContentLanguage :
   ContentLanguage(const std::string &language);
   ~ContentLanguage() override;
 
-  scoped_ptr<ContentLanguage> Clone() const {
-    return scoped_ptr<ContentLanguage>(DoClone());
+  std::unique_ptr<ContentLanguage> Clone() const {
+    return std::unique_ptr<ContentLanguage>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

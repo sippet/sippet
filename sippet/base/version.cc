@@ -6,7 +6,7 @@
 #include "base/strings/stringprintf.h"
 
 // Generated
-#include "sippet_version.h"
+#include "sippet/sippet_version.h"
 
 namespace sippet {
 

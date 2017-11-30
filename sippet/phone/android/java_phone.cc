@@ -20,12 +20,12 @@ namespace sippet {
 namespace phone {
 namespace android {
 
-static void InitApplicationContext(JNIEnv* env, jclass jcaller,
-    jobject context) {
+static void InitApplicationContext(JNIEnv* env, const JavaParamRef<jclass>&
+    jcaller, const JavaParamRef<jobject>& context) {
   sippet::android::InitApplicationContext(env, context);
 }
 
-static jlong Create(JNIEnv* env, jobject jcaller) {
+static jlong Create(JNIEnv* env, const JavaParamRef<jobject>& jcaller) {
   return reinterpret_cast<jlong>(new JavaPhone(env, jcaller));
 }
 

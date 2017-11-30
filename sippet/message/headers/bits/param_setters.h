@@ -7,9 +7,9 @@
 
 #include <string>
 #include <cmath>
-#include "base/basictypes.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
+#include "net/http/http_util.h"
 #include "sippet/base/format.h"
 #include "sippet/base/raw_ostream.h"
 
@@ -66,7 +66,8 @@ public:                                                             \
 
 integer_token_param_template(has_ttl,     ttl,     Ttl,     unsigned)
 integer_token_param_template(has_expires, expires, Expires, unsigned)
-integer_token_param_template(has_rport,   rport,   Rport,   uint16  )
+integer_token_param_template(has_rport,   rport,   Rport,   uint16_t)
+integer_token_param_template(has_cause,   cause,   Cause,   int     )
 
 #undef integer_token_param_template
 
@@ -180,6 +181,25 @@ class has_received {
       return input.substr(1, input.size()-2);
     else
       return input;
+  }
+};
+
+template<class T>
+class has_text {
+public:
+  bool HasText() const {
+    return static_cast<const T*>(this)->param_find("text") !=
+           static_cast<const T*>(this)->param_end();
+  }
+
+  std::string text() const {
+    assert(HasText() && "Cannot read text");
+    return net::HttpUtil::Unquote(
+        static_cast<const T*>(this)->param_find("text")->second);
+  }
+
+  void set_text(const std::string& text) {
+    static_cast<T*>(this)->param_set("text", net::HttpUtil::Quote(text));
   }
 };
 

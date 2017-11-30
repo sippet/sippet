@@ -14,7 +14,8 @@
 namespace net {
 class SSLInfo;
 class X509Certificate;
-}
+class SSLPrivateKey;
+}  // namespace net
 
 namespace sippet {
 
@@ -76,7 +77,8 @@ class NET_EXPORT_PRIVATE Channel :
   virtual int ReconnectIgnoringLastError() = 0;
 
   // Restarts the internal channel with a client certificate.
-  virtual int ReconnectWithCertificate(net::X509Certificate* client_cert) = 0;
+  virtual int ReconnectWithCertificate(net::X509Certificate* client_cert,
+                                       net::SSLPrivateKey* private_key) = 0;
 
   // Writes the message to the underlying socket.
   // ERR_IO_PENDING is returned if the operation could not be completed
@@ -100,6 +102,9 @@ class NET_EXPORT_PRIVATE Channel :
   // Detach delegate.  Call before delegate is deleted.  Once delegate
   // is detached, close the channel and never call delegate back.
   virtual void DetachDelegate() = 0;
+
+  // Sends CRLF each given number of seconds.
+  virtual void SetKeepAlive(int seconds) = 0;
 
  protected:
   friend class base::RefCountedThreadSafe<Channel>;

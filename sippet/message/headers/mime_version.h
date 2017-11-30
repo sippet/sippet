@@ -26,8 +26,8 @@ class MimeVersion :
   MimeVersion(unsigned major, unsigned minor);
   ~MimeVersion() override;
 
-  scoped_ptr<MimeVersion> Clone() const {
-    return scoped_ptr<MimeVersion>(DoClone());
+  std::unique_ptr<MimeVersion> Clone() const {
+    return std::unique_ptr<MimeVersion>(DoClone());
   }
 
   void set_major(unsigned major) { major_ = major; }

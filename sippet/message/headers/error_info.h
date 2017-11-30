@@ -47,8 +47,8 @@ class ErrorInfo :
   ErrorInfo();
   ~ErrorInfo() override;
 
-  scoped_ptr<ErrorInfo> Clone() const {
-    return scoped_ptr<ErrorInfo>(DoClone());
+  std::unique_ptr<ErrorInfo> Clone() const {
+    return std::unique_ptr<ErrorInfo>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

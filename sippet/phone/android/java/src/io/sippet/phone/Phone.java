@@ -8,8 +8,8 @@ import android.content.Context;
 
 import org.chromium.base.Log;
 import org.chromium.base.ThreadUtils;
-import org.chromium.base.JNINamespace;
-import org.chromium.base.CalledByNative;
+import org.chromium.base.annotations.JNINamespace;
+import org.chromium.base.annotations.CalledByNative;
 import org.chromium.base.annotations.SuppressFBWarnings;
 import org.chromium.base.library_loader.LibraryLoader;
 import org.chromium.base.library_loader.LibraryProcessType;
@@ -114,6 +114,7 @@ public class Phone {
      *
      * @param target   Destination of the call. String representing a
      *                 destination, username, or a complete SIP URI.
+     * @param callback The callback that will be executed on completion.
      * @return         A call object.
      */
     public Call makeCall(String target, CompletionCallback callback) {

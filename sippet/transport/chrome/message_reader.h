@@ -5,7 +5,7 @@
 #ifndef SIPPET_TRANSPORT_CHROME_MESSAGE_READER_H_
 #define SIPPET_TRANSPORT_CHROME_MESSAGE_READER_H_
 
-#include "base/memory/scoped_ptr.h"
+#include "base/memory/ref_counted.h"
 #include "net/base/completion_callback.h"
 
 namespace sippet {
@@ -39,11 +39,11 @@ class MessageReader {
   virtual size_t max_size() = 0;
 
   // Returns the number of unconsumed bytes.
-  virtual int BytesRemaining() const = 0;
+  virtual size_t BytesRemaining() const = 0;
 
   // DidConsume() changes the |data| pointer so that |data| always points
   // to the first unconsumed byte.
-  virtual void DidConsume(int bytes) = 0;
+  virtual void DidConsume(size_t bytes) = 0;
 
  private:
   enum State {

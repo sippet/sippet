@@ -42,8 +42,7 @@ bool SchemeIs(const std::string& spec,
               const uri::Parsed& parsed,
               const char* lower_ascii_scheme) {
   return base::LowerCaseEqualsASCII(
-      spec.data() + parsed.scheme.begin,
-      spec.data() + parsed.scheme.begin + parsed.scheme.len,
+      base::StringPiece(spec.data() + parsed.scheme.begin, parsed.scheme.len),
       lower_ascii_scheme);
 }
 
@@ -276,7 +275,7 @@ bool SipURI::DomainIs(const char* lower_ascii_domain,
                                host_len - domain_len;
 
   if (!base::LowerCaseEqualsASCII(
-           host_first_pos, host_first_pos + domain_len, lower_ascii_domain))
+           base::StringPiece(host_first_pos, domain_len), lower_ascii_domain))
     return false;
 
   // Make sure there aren't extra characters in host before the compared part;

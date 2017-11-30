@@ -9,7 +9,6 @@
 namespace sippet {
 
 // Based on net/http/http_auth_handler.cc,
-// revision 238260
 
 // Copyright (c) 2011 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
@@ -17,15 +16,15 @@ namespace sippet {
 
 namespace {
 
-net::NetLog::EventType EventTypeFromAuthTarget(Auth::Target target) {
+net::NetLogEventType EventTypeFromAuthTarget(Auth::Target target) {
   switch (target) {
     case net::HttpAuth::AUTH_PROXY:
-      return net::NetLog::TYPE_AUTH_PROXY;
+      return net::NetLogEventType::AUTH_PROXY;
     case net::HttpAuth::AUTH_SERVER:
-      return net::NetLog::TYPE_AUTH_SERVER;
+      return net::NetLogEventType::AUTH_SERVER;
     default:
       NOTREACHED();
-      return net::NetLog::TYPE_CANCELLED;
+      return net::NetLogEventType::CANCELLED;
   }
 }
 
@@ -44,7 +43,7 @@ bool AuthHandler::InitFromChallenge(
     const Challenge& challenge,
     Auth::Target target,
     const GURL& origin,
-    const net::BoundNetLog& net_log) {
+    const net::NetLogWithSource& net_log) {
   origin_ = origin;
   target_ = target;
   score_ = -1;

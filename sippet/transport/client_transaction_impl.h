@@ -58,9 +58,9 @@ class ClientTransactionImpl : public ClientTransaction {
   TransactionDelegate *delegate_;
   scoped_refptr<Request> initial_request_;
   scoped_refptr<Request> generated_ack_;
-  base::OneShotTimer<ClientTransactionImpl> retryTimer_;
-  base::OneShotTimer<ClientTransactionImpl> timedOutTimer_;
-  base::OneShotTimer<ClientTransactionImpl> terminateTimer_;
+  base::OneShotTimer retryTimer_;
+  base::OneShotTimer timedOutTimer_;
+  base::OneShotTimer terminateTimer_;
 
   void OnRetransmit();
   void OnTimedOut();
@@ -75,9 +75,9 @@ class ClientTransactionImpl : public ClientTransaction {
   void Terminate();
 
   TimeDeltaFactory *time_delta_factory_;
-  scoped_ptr<TimeDeltaProvider> time_delta_provider_;
+  std::unique_ptr<TimeDeltaProvider> time_delta_provider_;
 
-  base::WeakPtrFactory<ClientTransactionImpl> weak_factory_;
+  base::WeakPtrFactory<ClientTransactionImpl> weak_ptr_factory_;
 };
 
 } /// End of sippet namespace

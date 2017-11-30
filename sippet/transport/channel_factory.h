@@ -5,7 +5,7 @@
 #ifndef SIPPET_TRANSPORT_CHANNEL_FACTORY_H_
 #define SIPPET_TRANSPORT_CHANNEL_FACTORY_H_
 
-#include "base/memory/scoped_ptr.h"
+#include "base/memory/ref_counted.h"
 #include "sippet/transport/end_point.h"
 #include "sippet/transport/channel.h"
 

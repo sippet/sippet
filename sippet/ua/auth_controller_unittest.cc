@@ -64,7 +64,7 @@ class AuthControllerTest : public testing::Test {
   }
 
   void RunResponseTest(ResponseTest *test) {
-    net::BoundNetLog dummy_log;
+    net::NetLogWithSource dummy_log;
 
     current_test_ = test;
     scoped_refptr<Request> request(dyn_cast<Request>(
@@ -75,13 +75,14 @@ class AuthControllerTest : public testing::Test {
       Message::Parse(test->response_)));
     response->set_refer_to(request);
 
-    NiceMock<AuthHandlerMock>* auth_handler = new NiceMock<AuthHandlerMock>;
+    std::unique_ptr<NiceMock<AuthHandlerMock>> auth_handler(
+        new NiceMock<AuthHandlerMock>());
     ON_CALL(*auth_handler, HandleAnotherChallenge(_))
       .WillByDefault(Return(net::HttpAuth::AUTHORIZATION_RESULT_ACCEPT));
     ON_CALL(*auth_handler, GenerateAuthImpl(_, _, _))
       .WillByDefault(Invoke(this, &AuthControllerTest::GenerateAuthImpl));
 
-    factory().AddMockHandler(auth_handler, test->target_, true);
+    factory().AddMockHandler(std::move(auth_handler), test->target_, true);
 
     ASSERT_EQ(test->expected_challenge_rv_,
               controller().HandleAuthChallenge(response, dummy_log));
@@ -112,7 +113,7 @@ class AuthControllerTest : public testing::Test {
     if (current_test_->run_mode_ == RUN_HANDLER_SYNC)
       return current_test_->handler_rv_;
     callback_ = callback;
-    base::MessageLoop::current()->PostTask(
+    base::ThreadTaskRunnerHandle::Get()->PostTask(
         FROM_HERE,
         base::Bind(&AuthControllerTest::OnIOComplete,
             base::Unretained(this), current_test_->handler_rv_));
@@ -310,7 +311,7 @@ class MockHandler : public AuthHandlerMock {
 // If an AuthHandler indicates that it doesn't allow explicit
 // credentials, don't prompt for credentials.
 TEST_F(AuthControllerTest, NoExplicitCredentialsAllowed) {
-  net::BoundNetLog dummy_log;
+  net::NetLogWithSource dummy_log;
   AuthCache dummy_auth_cache;
   scoped_refptr<Request> request(dyn_cast<Request>(
     Message::Parse("REGISTER sip:some.domain.com SIP/2.0\r\n"
@@ -326,36 +327,37 @@ TEST_F(AuthControllerTest, NoExplicitCredentialsAllowed) {
   // Handlers for the first attempt at authentication.  AUTH_SCHEME_MOCK handler
   // accepts the default identity and successfully constructs a token.
   factory().AddMockHandler(
-      new NiceMock<MockHandler>(net::OK, net::HttpAuth::AUTH_SCHEME_MOCK),
+      base::WrapUnique(new NiceMock<MockHandler>(net::OK,
+          net::HttpAuth::AUTH_SCHEME_MOCK)),
       net::HttpAuth::AUTH_SERVER, true);
   factory().AddMockHandler(
-      new NiceMock<MockHandler>(net::ERR_UNEXPECTED,
-          net::HttpAuth::AUTH_SCHEME_DIGEST),
-              net::HttpAuth::AUTH_SERVER, true);
+      base::WrapUnique(new NiceMock<MockHandler>(net::ERR_UNEXPECTED,
+          net::HttpAuth::AUTH_SCHEME_DIGEST)),
+      net::HttpAuth::AUTH_SERVER, true);
 
   // Handlers for the second attempt.  Neither should be used to generate a
   // token.  Instead the controller should realize that there are no viable
   // identities to use with the AUTH_SCHEME_MOCK handler and fail.
   factory().AddMockHandler(
-      new NiceMock<MockHandler>(net::ERR_UNEXPECTED,
-          net::HttpAuth::AUTH_SCHEME_MOCK),
-              net::HttpAuth::AUTH_SERVER, true);
+      base::WrapUnique(new NiceMock<MockHandler>(net::ERR_UNEXPECTED,
+          net::HttpAuth::AUTH_SCHEME_MOCK)),
+      net::HttpAuth::AUTH_SERVER, true);
   factory().AddMockHandler(
-      new NiceMock<MockHandler>(net::ERR_UNEXPECTED,
-          net::HttpAuth::AUTH_SCHEME_DIGEST),
-              net::HttpAuth::AUTH_SERVER, true);
+      base::WrapUnique(new NiceMock<MockHandler>(net::ERR_UNEXPECTED,
+          net::HttpAuth::AUTH_SCHEME_DIGEST)),
+      net::HttpAuth::AUTH_SERVER, true);
 
   // Fallback handlers for the second attempt.  The AUTH_SCHEME_MOCK handler
   // should be discarded due to the disabled scheme, and the AUTH_SCHEME_BASIC
   // handler should successfully be used to generate a token.
   factory().AddMockHandler(
-      new NiceMock<MockHandler>(net::ERR_UNEXPECTED,
-          net::HttpAuth::AUTH_SCHEME_MOCK),
-              net::HttpAuth::AUTH_SERVER, true);
+      base::WrapUnique(new NiceMock<MockHandler>(net::ERR_UNEXPECTED,
+          net::HttpAuth::AUTH_SCHEME_MOCK)),
+      net::HttpAuth::AUTH_SERVER, true);
   factory().AddMockHandler(
-      new NiceMock<MockHandler>(net::OK,
-          net::HttpAuth::AUTH_SCHEME_DIGEST),
-              net::HttpAuth::AUTH_SERVER, true);
+      base::WrapUnique(new NiceMock<MockHandler>(net::OK,
+          net::HttpAuth::AUTH_SCHEME_DIGEST)),
+      net::HttpAuth::AUTH_SERVER, true);
 
   ASSERT_EQ(net::OK,
             controller().HandleAuthChallenge(response, dummy_log));

@@ -174,7 +174,7 @@ int MessageReader::DoReadHeadersComplete() {
 int MessageReader::DoReadBody() {
   ContentLength *content_length = current_message_->get<ContentLength>();
   DCHECK(content_length);
-  if (content_length->value() > static_cast<unsigned>(BytesRemaining())) {
+  if (content_length->value() > static_cast<size_t>(BytesRemaining())) {
     // Read more...
     return ReadMore();
   }
@@ -192,7 +192,7 @@ int MessageReader::DoReadBodyComplete() {
 }
 
 int MessageReader::ReadMore() {
-  if (BytesRemaining() == max_size()) {
+  if (static_cast<size_t>(BytesRemaining()) == max_size()) {
     // Close the connection: the server is trying to send a message (header
     // or content) that exceeds the maximum size allowed.
     return net::ERR_MSG_TOO_BIG;

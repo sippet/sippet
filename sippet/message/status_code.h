@@ -5,6 +5,7 @@
 #ifndef SIPPET_MESSAGE_STATUS_CODE_H_
 #define SIPPET_MESSAGE_STATUS_CODE_H_
 
+#include <string>
 #include "net/base/net_export.h"
 
 namespace sippet {
@@ -25,7 +26,10 @@ enum StatusCode {
 // This function may not cover all codes defined in the IANA registry. It
 // returns an empty string (or crash in debug build) for status codes which are
 // not yet covered or just invalid. Please extend it when needed.
-NET_EXPORT const char* GetReasonPhrase(StatusCode code);
+const char* GetReasonPhrase(StatusCode code);
+
+// Returns a textual representation of the status code for logging purposes.
+std::string StatusCodeToShortString(int status_code);
 
 } // End of sippet namespace
 

@@ -25,8 +25,8 @@ class UserAgent :
   UserAgent(const single_value::value_type &subject);
   ~UserAgent() override;
 
-  scoped_ptr<UserAgent> Clone() const {
-    return scoped_ptr<UserAgent>(DoClone());
+  std::unique_ptr<UserAgent> Clone() const {
+    return std::unique_ptr<UserAgent>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

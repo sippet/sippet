@@ -5,14 +5,18 @@
 #ifndef SIPPET_TRANSPORT_CHROME_CHROME_DATAGRAM_CHANNEL_H_
 #define SIPPET_TRANSPORT_CHROME_CHROME_DATAGRAM_CHANNEL_H_
 
-#include "sippet/transport/channel.h"
-#include "sippet/transport/chrome/chrome_datagram_writer.h"
-#include "sippet/transport/chrome/chrome_datagram_reader.h"
 #include "base/memory/weak_ptr.h"
 #include "net/base/address_list.h"
 #include "net/dns/host_resolver.h"
-#include "net/dns/single_request_host_resolver.h"
+#include "net/log/net_log_with_source.h"
 #include "url/gurl.h"
+#include "sippet/transport/channel.h"
+#include "sippet/transport/chrome/chrome_datagram_writer.h"
+#include "sippet/transport/chrome/chrome_datagram_reader.h"
+
+namespace base {
+class RepeatingTimer;
+}  // namespace base
 
 namespace net {
 class ClientSocketFactory;
@@ -21,7 +25,7 @@ class URLRequestContextGetter;
 class IOBufferWithSize;
 class NetLog;
 class HostResolver;
-}
+}  // namespace net
 
 namespace sippet {
 
@@ -43,7 +47,8 @@ class ChromeDatagramChannel : public Channel {
 
   void Connect() override;
   int ReconnectIgnoringLastError() override;
-  int ReconnectWithCertificate(net::X509Certificate* client_cert) override;
+  int ReconnectWithCertificate(net::X509Certificate* client_cert,
+                               net::SSLPrivateKey* private_key) override;
 
   int Send(const scoped_refptr<Message> &message,
            const net::CompletionCallback& callback) override;
@@ -53,6 +58,8 @@ class ChromeDatagramChannel : public Channel {
   void CloseWithError(int err) override;
 
   void DetachDelegate() override;
+
+  void SetKeepAlive(int seconds) override;
 
  private:
   friend class base::RefCountedThreadSafe<Channel>;
@@ -79,19 +86,23 @@ class ChromeDatagramChannel : public Channel {
   void DoRead();
   void OnReadComplete(int result);
 
+  void SendKeepAlive();
+
   State next_state_;
 
   EndPoint destination_;
   Channel::Delegate *delegate_;
 
-  net::SingleRequestHostResolver host_resolver_;
+  net::HostResolver* resolver_;
+  std::unique_ptr<net::HostResolver::Request> resolve_request_;
   net::AddressList addresses_;
 
   net::ClientSocketFactory* client_socket_factory_;
-  scoped_ptr<net::DatagramClientSocket> socket_;
-  scoped_ptr<ChromeDatagramReader> datagram_reader_;
-  scoped_ptr<ChromeDatagramWriter> datagram_writer_;
-  net::BoundNetLog bound_net_log_;
+  std::unique_ptr<net::DatagramClientSocket> socket_;
+  std::unique_ptr<ChromeDatagramReader> datagram_reader_;
+  std::unique_ptr<ChromeDatagramWriter> datagram_writer_;
+  const net::NetLogWithSource net_log_;
+  std::unique_ptr<base::RepeatingTimer> keep_alive_timer_;
 
   bool is_connected_;
 

@@ -26,8 +26,8 @@ public:
   Allow();
   ~Allow() override;
 
-  scoped_ptr<Allow> Clone() const {
-    return scoped_ptr<Allow>(DoClone());
+  std::unique_ptr<Allow> Clone() const {
+    return std::unique_ptr<Allow>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

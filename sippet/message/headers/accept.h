@@ -42,8 +42,8 @@ class Accept :
   Accept();
   ~Accept() override;
 
-  scoped_ptr<Accept> Clone() const {
-    return scoped_ptr<Accept>(DoClone());
+  std::unique_ptr<Accept> Clone() const {
+    return std::unique_ptr<Accept>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

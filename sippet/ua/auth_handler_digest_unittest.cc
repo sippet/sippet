@@ -4,7 +4,6 @@
 
 #include <string>
 
-#include "base/basictypes.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "net/base/net_errors.h"
@@ -36,14 +35,14 @@ bool RespondToChallenge(const std::string& challenge,
   }
 
   token->clear();
-  scoped_ptr<AuthHandlerDigest::Factory> factory(
+  std::unique_ptr<AuthHandlerDigest::Factory> factory(
       new AuthHandlerDigest::Factory());
   AuthHandlerDigest::NonceGenerator* nonce_generator =
       new AuthHandlerDigest::FixedNonceGenerator(cnonce);
   factory->set_nonce_generator(nonce_generator);
-  scoped_ptr<AuthHandler> handler;
+  std::unique_ptr<AuthHandler> handler;
 
-  scoped_ptr<Header> header(
+  std::unique_ptr<Header> header(
     Header::Parse(std::string("WWW-Authenticate: " + challenge)));
   EXPECT_TRUE(header.get() != nullptr);
   WwwAuthenticate *www_authenticate = dyn_cast<WwwAuthenticate>(header);
@@ -55,7 +54,7 @@ bool RespondToChallenge(const std::string& challenge,
     *www_authenticate, net::HttpAuth::AUTH_SERVER,
     GURL(uri_origin.GetOrigin().spec()),
     AuthHandlerFactory::CREATE_CHALLENGE, 1,
-    net::BoundNetLog(), &handler);
+    net::NetLogWithSource(), &handler);
   if (rv_create != net::OK || handler.get() == nullptr) {
     ADD_FAILURE() << "Unable to create auth handler.";
     return false;
@@ -78,7 +77,7 @@ bool RespondToChallenge(const std::string& challenge,
     ADD_FAILURE() << "Problems generating auth token";
     return false;
   }
-  EXPECT_EQ(1, request->size());
+  EXPECT_EQ(1ul, request->size());
   Authorization *authorization = request->get<Authorization>();
   EXPECT_TRUE(authorization != nullptr);
   *token = authorization->ToString();
@@ -256,12 +255,12 @@ TEST(AuthHandlerDigest, AuthIntAndMd5Sess) {
 }
 
 TEST(AuthHandlerDigest, HandleAnotherChallenge) {
-  scoped_ptr<AuthHandlerDigest::Factory> factory(
+  std::unique_ptr<AuthHandlerDigest::Factory> factory(
       new AuthHandlerDigest::Factory());
-  scoped_ptr<AuthHandler> handler;
+  std::unique_ptr<AuthHandler> handler;
   std::string default_challenge =
       "Digest realm=\"biloxi.com\", nonce=\"nonce-value\"";
-  scoped_ptr<Header> header =
+  std::unique_ptr<Header> header =
     Header::Parse(std::string("WWW-Authenticate: " + default_challenge));
   Challenge *challenge = dyn_cast<WwwAuthenticate>(header);
   SipURI uri_origin("sip:bob@biloxi.com");
@@ -269,7 +268,7 @@ TEST(AuthHandlerDigest, HandleAnotherChallenge) {
     *challenge, net::HttpAuth::AUTH_SERVER,
     GURL(uri_origin.GetOrigin().spec()),
     AuthHandlerFactory::CREATE_CHALLENGE, 1,
-    net::BoundNetLog(), &handler);
+    net::NetLogWithSource(), &handler);
   EXPECT_EQ(net::OK, rv);
   ASSERT_TRUE(handler.get() != nullptr);
 
@@ -277,14 +276,14 @@ TEST(AuthHandlerDigest, HandleAnotherChallenge) {
             handler->HandleAnotherChallenge(*challenge));
 
   std::string stale_challenge = default_challenge + ", stale=true";
-  scoped_ptr<Header> header1 =
+  std::unique_ptr<Header> header1 =
     Header::Parse(std::string("WWW-Authenticate: " + stale_challenge));
   challenge = dyn_cast<WwwAuthenticate>(header1);
   EXPECT_EQ(net::HttpAuth::AUTHORIZATION_RESULT_STALE,
             handler->HandleAnotherChallenge(*challenge));
 
   std::string stale_false_challenge = default_challenge + ", stale=false";
-  scoped_ptr<Header> header2 =
+  std::unique_ptr<Header> header2 =
     Header::Parse(std::string("WWW-Authenticate: " + stale_false_challenge));
   challenge = dyn_cast<WwwAuthenticate>(header2);
   EXPECT_EQ(net::HttpAuth::AUTHORIZATION_RESULT_REJECT,
@@ -292,7 +291,7 @@ TEST(AuthHandlerDigest, HandleAnotherChallenge) {
 
   std::string realm_change_challenge =
       "Digest realm=\"p1.biloxi.com\", nonce=\"nonce-value2\"";
-  scoped_ptr<Header> header3 =
+  std::unique_ptr<Header> header3 =
     Header::Parse(std::string("WWW-Authenticate: " + realm_change_challenge));
   challenge = dyn_cast<WwwAuthenticate>(header3);
   EXPECT_EQ(net::HttpAuth::AUTHORIZATION_RESULT_DIFFERENT_REALM,

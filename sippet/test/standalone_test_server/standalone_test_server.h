@@ -103,7 +103,7 @@ class StandaloneTestServer {
   // Called when a response is received.
   void OnReceiveResponse(pjsip_rx_data *rdata);
 
-  scoped_ptr<base::Thread> io_thread_;
+  std::unique_ptr<base::Thread> io_thread_;
   Protocol protocol_;
   int port_;
   GURL base_uri_;
@@ -111,7 +111,7 @@ class StandaloneTestServer {
   base::ThreadChecker thread_checker_;
 
   struct ControlStruct;
-  scoped_ptr<ControlStruct> control_struct_;
+  std::unique_ptr<ControlStruct> control_struct_;
   SSLOptions ssl_options_;
 
   DISALLOW_COPY_AND_ASSIGN(StandaloneTestServer);

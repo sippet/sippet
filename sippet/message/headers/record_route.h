@@ -22,8 +22,8 @@ class RecordRoute :
   RecordRoute(const RouteParam &param);
   ~RecordRoute() override;
 
-  scoped_ptr<RecordRoute> Clone() const {
-    return scoped_ptr<RecordRoute>(DoClone());
+  std::unique_ptr<RecordRoute> Clone() const {
+    return std::unique_ptr<RecordRoute>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

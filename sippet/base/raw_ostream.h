@@ -44,7 +44,6 @@
 #include <string>
 
 #include "base/strings/string_piece.h"
-#include "base/basictypes.h"
 
 namespace sippet {
 
@@ -94,7 +93,7 @@ public:
   virtual ~raw_ostream();
 
   /// tell - Return the current offset with the file.
-  uint64 tell() const { return current_pos() + GetNumBytesInBuffer(); }
+  uint64_t tell() const { return current_pos() + GetNumBytesInBuffer(); }
 
   //===--------------------------------------------------------------------===//
   // Configuration Interface
@@ -177,15 +176,15 @@ public:
     return *this;
   }
 
-  raw_ostream &operator<<(uint32 N);
-  raw_ostream &operator<<(int32 N);
-  raw_ostream &operator<<(uint64 N);
-  raw_ostream &operator<<(int64 N);
+  raw_ostream &operator<<(uint32_t N);
+  raw_ostream &operator<<(int32_t N);
+  raw_ostream &operator<<(uint64_t N);
+  raw_ostream &operator<<(int64_t N);
 
   raw_ostream &operator<<(double N);
 
   /// write_hex - Output \p N in hexadecimal, without any prefix or padding.
-  raw_ostream &write_hex(uint64 N);
+  raw_ostream &write_hex(uint64_t N);
 
   /// write_escaped - Output \p Str, turning '\\', '\t', '\n', '"', and
   /// anything that doesn't satisfy std::isprint into an escape sequence.
@@ -225,7 +224,7 @@ private:
 
   /// current_pos - Return the current position within the stream, not
   /// counting the bytes currently in the buffer.
-  virtual uint64 current_pos() const = 0;
+  virtual uint64_t current_pos() const = 0;
 
 protected:
   /// SetBuffer - Use the provided buffer as the raw_ostream buffer. This is
@@ -275,7 +274,7 @@ class raw_string_ostream : public raw_ostream {
 
   /// current_pos - Return the current position within the stream, not
   /// counting the bytes currently in the buffer.
-  uint64 current_pos() const override;
+  uint64_t current_pos() const override;
 
 public:
   explicit raw_string_ostream(std::string &O) : OS(O) {}

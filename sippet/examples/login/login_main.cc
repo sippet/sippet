@@ -18,7 +18,7 @@ static void PrintUsage() {
 }
 
 class UserAgentHandler
-  : public sippet::ua::UserAgent::Delegate {
+  : public sippet::ua::UserAgent::Observer {
  public:
   explicit UserAgentHandler(sippet::NetworkLayer *network_layer)
       : network_layer_(network_layer) {
@@ -62,25 +62,19 @@ class UserAgentHandler
   }
 
   void OnTimedOut(
-      const scoped_refptr<sippet::Request> &request,
-      const scoped_refptr<sippet::Dialog> &dialog) override {
+      const scoped_refptr<sippet::Request> &request) override {
     std::cout << "Timed out sending request "
               << request->method().str()
               << "\n";
-    if (dialog)
-      std::cout << "-- Using dialog " << dialog->id() << "\n";
 
     base::MessageLoop::current()->Quit();
   }
 
   void OnTransportError(
-      const scoped_refptr<sippet::Request> &request, int error,
-      const scoped_refptr<sippet::Dialog> &dialog) override {
+      const scoped_refptr<sippet::Request> &request, int error) override {
     std::cout << "Transport error sending request "
               << request->method().str()
               << "\n";
-    if (dialog)
-      std::cout << "-- Using dialog " << dialog->id() << "\n";
 
     base::MessageLoop::current()->Quit();
   }
@@ -160,9 +154,9 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  scoped_ptr<UserAgentHandler> handler(
+  std::unique_ptr<UserAgentHandler> handler(
       new UserAgentHandler(program_main.network_layer()));
-  program_main.AppendHandler(handler.get());
+  program_main.AddObserver(handler.get());
 
   std::string from("sip:" + username + "@" + server);
   std::string to("sip:" + username + "@" + server);

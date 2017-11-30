@@ -8,6 +8,7 @@
 #include <set>
 #include "net/base/auth.h"
 #include "net/http/http_auth.h"
+#include "net/log/net_log_with_source.h"
 #include "sippet/message/header.h"
 
 namespace sippet {
@@ -76,8 +77,8 @@ struct Auth {
       AuthHandlerFactory* auth_handler_factory,
       const scoped_refptr<Response> &response,
       const std::set<Scheme>& disabled_schemes,
-      const net::BoundNetLog& net_log,
-      scoped_ptr<AuthHandler>* handler);
+      const net::NetLogWithSource& net_log,
+      std::unique_ptr<AuthHandler>* handler);
 
   // Handle a 401/407 response from a server/proxy after a previous
   // authentication attempt. For connection-based authentication schemes, the

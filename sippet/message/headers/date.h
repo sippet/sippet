@@ -26,8 +26,8 @@ class Date :
   Date(const single_value::value_type &date);
   ~Date() override;
 
-  scoped_ptr<Date> Clone() const {
-    return scoped_ptr<Date>(DoClone());
+  std::unique_ptr<Date> Clone() const {
+    return std::unique_ptr<Date>(DoClone());
   }
 
   void print(raw_ostream &os) const override;

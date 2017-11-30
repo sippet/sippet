@@ -15,9 +15,9 @@ ServerTransactionImpl::ServerTransactionImpl(
                           const scoped_refptr<Channel> &channel,
                           TransactionDelegate *delegate,
                           TimeDeltaFactory *time_delta_factory)
-  : weak_factory_(this),
-    id_(id), channel_(channel), delegate_(delegate),
-    time_delta_factory_(time_delta_factory) {
+  : id_(id), channel_(channel), delegate_(delegate),
+    time_delta_factory_(time_delta_factory),
+    weak_ptr_factory_(this) {
   DCHECK(id.length());
   DCHECK(channel);
   DCHECK(delegate);
@@ -48,6 +48,10 @@ void ServerTransactionImpl::Start(
     next_state_ = STATE_TRYING;
     time_delta_provider_.reset(time_delta_factory_->CreateServerNonInvite());
   }
+
+  LOG(INFO) << "Received request from "
+            << channel_->destination().ToString() << ":\n"
+            << incoming_request->ToString();
 }
 
 void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
@@ -62,12 +66,14 @@ void ServerTransactionImpl::Send(const scoped_refptr<Response> &response) {
   if (STATE_PROCEED_CALLING == next_state_)
     StopProvisionalResponse();
 
-  LOG(INFO) << "Sent to " << channel_->destination().ToString();
+  LOG(INFO) << "Sent response to "
+            << channel_->destination().ToString() << ":\n"
+            << response->ToString();
 
   latest_response_ = response;
   int result = channel_->Send(response,
       base::Bind(&ServerTransactionImpl::OnSendWriteComplete,
-          weak_factory_.GetWeakPtr(), response));
+          weak_ptr_factory_.GetWeakPtr(), response));
   if (net::ERR_IO_PENDING != result)
     OnSendWriteComplete(response, result);
 }
@@ -131,17 +137,19 @@ void ServerTransactionImpl::HandleIncomingRequest(
   DCHECK(next_state_ != STATE_TERMINATED);
 
   int result = net::OK;
-  if (STATE_PROCEEDING == next_state_
-      || STATE_PROCEED_CALLING == next_state_
-      || (STATE_COMPLETED == next_state_
-          && Method::ACK != request->method())) {
-    result = channel_->Send(latest_response_,
-      base::Bind(&ServerTransactionImpl::OnRepeatResponseWriteComplete,
-        this, request));
-  }
-
-  if (net::ERR_IO_PENDING != result)
+  if (Method::ACK == request->method()) {
     OnRepeatResponseWriteComplete(request, result);
+  } else if (STATE_PROCEEDING == next_state_
+             || STATE_PROCEED_CALLING == next_state_
+             || STATE_COMPLETED == next_state_) {
+    if (latest_response_) {
+      result = channel_->Send(latest_response_,
+        base::Bind(&ServerTransactionImpl::OnRepeatResponseWriteComplete,
+          this, request));
+      if (net::ERR_IO_PENDING != result)
+        OnRepeatResponseWriteComplete(request, result);
+    }
+  }
 }
 
 void ServerTransactionImpl::OnRepeatResponseWriteComplete(
@@ -154,8 +162,12 @@ void ServerTransactionImpl::OnRepeatResponseWriteComplete(
     case STATE_PROCEED_CALLING:
       break;
     case STATE_COMPLETED:
-      if (Method::ACK == request->method())
+      if (Method::ACK == request->method()) {
         next_state_ = STATE_CONFIRMED;
+        LOG(INFO) << "Received request from "
+                  << channel_->destination().ToString() << ":\n"
+                  << request->ToString();
+      }
       break;
     case STATE_CONFIRMED:
       break;
@@ -190,7 +202,7 @@ void ServerTransactionImpl::OnRetransmit() {
 
   int result = channel_->Send(latest_response_,
       base::Bind(&ServerTransactionImpl::OnRetransmitWriteComplete,
-          weak_factory_.GetWeakPtr()));
+          weak_ptr_factory_.GetWeakPtr()));
 
   if (net::ERR_IO_PENDING != result)
     OnRetransmitWriteComplete(result);
@@ -219,13 +231,22 @@ void ServerTransactionImpl::OnTerminated() {
 }
 
 void ServerTransactionImpl::OnSendProvisionalResponse() {
-  DCHECK(MODE_INVITE == mode_ && STATE_PROCEEDING == next_state_);
+  DCHECK(MODE_INVITE == mode_ && STATE_PROCEED_CALLING == next_state_);
+  DCHECK(latest_response_ == nullptr
+         || SIP_TRYING == latest_response_->response_code());
 
-  scoped_refptr<Response> response =
-      initial_request_->CreateResponse(SIP_TRYING);
-  int result = channel_->Send(response,
+  if (!latest_response_) {
+    latest_response_ =
+        initial_request_->CreateResponse(SIP_TRYING);
+  }
+
+  LOG(INFO) << "Sent response to "
+            << channel_->destination().ToString() << ":\n"
+            << latest_response_->ToString();
+
+  int result = channel_->Send(latest_response_,
       base::Bind(&ServerTransactionImpl::OnSendProvisionalResponseWriteComplete,
-          weak_factory_.GetWeakPtr()));
+          weak_ptr_factory_.GetWeakPtr()));
 
   if (net::ERR_IO_PENDING != result)
     OnSendProvisionalResponseWriteComplete(result);
@@ -260,28 +281,28 @@ void ServerTransactionImpl::ScheduleRetry() {
   retryTimer_.Start(FROM_HERE,
       time_delta_provider_->GetNextRetryDelay(),
       base::Bind(&ServerTransactionImpl::OnRetransmit,
-          weak_factory_.GetWeakPtr()));
+          weak_ptr_factory_.GetWeakPtr()));
 }
 
 void ServerTransactionImpl::ScheduleTimeout() {
   timedOutTimer_.Start(FROM_HERE,
       time_delta_provider_->GetTimeoutDelay(),
       base::Bind(&ServerTransactionImpl::OnTimedOut,
-          weak_factory_.GetWeakPtr()));
+          weak_ptr_factory_.GetWeakPtr()));
 }
 
 void ServerTransactionImpl::ScheduleTerminate() {
   terminateTimer_.Start(FROM_HERE,
       time_delta_provider_->GetTerminateDelay(),
       base::Bind(&ServerTransactionImpl::OnTerminated,
-          weak_factory_.GetWeakPtr()));
+          weak_ptr_factory_.GetWeakPtr()));
 }
 
 void ServerTransactionImpl::ScheduleProvisionalResponse() {
   provisionalTimer_.Start(FROM_HERE,
       base::TimeDelta::FromMilliseconds(200),
       base::Bind(&ServerTransactionImpl::OnSendProvisionalResponse,
-          weak_factory_.GetWeakPtr()));
+          weak_ptr_factory_.GetWeakPtr()));
 }
 
 void ServerTransactionImpl::Terminate() {

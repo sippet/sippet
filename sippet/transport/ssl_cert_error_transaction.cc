@@ -83,7 +83,7 @@ int SSLCertErrorTransaction::DoLoop(int last_io_result) {
 }
 
 int SSLCertErrorTransaction::DoHandleSSLCertError() {
-  scoped_ptr<SSLCertErrorHandler> ssl_cert_error_handler(
+  std::unique_ptr<SSLCertErrorHandler> ssl_cert_error_handler(
       ssl_cert_error_handler_factory_->CreateSSLCertificateErrorHandler());
   ssl_cert_error_handler_.reset(ssl_cert_error_handler.release());
   return net::OK;
@@ -114,7 +114,7 @@ int SSLCertErrorTransaction::DoGetClientCert() {
   DCHECK(ssl_cert_error_handler_.get());
   next_state_ = STATE_GET_CLIENT_CERT_COMPLETE;
   return ssl_cert_error_handler_->GetClientCert(destination_,
-      ssl_info_, &client_cert_, io_callback_);
+      ssl_info_, &client_cert_, &private_key_, io_callback_);
 }
 
 int SSLCertErrorTransaction::DoGetClientCertComplete(int result) {

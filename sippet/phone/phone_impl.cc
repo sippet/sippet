@@ -18,7 +18,6 @@
 #include "net/url_request/url_request_context_builder.h"
 #include "sippet/ua/dialog_controller.h"
 #include "sippet/phone/completion_status.h"
-#include "talk/media/devices/devicemanager.h"
 #include "jingle/glue/thread_wrapper.h"
 #include "webrtc/base/ssladapter.h"
 
@@ -55,9 +54,11 @@ class URLRequestContextGetter : public net::URLRequestContextGetter {
       builder.set_user_agent("Sippet");
       builder.DisableHttpCache();
 #if defined(OS_LINUX) || defined(OS_ANDROID)
-      builder.set_proxy_config_service(new ProxyConfigServiceDirect());
+      std::unique_ptr<ProxyConfigServiceDirect> proxy_config(
+          new ProxyConfigServiceDirect);
+      builder.set_proxy_config_service(std::move(proxy_config));
 #endif
-      url_request_context_.reset(builder.Build());
+      url_request_context_ = builder.Build();
     }
     return url_request_context_.get();
   }
@@ -73,7 +74,7 @@ class URLRequestContextGetter : public net::URLRequestContextGetter {
   scoped_refptr<base::SingleThreadTaskRunner> network_task_runner_;
 
   // Only accessed on the IO thread.
-  scoped_ptr<net::URLRequestContext> url_request_context_;
+  std::unique_ptr<net::URLRequestContext> url_request_context_;
 
   DISALLOW_COPY_AND_ASSIGN(URLRequestContextGetter);
 };
@@ -98,11 +99,11 @@ PhoneImpl::PasswordHandler::Factory::Factory(Settings *settings) :
 PhoneImpl::PasswordHandler::Factory::~Factory() {
 }
 
-scoped_ptr<PasswordHandler>
+std::unique_ptr<PasswordHandler>
       PhoneImpl::PasswordHandler::Factory::CreatePasswordHandler() {
-  scoped_ptr<PasswordHandler> password_handler(
+  std::unique_ptr<PasswordHandler> password_handler(
     new PasswordHandler(this));
-  return password_handler.Pass();
+  return std::move(password_handler);
 }
 
 //
@@ -140,7 +141,9 @@ PhoneImpl::PhoneImpl(Phone::Delegate *delegate)
     last_state_(PHONE_STATE_OFFLINE),
     delegate_(delegate),
     network_thread_("PhoneSignalling"),
-    network_thread_event_(false, false) {
+    network_thread_event_(
+      base::WaitableEvent::ResetPolicy::AUTOMATIC,
+      base::WaitableEvent::InitialState::NOT_SIGNALED) {
   DCHECK(delegate);
 }
 
@@ -302,7 +305,7 @@ void PhoneImpl::OnInit() {
   DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
 
   base::MessageLoop *message_loop = network_thread_.message_loop();
-  refresh_timer_.reset(new base::OneShotTimer<PhoneImpl>);
+  refresh_timer_.reset(new base::OneShotTimer);
 
   request_context_getter_ =
       new URLRequestContextGetter(message_loop->task_runner());
@@ -310,9 +313,9 @@ void PhoneImpl::OnInit() {
   net::ClientSocketFactory *client_socket_factory =
       net::ClientSocketFactory::GetDefaultFactory();
   host_resolver_ = net::HostResolver::CreateDefaultResolver(nullptr);
-  scoped_ptr<AuthHandlerRegistryFactory> auth_handler_factory(
+  std::unique_ptr<AuthHandlerRegistryFactory> auth_handler_factory(
       AuthHandlerFactory::CreateDefault(host_resolver_.get()));
-  auth_handler_factory_ = auth_handler_factory.Pass();
+  auth_handler_factory_ = std::move(auth_handler_factory);
 
   user_agent_.reset(new ua::UserAgent(auth_handler_factory_.get(),
       password_handler_factory_.get(),
@@ -332,7 +335,7 @@ void PhoneImpl::OnInit() {
   network_layer_->RegisterChannelFactory(Protocol::TLS,
       channel_factory_.get());
   user_agent_->SetNetworkLayer(network_layer_.get());
-  user_agent_->AppendHandler(this);
+  user_agent_->AddObserver(this);
 
   InitializePeerConnectionFactory();
 
@@ -350,6 +353,8 @@ void PhoneImpl::OnDestroy() {
     (*i)->OnDestroy();
   }
   calls_.clear();
+
+  user_agent_->RemoveObserver(this);
 
   channel_factory_.reset();
   auth_handler_factory_.reset();
@@ -378,8 +383,8 @@ void PhoneImpl::OnRegister() {
           GURL(address_of_record));
 
   // Indicate the desired expiration for the address-of-record binding
-  scoped_ptr<Expires> expires(new Expires(settings_.register_expires()));
-  last_request_->push_back(expires.Pass());
+  std::unique_ptr<Expires> expires(new Expires(settings_.register_expires()));
+  last_request_->push_back(std::move(expires));
 
   int rv = user_agent_->Send(last_request_,
       base::Bind(&RunIfNotOk, on_register_completed_));
@@ -428,8 +433,8 @@ void PhoneImpl::OnUnregister(bool all) {
     contact->set_all(true);
 
     // Set expiration to 0 for all contacts
-    scoped_ptr<Expires> expires(new Expires(0));
-    last_request_->push_back(expires.Pass());
+    std::unique_ptr<Expires> expires(new Expires(0));
+    last_request_->push_back(std::move(expires));
   } else {
     // Modifies the Contact header to include an expires=0 at the end
     // of existing parameters
@@ -546,14 +551,13 @@ void PhoneImpl::OnIncomingResponse(
 }
 
 void PhoneImpl::OnTimedOut(
-    const scoped_refptr<Request> &request,
-    const scoped_refptr<Dialog> &dialog) {
+    const scoped_refptr<Request> &request) {
   DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
   if (Method::INVITE == request->method()
       || Method::BYE == request->method()) {
     CallImpl *call = RouteToCall(request);
     if (call)
-      call->OnTimedOut(request, dialog);
+      call->OnTimedOut(request);
   } else if (Method::REGISTER == request->method()) {
     if (PHONE_STATE_REGISTERING == state_)
       on_register_completed_.Run(net::ERR_TIMED_OUT);
@@ -565,14 +569,13 @@ void PhoneImpl::OnTimedOut(
 }
 
 void PhoneImpl::OnTransportError(
-    const scoped_refptr<Request> &request, int error,
-    const scoped_refptr<Dialog> &dialog) {
+    const scoped_refptr<Request> &request, int error) {
   DCHECK(GetNetworkTaskRunner()->BelongsToCurrentThread());
   if (Method::INVITE == request->method()
       || Method::BYE == request->method()) {
     CallImpl *call = RouteToCall(request);
     if (call)
-      call->OnTransportError(request, error, dialog);
+      call->OnTransportError(request, error);
   } else if (Method::REGISTER == request->method()) {
     if (PHONE_STATE_REGISTERING == state_)
       on_register_completed_.Run(error);
@@ -627,7 +630,7 @@ unsigned int PhoneImpl::GetContactExpiration(
   for (Message::iterator i = incoming_response->find_first<Contact>(),
        ie = incoming_response->end(); i != ie;
        i = incoming_response->find_next<Contact>(i)) {
-    Contact *contact = dyn_cast<Contact>(i);
+    Contact *contact = cast<Contact>(i);
     for (Contact::iterator j = contact->begin(), je = contact->end();
       j != je; ++j) {
       if (j->address() == local_uri) {
