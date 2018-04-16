@@ -8,7 +8,6 @@
 
 #include "base/md5.h"
 #include "base/build_time.h"
-#include "base/stl_util.h"
 #include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/i18n/time_formatting.h"

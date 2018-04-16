@@ -4,7 +4,6 @@
 
 #include "sippet/ua/dialog_store.h"
 
-#include "sippet/base/stl_extras.h"
 #include "sippet/message/message.h"
 #include "sippet/ua/dialog.h"
 
