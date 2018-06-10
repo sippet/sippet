@@ -1,8 +1,8 @@
-// Copyright (c) 2013-2017 The Sippet Authors. All rights reserved.
+// Copyright (c) 2013-2018 The Sippet Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/message/headers.h"
+#include "sippet/message/message.h"
 
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_piece.h"
@@ -23,7 +23,7 @@ void CheckDoesNotHaveEmbededNulls(const std::string& str) {
 
 }  // namespace
 
-struct Headers::ParsedHeader {
+struct Message::ParsedHeader {
   // A header "continuation" contains only a subsequent value for the
   // preceding header.  (Header values are comma separated.)
   bool is_continuation() const { return name_begin == name_end; }
@@ -34,13 +34,13 @@ struct Headers::ParsedHeader {
   std::string::const_iterator value_end;
 };
 
-Headers::Headers()
+Message::Message()
   : response_code_(-1) {
 }
 
-Headers::~Headers() {}
+Message::~Message() {}
 
-bool Headers::Parse(const std::string& raw_input) {
+bool Message::Parse(const std::string& raw_input) {
   raw_headers_.reserve(raw_input.size());
 
   // ParseStartLine adds a normalized status line to raw_headers_
@@ -90,7 +90,7 @@ bool Headers::Parse(const std::string& raw_input) {
   return true;
 }
 
-void Headers::RemoveHeader(const std::string& name) {
+void Message::RemoveHeader(const std::string& name) {
   // Copy up to the null byte.  This just copies the status line.
   std::string new_raw_headers(raw_headers_.c_str());
   new_raw_headers.push_back('\0');
@@ -98,10 +98,10 @@ void Headers::RemoveHeader(const std::string& name) {
   std::string lowercase_name = base::ToLowerASCII(name);
   HeaderSet to_remove;
   to_remove.insert(lowercase_name);
-  MergeWithHeaders(new_raw_headers, to_remove);
+  MergeWithMessage(new_raw_headers, to_remove);
 }
 
-void Headers::RemoveHeaders(
+void Message::RemoveMessage(
     const std::unordered_set<std::string>& header_names) {
   // Copy up to the null byte.  This just copies the status line.
   std::string new_raw_headers(raw_headers_.c_str());
@@ -111,10 +111,10 @@ void Headers::RemoveHeaders(
   for (const auto& header_name : header_names) {
     to_remove.insert(base::ToLowerASCII(header_name));
   }
-  MergeWithHeaders(new_raw_headers, to_remove);
+  MergeWithMessage(new_raw_headers, to_remove);
 }
 
-void Headers::RemoveHeaderLine(const std::string& name,
+void Message::RemoveHeaderLine(const std::string& name,
     const std::string& value) {
   std::string name_lowercase = base::ToLowerASCII(name);
 
@@ -146,7 +146,7 @@ void Headers::RemoveHeaderLine(const std::string& name,
   Parse(new_raw_headers);
 }
 
-void Headers::AddHeader(const std::string& header) {
+void Message::AddHeader(const std::string& header) {
   CheckDoesNotHaveEmbededNulls(header);
   DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 2]);
   DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 1]);
@@ -162,7 +162,7 @@ void Headers::AddHeader(const std::string& header) {
   Parse(new_raw_headers);
 }
 
-bool Headers::GetNormalizedHeader(const std::string& name,
+bool Message::GetNormalizedHeader(const std::string& name,
     std::string* value) const {
   // If you hit this assertion, please use EnumerateHeader instead!
   DCHECK(!SipUtil::IsNonCoalescingHeader(name));
@@ -191,12 +191,12 @@ bool Headers::GetNormalizedHeader(const std::string& name,
   return found;
 }
 
-std::string Headers::GetStartLine() const {
+std::string Message::GetStartLine() const {
   // copy up to the null byte.
   return std::string(raw_headers_.c_str());
 }
 
-bool Headers::EnumerateHeaderLines(size_t* iter,
+bool Message::EnumerateHeaderLines(size_t* iter,
                                    std::string* name,
                                    std::string* value) const {
   size_t i = *iter;
@@ -218,7 +218,7 @@ bool Headers::EnumerateHeaderLines(size_t* iter,
   return true;
 }
 
-bool Headers::EnumerateHeader(size_t* iter,
+bool Message::EnumerateHeader(size_t* iter,
                               const base::StringPiece& name,
                               std::string* value) const {
   size_t i;
@@ -244,7 +244,7 @@ bool Headers::EnumerateHeader(size_t* iter,
   return true;
 }
 
-bool Headers::HasHeaderValue(const base::StringPiece& name,
+bool Message::HasHeaderValue(const base::StringPiece& name,
                              const base::StringPiece& value) const {
   // The value has to be an exact match.  This is important since
   // 'cache-control: no-cache' != 'cache-control: no-cache="foo"'
@@ -257,11 +257,11 @@ bool Headers::HasHeaderValue(const base::StringPiece& name,
   return false;
 }
 
-bool Headers::HasHeader(const base::StringPiece& name) const {
+bool Message::HasHeader(const base::StringPiece& name) const {
   return FindHeader(0, name) != std::string::npos;
 }
 
-void Headers::GetMimeTypeAndCharset(std::string* mime_type,
+void Message::GetMimeTypeAndCharset(std::string* mime_type,
                                     std::string* charset) const {
   mime_type->clear();
   charset->clear();
@@ -276,19 +276,19 @@ void Headers::GetMimeTypeAndCharset(std::string* mime_type,
     SipUtil::ParseContentType(value, mime_type, charset, &had_charset, NULL);
 }
 
-bool Headers::GetMimeType(std::string* mime_type) const {
+bool Message::GetMimeType(std::string* mime_type) const {
   std::string unused;
   GetMimeTypeAndCharset(mime_type, &unused);
   return !mime_type->empty();
 }
 
-bool Headers::GetCharset(std::string* charset) const {
+bool Message::GetCharset(std::string* charset) const {
   std::string unused;
   GetMimeTypeAndCharset(&unused, charset);
   return !charset->empty();
 }
 
-bool Headers::GetTimeValuedHeader(const std::string& name,
+bool Message::GetTimeValuedHeader(const std::string& name,
     base::Time* result) const {
   std::string value;
   if (!EnumerateHeader(nullptr, name, &value))
@@ -298,11 +298,11 @@ bool Headers::GetTimeValuedHeader(const std::string& name,
   return base::Time::FromUTCString(value.c_str(), result);
 }
 
-int64_t Headers::GetContentLength() const {
+int64_t Message::GetContentLength() const {
   return GetInt64HeaderValue("content-length");
 }
 
-int64_t Headers::GetInt64HeaderValue(const std::string& header) const {
+int64_t Message::GetInt64HeaderValue(const std::string& header) const {
   size_t iter = 0;
   std::string content_length_val;
   if (!EnumerateHeader(&iter, header, &content_length_val))
@@ -325,7 +325,7 @@ int64_t Headers::GetInt64HeaderValue(const std::string& header) const {
 // Note: this implementation implicitly assumes that line_end points at a valid
 // sentinel character (such as '\0').
 // static
-SipVersion Headers::ParseVersion(
+SipVersion Message::ParseVersion(
     std::string::const_iterator line_begin,
     std::string::const_iterator line_end) {
   std::string::const_iterator p = line_begin;
@@ -367,7 +367,7 @@ SipVersion Headers::ParseVersion(
 
 // Note: this implementation implicitly assumes that line_end points at a valid
 // sentinel character (such as '\0').
-bool Headers::ParseStartLine(
+bool Message::ParseStartLine(
     std::string::const_iterator line_begin,
     std::string::const_iterator line_end) {
   // Parse either a request line or a status line.
@@ -380,7 +380,7 @@ bool Headers::ParseStartLine(
   }
 }
 
-bool Headers::ParseRequestLine(std::string::const_iterator line_begin,
+bool Message::ParseRequestLine(std::string::const_iterator line_begin,
                                std::string::const_iterator line_end) {
   std::string::const_iterator p = std::find(line_begin, line_end, ' ');
 
@@ -427,7 +427,7 @@ bool Headers::ParseRequestLine(std::string::const_iterator line_begin,
   return true;
 }
 
-bool Headers::ParseStatusLine(std::string::const_iterator line_begin,
+bool Message::ParseStatusLine(std::string::const_iterator line_begin,
                               std::string::const_iterator line_end) {
   // Extract the version number
   SipVersion parsed_sip_version = ParseVersion(line_begin, line_end);
@@ -482,7 +482,7 @@ bool Headers::ParseStatusLine(std::string::const_iterator line_begin,
   return true;
 }
 
-size_t Headers::FindHeader(size_t from,
+size_t Message::FindHeader(size_t from,
     const base::StringPiece& search) const {
   for (size_t i = from; i < parsed_.size(); ++i) {
     if (parsed_[i].is_continuation())
@@ -495,7 +495,7 @@ size_t Headers::FindHeader(size_t from,
   return std::string::npos;
 }
 
-void Headers::AddHeader(std::string::const_iterator name_begin,
+void Message::AddHeader(std::string::const_iterator name_begin,
                         std::string::const_iterator name_end,
                         std::string::const_iterator values_begin,
                         std::string::const_iterator values_end) {
@@ -513,7 +513,7 @@ void Headers::AddHeader(std::string::const_iterator name_begin,
   }
 }
 
-void Headers::AddToParsed(std::string::const_iterator name_begin,
+void Message::AddToParsed(std::string::const_iterator name_begin,
                           std::string::const_iterator name_end,
                           std::string::const_iterator value_begin,
                           std::string::const_iterator value_end) {
@@ -525,7 +525,7 @@ void Headers::AddToParsed(std::string::const_iterator name_begin,
   parsed_.push_back(header);
 }
 
-void Headers::MergeWithHeaders(const std::string& raw_headers,
+void Message::MergeWithMessage(const std::string& raw_headers,
                                const HeaderSet& headers_to_remove) {
   std::string new_raw_headers(raw_headers);
   for (size_t i = 0; i < parsed_.size(); ++i) {

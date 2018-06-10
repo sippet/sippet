@@ -8,8 +8,8 @@ use_v8_in_net = !is_ios && !is_android
 
 static_library("sippet") {
   sources = [
-    "message/headers.h",
-    "message/headers.cc",
+    "message/message.h",
+    "message/message.cc",
     "uri/uri.h",
     "uri/uri.cc",
     "uri/uri_canon.h",

@@ -134,6 +134,103 @@ class SipUtil {
     std::string::const_iterator value_begin_;
     std::string::const_iterator value_end_;
   };
+
+  // Iterates over a delimited sequence of name-value pairs in an SIP header.
+  // Each pair consists of a token (the name), an equals sign, and either a
+  // token or quoted-string (the value). Arbitrary SIP LWS is permitted outside
+  // of and between names, values, and delimiters.
+  //
+  // String iterators returned from this class' methods may be invalidated upon
+  // calls to GetNext() or after the NameValuePairsIterator is destroyed.
+  class NameValuePairsIterator {
+   public:
+    // Whether or not values are optional. Values::NOT_REQUIRED allows
+    // e.g. name1=value1;name2;name3=value3, whereas Vaues::REQUIRED
+    // will treat it as a parse error because name2 does not have a
+    // corresponding equals sign.
+    enum class Values { NOT_REQUIRED, REQUIRED };
+
+    // Whether or not unmatched quotes should be considered a failure. By
+    // default this class is pretty lenient and does a best effort to parse
+    // values with mismatched quotes. When set to STRICT_QUOTES a value with
+    // mismatched or otherwise invalid quotes is considered a parse error.
+    enum class Quotes { STRICT_QUOTES, NOT_STRICT };
+
+    NameValuePairsIterator(std::string::const_iterator begin,
+                           std::string::const_iterator end,
+                           char delimiter,
+                           Values optional_values,
+                           Quotes strict_quotes);
+
+    // Treats values as not optional by default (Values::REQUIRED) and
+    // treats quotes as not strict.
+    NameValuePairsIterator(std::string::const_iterator begin,
+                           std::string::const_iterator end,
+                           char delimiter);
+
+    NameValuePairsIterator(const NameValuePairsIterator& other);
+
+    ~NameValuePairsIterator();
+
+    // Advances the iterator to the next pair, if any.  Returns true if there
+    // is a next pair.  Use name* and value* methods to access the resultant
+    // value.
+    bool GetNext();
+
+    // Returns false if there was a parse error.
+    bool valid() const { return valid_; }
+
+    // The name of the current name-value pair.
+    std::string::const_iterator name_begin() const { return name_begin_; }
+    std::string::const_iterator name_end() const { return name_end_; }
+    std::string name() const { return std::string(name_begin_, name_end_); }
+
+    // The value of the current name-value pair.
+    std::string::const_iterator value_begin() const {
+      return value_is_quoted_ ? unquoted_value_.begin() : value_begin_;
+    }
+    std::string::const_iterator value_end() const {
+      return value_is_quoted_ ? unquoted_value_.end() : value_end_;
+    }
+    std::string value() const {
+      return value_is_quoted_ ? unquoted_value_ : std::string(value_begin_,
+                                                              value_end_);
+    }
+
+    bool value_is_quoted() const { return value_is_quoted_; }
+
+    // The value before unquoting (if any).
+    std::string raw_value() const { return std::string(value_begin_,
+                                                       value_end_); }
+
+   private:
+    bool IsQuote(char c) const;
+
+    SipUtil::ValuesIterator props_;
+    bool valid_;
+
+    std::string::const_iterator name_begin_;
+    std::string::const_iterator name_end_;
+
+    std::string::const_iterator value_begin_;
+    std::string::const_iterator value_end_;
+
+    // Do not store iterators into this string. The NameValuePairsIterator
+    // is copyable/assignable, and if copied the copy's iterators would point
+    // into the original's unquoted_value_ member.
+    std::string unquoted_value_;
+
+    bool value_is_quoted_;
+
+    // True if values are required for each name/value pair; false if a
+    // name is permitted to appear without a corresponding value.
+    bool values_optional_;
+
+    // True if quotes values are required to be properly quoted; false if
+    // mismatched quotes and other problems with quoted values should be more
+    // or less gracefully treated as valid.
+    bool strict_quotes_;
+  };
 };
 
 }  // namespace sippet

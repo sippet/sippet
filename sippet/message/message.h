@@ -1,9 +1,9 @@
-// Copyright (c) 2013-2017 The Sippet Authors. All rights reserved.
+// Copyright (c) 2013-2018 The Sippet Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_MESSAGE_HEADERS_H_
-#define SIPPET_MESSAGE_HEADERS_H_
+#ifndef SIPPET_MESSAGE_MESSAGE_H_
+#define SIPPET_MESSAGE_MESSAGE_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -16,6 +16,7 @@
 #include "base/time/time.h"
 #include "url/gurl.h"
 #include "sippet/message/sip_version.h"
+#include "sippet/message/sip_util.h"
 
 namespace base {
 class Time;
@@ -23,22 +24,22 @@ class Time;
 
 namespace sippet {
 
-class Headers {
+class Message {
  public:
-  Headers();
-  ~Headers();
+  Message();
+  ~Message();
 
   // Parses the given raw_headers.  raw_headers should be formatted thus: each
   // line is \0-terminated, and it's terminated by an empty line (ie, 2 \0s in
   // a row).  (Note that line continuations should have already been joined;
-  // see SipUtil::AssembleRawHeaders)
+  // see SipUtil::AssembleRawMessage)
   bool Parse(const std::string& raw_headers);
 
   // Removes all instances of a particular header.
   void RemoveHeader(const std::string& name);
 
   // Removes all instances of particular headers.
-  void RemoveHeaders(const std::unordered_set<std::string>& header_names);
+  void RemoveMessage(const std::unordered_set<std::string>& header_names);
 
   // Removes a particular header line. The header name is compared
   // case-insensitively.
@@ -52,7 +53,7 @@ class Headers {
   void AddHeader(const std::string& header);
 
   // Fetch the "normalized" value of a single header, where all values for the
-  // header name are separated by commas.  See the GetNormalizedHeaders for
+  // header name are separated by commas.  See the GetNormalizedMessage for
   // format details.  Returns false if this header wasn't found.
   //
   // NOTE: Do not make any assumptions about the encoding of this output
@@ -127,7 +128,7 @@ class Headers {
   bool GetCharset(std::string* charset) const;
 
   // Extracts the time value of a particular header.  This method looks for the
-  // first matching header value and parses its value as a HTTP-date.
+  // first matching header value and parses its value as a SIP-date.
   bool GetTimeValuedHeader(const std::string& name, base::Time* result) const;
 
   // Extracts the value of the Content-Length header or returns -1 if there is
@@ -137,6 +138,54 @@ class Headers {
   // Extracts the value of the specified header or returns -1 if there is no
   // such header in the response.
   int64_t GetInt64HeaderValue(const std::string& header) const;
+
+  // Extracts the value of the From header or returns false.
+  bool GetFrom(std::string* display_name,
+               GURL* address,
+               SipUtil::NameValuePairsIterator* parameters) const;
+
+  // Extracts the value of the To header or returns false.
+  bool GetTo(std::string* display_name,
+             GURL* address,
+             SipUtil::NameValuePairsIterator* parameters) const;
+
+  // Extracts the value of the Reply-To header or returns false.
+  bool GetReplyTo(std::string* display_name,
+                  GURL* address,
+                  SipUtil::NameValuePairsIterator* parameters) const;
+
+  // Extracts the values of the Contact header. The 'iter' parameter works like
+  // the |EnumerateHeader| function.
+  bool EnumerateContacts(size_t* iter,
+                         std::string* display_name,
+                         GURL* address,
+                         SipUtil::NameValuePairsIterator* parameters) const;
+
+  // Extracts the values of the Route header. The 'iter' parameter works like
+  // the |EnumerateHeader| function.
+  bool EnumerateRoutes(size_t* iter,
+                       std::string* display_name,
+                       GURL* address,
+                       SipUtil::NameValuePairsIterator* parameters) const;
+
+  // Extracts the values of the Record-Route header. The 'iter' parameter works
+  // like the |EnumerateHeader| function.
+  bool EnumerateRecordRoutes(
+      size_t* iter,
+      std::string* display_name,
+      GURL* address,
+      SipUtil::NameValuePairsIterator* parameters) const;
+
+  // Enumerates Contact-like headers.
+  bool EnumerateContactLikeMessage(
+      size_t* iter,
+      const base::StringPiece& name,
+      std::string* display_name,
+      GURL* address,
+      SipUtil::NameValuePairsIterator* parameters) const;
+
+  // Extracts the value of the CSeq header or returns -1.
+  int64_t GetCSeq(std::string* method) const;
 
   // Returns the raw header string.
   const std::string& raw_headers() const { return raw_headers_; }
@@ -191,7 +240,7 @@ class Headers {
   // the current headers without the headers in |headers_to_remove|. Note that
   // |headers_to_remove| are removed from the current headers (before the
   // merge), not after the merge.
-  void MergeWithHeaders(const std::string& raw_headers,
+  void MergeWithMessage(const std::string& raw_headers,
                         const HeaderSet& headers_to_remove);
 
   // We keep a list of ParsedHeader objects.  These tell us where to locate the
@@ -215,9 +264,9 @@ class Headers {
   // The normalized sip version.
   SipVersion sip_version_;
 
-  DISALLOW_COPY_AND_ASSIGN(Headers);
+  DISALLOW_COPY_AND_ASSIGN(Message);
 };
 
 }  // namespace sippet
 
-#endif // SIPPET_MESSAGE_HEADERS_H_
+#endif // SIPPET_MESSAGE_MESSAGE_H_
