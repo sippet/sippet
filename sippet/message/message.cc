@@ -325,8 +325,8 @@ int64_t Message::GetInt64HeaderValue(const std::string& header) const {
 std::string Message::GetStatusText() const {
   CHECK(IsResponse());
   // GetStatusLine() is already normalized, so it has the format:
-  // '<http_version> SP <response_code>' or
-  // '<http_version> SP <response_code> SP <status_text>'.
+  // '<sip_version> SP <response_code>' or
+  // '<sip_version> SP <response_code> SP <status_text>'.
   std::string status_text = GetStartLine();
   std::string::const_iterator begin = status_text.begin();
   std::string::const_iterator end = status_text.end();

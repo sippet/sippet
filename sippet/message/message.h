@@ -205,8 +205,11 @@ class Message {
   // not be parsed.
   int response_code() const { return response_code_; }
 
-  // Get the HTTP status text of the normalized status line.
+  // Get the SIP status text of the normalized status line.
   std::string GetStatusText() const;
+
+  // Get the SIP version of the normalized status line.
+  SipVersion GetSipVersion() const { return sip_version_; }
 
   // Returns the raw header string.
   const std::string& raw_headers() const { return raw_headers_; }
