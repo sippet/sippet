@@ -187,6 +187,27 @@ class Message {
   // Extracts the value of the CSeq header or returns -1.
   int64_t GetCSeq(std::string* method) const;
 
+  // Returns whether the message is a request.
+  bool IsRequest() const { return !request_method_.empty(); }
+
+  // Returns whether the message is a response.
+  bool IsResponse() const { return !IsRequest(); }
+
+  // Returns the SIP request method normalized in uppercase.  This is empty if
+  // the request method could not be parsed.
+  const std::string& request_method() const { return request_method_; }
+
+  // Returns the SIP request URI.  This is empty if the request URI could not
+  // be parsed.
+  const GURL& request_uri() const { return request_uri_; };
+
+  // Returns the SIP response code.  This is -1 if the response code text could
+  // not be parsed.
+  int response_code() const { return response_code_; }
+
+  // Get the HTTP status text of the normalized status line.
+  std::string GetStatusText() const;
+
   // Returns the raw header string.
   const std::string& raw_headers() const { return raw_headers_; }
 
@@ -255,8 +276,8 @@ class Message {
   // This is the parsed SIP response code.
   int response_code_;
 
-  // This is the parsed SIP method.
-  std::string method_;
+  // This is the parsed SIP request method.
+  std::string request_method_;
 
   // This is the parsed SIP Request-URI.
   GURL request_uri_;

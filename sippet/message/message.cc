@@ -322,6 +322,28 @@ int64_t Message::GetInt64HeaderValue(const std::string& header) const {
   return result;
 }
 
+std::string Message::GetStatusText() const {
+  CHECK(IsResponse());
+  // GetStatusLine() is already normalized, so it has the format:
+  // '<http_version> SP <response_code>' or
+  // '<http_version> SP <response_code> SP <status_text>'.
+  std::string status_text = GetStartLine();
+  std::string::const_iterator begin = status_text.begin();
+  std::string::const_iterator end = status_text.end();
+  // Seek to beginning of <response_code>.
+  begin = std::find(begin, end, ' ');
+  CHECK(begin != end);
+  ++begin;
+  CHECK(begin != end);
+  // See if there is another space.
+  begin = std::find(begin, end, ' ');
+  if (begin == end)
+    return std::string();
+  ++begin;
+  CHECK(begin != end);
+  return std::string(begin, end);
+}
+
 // Note: this implementation implicitly assumes that line_end points at a valid
 // sentinel character (such as '\0').
 // static
@@ -388,8 +410,8 @@ bool Message::ParseRequestLine(std::string::const_iterator line_begin,
     DVLOG(1) << "missing method; rejecting";
     return false;
   }
-  method_ = base::ToUpperASCII(base::StringPiece(line_begin, p));
-  raw_headers_ = method_;
+  request_method_ = base::ToUpperASCII(base::StringPiece(line_begin, p));
+  raw_headers_ = request_method_;
 
   // Skip whitespace.
   while (*p == ' ')
