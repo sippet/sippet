@@ -12,9 +12,11 @@
 #include <unordered_set>
 #include <vector>
 
+#include "base/memory/ref_counted.h"
 #include "base/strings/string_piece.h"
 #include "base/time/time.h"
 #include "url/gurl.h"
+#include "sippet/sippet_export.h"
 #include "sippet/message/sip_version.h"
 #include "sippet/message/sip_util.h"
 
@@ -24,16 +26,14 @@ class Time;
 
 namespace sippet {
 
-class Message {
+class SIPPET_EXPORT Message
+    : public base::RefCountedThreadSafe<Message> {
  public:
-  Message();
-  ~Message();
-
   // Parses the given raw_headers.  raw_headers should be formatted thus: each
   // line is \0-terminated, and it's terminated by an empty line (ie, 2 \0s in
   // a row).  (Note that line continuations should have already been joined;
   // see SipUtil::AssembleRawMessage)
-  bool Parse(const std::string& raw_headers);
+  static scoped_refptr<Message> Parse(const std::string& raw_headers);
 
   // Removes all instances of a particular header.
   void RemoveHeader(const std::string& name);
@@ -215,11 +215,23 @@ class Message {
   const std::string& raw_headers() const { return raw_headers_; }
 
  private:
+  friend class base::RefCountedThreadSafe<Message>;
+
   using HeaderSet = std::unordered_set<std::string>;
 
   // The members of this structure point into raw_headers_.
   struct ParsedHeader;
   typedef std::vector<ParsedHeader> HeaderList;
+
+  Message();
+  ~Message();
+
+  // Expact compact form headers.
+  void ExpandHeaders(std::string::const_iterator headers_begin,
+                     std::string::const_iterator headers_end);
+
+  // Parse the message.
+  bool ParseInternal(const std::string& raw_headers);
 
   // Helper function for ParseStartLine.
   // Tries to extract the "SIP/X.Y" from a status line formatted like:

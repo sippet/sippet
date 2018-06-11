@@ -1,7 +1,8 @@
-# Copyright (c) 2013-2017 The Sippet Authors. All rights reserved.
+# Copyright (c) 2013-2018 The Sippet Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/buildflag_header.gni")
 import("//testing/test.gni")
 
 use_v8_in_net = !is_ios && !is_android
@@ -10,17 +11,9 @@ static_library("sippet") {
   sources = [
     "message/message.h",
     "message/message.cc",
-    "uri/uri.h",
-    "uri/uri.cc",
-    "uri/uri_canon.h",
-    "uri/uri_canon.cc",
-    "uri/uri_canon_internal.h",
-    "uri/uri_canon_internal.cc",
-    "uri/uri_parse.h",
-    "uri/uri_parse.cc",
-    "uri/uri_parse_internal.h",
-    "uri/uri_util.h",
-    "uri/uri_util.cc",
+    "message/sip_util.h",
+    "message/sip_util.cc",
+    "message/sip_version.h",
   ]
 
   public_deps = [
@@ -31,23 +24,14 @@ static_library("sippet") {
 
   deps = [
     "//url:url",
+    "//net:net",
   ]
-
-  if (is_ios) {
-    # iOS has different user-agent construction utilities.
-    sources -= [
-      "base/user_agent_utils.cc",
-    ]
-  }
 }
 
 component("sippet_test_support") {
   testonly = true
   sources = [
     "transport/chrome/transport_test_util.h",
-    "transport/chrome/transport_test_util.cc",
-    "ua/auth_handler_mock.h",
-    "ua/auth_handler_mock.cc",
   ]
 
   deps = [
@@ -55,8 +39,6 @@ component("sippet_test_support") {
   ]
 
   public_deps = [
-    "//net:net",
-    "//net:test_support",
     "//testing/gtest",
     "//testing/gmock",
     ":sippet",
@@ -67,19 +49,13 @@ test("sippet_unittests") {
   sources = [
     "../net/test/run_all_unittests.cc",
     "message/message_unittest.cc",
-    "message/headers_unittest.cc",
-    "message/parser_unittest.cc",
-    "uri/uri_unittest.cc",
-    "transport/end_point_unittest.cc",
-    "transport/network_layer_unittest.cc",
-    "transport/chrome/chrome_datagram_writer_unittest.cc",
-    "transport/chrome/chrome_stream_writer_unittest.cc",
-    "ua/auth_controller_unittest.cc",
-    "ua/auth_handler_digest_unittest.cc",
   ]
 
   deps = [
+    "//base/test:test_support",
+    "//net:test_support",
     ":sippet_test_support",
+    ":sippet",
   ]
 
   if (use_v8_in_net) {

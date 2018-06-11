@@ -40,54 +40,12 @@ Message::Message()
 
 Message::~Message() {}
 
-bool Message::Parse(const std::string& raw_input) {
-  raw_headers_.reserve(raw_input.size());
-
-  // ParseStartLine adds a normalized status line to raw_headers_
-  std::string::const_iterator line_begin = raw_input.begin();
-  std::string::const_iterator line_end =
-      std::find(line_begin, raw_input.end(), '\0');
-  if (!ParseStartLine(line_begin, line_end))
-    return false;
-  raw_headers_.push_back('\0');  // Terminate status line with a null.
-
-  if (line_end == raw_input.end()) {
-    raw_headers_.push_back('\0');  // Ensure the headers end with a double null.
-
-    DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 2]);
-    DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 1]);
-    return true;
-  }
-
-  // Including a terminating null byte.
-  size_t status_line_len = raw_headers_.size();
-
-  // Now, we add the rest of the raw headers to raw_headers_, and begin parsing
-  // it (to populate our parsed_ vector).
-  raw_headers_.append(line_end + 1, raw_input.end());
-
-  // Ensure the headers end with a double null.
-  while (raw_headers_.size() < 2 ||
-         raw_headers_[raw_headers_.size() - 2] != '\0' ||
-         raw_headers_[raw_headers_.size() - 1] != '\0') {
-    raw_headers_.push_back('\0');
-  }
-
-  // Adjust to point at the null byte following the status line
-  line_end = raw_headers_.begin() + status_line_len - 1;
-
-  SipUtil::HeadersIterator headers(line_end + 1, raw_headers_.end(),
-                                   std::string(1, '\0'));
-  while (headers.GetNext()) {
-    AddHeader(headers.name_begin(),
-              headers.name_end(),
-              headers.values_begin(),
-              headers.values_end());
-  }
-
-  DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 2]);
-  DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 1]);
-  return true;
+// static
+scoped_refptr<Message> Message::Parse(const std::string& raw_input) {
+  scoped_refptr<Message> message(new Message);
+  if (!message->ParseInternal(raw_input))
+    return nullptr;
+  return message;
 }
 
 void Message::RemoveHeader(const std::string& name) {
@@ -344,6 +302,77 @@ std::string Message::GetStatusText() const {
   return std::string(begin, end);
 }
 
+void Message::ExpandHeaders(std::string::const_iterator headers_begin,
+                            std::string::const_iterator headers_end) {
+  std::string compact_headers(headers_begin, headers_end);
+
+  // Ensure the compact_headers end with a double null.
+  while (compact_headers.size() < 2 ||
+         compact_headers[compact_headers.size() - 2] != '\0' ||
+         compact_headers[compact_headers.size() - 1] != '\0') {
+    compact_headers.push_back('\0');
+  }
+
+  SipUtil::HeadersIterator headers(compact_headers.begin(),
+      compact_headers.end(), std::string(1, '\0'));
+  while (headers.GetNext()) {
+    const char* header_name;
+    if (headers.name_end() - headers.name_begin() == 1
+        && (header_name = SipUtil::ExpandHeader(*headers.name_begin()))) {
+      raw_headers_.append(header_name);
+    } else {
+      raw_headers_.append(headers.name_begin(), headers.name_end());
+    }
+    raw_headers_.append(": ");
+    raw_headers_.append(headers.values_begin(), headers.values_end());
+    raw_headers_.push_back('\0');
+  }
+
+  raw_headers_.push_back('\0');
+}
+
+bool Message::ParseInternal(const std::string& raw_input) {
+  raw_headers_.reserve(raw_input.size());
+
+  // ParseStartLine adds a normalized status line to raw_headers_
+  std::string::const_iterator line_begin = raw_input.begin();
+  std::string::const_iterator line_end =
+      std::find(line_begin, raw_input.end(), '\0');
+  if (!ParseStartLine(line_begin, line_end))
+    return false;
+  raw_headers_.push_back('\0');  // Terminate status line with a null.
+
+  if (line_end == raw_input.end()) {
+    raw_headers_.push_back('\0');  // Ensure the headers end with a double null.
+
+    DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 2]);
+    DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 1]);
+    return true;
+  }
+
+  // Including a terminating null byte.
+  size_t start_line_len = raw_headers_.size();
+
+  // Expand compact headers in raw_headers_.
+  ExpandHeaders(line_end + 1, raw_input.end());
+
+  // Adjust to point at the null byte following the status line
+  line_end = raw_headers_.begin() + start_line_len - 1;
+
+  SipUtil::HeadersIterator headers(line_end + 1, raw_headers_.end(),
+                                   std::string(1, '\0'));
+  while (headers.GetNext()) {
+    AddHeader(headers.name_begin(),
+              headers.name_end(),
+              headers.values_begin(),
+              headers.values_end());
+  }
+
+  DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 2]);
+  DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 1]);
+  return true;
+}
+
 // Note: this implementation implicitly assumes that line_end points at a valid
 // sentinel character (such as '\0').
 // static
@@ -487,6 +516,11 @@ bool Message::ParseStatusLine(std::string::const_iterator line_begin,
   raw_headers_.push_back(' ');
   raw_headers_.append(code, p);
   base::StringToInt(base::StringPiece(code, p), &response_code_);
+
+  if (response_code_ < 100 || response_code_ > 699) {
+    DVLOG(1) << "invalid response code " << response_code_ << "; rejecting";
+    return false;
+  }
 
   // Skip whitespace.
   while (p < line_end && *p == ' ')
