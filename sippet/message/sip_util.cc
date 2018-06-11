@@ -35,9 +35,9 @@ bool SipUtil::IsNonCoalescingHeader(std::string::const_iterator name_begin,
 const char* SipUtil::ExpandHeader(char c) {
   // IANA registers headers and their abbreviations.
   // https://www.cs.columbia.edu/sip/compact.html
-  struct {
+  const struct {
     char compact_form;
-    const char* header_name;
+    const char* const header_name;
   } kCompactHeaders[] = {
     { 'a', "Accept-Contact" },
     { 'b', "Referred-By" },
