@@ -39,7 +39,7 @@ class SIPPET_EXPORT Message
   void RemoveHeader(const std::string& name);
 
   // Removes all instances of particular headers.
-  void RemoveMessage(const std::unordered_set<std::string>& header_names);
+  void RemoveHeaders(const std::unordered_set<std::string>& header_names);
 
   // Removes a particular header line. The header name is compared
   // case-insensitively.

@@ -59,7 +59,7 @@ void Message::RemoveHeader(const std::string& name) {
   MergeWithMessage(new_raw_headers, to_remove);
 }
 
-void Message::RemoveMessage(
+void Message::RemoveHeaders(
     const std::unordered_set<std::string>& header_names) {
   // Copy up to the null byte.  This just copies the status line.
   std::string new_raw_headers(raw_headers_.c_str());
