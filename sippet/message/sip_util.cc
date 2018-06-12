@@ -10,8 +10,7 @@
 namespace sippet {
 
 // static
-bool SipUtil::IsNonCoalescingHeader(std::string::const_iterator name_begin,
-                                    std::string::const_iterator name_end) {
+bool SipUtil::IsNonCoalescingHeader(const base::StringPiece& name) {
   const char* const kNonCoalescingHeaders[] = {
     "date",
     "retry-after",
@@ -23,8 +22,25 @@ bool SipUtil::IsNonCoalescingHeader(std::string::const_iterator name_begin,
   };
 
   for (const char* header : kNonCoalescingHeaders) {
-    if (base::LowerCaseEqualsASCII(base::StringPiece(name_begin, name_end),
-                                   header)) {
+    if (base::LowerCaseEqualsASCII(name, header)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// static
+bool SipUtil::IsContactLikeHeader(const base::StringPiece& name) {
+  const char* const kContactLikeHeaders[] = {
+    "from",
+    "record-route",
+    "reply-to",
+    "route",
+    "to",
+  };
+
+  for (const char* header : kContactLikeHeaders) {
+    if (base::LowerCaseEqualsASCII(name, header)) {
       return true;
     }
   }

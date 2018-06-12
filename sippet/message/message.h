@@ -156,28 +156,28 @@ class SIPPET_EXPORT Message
 
   // Extracts the values of the Contact header. The 'iter' parameter works like
   // the |EnumerateHeader| function.
-  bool EnumerateContacts(size_t* iter,
-                         std::string* display_name,
-                         GURL* address,
-                         SipUtil::NameValuePairsIterator* parameters) const;
+  bool EnumerateContact(size_t* iter,
+                        std::string* display_name,
+                        GURL* address,
+                        SipUtil::NameValuePairsIterator* parameters) const;
 
   // Extracts the values of the Route header. The 'iter' parameter works like
   // the |EnumerateHeader| function.
-  bool EnumerateRoutes(size_t* iter,
-                       std::string* display_name,
-                       GURL* address,
-                       SipUtil::NameValuePairsIterator* parameters) const;
+  bool EnumerateRoute(size_t* iter,
+                      std::string* display_name,
+                      GURL* address,
+                      SipUtil::NameValuePairsIterator* parameters) const;
 
   // Extracts the values of the Record-Route header. The 'iter' parameter works
   // like the |EnumerateHeader| function.
-  bool EnumerateRecordRoutes(
+  bool EnumerateRecordRoute(
       size_t* iter,
       std::string* display_name,
       GURL* address,
       SipUtil::NameValuePairsIterator* parameters) const;
 
   // Enumerates Contact-like headers.
-  bool EnumerateContactLikeMessage(
+  bool EnumerateContactLikeHeader(
       size_t* iter,
       const base::StringPiece& name,
       std::string* display_name,
@@ -226,9 +226,14 @@ class SIPPET_EXPORT Message
   Message();
   ~Message();
 
-  // Expact compact form headers.
-  void ExpandHeaders(std::string::const_iterator headers_begin,
-                     std::string::const_iterator headers_end);
+  // Normalize headers, expanding compact form header names, before parsing the
+  // message.
+  bool NormalizeHeaders(std::string::const_iterator headers_begin,
+                        std::string::const_iterator headers_end);
+
+  // Normalize Contact-like headers.
+  bool NormalizeContactLikeHeader(std::string::const_iterator values_begin,
+                                  std::string::const_iterator values_end);
 
   // Parse the message.
   bool ParseInternal(const std::string& raw_headers);

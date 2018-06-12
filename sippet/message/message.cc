@@ -7,6 +7,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/string_piece.h"
 #include "base/strings/string_util.h"
+#include "base/strings/string_tokenizer.h"
 #include "base/time/time.h"
 #include "sippet/message/sip_util.h"
 
@@ -302,33 +303,113 @@ std::string Message::GetStatusText() const {
   return std::string(begin, end);
 }
 
-void Message::ExpandHeaders(std::string::const_iterator headers_begin,
-                            std::string::const_iterator headers_end) {
-  std::string compact_headers(headers_begin, headers_end);
-
-  // Ensure the compact_headers end with a double null.
-  while (compact_headers.size() < 2 ||
-         compact_headers[compact_headers.size() - 2] != '\0' ||
-         compact_headers[compact_headers.size() - 1] != '\0') {
-    compact_headers.push_back('\0');
-  }
-
-  SipUtil::HeadersIterator headers(compact_headers.begin(),
-      compact_headers.end(), std::string(1, '\0'));
+bool Message::NormalizeHeaders(std::string::const_iterator headers_begin,
+                               std::string::const_iterator headers_end) {
+  SipUtil::HeadersIterator headers(headers_begin, headers_end,
+                                   std::string(1, '\0'));
   while (headers.GetNext()) {
-    const char* header_name;
-    if (headers.name_end() - headers.name_begin() == 1
-        && (header_name = SipUtil::ExpandHeader(*headers.name_begin()))) {
-      raw_headers_.append(header_name);
-    } else {
-      raw_headers_.append(headers.name_begin(), headers.name_end());
+    base::StringPiece header_name(headers.name_begin(), headers.name_end());
+    if (header_name.size() == 1) {
+      const char* long_name = SipUtil::ExpandHeader(*headers.name_begin());
+      if (long_name)
+        header_name = base::StringPiece(long_name);
     }
+    raw_headers_.append(header_name.begin(), header_name.end());
     raw_headers_.append(": ");
-    raw_headers_.append(headers.values_begin(), headers.values_end());
+    if (SipUtil::IsContactLikeHeader(header_name)) {
+      if (!NormalizeContactLikeHeader(headers.values_begin(),
+            headers.values_end()))
+        return false;
+    } else if (base::LowerCaseEqualsASCII(header_name, "contact")) {
+      if (headers.values_end() - headers.values_begin() == 1
+          && *headers.values_begin() == '*') {
+        raw_headers_.push_back('*');
+      } else {
+        if (!NormalizeContactLikeHeader(headers.values_begin(),
+              headers.values_end()))
+          return false;
+      }
+    } else {
+      raw_headers_.append(headers.values_begin(), headers.values_end());
+    }
     raw_headers_.push_back('\0');
   }
 
+  // Ensure the compact_headers end with a double null.
   raw_headers_.push_back('\0');
+  return true;
+}
+
+bool Message::NormalizeContactLikeHeader(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  bool next_is_param = false;
+  bool had_quoted_string = false, had_address = false, had_token = false;
+  base::StringTokenizer t(values_begin, values_end, "; ,");
+  t.set_quote_chars("\"");
+  t.set_options(base::StringTokenizer::RETURN_DELIMS);
+  while (t.GetNext()) {
+    if (t.token_is_delim()) {
+      switch (*t.token_begin()) {
+        case ';':
+          next_is_param = true;
+          break;
+        case ',':
+          // Reset state
+          next_is_param = false;
+          had_quoted_string = had_address = had_token = false;
+          raw_headers_.append(", ");
+          break;
+      }
+    } else {
+      base::StringPiece token(t.token_piece());
+      if (token.empty())
+        continue;
+      if (next_is_param) {
+        raw_headers_.push_back(';');
+        raw_headers_.append(token.begin(), token.end());
+      } else if (token[0] == '"') {
+        if (had_quoted_string) {
+          DVLOG(1) << "repeated name";
+          return false;
+        }
+        if (token[1] != '"')
+          raw_headers_.append(token.begin(), token.end());
+        had_quoted_string = true;
+      } else if (token[0] == '<') {
+        if (had_address) {
+          DVLOG(1) << "repeated addr-spec";
+          return false;
+        }
+        if (had_token) {
+          raw_headers_.append("\" ");
+        } else if (had_quoted_string) {
+          raw_headers_.push_back(' ');
+        }
+        raw_headers_.append(token.begin(), token.end());
+        had_address = true;
+      } else {
+        if (had_quoted_string || had_address) {
+          DVLOG(1) << "malformed contact-like header";
+          return false;
+        }
+        if (token.starts_with("sip:") || token.starts_with("sips:")) {
+          raw_headers_.push_back('<');
+          raw_headers_.append(token.begin(), token.end());
+          raw_headers_.push_back('>');
+          had_address = true;
+        } else {
+          if (!had_token)
+            raw_headers_.push_back('"');
+          else
+            raw_headers_.push_back(' ');
+          raw_headers_.append(token.begin(), token.end());
+          had_token = true;
+        }
+      }
+    }
+  }
+  return true;
 }
 
 bool Message::ParseInternal(const std::string& raw_input) {
@@ -354,7 +435,8 @@ bool Message::ParseInternal(const std::string& raw_input) {
   size_t start_line_len = raw_headers_.size();
 
   // Expand compact headers in raw_headers_.
-  ExpandHeaders(line_end + 1, raw_input.end());
+  if (!NormalizeHeaders(line_end + 1, raw_input.end()))
+    return false;
 
   // Adjust to point at the null byte following the status line
   line_end = raw_headers_.begin() + start_line_len - 1;
@@ -557,7 +639,8 @@ void Message::AddHeader(std::string::const_iterator name_begin,
                         std::string::const_iterator values_end) {
   // If the header can be coalesced, then we should split it up.
   if (values_begin == values_end ||
-      SipUtil::IsNonCoalescingHeader(name_begin, name_end)) {
+      SipUtil::IsNonCoalescingHeader(
+          base::StringPiece(name_begin, name_end))) {
     AddToParsed(name_begin, name_end, values_begin, values_end);
   } else {
     SipUtil::ValuesIterator it(values_begin, values_end, ',');

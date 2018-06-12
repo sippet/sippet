@@ -302,8 +302,24 @@ TestResponseData response_headers_tests[] = {
      "From: <sip:c8oqz84zk7z@privacy.org>;tag=hyh8\n"
      "Subject: Tech Support\n"
      "Supported: 100rel\n"
-     "To: sip:+12125551212@server.phone2net.com\n"
+     "To: <sip:+12125551212@server.phone2net.com>\n"
      "Via: SIP/2.0/UDP erlang.bell-telephone.com:5060 ;branch=z9hG4bK87asdks7\n",
+
+     true, SipVersion(2, 0), 202, "Accepted"},
+    {// Normalize contact-like headers.
+     "SIP/2.0 202 Accepted  \n"
+     "M:Mr.    John    <sips:bob@192.0.2.4>;expires=60\n"
+     "Contact: \"Foo, Bar;\" <sips:bob@192.0.2.8> ; expires=60, "
+       "sip:crazy@stuff ;tag=abcd\n"
+     "f:sip:c8oqz84zk7z@privacy.org;tag=hyh8 \n"
+     "t: \"\" <sip:+12125551212@server.phone2net.com>\n",
+
+     "SIP/2.0 202 Accepted\n"
+     "Contact: \"Mr. John\" <sips:bob@192.0.2.4>;expires=60\n"
+     "Contact: \"Foo, Bar;\" <sips:bob@192.0.2.8>;expires=60, "
+       "<sip:crazy@stuff>;tag=abcd\n"
+     "From: <sip:c8oqz84zk7z@privacy.org>;tag=hyh8\n"
+     "To: <sip:+12125551212@server.phone2net.com>\n",
 
      true, SipVersion(2, 0), 202, "Accepted"},
     {// Reject bad status line.

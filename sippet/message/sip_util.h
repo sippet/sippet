@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "base/strings/string_tokenizer.h"
+#include "base/strings/string_piece.h"
 #include "net/http/http_util.h"
 
 namespace sippet {
@@ -27,11 +28,10 @@ class SipUtil {
 
   // Multiple occurances of some headers cannot be coalesced into a comma-
   // separated list.
-  static bool IsNonCoalescingHeader(std::string::const_iterator name_begin,
-                                    std::string::const_iterator name_end);
-  static bool IsNonCoalescingHeader(const std::string& name) {
-    return IsNonCoalescingHeader(name.begin(), name.end());
-  }
+  static bool IsNonCoalescingHeader(const base::StringPiece& name);
+
+  // Contact-like headers need special handling.
+  static bool IsContactLikeHeader(const base::StringPiece& name);
 
   // Expand the header compact form into their long formats.
   static const char* ExpandHeader(char c);
