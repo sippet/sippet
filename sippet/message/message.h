@@ -10,6 +10,7 @@
 
 #include <string>
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 #include "base/memory/ref_counted.h"
@@ -107,6 +108,10 @@ class SIPPET_EXPORT Message
   // concatenated header, and then parse manually.
   bool EnumerateHeader(size_t* iter,
                        const base::StringPiece& name,
+                       std::string::const_iterator* value_begin,
+                       std::string::const_iterator* value_end) const;
+  bool EnumerateHeader(size_t* iter,
+                       const base::StringPiece& name,
                        std::string* value) const;
 
   // Returns true if the response contains the specified header-value pair.
@@ -146,31 +151,31 @@ class SIPPET_EXPORT Message
   // Extracts the value of the From header or returns false.
   bool GetFrom(std::string* display_name,
                GURL* address,
-               SipUtil::NameValuePairsIterator* parameters) const;
+               std::unordered_map<std::string, std::string>* parameters) const;
 
   // Extracts the value of the To header or returns false.
   bool GetTo(std::string* display_name,
              GURL* address,
-             SipUtil::NameValuePairsIterator* parameters) const;
+             std::unordered_map<std::string, std::string>* parameters) const;
 
   // Extracts the value of the Reply-To header or returns false.
   bool GetReplyTo(std::string* display_name,
                   GURL* address,
-                  SipUtil::NameValuePairsIterator* parameters) const;
+                  std::unordered_map<std::string, std::string>* parameters) const;
 
   // Extracts the values of the Contact header. The 'iter' parameter works like
   // the |EnumerateHeader| function.
   bool EnumerateContact(size_t* iter,
                         std::string* display_name,
                         GURL* address,
-                        SipUtil::NameValuePairsIterator* parameters) const;
+                        std::unordered_map<std::string, std::string>* parameters) const;
 
   // Extracts the values of the Route header. The 'iter' parameter works like
   // the |EnumerateHeader| function.
   bool EnumerateRoute(size_t* iter,
                       std::string* display_name,
                       GURL* address,
-                      SipUtil::NameValuePairsIterator* parameters) const;
+                      std::unordered_map<std::string, std::string>* parameters) const;
 
   // Extracts the values of the Record-Route header. The 'iter' parameter works
   // like the |EnumerateHeader| function.
@@ -178,7 +183,7 @@ class SIPPET_EXPORT Message
       size_t* iter,
       std::string* display_name,
       GURL* address,
-      SipUtil::NameValuePairsIterator* parameters) const;
+      std::unordered_map<std::string, std::string>* parameters) const;
 
   // Enumerates Contact-like headers.
   bool EnumerateContactLikeHeader(
@@ -186,10 +191,16 @@ class SIPPET_EXPORT Message
       const base::StringPiece& name,
       std::string* display_name,
       GURL* address,
-      SipUtil::NameValuePairsIterator* parameters) const;
+      std::unordered_map<std::string, std::string>* parameters) const;
 
   // Extracts the value of the CSeq header or returns -1.
   int64_t GetCSeq(std::string* method) const;
+
+  // Extracts the Expires header.
+  bool GetExpiresValue(base::TimeDelta* value) const;
+
+  // Set a top Via "received" parameter.
+  void SetViaReceived(const std::string& value);
 
   // Returns whether the message is a request.
   bool IsRequest() const { return !request_method_.empty(); }

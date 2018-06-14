@@ -471,6 +471,71 @@ INSTANTIATE_TEST_CASE_P(SipTimeValuedHeaders,
                         TimeValuedHeaderTest,
                         testing::ValuesIn(time_valued_header_tests));
 
+TEST(SipResponseHeadersTest, GetExpiresValue10) {
+  std::string headers =
+      "SIP/2.0 200 OK\n"
+      "Expires: 10\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+  base::TimeDelta age;
+  ASSERT_TRUE(parsed->GetExpiresValue(&age));
+  EXPECT_EQ(10, age.InSeconds());
+}
+
+TEST(SipResponseHeadersTest, GetExpiresValue0) {
+  std::string headers =
+      "SIP/2.0 200 OK\n"
+      "Expires: 0\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+  base::TimeDelta age;
+  ASSERT_TRUE(parsed->GetExpiresValue(&age));
+  EXPECT_EQ(0, age.InSeconds());
+}
+
+TEST(SipResponseHeadersTest, GetExpiresValueBogus) {
+  std::string headers =
+      "SIP/2.0 200 OK\n"
+      "Expires: donkey\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+  base::TimeDelta age;
+  ASSERT_FALSE(parsed->GetExpiresValue(&age));
+}
+
+TEST(SipResponseHeadersTest, GetExpiresValueNegative) {
+  std::string headers =
+      "SIP/2.0 200 OK\n"
+      "Expires: -10\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+  base::TimeDelta age;
+  ASSERT_FALSE(parsed->GetExpiresValue(&age));
+}
+
+TEST(SipResponseHeadersTest, GetExpiresValueLeadingPlus) {
+  std::string headers =
+      "SIP/2.0 200 OK\n"
+      "Expires: +10\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+  base::TimeDelta age;
+  ASSERT_FALSE(parsed->GetExpiresValue(&age));
+}
+
+TEST(SipResponseHeadersTest, GetExpiresValueOverflow) {
+  std::string headers =
+      "SIP/2.0 200 OK\n"
+      "Expires: 999999999999999999999999999999999999999999\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+  base::TimeDelta age;
+  ASSERT_TRUE(parsed->GetExpiresValue(&age));
+
+  // Should have saturated to 2^32 - 1.
+  EXPECT_EQ(static_cast<int64_t>(0xFFFFFFFFL), age.InSeconds());
+}
+
 struct ContentTypeTestData {
   const std::string raw_headers;
   const std::string mime_type;
@@ -989,6 +1054,91 @@ const ReplaceStatusTestData replace_status_tests[] = {
 INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
                         ReplaceStatusTest,
                         testing::ValuesIn(replace_status_tests));
+
+TEST(SipRequestHeadersTest, SetViaReceived) {
+  std::string headers =
+      "INVITE sip:bob@Biloxi.com SIP/2.0\n"
+      "Via: SIP/2.0/UDP bobspc.biloxi.com:5060\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+  parsed->SetViaReceived("192.0.2.4");
+  EXPECT_EQ(
+      "INVITE sip:bob@Biloxi.com SIP/2.0\n"
+      "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;received=192.0.2.4\n",
+      ToSimpleString(parsed));
+}
+
+struct EnumerateContactLikeTestData {
+  const char* raw_headers;
+  const char* expected_display_name;
+  const char* expected_address;
+  std::unordered_map<std::string, std::string> expected_parameters;
+};
+
+EnumerateContactLikeTestData contact_like_tests[] = {
+    {"SIP/2.0 200 OK\n"
+     "Contact: sip:caller@u1.example.com\n",
+
+     "", "sip:caller@u1.example.com",
+    },
+    {"SIP/2.0 200 OK\n"
+     "Contact: sip:caller@u1.example.com;foo=bar\n",
+
+     "", "sip:caller@u1.example.com", {{"foo", "bar"}},
+    },
+    {"SIP/2.0 200 OK\n"
+     "Contact: sip:caller@u1.example.com;foo=\"bar\"\n",
+
+     "", "sip:caller@u1.example.com", {{"foo", "bar"}},
+    },
+    {"SIP/2.0 200 OK\n"
+     "Contact: sip:caller@u1.example.com;foo\n",
+
+     "", "sip:caller@u1.example.com", {{"foo", ""}},
+    },
+    {"SIP/2.0 200 OK\n"
+     "Contact: sip:caller@u1.example.com;foo=\"bar;baz\"\n",
+
+     "", "sip:caller@u1.example.com", {{"foo", "bar;baz"}},
+    },
+    {"SIP/2.0 200 OK\n"
+     "Contact: sip:caller@u1.example.com;foo=\"bar\\\"baz\"\n",
+
+     "", "sip:caller@u1.example.com", {{"foo", "bar\"baz"}},
+    },
+    {"SIP/2.0 200 OK\n"
+     "Contact: \"Mr, Magoo\" <sip:caller@u1.example.com>\n",
+
+     "Mr, Magoo", "sip:caller@u1.example.com",
+    },
+};
+
+class EnumerateContactLikeTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<EnumerateContactLikeTestData> {
+};
+
+TEST_P(EnumerateContactLikeTest, ReadValue) {
+  const EnumerateContactLikeTestData test = GetParam();
+
+  std::string orig_headers(test.raw_headers);
+  HeadersToRaw(&orig_headers);
+  scoped_refptr<Message> parsed(Message::Parse(orig_headers));
+
+  std::string display_name;
+  GURL address;
+  std::unordered_map<std::string, std::string> parameters;
+  parsed->EnumerateContactLikeHeader(nullptr, "contact", &display_name,
+      &address, &parameters);
+
+  EXPECT_EQ(std::string(test.expected_display_name), display_name);
+  EXPECT_EQ(std::string(test.expected_address), address.spec());
+  EXPECT_EQ(test.expected_parameters, parameters);
+}
+
+INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+                        EnumerateContactLikeTest,
+                        testing::ValuesIn(contact_like_tests));
 
 }  // namespace
 

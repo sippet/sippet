@@ -9,6 +9,7 @@
 #include "base/strings/string_util.h"
 #include "base/strings/string_tokenizer.h"
 #include "base/time/time.h"
+#include "net/base/parse_number.h"
 #include "sippet/message/sip_util.h"
 
 namespace sippet {
@@ -189,7 +190,8 @@ bool Message::EnumerateHeaderLines(size_t* iter,
 
 bool Message::EnumerateHeader(size_t* iter,
                               const base::StringPiece& name,
-                              std::string* value) const {
+                              std::string::const_iterator* value_begin,
+                              std::string::const_iterator* value_end) const {
   size_t i;
   if (!iter || !*iter) {
     i = FindHeader(0, name);
@@ -202,15 +204,27 @@ bool Message::EnumerateHeader(size_t* iter,
     }
   }
 
-  if (i == std::string::npos) {
-    value->clear();
+  if (i == std::string::npos)
     return false;
-  }
 
   if (iter)
     *iter = i + 1;
-  value->assign(parsed_[i].value_begin, parsed_[i].value_end);
+  *value_begin = parsed_[i].value_begin;
+  *value_end = parsed_[i].value_end;
   return true;
+}
+
+bool Message::EnumerateHeader(size_t* iter,
+                              const base::StringPiece& name,
+                              std::string* value) const {
+  std::string::const_iterator value_begin, value_end;
+  if (EnumerateHeader(iter, name, &value_begin, &value_end)) {
+    value->assign(value_begin, value_end);
+    return true;
+  } else {
+    value->clear();
+    return false;
+  }
 }
 
 bool Message::HasHeaderValue(const base::StringPiece& name,
@@ -289,6 +303,111 @@ int64_t Message::GetInt64HeaderValue(const std::string& header) const {
     return -1;
 
   return result;
+}
+
+bool Message::EnumerateContactLikeHeader(
+    size_t* iter,
+    const base::StringPiece& name,
+    std::string* display_name,
+    GURL* address,
+    std::unordered_map<std::string, std::string>* parameters) const {
+  std::string::const_iterator value_begin, value_end;
+  if (!EnumerateHeader(iter, name, &value_begin, &value_end))
+      return false;
+
+  if (display_name)
+    display_name->clear();
+  *address = GURL();
+  if (parameters)
+    parameters->clear();
+
+  // The contact-like headers are already normalized, so we don't need to parse
+  // special cases as 'Contact: sip:foo@bar;parameters' or
+  // 'Contact: Mr. Magoo <sip:foo@bar;parameters>'.
+  bool next_is_param = false;
+  base::StringTokenizer t(value_begin, value_end, "; ");
+  t.set_quote_chars("\"");
+  t.set_options(base::StringTokenizer::RETURN_DELIMS);
+  while (t.GetNext()) {
+    if (t.token_is_delim()) {
+      switch (*t.token_begin()) {
+        case ';':
+          next_is_param = true;
+          break;
+      }
+    } else {
+      base::StringPiece token(t.token_piece());
+      if (next_is_param) {
+        if (parameters) {
+          SipUtil::NameValuePairsIterator pairs(
+            t.token_begin(), value_end, ';',
+            SipUtil::NameValuePairsIterator::Values::NOT_REQUIRED,
+            SipUtil::NameValuePairsIterator::Quotes::STRICT_QUOTES);
+          while (pairs.GetNext()) {
+            (*parameters)[pairs.name()] = pairs.value();
+          }
+        }
+        break;
+      } else if (token[0] == '"') {
+        display_name->assign(token.begin() + 1, token.end() - 1);
+      } else if (token[0] == '<') {
+        *address = GURL(std::string(token.begin() + 1, token.end() - 1));
+      } else {
+        NOTREACHED() << "Logical error";
+      }
+    }
+  }
+  return true;
+}
+
+bool Message::GetExpiresValue(base::TimeDelta* result) const {
+  std::string value;
+  if (!EnumerateHeader(nullptr, "Expires", &value))
+    return false;
+
+  // Parse the delta-seconds as 1*DIGIT.
+  uint32_t seconds;
+  net::ParseIntError error;
+  if (!net::ParseUint32(value, &seconds, &error)) {
+    if (error == net::ParseIntError::FAILED_OVERFLOW) {
+      // If the Age value cannot fit in a uint32_t, saturate it to a maximum
+      // value. This is similar to what RFC 2616 says in section 14.6 for how
+      // caches should transmit values that overflow.
+      seconds = std::numeric_limits<decltype(seconds)>::max();
+    } else {
+      return false;
+    }
+  }
+
+  *result = base::TimeDelta::FromSeconds(seconds);
+  return true;
+}
+
+void Message::SetViaReceived(const std::string& received) {
+  DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 2]);
+  DCHECK_EQ('\0', raw_headers_[raw_headers_.size() - 1]);
+
+  std::string new_raw_headers(GetStartLine());
+  new_raw_headers.push_back('\0');
+
+  size_t iter = 0;
+  std::string name;
+  std::string value;
+  bool is_first = true;
+  while (EnumerateHeaderLines(&iter, &name, &value)) {
+    if (base::EqualsCaseInsensitiveASCII(name, "via") && is_first) {
+      value.append(";received=" + received);
+      is_first = false;
+    }
+    new_raw_headers.append(name + ": " + value);
+    new_raw_headers.push_back('\0');
+  }
+  new_raw_headers.push_back('\0');
+
+  // Make this object hold the new data.
+  raw_headers_.clear();
+  parsed_.clear();
+  ParseInternal(new_raw_headers);
 }
 
 std::string Message::GetStatusText() const {
