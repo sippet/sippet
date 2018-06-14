@@ -144,6 +144,10 @@ class SIPPET_EXPORT Message
   // no such header in the response.
   int64_t GetContentLength() const;
 
+  // Extracts the value of the Max-Forwards header or returns -1 if there is
+  // no such header in the response.
+  int64_t GetMaxForwards() const;
+
   // Extracts the value of the specified header or returns -1 if there is no
   // such header in the response.
   int64_t GetInt64HeaderValue(const std::string& header) const;
@@ -173,7 +177,6 @@ class SIPPET_EXPORT Message
   // Extracts the values of the Route header. The 'iter' parameter works like
   // the |EnumerateHeader| function.
   bool EnumerateRoute(size_t* iter,
-                      std::string* display_name,
                       GURL* address,
                       std::unordered_map<std::string, std::string>* parameters) const;
 
@@ -181,7 +184,6 @@ class SIPPET_EXPORT Message
   // like the |EnumerateHeader| function.
   bool EnumerateRecordRoute(
       size_t* iter,
-      std::string* display_name,
       GURL* address,
       std::unordered_map<std::string, std::string>* parameters) const;
 

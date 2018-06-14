@@ -285,6 +285,10 @@ int64_t Message::GetContentLength() const {
   return GetInt64HeaderValue("content-length");
 }
 
+int64_t Message::GetContentLength() const {
+  return GetInt64HeaderValue("max-forwards");
+}
+
 int64_t Message::GetInt64HeaderValue(const std::string& header) const {
   size_t iter = 0;
   std::string content_length_val;
@@ -303,6 +307,55 @@ int64_t Message::GetInt64HeaderValue(const std::string& header) const {
     return -1;
 
   return result;
+}
+
+bool Message::GetFrom(
+    std::string* display_name,
+    GURL* address,
+    std::unordered_map<std::string, std::string>* parameters) const {
+  return EnumerateContactLikeHeader(nullptr, "from", display_name, address,
+      parameters);
+}
+
+bool Message::GetTo(
+    std::string* display_name,
+    GURL* address,
+    std::unordered_map<std::string, std::string>* parameters) const {
+  return EnumerateContactLikeHeader(nullptr, "to", display_name, address,
+      parameters);
+}
+
+bool Message::GetReplyTo(
+    std::string* display_name,
+    GURL* address,
+    std::unordered_map<std::string, std::string>* parameters) const {
+  return EnumerateContactLikeHeader(nullptr, "reply-to", display_name, address,
+      parameters);
+}
+
+bool Message::EnumerateContact(
+    size_t* iter,
+    std::string* display_name,
+    GURL* address,
+    std::unordered_map<std::string, std::string>* parameters) const {
+  return EnumerateContactLikeHeader(iter, "contact", display_name, address,
+      parameters);
+}
+
+bool Message::EnumerateRoute(
+    size_t* iter,
+    GURL* address,
+    std::unordered_map<std::string, std::string>* parameters) const {
+  return EnumerateContactLikeHeader(iter, "route", nullptr, address,
+      parameters);
+}
+
+bool Message::EnumerateRecordRoute(
+    size_t* iter,
+    GURL* address,
+    std::unordered_map<std::string, std::string>* parameters) const {
+  return EnumerateContactLikeHeader(iter, "record-route", nullptr, address,
+      parameters);
 }
 
 bool Message::EnumerateContactLikeHeader(
@@ -360,9 +413,33 @@ bool Message::EnumerateContactLikeHeader(
   return true;
 }
 
+int64_t Message::GetCSeq(std::string* method) const {
+  std::string::const_iterator value_begin, value_end;
+  if (!EnumerateHeader(nullptr, "cseq", &value_begin, &value_end))
+    return -1;
+
+  base::StringTokenizer t(value_begin, value_end, " ");
+  if (!t.GetNext())
+    return -1;
+
+  // Parse the sequence as 1*DIGIT.
+  int64_t sequence;
+  if (!net::ParseInt64(t.token(), net::ParseIntFormat::NON_NEGATIVE, &sequence)) {
+    // If the sequence value cannot fit in a int64_t, return false.
+    return -1;
+  }
+
+  if (!t.GetNext())
+    return -1;
+
+  if (method)
+    *method = base::ToUpperASCII(t.token());
+  return sequence;
+}
+
 bool Message::GetExpiresValue(base::TimeDelta* result) const {
   std::string value;
-  if (!EnumerateHeader(nullptr, "Expires", &value))
+  if (!EnumerateHeader(nullptr, "expires", &value))
     return false;
 
   // Parse the delta-seconds as 1*DIGIT.

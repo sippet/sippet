@@ -1140,6 +1140,55 @@ INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
                         EnumerateContactLikeTest,
                         testing::ValuesIn(contact_like_tests));
 
+struct CSeqTestData {
+  const char* raw_headers;
+  int64_t expected_sequence;
+  const char *expected_method;
+};
+
+CSeqTestData cseq_tests[] = {
+    {"SIP/2.0 200 OK\n"
+     "CSeq: 314159 INVITE\n",
+
+     314159, "INVITE",
+    },
+    {"SIP/2.0 200 OK\n"
+     "CSeq: 0009 INVITE\n",
+
+     9, "INVITE",
+    },
+    {"SIP/2.0 200 OK\n"
+     "CSeq: 36893488147419103232 REGISTER\n",
+
+     -1,
+    },
+};
+
+class CSeqTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<CSeqTestData> {
+};
+
+TEST_P(CSeqTest, ReadValue) {
+  const CSeqTestData test = GetParam();
+
+  std::string orig_headers(test.raw_headers);
+  HeadersToRaw(&orig_headers);
+  scoped_refptr<Message> parsed(Message::Parse(orig_headers));
+
+  std::string method;
+  int64_t sequence = parsed->GetCSeq(&method);
+
+  EXPECT_EQ(test.expected_sequence, sequence);
+  if (sequence >= 0) {
+    EXPECT_EQ(test.expected_method, method);
+  }
+}
+
+INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+                        CSeqTest,
+                        testing::ValuesIn(cseq_tests));
+
 }  // namespace
 
 }  // namespace sippet
