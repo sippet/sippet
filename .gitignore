@@ -36,6 +36,7 @@
 .pydevproject
 .settings
 .sw?
+.vscode
 /Makefile
 /apps
 /ash
