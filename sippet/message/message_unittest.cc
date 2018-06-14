@@ -1162,6 +1162,16 @@ CSeqTestData cseq_tests[] = {
 
      -1,
     },
+    {"SIP/2.0 200 OK\n"
+     "CSeq: 123\n",
+
+     -1,
+    },
+    {"SIP/2.0 200 OK\n"
+     "CSeq:\n",
+
+     -1,
+    },
 };
 
 class CSeqTest

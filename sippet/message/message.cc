@@ -285,7 +285,7 @@ int64_t Message::GetContentLength() const {
   return GetInt64HeaderValue("content-length");
 }
 
-int64_t Message::GetContentLength() const {
+int64_t Message::GetMaxForwards() const {
   return GetInt64HeaderValue("max-forwards");
 }
 
