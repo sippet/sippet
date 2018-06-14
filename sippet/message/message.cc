@@ -102,7 +102,7 @@ void Message::RemoveHeaderLine(const std::string& name,
   // Make this object hold the new data.
   raw_headers_.clear();
   parsed_.clear();
-  Parse(new_raw_headers);
+  ParseInternal(new_raw_headers);
 }
 
 void Message::AddHeader(const std::string& header) {
@@ -118,7 +118,17 @@ void Message::AddHeader(const std::string& header) {
   // Make this object hold the new data.
   raw_headers_.clear();
   parsed_.clear();
-  Parse(new_raw_headers);
+  ParseInternal(new_raw_headers);
+}
+
+void Message::ReplaceStartLine(const std::string& new_start) {
+  CheckDoesNotHaveEmbededNulls(new_start);
+  // Copy up to the null byte.  This just copies the status line.
+  std::string new_raw_headers(new_start);
+  new_raw_headers.push_back('\0');
+
+  HeaderSet empty_to_remove;
+  MergeWithMessage(new_raw_headers, empty_to_remove);
 }
 
 bool Message::GetNormalizedHeader(const std::string& name,
@@ -690,7 +700,7 @@ void Message::MergeWithMessage(const std::string& raw_headers,
   // Make this object hold the new data.
   raw_headers_.clear();
   parsed_.clear();
-  Parse(new_raw_headers);
+  ParseInternal(new_raw_headers);
 }
 
 }  // namespace sippet

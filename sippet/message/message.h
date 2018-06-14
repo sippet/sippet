@@ -52,6 +52,10 @@ class SIPPET_EXPORT Message
   // end of the list.
   void AddHeader(const std::string& header);
 
+  // Replaces the current start line with the provided one (|new_start| should
+  // not have any EOL).
+  void ReplaceStartLine(const std::string& new_start);
+
   // Fetch the "normalized" value of a single header, where all values for the
   // header name are separated by commas.  See the GetNormalizedMessage for
   // format details.  Returns false if this header wasn't found.

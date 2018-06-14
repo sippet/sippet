@@ -146,18 +146,18 @@ TEST_P(CommonSipResponsesTest, TestCommon) {
 TestRequestData request_headers_tests[] = {
     {// Normalize whitespace.
      "INVITE   sip:user@example.com  SIP/2.0 \n"
-     "Content-TYPE  : text/html; charset=utf-8  \n",
+     "Content-TYPE  : application/sdp; charset=utf-8  \n",
 
      "INVITE sip:user@example.com SIP/2.0\n"
-     "Content-TYPE: text/html; charset=utf-8\n",
+     "Content-TYPE: application/sdp; charset=utf-8\n",
 
      true, "INVITE", "sip:user@example.com", SipVersion(2, 0)},
     {// Normalize the method name.
      "InViTe sip:user@example.com  SIP/2.0 \n"
-     "Content-TYPE  : text/html; charset=utf-8  \n",
+     "Content-TYPE  : application/sdp; charset=utf-8  \n",
 
      "INVITE sip:user@example.com SIP/2.0\n"
-     "Content-TYPE: text/html; charset=utf-8\n",
+     "Content-TYPE: application/sdp; charset=utf-8\n",
 
      true, "INVITE", "sip:user@example.com", SipVersion(2, 0)},
     {// Accept weird method names.
@@ -203,12 +203,12 @@ INSTANTIATE_TEST_CASE_P(SipRequestHeaders,
 TestResponseData response_headers_tests[] = {
     {// Normalize whitespace.
      "SIP/2.0    202   Accepted  \n"
-     "Content-TYPE  : text/html; charset=utf-8  \n"
+     "Content-TYPE  : application/sdp; charset=utf-8  \n"
      "Expires: 7200 \n"
      "Accept-Language:   en \n",
 
      "SIP/2.0 202 Accepted\n"
-     "Content-TYPE: text/html; charset=utf-8\n"
+     "Content-TYPE: application/sdp; charset=utf-8\n"
      "Expires: 7200\n"
      "Accept-Language: en\n",
 
@@ -216,7 +216,7 @@ TestResponseData response_headers_tests[] = {
     {// Normalize leading whitespace.
      "SIP/2.0    202   Accepted  \n"
      // Starts with space -- will be skipped as invalid.
-     "  Content-TYPE  : text/html; charset=utf-8  \n"
+     "  Content-TYPE  : application/sdp; charset=utf-8  \n"
      "Expires: 7200 \n"
      "Accept-Language:   en \n",
 
@@ -248,10 +248,10 @@ TestResponseData response_headers_tests[] = {
      true, SipVersion(2, 0), 200, "OK"},
     {// Normalize SIP/ case and do not add missing status text.
      "sIp/2.0 201\n"
-     "Content-TYPE: text/html; charset=utf-8\n",
+     "Content-TYPE: application/sdp; charset=utf-8\n",
 
      "SIP/2.0 201\n"
-     "Content-TYPE: text/html; charset=utf-8\n",
+     "Content-TYPE: application/sdp; charset=utf-8\n",
 
      true, SipVersion(2, 0), 201, ""},
     {// Normalize headers that start with a colon.
@@ -286,7 +286,7 @@ TestResponseData response_headers_tests[] = {
      "M:<sips:bob@192.0.2.4>;expires=60\n"
      "e: tar\n"
      "l:   173 \n"
-     "c:  text/html; charset=ISO-8859-4 \n"
+     "c:  application/sdp; charset=ISO-8859-4 \n"
      "f: <sip:c8oqz84zk7z@privacy.org>;tag=hyh8 \n"
      "s: Tech Support \n"
      "k: 100rel\n"
@@ -298,7 +298,7 @@ TestResponseData response_headers_tests[] = {
      "Contact: <sips:bob@192.0.2.4>;expires=60\n"
      "Content-Encoding: tar\n"
      "Content-Length: 173\n"
-     "Content-Type: text/html; charset=ISO-8859-4\n"
+     "Content-Type: application/sdp; charset=ISO-8859-4\n"
      "From: <sip:c8oqz84zk7z@privacy.org>;tag=hyh8\n"
      "Subject: Tech Support\n"
      "Supported: 100rel\n"
@@ -324,35 +324,35 @@ TestResponseData response_headers_tests[] = {
      true, SipVersion(2, 0), 202, "Accepted"},
     {// Reject bad status line.
      "SCREWED_UP_START_LINE\n"
-     "Content-TYPE: text/html; charset=utf-8\n",
+     "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
      false, SipVersion(), 0, nullptr},
     {// Reject bad version number.
      "SIP/1.0 202 Accepted\n"
-     "Content-TYPE: text/html; charset=utf-8\n",
+     "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
      false, SipVersion(), 0, nullptr},
     {// Reject bad status code.
      "SIP/2.0 -1 Accepted\n"
-     "Content-TYPE: text/html; charset=utf-8\n",
+     "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
      false, SipVersion(), 0, nullptr},
     {// Reject bad status code (2).
      "SIP/2.0 18 Accepted\n"
-     "Content-TYPE: text/html; charset=utf-8\n",
+     "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
      false, SipVersion(), 0, nullptr},
     {// Reject bad status code (3).
      "SIP/2.0 4294967301 better not break the receiver\n"
-     "Content-TYPE: text/html; charset=utf-8\n",
+     "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
@@ -362,6 +362,633 @@ TestResponseData response_headers_tests[] = {
 INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
                         CommonSipResponsesTest,
                         testing::ValuesIn(response_headers_tests));
+
+TEST(SipResponseHeadersTest, EnumerateHeader_Coalesced) {
+  // Ensure that commas in quoted strings are not regarded as value separators.
+  // Ensure that whitespace following a value is trimmed properly.
+  std::string headers =
+      "SIP/2.0 200 OK\n"
+      "Via: SIP/2.0/UDP server10.biloxi.com"
+        ";branch=z9hG4bKnashds8;received=192.0.2.3, "
+        "SIP/2.0/UDP bigbox3.site3.atlanta.com"
+        " ;branch=z9hG4bK77ef4c2312983.1;  received=192.0.2.2\n"
+      "Via: SIP/2.0/UDP pc33.atlanta.com"
+        ";branch=z9hG4bK776asdhds ;received=192.0.2.1\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+
+  size_t iter = 0;
+  std::string value;
+  EXPECT_TRUE(parsed->EnumerateHeader(&iter, "via", &value));
+  EXPECT_EQ("SIP/2.0/UDP server10.biloxi.com"
+      ";branch=z9hG4bKnashds8;received=192.0.2.3",
+      value);
+  EXPECT_TRUE(parsed->EnumerateHeader(&iter, "via", &value));
+  EXPECT_EQ("SIP/2.0/UDP bigbox3.site3.atlanta.com"
+      " ;branch=z9hG4bK77ef4c2312983.1;  received=192.0.2.2",
+      value);
+  EXPECT_TRUE(parsed->EnumerateHeader(&iter, "via", &value));
+  EXPECT_EQ("SIP/2.0/UDP pc33.atlanta.com"
+      ";branch=z9hG4bK776asdhds ;received=192.0.2.1",
+      value);
+  EXPECT_FALSE(parsed->EnumerateHeader(&iter, "via", &value));
+}
+
+TEST(SipResponseHeadersTest, EnumerateHeader_Challenge) {
+  // Even though WWW-Authenticate has commas, it should not be treated as
+  // coalesced values.
+  std::string headers =
+      "SIP/2.0 401 OK\n"
+      "WWW-Authenticate:Digest realm=foobar,  nonce=x, domain=y\n"
+      "WWW-Authenticate:Basic realm=quatar\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+
+  size_t iter = 0;
+  std::string value;
+  EXPECT_TRUE(parsed->EnumerateHeader(&iter, "WWW-Authenticate", &value));
+  EXPECT_EQ("Digest realm=foobar,  nonce=x, domain=y", value);
+  EXPECT_TRUE(parsed->EnumerateHeader(&iter, "WWW-Authenticate", &value));
+  EXPECT_EQ("Basic realm=quatar", value);
+  EXPECT_FALSE(parsed->EnumerateHeader(&iter, "WWW-Authenticate", &value));
+}
+
+TEST(SipResponseHeadersTest, EnumerateHeader_DateValued) {
+  // The comma in a date valued header should not be treated as a
+  // field-value separator.
+  std::string headers =
+      "SIP/2.0 200 OK\n"
+      "Date: Tue, 07 Aug 2007 23:10:55 GMT\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+
+  std::string value;
+  EXPECT_TRUE(parsed->EnumerateHeader(NULL, "date", &value));
+  EXPECT_EQ("Tue, 07 Aug 2007 23:10:55 GMT", value);
+}
+
+struct TimeValuedHeaderTestData {
+  const char* raw_headers;
+  const char* expected_date;
+};
+
+class TimeValuedHeaderTest
+    : public SipMessagesTest,
+      public testing::WithParamInterface<TimeValuedHeaderTestData> {
+};
+
+TimeValuedHeaderTestData time_valued_header_tests[] = {
+    {// When the timezone is missing, GMT is a good guess as its what RFC2616
+     // requires.
+     "SIP/2.0 200 OK\n"
+     "Date: Tue, 07 Aug 2007 23:10:55\n",
+
+     "Tue, 07 Aug 2007 23:10:55 GMT"},
+    {// If GMT is missing but an RFC822-conforming one is present, use that.
+     "SIP/2.0 200 OK\n"
+     "Date: Tue, 07 Aug 2007 19:10:55 EDT\n",
+
+     "Tue, 07 Aug 2007 23:10:55 GMT"},
+};
+
+TEST_P(TimeValuedHeaderTest, DefaultDateToGMT) {
+  const TimeValuedHeaderTestData test = GetParam();
+
+  std::string raw_headers(test.raw_headers);
+  HeadersToRaw(&raw_headers);
+
+  scoped_refptr<Message> parsed(Message::Parse(raw_headers));
+  base::Time expected_value;
+  ASSERT_TRUE(base::Time::FromString(test.expected_date,
+                                     &expected_value));
+
+  base::Time value;
+  EXPECT_TRUE(parsed->GetTimeValuedHeader("date", &value));
+  EXPECT_EQ(expected_value, value);
+}
+
+INSTANTIATE_TEST_CASE_P(SipTimeValuedHeaders,
+                        TimeValuedHeaderTest,
+                        testing::ValuesIn(time_valued_header_tests));
+
+struct ContentTypeTestData {
+  const std::string raw_headers;
+  const std::string mime_type;
+  const bool has_mimetype;
+  const std::string charset;
+  const bool has_charset;
+  const std::string all_content_type;
+};
+
+class ContentTypeTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<ContentTypeTestData> {
+};
+
+TEST_P(ContentTypeTest, GetMimeType) {
+  const ContentTypeTestData test = GetParam();
+
+  std::string headers(test.raw_headers);
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+
+  std::string value;
+  EXPECT_EQ(test.has_mimetype, parsed->GetMimeType(&value));
+  EXPECT_EQ(test.mime_type, value);
+  value.clear();
+  EXPECT_EQ(test.has_charset, parsed->GetCharset(&value));
+  EXPECT_EQ(test.charset, value);
+  EXPECT_TRUE(parsed->GetNormalizedHeader("content-type", &value));
+  EXPECT_EQ(test.all_content_type, value);
+}
+
+const ContentTypeTestData mimetype_tests[] = {
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp\n",
+    "application/sdp", true,
+    "", false,
+    "application/sdp" },
+  // Multiple content-type headers should give us the last one.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp\n"
+    "Content-type: application/sdp\n",
+    "application/sdp", true,
+    "", false,
+    "application/sdp, application/sdp" },
+  { "SIP/2.0 200 OK\n"
+    "Content-type: text/plain\n"
+    "Content-type: application/sdp\n"
+    "Content-type: text/plain\n"
+    "Content-type: application/sdp\n",
+    "application/sdp", true,
+    "", false,
+    "text/plain, application/sdp, text/plain, application/sdp" },
+  // Test charset parsing.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp\n"
+    "Content-type: application/sdp; charset=ISO-8859-1\n",
+    "application/sdp", true,
+    "iso-8859-1", true,
+    "application/sdp, application/sdp; charset=ISO-8859-1" },
+  // Test charset in double quotes.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp\n"
+    "Content-type: application/sdp; charset=\"ISO-8859-1\"\n",
+    "application/sdp", true,
+    "iso-8859-1", true,
+    "application/sdp, application/sdp; charset=\"ISO-8859-1\"" },
+  // If there are multiple matching content-type headers, we carry
+  // over the charset value.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp;charset=utf-8\n"
+    "Content-type: application/sdp\n",
+    "application/sdp", true,
+    "utf-8", true,
+    "application/sdp;charset=utf-8, application/sdp" },
+  // Test single quotes.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp;charset='utf-8'\n"
+    "Content-type: application/sdp\n",
+    "application/sdp", true,
+    "utf-8", true,
+    "application/sdp;charset='utf-8', application/sdp" },
+  // Last charset wins if matching content-type.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp;charset=utf-8\n"
+    "Content-type: application/sdp;charset=iso-8859-1\n",
+    "application/sdp", true,
+    "iso-8859-1", true,
+    "application/sdp;charset=utf-8, application/sdp;charset=iso-8859-1" },
+  // Charset is ignored if the content types change.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: text/plain;charset=utf-8\n"
+    "Content-type: application/sdp\n",
+    "application/sdp", true,
+    "", false,
+    "text/plain;charset=utf-8, application/sdp" },
+  // Empty content-type.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: \n",
+    "", false,
+    "", false,
+    "" },
+  // Emtpy charset.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp;charset=\n",
+    "application/sdp", true,
+    "", false,
+    "application/sdp;charset=" },
+  // Multiple charsets, last one wins.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp;charset=utf-8; charset=iso-8859-1\n",
+    "application/sdp", true,
+    "iso-8859-1", true,
+    "application/sdp;charset=utf-8; charset=iso-8859-1" },
+  // Multiple params.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp; foo=utf-8; charset=iso-8859-1\n",
+    "application/sdp", true,
+    "iso-8859-1", true,
+    "application/sdp; foo=utf-8; charset=iso-8859-1" },
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp ; charset=utf-8 ; bar=iso-8859-1\n",
+    "application/sdp", true,
+    "utf-8", true,
+    "application/sdp ; charset=utf-8 ; bar=iso-8859-1" },
+  // Comma embeded in quotes.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp ; charset='utf-8,text/plain' ;\n",
+    "application/sdp", true,
+    "utf-8,text/plain", true,
+    "application/sdp ; charset='utf-8,text/plain' ;" },
+  // Charset with leading spaces.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp ; charset= 'utf-8' ;\n",
+    "application/sdp", true,
+    "utf-8", true,
+    "application/sdp ; charset= 'utf-8' ;" },
+  // Media type comments in mime-type.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp (html)\n",
+    "application/sdp", true,
+    "", false,
+   "application/sdp (html)" },
+  // Incomplete charset= param.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: application/sdp; char=\n",
+    "application/sdp", true,
+    "", false,
+    "application/sdp; char=" },
+  // Invalid media type: no slash.
+  { "SIP/2.0 200 OK\n"
+    "Content-type: texthtml\n",
+    "", false,
+    "", false,
+    "texthtml" },
+  // Invalid media type: "*/*".
+  { "SIP/2.0 200 OK\n"
+    "Content-type: */*\n",
+    "", false,
+    "", false,
+    "*/*" },
+};
+
+INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+                        ContentTypeTest,
+                        testing::ValuesIn(mimetype_tests));
+
+struct EnumerateHeaderTestData {
+  const char* headers;
+  const char* expected_lines;
+};
+
+class EnumerateHeaderLinesTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<EnumerateHeaderTestData> {
+};
+
+TEST_P(EnumerateHeaderLinesTest, EnumerateHeaderLines) {
+  const EnumerateHeaderTestData test = GetParam();
+
+  std::string headers(test.headers);
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+
+  std::string name, value, lines;
+
+  size_t iter = 0;
+  while (parsed->EnumerateHeaderLines(&iter, &name, &value)) {
+    lines.append(name);
+    lines.append(": ");
+    lines.append(value);
+    lines.append("\n");
+  }
+
+  EXPECT_EQ(std::string(test.expected_lines), lines);
+}
+
+const EnumerateHeaderTestData enumerate_header_tests[] = {
+  { "SIP/2.0 200 OK\n",
+
+    ""
+  },
+  { "SIP/2.0 200 OK\n"
+    "Foo: 1\n",
+
+    "Foo: 1\n"
+  },
+  { "SIP/2.0 200 OK\n"
+    "Foo: 1\n"
+    "Bar: 2\n"
+    "Foo: 3\n",
+
+    "Foo: 1\nBar: 2\nFoo: 3\n"
+  },
+  { "SIP/2.0 200 OK\n"
+    "Foo: 1, 2, 3\n",
+
+    "Foo: 1, 2, 3\n"
+  },
+};
+
+INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+                        EnumerateHeaderLinesTest,
+                        testing::ValuesIn(enumerate_header_tests));
+
+struct ContentLengthTestData {
+  const char* headers;
+  int64_t expected_len;
+};
+
+class GetContentLengthTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<ContentLengthTestData> {
+};
+
+TEST_P(GetContentLengthTest, GetContentLength) {
+  const ContentLengthTestData test = GetParam();
+
+  std::string headers(test.headers);
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+
+  EXPECT_EQ(test.expected_len, parsed->GetContentLength());
+}
+
+const ContentLengthTestData content_length_tests[] = {
+    {"SIP/2.0 200 OK\n", -1},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: 10\n",
+     10},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: \n",
+     -1},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: abc\n",
+     -1},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: -10\n",
+     -1},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length:  +10\n",
+     -1},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: 23xb5\n",
+     -1},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: 0xA\n",
+     -1},
+    {"SIP/2.0 200 OK\n"
+     "L: 010\n",
+     10},
+    // Content-Length too big, will overflow an int64_t.
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: 40000000000000000000\n",
+     -1},
+    {"SIP/2.0 200 OK\n"
+     "l:       10\n",
+     10},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: 10  \n",
+     10},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: \t10\n",
+     10},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: \v10\n",
+     -1},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: \f10\n",
+     -1},
+    {"SIP/2.0 200 OK\n"
+     "cOnTeNt-LENgth: 33\n",
+     33},
+    {"SIP/2.0 200 OK\n"
+     "Content-Length: 34\r\n",
+     -1},
+};
+
+INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+                        GetContentLengthTest,
+                        testing::ValuesIn(content_length_tests));
+
+struct AddHeaderTestData {
+  const char* orig_headers;
+  const char* new_header;
+  const char* expected_headers;
+};
+
+class AddHeaderTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<AddHeaderTestData> {
+};
+
+TEST_P(AddHeaderTest, AddHeader) {
+  const AddHeaderTestData test = GetParam();
+
+  std::string orig_headers(test.orig_headers);
+  HeadersToRaw(&orig_headers);
+  scoped_refptr<Message> parsed(Message::Parse(orig_headers));
+
+  std::string new_header(test.new_header);
+  parsed->AddHeader(new_header);
+
+  EXPECT_EQ(std::string(test.expected_headers), ToSimpleString(parsed));
+}
+
+const AddHeaderTestData add_header_tests[] = {
+  { "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE\n",
+
+    "Content-Length: 450",
+
+    "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE\n"
+    "Content-Length: 450\n"
+  },
+  { "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE    \n",
+
+    "Content-Length: 450  ",
+
+    "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE\n"
+    "Content-Length: 450\n"
+  },
+};
+
+INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+                        AddHeaderTest,
+                        testing::ValuesIn(add_header_tests));
+
+struct RemoveHeaderTestData {
+  const char* orig_headers;
+  const char* to_remove;
+  const char* expected_headers;
+};
+
+class RemoveHeaderTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<RemoveHeaderTestData> {
+};
+
+TEST_P(RemoveHeaderTest, RemoveHeader) {
+  const RemoveHeaderTestData test = GetParam();
+
+  std::string orig_headers(test.orig_headers);
+  HeadersToRaw(&orig_headers);
+  scoped_refptr<Message> parsed(Message::Parse(orig_headers));
+
+  std::string name(test.to_remove);
+  parsed->RemoveHeader(name);
+
+  EXPECT_EQ(std::string(test.expected_headers), ToSimpleString(parsed));
+}
+
+const RemoveHeaderTestData remove_header_tests[] = {
+  { "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE\n"
+    "Content-Length: 450\n",
+
+    "content-length",
+
+    "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE\n"
+  },
+  { "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>  \n"
+    "Content-Length  : 450  \n"
+    "CSeq: 314159 INVITE\n",
+
+    "content-length",
+
+    "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE\n"
+  },
+};
+
+INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+                        RemoveHeaderTest,
+                        testing::ValuesIn(remove_header_tests));
+
+struct RemoveHeadersTestData {
+  const char* orig_headers;
+  const char* to_remove[2];
+  const char* expected_headers;
+};
+
+class RemoveHeadersTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<RemoveHeadersTestData> {};
+
+TEST_P(RemoveHeadersTest, RemoveHeaders) {
+  const RemoveHeadersTestData test = GetParam();
+
+  std::string orig_headers(test.orig_headers);
+  HeadersToRaw(&orig_headers);
+  scoped_refptr<Message> parsed(Message::Parse(orig_headers));
+
+  std::unordered_set<std::string> to_remove;
+  for (auto* header : test.to_remove) {
+    if (header)
+      to_remove.insert(header);
+  }
+  parsed->RemoveHeaders(to_remove);
+
+  EXPECT_EQ(std::string(test.expected_headers), ToSimpleString(parsed));
+}
+
+const RemoveHeadersTestData remove_headers_tests[] = {
+    {"SIP/2.0 200 OK\n"
+     "Contact: <sip:alice@pc33.atlanta.com>\n"
+     "CSeq: 314159 INVITE\n"
+     "Content-Length: 450\n",
+
+     {"Content-Length", "CSEQ"},
+
+     "SIP/2.0 200 OK\n"
+     "Contact: <sip:alice@pc33.atlanta.com>\n"},
+
+    {"SIP/2.0 200 OK\n"
+     "Contact: <sip:alice@pc33.atlanta.com>\n"
+     "Content-Length: 450\n",
+
+     {"foo", "bar"},
+
+     "SIP/2.0 200 OK\n"
+     "Contact: <sip:alice@pc33.atlanta.com>\n"
+     "Content-Length: 450\n"},
+
+    {"SIP/2.0 404 Kinda not OK\n"
+     "Contact: <sip:alice@pc33.atlanta.com>  \n",
+
+     {},
+
+     "SIP/2.0 404 Kinda not OK\n"
+     "Contact: <sip:alice@pc33.atlanta.com>\n"},
+};
+
+INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+                        RemoveHeadersTest,
+                        testing::ValuesIn(remove_headers_tests));
+
+struct ReplaceStatusTestData {
+  const char* orig_headers;
+  const char* new_status;
+  const char* expected_headers;
+};
+
+class ReplaceStatusTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<ReplaceStatusTestData> {
+};
+
+TEST_P(ReplaceStatusTest, ReplaceStatus) {
+  const ReplaceStatusTestData test = GetParam();
+
+  std::string orig_headers(test.orig_headers);
+  HeadersToRaw(&orig_headers);
+  scoped_refptr<Message> parsed(Message::Parse(orig_headers));
+
+  std::string name(test.new_status);
+  parsed->ReplaceStartLine(name);
+
+  EXPECT_EQ(std::string(test.expected_headers), ToSimpleString(parsed));
+}
+
+const ReplaceStatusTestData replace_status_tests[] = {
+  { "SIP/2.0 206 Partial Content\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE\n"
+    "Content-Length: 450\n",
+
+    "SIP/2.0 200 OK",
+
+    "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE\n"
+    "Content-Length: 450\n"
+  },
+  { "SIP/2.0 200 OK\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n",
+
+    "SIP/2.0 304 Not Modified",
+
+    "SIP/2.0 304 Not Modified\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+  },
+};
+
+INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+                        ReplaceStatusTest,
+                        testing::ValuesIn(replace_status_tests));
 
 }  // namespace
 
