@@ -122,6 +122,13 @@ struct Message::ParsedHeader {
   std::string::const_iterator value_end;
 };
 
+const char Message::kAck[] = "ACK";
+const char Message::kBye[] = "BYE";
+const char Message::kCancel[] = "CANCEL";
+const char Message::kInvite[] = "INVITE";
+const char Message::kOptions[] = "OPTIONS";
+const char Message::kRegister[] = "REGISTER";
+
 Message::Message()
   : response_code_(-1) {
 }
@@ -168,6 +175,56 @@ scoped_refptr<Message> Message::Parse(const std::string& raw_input) {
   if (!message->ParseInternal(raw_input))
     return nullptr;
   return message;
+}
+
+void Message::Update(const Message& new_message) {
+  // Copy up to the null byte.  This just copies the start-line.
+  std::string new_raw_headers(raw_headers_.c_str());
+  new_raw_headers.push_back('\0');
+
+  HeaderSet updated_headers;
+
+  // NOTE: we write the new headers then the old headers for convenience.  The
+  // order should not matter.
+
+  // Figure out which headers we want to take from new_message:
+  for (size_t i = 0; i < new_message.parsed_.size(); ++i) {
+    const HeaderList& new_parsed = new_message.parsed_;
+
+    DCHECK(!new_parsed[i].is_continuation());
+
+    // Locate the start of the next header.
+    size_t k = i;
+    while (++k < new_parsed.size() && new_parsed[k].is_continuation()) {}
+    --k;
+
+    base::StringPiece name(new_parsed[i].name_begin, new_parsed[i].name_end);
+    if (HasHeader(name)) {
+      std::string name_lower = base::ToLowerASCII(name);
+      updated_headers.insert(name_lower);
+
+      // Preserve this header line in the merged result, making sure there is
+      // a null after the value.
+      if (name_lower == "cseq" && IsRequest()) {
+        // When merging the CSeq header, keep the method.
+        int64_t sequence = new_message.GetCSeq(nullptr);
+        new_raw_headers.append(new_parsed[i].name_begin,
+            new_parsed[i].name_end);
+        new_raw_headers.append(": " + base::Int64ToString(sequence));
+        new_raw_headers.push_back(' ');
+        new_raw_headers.append(request_method_);
+      } else {
+        new_raw_headers.append(new_parsed[i].name_begin,
+            new_parsed[k].value_end);
+      }
+      new_raw_headers.push_back('\0');
+    }
+
+    i = k;
+  }
+
+  // Now, build the new raw headers.
+  MergeWithMessage(new_raw_headers, updated_headers);
 }
 
 void Message::RemoveHeader(const std::string& name) {

@@ -30,6 +30,14 @@ namespace sippet {
 class SIPPET_EXPORT Message
     : public base::RefCountedThreadSafe<Message> {
  public:
+  // RFC 3261 methods:
+  static const char kAck[];
+  static const char kBye[];
+  static const char kCancel[];
+  static const char kInvite[];
+  static const char kOptions[];
+  static const char kRegister[];
+
   // Creates a new request Message.
   static scoped_refptr<Message> Create(const base::StringPiece& method,
                                        const GURL& request_uri);
@@ -44,6 +52,11 @@ class SIPPET_EXPORT Message
   // a row).  (Note that line continuations should have already been joined;
   // see SipUtil::AssembleRawMessage)
   static scoped_refptr<Message> Parse(const std::string& raw_headers);
+
+  // Replaces the current headers with the merged version of those in
+  // |new_message|. It makes easy to generate responses as well as CANCEL and
+  // ACK requests.
+  void Update(const Message& new_message);
 
   // Removes all instances of a particular header.
   void RemoveHeader(const std::string& name);

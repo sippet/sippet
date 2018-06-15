@@ -196,7 +196,7 @@ TestRequestData request_headers_tests[] = {
      false, nullptr, nullptr, SipVersion()},
 };
 
-INSTANTIATE_TEST_CASE_P(SipRequestHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         CommonSipRequestsTest,
                         testing::ValuesIn(request_headers_tests));
 
@@ -361,11 +361,11 @@ TestResponseData response_headers_tests[] = {
      false, SipVersion(), 0, nullptr},
 };
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         CommonSipResponsesTest,
                         testing::ValuesIn(response_headers_tests));
 
-TEST(SipResponseHeadersTest, EnumerateHeader_Coalesced) {
+TEST(MessageTest, EnumerateHeader_Coalesced) {
   // Ensure that commas in quoted strings are not regarded as value separators.
   // Ensure that whitespace following a value is trimmed properly.
   std::string headers =
@@ -396,7 +396,7 @@ TEST(SipResponseHeadersTest, EnumerateHeader_Coalesced) {
   EXPECT_FALSE(parsed->EnumerateHeader(&iter, "via", &value));
 }
 
-TEST(SipResponseHeadersTest, EnumerateHeader_Challenge) {
+TEST(MessageTest, EnumerateHeader_Challenge) {
   // Even though WWW-Authenticate has commas, it should not be treated as
   // coalesced values.
   std::string headers =
@@ -415,7 +415,7 @@ TEST(SipResponseHeadersTest, EnumerateHeader_Challenge) {
   EXPECT_FALSE(parsed->EnumerateHeader(&iter, "WWW-Authenticate", &value));
 }
 
-TEST(SipResponseHeadersTest, EnumerateHeader_DateValued) {
+TEST(MessageTest, EnumerateHeader_DateValued) {
   // The comma in a date valued header should not be treated as a
   // field-value separator.
   std::string headers =
@@ -469,11 +469,11 @@ TEST_P(TimeValuedHeaderTest, DefaultDateToGMT) {
   EXPECT_EQ(expected_value, value);
 }
 
-INSTANTIATE_TEST_CASE_P(SipTimeValuedHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         TimeValuedHeaderTest,
                         testing::ValuesIn(time_valued_header_tests));
 
-TEST(SipResponseHeadersTest, GetExpiresValue10) {
+TEST(MessageTest, GetExpiresValue10) {
   std::string headers =
       "SIP/2.0 200 OK\n"
       "Expires: 10\n";
@@ -484,7 +484,7 @@ TEST(SipResponseHeadersTest, GetExpiresValue10) {
   EXPECT_EQ(10, age.InSeconds());
 }
 
-TEST(SipResponseHeadersTest, GetExpiresValue0) {
+TEST(MessageTest, GetExpiresValue0) {
   std::string headers =
       "SIP/2.0 200 OK\n"
       "Expires: 0\n";
@@ -495,7 +495,7 @@ TEST(SipResponseHeadersTest, GetExpiresValue0) {
   EXPECT_EQ(0, age.InSeconds());
 }
 
-TEST(SipResponseHeadersTest, GetExpiresValueBogus) {
+TEST(MessageTest, GetExpiresValueBogus) {
   std::string headers =
       "SIP/2.0 200 OK\n"
       "Expires: donkey\n";
@@ -505,7 +505,7 @@ TEST(SipResponseHeadersTest, GetExpiresValueBogus) {
   ASSERT_FALSE(parsed->GetExpiresValue(&age));
 }
 
-TEST(SipResponseHeadersTest, GetExpiresValueNegative) {
+TEST(MessageTest, GetExpiresValueNegative) {
   std::string headers =
       "SIP/2.0 200 OK\n"
       "Expires: -10\n";
@@ -515,7 +515,7 @@ TEST(SipResponseHeadersTest, GetExpiresValueNegative) {
   ASSERT_FALSE(parsed->GetExpiresValue(&age));
 }
 
-TEST(SipResponseHeadersTest, GetExpiresValueLeadingPlus) {
+TEST(MessageTest, GetExpiresValueLeadingPlus) {
   std::string headers =
       "SIP/2.0 200 OK\n"
       "Expires: +10\n";
@@ -525,7 +525,7 @@ TEST(SipResponseHeadersTest, GetExpiresValueLeadingPlus) {
   ASSERT_FALSE(parsed->GetExpiresValue(&age));
 }
 
-TEST(SipResponseHeadersTest, GetExpiresValueOverflow) {
+TEST(MessageTest, GetExpiresValueOverflow) {
   std::string headers =
       "SIP/2.0 200 OK\n"
       "Expires: 999999999999999999999999999999999999999999\n";
@@ -700,7 +700,7 @@ const ContentTypeTestData mimetype_tests[] = {
     "*/*" },
 };
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         ContentTypeTest,
                         testing::ValuesIn(mimetype_tests));
 
@@ -758,7 +758,7 @@ const EnumerateHeaderTestData enumerate_header_tests[] = {
   },
 };
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         EnumerateHeaderLinesTest,
                         testing::ValuesIn(enumerate_header_tests));
 
@@ -835,7 +835,7 @@ const ContentLengthTestData content_length_tests[] = {
      -1},
 };
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         GetContentLengthTest,
                         testing::ValuesIn(content_length_tests));
 
@@ -888,7 +888,7 @@ const AddHeaderTestData add_header_tests[] = {
   },
 };
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         AddHeaderTest,
                         testing::ValuesIn(add_header_tests));
 
@@ -941,7 +941,7 @@ const RemoveHeaderTestData remove_header_tests[] = {
   },
 };
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         RemoveHeaderTest,
                         testing::ValuesIn(remove_header_tests));
 
@@ -1002,7 +1002,7 @@ const RemoveHeadersTestData remove_headers_tests[] = {
      "Contact: <sip:alice@pc33.atlanta.com>\n"},
 };
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         RemoveHeadersTest,
                         testing::ValuesIn(remove_headers_tests));
 
@@ -1053,11 +1053,11 @@ const ReplaceStatusTestData replace_status_tests[] = {
   },
 };
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         ReplaceStatusTest,
                         testing::ValuesIn(replace_status_tests));
 
-TEST(SipRequestHeadersTest, SetViaReceived) {
+TEST(MessageTest, SetViaReceived) {
   std::string headers =
       "INVITE sip:bob@Biloxi.com SIP/2.0\n"
       "Via: SIP/2.0/UDP bobspc.biloxi.com:5060\n";
@@ -1070,7 +1070,7 @@ TEST(SipRequestHeadersTest, SetViaReceived) {
       ToSimpleString(parsed));
 }
 
-TEST(SipRequestHeadersTest, OverrideReceived) {
+TEST(MessageTest, OverrideReceived) {
   std::string headers =
       "INVITE sip:bob@Biloxi.com SIP/2.0\n"
       "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;RECEIVED=192.0.2.4\n";
@@ -1151,7 +1151,7 @@ TEST_P(EnumerateContactLikeTest, ReadValue) {
   EXPECT_EQ(test.expected_parameters, parameters);
 }
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         EnumerateContactLikeTest,
                         testing::ValuesIn(contact_like_tests));
 
@@ -1210,11 +1210,11 @@ TEST_P(CSeqTest, ReadValue) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
+INSTANTIATE_TEST_CASE_P(MessageTest,
                         CSeqTest,
                         testing::ValuesIn(cseq_tests));
 
-TEST(SipRequestHeadersTest, Create_Request) {
+TEST(MessageTest, Create_Request) {
   scoped_refptr<Message> created(Message::Create("invite",
         GURL("sip:user@example.com")));
 
@@ -1223,7 +1223,7 @@ TEST(SipRequestHeadersTest, Create_Request) {
   EXPECT_EQ("INVITE sip:user@example.com SIP/2.0\n", headers);
 }
 
-TEST(SipResponseHeadersTest, Create_Response) {
+TEST(MessageTest, Create_Response) {
   scoped_refptr<Message> created(Message::Create(100, "Don't BREAK me out"));
 
   std::string headers = ToSimpleString(created);
@@ -1231,7 +1231,7 @@ TEST(SipResponseHeadersTest, Create_Response) {
   EXPECT_EQ("SIP/2.0 100 Don't BREAK me out\n", headers);
 }
 
-TEST(SipResponseHeadersTest, Create_ResponseNoStatusText) {
+TEST(MessageTest, Create_ResponseNoStatusText) {
   scoped_refptr<Message> created(Message::Create(100));
 
   std::string headers = ToSimpleString(created);
@@ -1239,13 +1239,123 @@ TEST(SipResponseHeadersTest, Create_ResponseNoStatusText) {
   EXPECT_EQ("SIP/2.0 100 Trying\n", headers);
 }
 
-TEST(SipResponseHeadersTest, Create_ResponseUnknownStatus) {
+TEST(MessageTest, Create_ResponseUnknownStatus) {
   scoped_refptr<Message> created(Message::Create(151));
 
   std::string headers = ToSimpleString(created);
 
   EXPECT_EQ("SIP/2.0 151\n", headers);
 }
+
+struct UpdateTestData {
+  const char* orig_headers;
+  const char* new_headers;
+  const char* expected_headers;
+};
+
+class UpdateTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<UpdateTestData> {
+};
+
+TEST_P(UpdateTest, Update) {
+  const UpdateTestData test = GetParam();
+
+  std::string orig_headers(test.orig_headers);
+  HeadersToRaw(&orig_headers);
+  scoped_refptr<Message> parsed(Message::Parse(orig_headers));
+
+  std::string new_headers(test.new_headers);
+  HeadersToRaw(&new_headers);
+  scoped_refptr<Message> new_parsed(Message::Parse(new_headers));
+
+  parsed->Update(*new_parsed.get());
+
+  EXPECT_EQ(std::string(test.expected_headers), ToSimpleString(parsed));
+}
+
+const UpdateTestData update_tests[] = {
+  { "SIP/2.0 200 OK\n",
+
+    "SIP/2.0 304 Not Modified\n"
+    "Contact: <sip:alice@pc33.atlanta.com>\n"
+    "CSeq: 314159 INVITE\n",
+
+    "SIP/2.0 200 OK\n"
+  },
+  { "SIP/2.0 200 OK\n"
+    "Foo: 1\n"
+    "CSeq: 314159 INVITE\n",
+
+    "SIP/2.0 304 Not Modified\n"
+    "CSeq: 123 CANCEL\n"
+    "Contact: sip:caller@u1.example.com\n",
+
+    "SIP/2.0 200 OK\n"
+    "CSeq: 123 CANCEL\n"
+    "Foo: 1\n"
+  },
+  { "SIP/2.0 200 OK\n"
+    "Foo: 1\n"
+    "CSeq: 314159 INVITE\n",
+
+    "SIP/2.0 304 Not Modified\n"
+    "CSEQ: 123 CANCEL\n"
+    "Contact: sip:caller@u1.example.com\n",
+
+    "SIP/2.0 200 OK\n"
+    "CSEQ: 123 CANCEL\n"
+    "Foo: 1\n"
+  },
+  { "SIP/2.0 200 OK\n"
+    "Content-Length: 450\n"
+    "CSeq:\n",
+
+    "SIP/2.0 304 Not Modified\n"
+    "CSeq: 123 CANCEL\n"
+    "Contact: sip:caller@u1.example.com\n",
+
+    "SIP/2.0 200 OK\n"
+    "CSeq: 123 CANCEL\n"
+    "Content-Length: 450\n"
+  },
+  { "SIP/2.0 200 OK\n"
+    "Content-Length: 450\n"
+    "Via:\n",
+
+    "SIP/2.0 304 Not Modified\n"
+    "Via: SIP/2.0/UDP server10.biloxi.com"
+      ";branch=z9hG4bKnashds8;received=192.0.2.3, "
+      "SIP/2.0/UDP bigbox3.site3.atlanta.com"
+      " ;branch=z9hG4bK77ef4c2312983.1;  received=192.0.2.2\n"
+    "Via: SIP/2.0/UDP pc33.atlanta.com"
+      ";branch=z9hG4bK776asdhds ;received=192.0.2.1\n"
+    "Contact: sip:caller@u1.example.com\n",
+
+    "SIP/2.0 200 OK\n"
+    "Via: SIP/2.0/UDP server10.biloxi.com"
+      ";branch=z9hG4bKnashds8;received=192.0.2.3, "
+      "SIP/2.0/UDP bigbox3.site3.atlanta.com"
+      ";branch=z9hG4bK77ef4c2312983.1;received=192.0.2.2\n"
+    "Via: SIP/2.0/UDP pc33.atlanta.com"
+      ";branch=z9hG4bK776asdhds;received=192.0.2.1\n"
+    "Content-Length: 450\n"
+  },
+  {// When updating Requests, handle the CSeq special case
+    "CANCEL sip:user@example.com SIP/2.0\n"
+    "CSeq:\n",
+
+    "INVITE sip:user@example.com SIP/2.0\n"
+    "CSEQ: 123 INVITE\n",
+
+    "CANCEL sip:user@example.com SIP/2.0\n"
+    "CSEQ: 123 CANCEL\n"
+  },
+};
+
+INSTANTIATE_TEST_CASE_P(MessageTest,
+                        UpdateTest,
+                        testing::ValuesIn(update_tests));
 
 }  // namespace
 
