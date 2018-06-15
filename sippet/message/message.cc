@@ -23,6 +23,92 @@ void CheckDoesNotHaveEmbededNulls(const std::string& str) {
   CHECK(str.find('\0') == std::string::npos);
 }
 
+const std::unordered_map<int, std::string> kDefaultStatusText = {
+  // Provisional 1xx
+  { 100, "Trying" },
+  { 180, "Ringing" },
+  { 181, "Call Is Being Forwarded" },
+  { 182, "Queued" },
+  { 183, "Session Progress" },
+  { 199, "Early Dialog Terminated" },
+
+  // Successful 2xx
+  { 200, "OK" },
+  { 202, "Accepted" },
+  { 204, "No Notification" },
+
+  // Redirection 3xx
+  { 300, "Multiple Choices" },
+  { 301, "Moved Permanently" },
+  { 302, "Moved Temporarily" },
+  { 305, "Use Proxy" },
+  { 380, "Alternative Service" },
+
+  // Request failure 4xx
+  { 400, "Bad Request" },
+  { 401, "Unauthorized" },
+  { 402, "Payment Required" },
+  { 403, "Forbidden" },
+  { 404, "Not Found" },
+  { 405, "Method Not Allowed" },
+  { 406, "Not Acceptable" },
+  { 407, "Proxy Authentication Required" },
+  { 408, "Request Timeout" },
+  { 409, "Conflict" },
+  { 410, "Gone" },
+  { 412, "Conditional Request Failed" },
+  { 413, "Request Entity Too Large" },
+  { 414, "Request-URI Too Long" },
+  { 415, "Unsupported Media Type" },
+  { 416, "Unsupported URI Scheme" },
+  { 417, "Unknown Resource-Priority" },
+  { 420, "Bad Extension" },
+  { 421, "Extension Required" },
+  { 422, "Session Interval Too Small" },
+  { 423, "Interval Too Brief" },
+  { 424, "Bad Location Information" },
+  { 428, "Use Identity Header" },
+  { 429, "Provide Referrer Identity" },
+  { 430, "Flow Failed" },
+  { 433, "Anonymity Disallowed" },
+  { 436, "Bad Identity-Info" },
+  { 437, "Unsupported Certificate" },
+  { 438, "Invalid Identity Header" },
+  { 439, "First Hop Lacks Outbound Support" },
+  { 440, "Max-Breadth Exceeded" },
+  { 469, "Bad Info Package" },
+  { 470, "Consent Needed" },
+  { 480, "Temporarily Unavailable" },
+  { 481, "Call/Transaction Does Not Exist" },
+  { 482, "Loop Detected" },
+  { 483, "Too Many Hops" },
+  { 484, "Address Incomplete" },
+  { 485, "Ambiguous" },
+  { 486, "Busy Here" },
+  { 487, "Request Terminated" },
+  { 488, "Not Acceptable Here" },
+  { 489, "Bad Event" },
+  { 491, "Request Pending" },
+  { 493, "Undecipherable" },
+  { 494, "Security Agreement Required" },
+
+  // Server failure 5xx
+  { 500, "Server Internal Error" },
+  { 501, "Not Implemented" },
+  { 502, "Bad Gateway" },
+  { 503, "Service Unavailable" },
+  { 504, "Server Time-out" },
+  { 505, "Version Not Supported" },
+  { 513, "Message Too Large" },
+  { 580, "Precondition Failure" },
+
+  // Global failure 6xx
+  { 600, "Busy Everywhere" },
+  { 603, "Decline" },
+  { 604, "Does Not Exist Anywhere" },
+  { 606, "Not Acceptable" },
+};
+
 }  // namespace
 
 struct Message::ParsedHeader {
@@ -41,6 +127,40 @@ Message::Message()
 }
 
 Message::~Message() {}
+
+// static
+scoped_refptr<Message> Message::Create(const base::StringPiece& method,
+                                       const GURL& request_uri) {
+  std::string request_line(method.begin(), method.end());
+  request_line.push_back(' ');
+  request_line.append(request_uri.spec());
+  request_line.append(" SIP/2.0");
+  request_line.push_back('\0');
+  return Parse(request_line);
+}
+
+// static
+scoped_refptr<Message> Message::Create(int response_code) {
+  base::StringPiece status_text;
+  auto kv = kDefaultStatusText.find(response_code);
+  if (kv != kDefaultStatusText.end()) {
+    status_text = base::StringPiece(kv->second);
+  }
+  return Create(response_code, status_text);
+}
+
+// static
+scoped_refptr<Message> Message::Create(int response_code,
+                                       const base::StringPiece& status_text) {
+  DCHECK_GE(response_code, 100);
+  DCHECK_LE(response_code, 699);
+  std::string status_line("SIP/2.0 ");
+  status_line.append(base::IntToString(response_code));
+  status_line.push_back(' ');
+  status_line.append(status_text.begin(), status_text.end());
+  status_line.push_back('\0');
+  return Parse(status_line);
+}
 
 // static
 scoped_refptr<Message> Message::Parse(const std::string& raw_input) {
@@ -393,9 +513,9 @@ bool Message::EnumerateContactLikeHeader(
       if (next_is_param) {
         if (parameters) {
           SipUtil::NameValuePairsIterator pairs(
-            t.token_begin(), value_end, ';',
-            SipUtil::NameValuePairsIterator::Values::NOT_REQUIRED,
-            SipUtil::NameValuePairsIterator::Quotes::STRICT_QUOTES);
+              t.token_begin(), value_end, ';',
+              SipUtil::NameValuePairsIterator::Values::NOT_REQUIRED,
+              SipUtil::NameValuePairsIterator::Quotes::STRICT_QUOTES);
           while (pairs.GetNext()) {
             (*parameters)[pairs.name()] = pairs.value();
           }
@@ -437,9 +557,18 @@ int64_t Message::GetCSeq(std::string* method) const {
   return sequence;
 }
 
-bool Message::GetExpiresValue(base::TimeDelta* result) const {
+bool Message::GetExpiresValue(base::TimeDelta* value) const {
+  return GetTimeDeltaValue("expires", value);
+}
+
+bool Message::GetMinExpiresValue(base::TimeDelta* value) const {
+  return GetTimeDeltaValue("min-expires", value);
+}
+
+bool Message::GetTimeDeltaValue(const base::StringPiece& name,
+                                base::TimeDelta* result) const {
   std::string value;
-  if (!EnumerateHeader(nullptr, "expires", &value))
+  if (!EnumerateHeader(nullptr, name, &value))
     return false;
 
   // Parse the delta-seconds as 1*DIGIT.
@@ -473,6 +602,24 @@ void Message::SetViaReceived(const std::string& received) {
   bool is_first = true;
   while (EnumerateHeaderLines(&iter, &name, &value)) {
     if (base::EqualsCaseInsensitiveASCII(name, "via") && is_first) {
+      std::string::iterator param_begin =
+          std::find(value.begin(), value.end(), ';');
+      if (param_begin != value.end()) {
+        std::string new_value(value.begin(), param_begin);
+        SipUtil::NameValuePairsIterator pairs(
+            param_begin, value.end(), ';',
+            SipUtil::NameValuePairsIterator::Values::NOT_REQUIRED,
+            SipUtil::NameValuePairsIterator::Quotes::STRICT_QUOTES);
+        while (pairs.GetNext()) {
+          if (base::EqualsCaseInsensitiveASCII(
+                base::StringPiece(pairs.name_begin(), pairs.name_end()),
+                "received")) {
+            continue;
+          }
+          new_value.append(";" + pairs.name() + "=" + pairs.value());
+        }
+        value.swap(new_value);
+      }
       value.append(";received=" + received);
       is_first = false;
     }
@@ -535,6 +682,10 @@ bool Message::NormalizeHeaders(std::string::const_iterator headers_begin,
               headers.values_end()))
           return false;
       }
+    } else if (base::LowerCaseEqualsASCII(header_name, "via")) {
+      if (!NormalizeViaHeader(headers.values_begin(),
+            headers.values_end()))
+        return false;
     } else {
       raw_headers_.append(headers.values_begin(), headers.values_end());
     }
@@ -612,6 +763,62 @@ bool Message::NormalizeContactLikeHeader(
           raw_headers_.append(token.begin(), token.end());
           had_token = true;
         }
+      }
+    }
+  }
+  return true;
+}
+
+bool Message::NormalizeViaHeader(
+    std::string::const_iterator values_begin,
+    std::string::const_iterator values_end) {
+  bool had_sip = false, had_version = false, had_protocol = false;
+  bool had_sent_by = false, next_is_param = false;
+  base::StringTokenizer t(values_begin, values_end, "/ ;,");
+  t.set_quote_chars("\"");
+  t.set_options(base::StringTokenizer::RETURN_DELIMS);
+  while (t.GetNext()) {
+    if (t.token_is_delim()) {
+      switch (*t.token_begin()) {
+        case ';':
+          next_is_param = true;
+          break;
+        case ',':
+          // Reset state
+          next_is_param = false;
+          had_sip = had_version = had_protocol = had_sent_by = false;
+          raw_headers_.append(", ");
+          break;
+      }
+    } else {
+      base::StringPiece token(t.token_piece());
+      if (next_is_param) {
+        raw_headers_.push_back(';');
+        raw_headers_.append(token.begin(), token.end());
+      } else if (!had_sip) {
+        if (!base::LowerCaseEqualsASCII(token, "sip")) {
+          DVLOG(1) << "bad protocol-name";
+          return false;
+        }
+        raw_headers_.append("SIP/");
+        had_sip = true;
+      } else if (!had_version) {
+        if (!base::LowerCaseEqualsASCII(token, "2.0")) {
+          DVLOG(1) << "bad protocol-version";
+          return false;
+        }
+        raw_headers_.append("2.0/");
+        had_version = true;
+      } else if (!had_protocol) {
+        raw_headers_.append(base::ToUpperASCII(token));
+        had_protocol = true;
+      } else if (!had_sent_by) {
+        raw_headers_.push_back(' ');
+        raw_headers_.append(token.begin(), token.end());
+        had_sent_by = true;
+      } else {
+        DVLOG(1) << "malformed via-parm";
+        return false;
       }
     }
   }

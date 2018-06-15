@@ -30,6 +30,15 @@ namespace sippet {
 class SIPPET_EXPORT Message
     : public base::RefCountedThreadSafe<Message> {
  public:
+  // Creates a new request Message.
+  static scoped_refptr<Message> Create(const base::StringPiece& method,
+                                       const GURL& request_uri);
+
+  // Creates a new response Message.
+  static scoped_refptr<Message> Create(int response_code);
+  static scoped_refptr<Message> Create(int response_code,
+                                       const base::StringPiece& status_text);
+
   // Parses the given raw_headers.  raw_headers should be formatted thus: each
   // line is \0-terminated, and it's terminated by an empty line (ie, 2 \0s in
   // a row).  (Note that line continuations should have already been joined;
@@ -201,6 +210,13 @@ class SIPPET_EXPORT Message
   // Extracts the Expires header.
   bool GetExpiresValue(base::TimeDelta* value) const;
 
+  // Extracts the Min-Expires header.
+  bool GetMinExpiresValue(base::TimeDelta* value) const;
+
+  // Extracts time-delta headers.
+  bool GetTimeDeltaValue(const base::StringPiece& name,
+                         base::TimeDelta* value) const;
+
   // Set a top Via "received" parameter.
   void SetViaReceived(const std::string& value);
 
@@ -231,6 +247,12 @@ class SIPPET_EXPORT Message
   // Returns the raw header string.
   const std::string& raw_headers() const { return raw_headers_; }
 
+  // Set the message body.
+  void SetBody(const std::string& body) { body_ = body; }
+
+  // Get the message body.
+  const std::string& body() const { return body_; }
+
  private:
   friend class base::RefCountedThreadSafe<Message>;
 
@@ -251,6 +273,10 @@ class SIPPET_EXPORT Message
   // Normalize Contact-like headers.
   bool NormalizeContactLikeHeader(std::string::const_iterator values_begin,
                                   std::string::const_iterator values_end);
+
+  // Normalize Via header.
+  bool NormalizeViaHeader(std::string::const_iterator values_begin,
+                          std::string::const_iterator values_end);
 
   // Parse the message.
   bool ParseInternal(const std::string& raw_headers);
@@ -321,6 +347,9 @@ class SIPPET_EXPORT Message
 
   // The normalized sip version.
   SipVersion sip_version_;
+
+  // The message body.
+  std::string body_;
 
   DISALLOW_COPY_AND_ASSIGN(Message);
 };

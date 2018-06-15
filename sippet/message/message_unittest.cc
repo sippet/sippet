@@ -291,7 +291,8 @@ TestResponseData response_headers_tests[] = {
      "s: Tech Support \n"
      "k: 100rel\n"
      "t: sip:+12125551212@server.phone2net.com \n"
-     "v: SIP/2.0/UDP erlang.bell-telephone.com:5060 ;branch=z9hG4bK87asdks7\n",
+     "v: SIP/2.0/UDP erlang.bell-telephone.com:5060 ;branch=z9hG4bK87asdks7\n"
+     "x:  foo\n",
 
      "SIP/2.0 202 Accepted\n"
      "Call-ID: f81d4fae-7dec-11d0-a765-00a0c91e6bf6@192.0.2.4\n"
@@ -303,7 +304,8 @@ TestResponseData response_headers_tests[] = {
      "Subject: Tech Support\n"
      "Supported: 100rel\n"
      "To: <sip:+12125551212@server.phone2net.com>\n"
-     "Via: SIP/2.0/UDP erlang.bell-telephone.com:5060 ;branch=z9hG4bK87asdks7\n",
+     "Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7\n"
+     "x: foo\n",
 
      true, SipVersion(2, 0), 202, "Accepted"},
     {// Normalize contact-like headers.
@@ -385,11 +387,11 @@ TEST(SipResponseHeadersTest, EnumerateHeader_Coalesced) {
       value);
   EXPECT_TRUE(parsed->EnumerateHeader(&iter, "via", &value));
   EXPECT_EQ("SIP/2.0/UDP bigbox3.site3.atlanta.com"
-      " ;branch=z9hG4bK77ef4c2312983.1;  received=192.0.2.2",
+      ";branch=z9hG4bK77ef4c2312983.1;received=192.0.2.2",
       value);
   EXPECT_TRUE(parsed->EnumerateHeader(&iter, "via", &value));
   EXPECT_EQ("SIP/2.0/UDP pc33.atlanta.com"
-      ";branch=z9hG4bK776asdhds ;received=192.0.2.1",
+      ";branch=z9hG4bK776asdhds;received=192.0.2.1",
       value);
   EXPECT_FALSE(parsed->EnumerateHeader(&iter, "via", &value));
 }
@@ -1068,6 +1070,19 @@ TEST(SipRequestHeadersTest, SetViaReceived) {
       ToSimpleString(parsed));
 }
 
+TEST(SipRequestHeadersTest, OverrideReceived) {
+  std::string headers =
+      "INVITE sip:bob@Biloxi.com SIP/2.0\n"
+      "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;RECEIVED=192.0.2.4\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+  parsed->SetViaReceived("10.0.1.1");
+  EXPECT_EQ(
+      "INVITE sip:bob@Biloxi.com SIP/2.0\n"
+      "Via: SIP/2.0/UDP bobspc.biloxi.com:5060;received=10.0.1.1\n",
+      ToSimpleString(parsed));
+}
+
 struct EnumerateContactLikeTestData {
   const char* raw_headers;
   const char* expected_display_name;
@@ -1198,6 +1213,39 @@ TEST_P(CSeqTest, ReadValue) {
 INSTANTIATE_TEST_CASE_P(SipResponseHeaders,
                         CSeqTest,
                         testing::ValuesIn(cseq_tests));
+
+TEST(SipRequestHeadersTest, Create_Request) {
+  scoped_refptr<Message> created(Message::Create("invite",
+        GURL("sip:user@example.com")));
+
+  std::string headers = ToSimpleString(created);
+
+  EXPECT_EQ("INVITE sip:user@example.com SIP/2.0\n", headers);
+}
+
+TEST(SipResponseHeadersTest, Create_Response) {
+  scoped_refptr<Message> created(Message::Create(100, "Don't BREAK me out"));
+
+  std::string headers = ToSimpleString(created);
+
+  EXPECT_EQ("SIP/2.0 100 Don't BREAK me out\n", headers);
+}
+
+TEST(SipResponseHeadersTest, Create_ResponseNoStatusText) {
+  scoped_refptr<Message> created(Message::Create(100));
+
+  std::string headers = ToSimpleString(created);
+
+  EXPECT_EQ("SIP/2.0 100 Trying\n", headers);
+}
+
+TEST(SipResponseHeadersTest, Create_ResponseUnknownStatus) {
+  scoped_refptr<Message> created(Message::Create(151));
+
+  std::string headers = ToSimpleString(created);
+
+  EXPECT_EQ("SIP/2.0 151\n", headers);
+}
 
 }  // namespace
 
