@@ -1168,6 +1168,11 @@ CSeqTestData cseq_tests[] = {
      314159, "INVITE",
     },
     {"SIP/2.0 200 OK\n"
+     "CSeq: 314159 Invite\n",
+
+     314159, "INVITE",
+    },
+    {"SIP/2.0 200 OK\n"
      "CSeq: 0009 INVITE\n",
 
      9, "INVITE",
