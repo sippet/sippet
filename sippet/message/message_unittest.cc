@@ -1399,6 +1399,15 @@ const EnumerateViaTestData enumerate_via_tests[] = {
     },
   },
   { "SIP/2.0 200 OK\n"
+    "Via: SIP/2.0/UDP server10.biloxi.com"
+      ";BRANCH=z9hG4bKnashds8;Received=192.0.2.3\n",
+
+    "UDP", "server10.biloxi.com", 5060, {
+      {"branch", "z9hG4bKnashds8"},
+      {"received", "192.0.2.3"},
+    },
+  },
+  { "SIP/2.0 200 OK\n"
     "Via: SIP/2.0/UDP server10.biloxi.com:15667\n",
 
     "UDP", "server10.biloxi.com", 15667,

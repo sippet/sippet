@@ -110,6 +110,18 @@ const std::unordered_map<int, std::string> kDefaultStatusText = {
   { 606, "Not Acceptable" },
 };
 
+void ReadNormalizingParameterNames(
+    std::string::const_iterator param_begin,
+    std::string::const_iterator param_end,
+    std::unordered_map<std::string, std::string>* parameters) {
+  SipUtil::NameValuePairsIterator pairs(param_begin, param_end, ';',
+      SipUtil::NameValuePairsIterator::Values::NOT_REQUIRED,
+      SipUtil::NameValuePairsIterator::Quotes::STRICT_QUOTES);
+  while (pairs.GetNext()) {
+    (*parameters)[base::ToLowerASCII(pairs.name())] = pairs.value();
+  }
+}
+
 }  // namespace
 
 struct Message::ParsedHeader {
@@ -570,13 +582,8 @@ bool Message::EnumerateContactLikeHeader(
       base::StringPiece token(t.token_piece());
       if (next_is_param) {
         if (parameters) {
-          SipUtil::NameValuePairsIterator pairs(
-              t.token_begin(), value_end, ';',
-              SipUtil::NameValuePairsIterator::Values::NOT_REQUIRED,
-              SipUtil::NameValuePairsIterator::Quotes::STRICT_QUOTES);
-          while (pairs.GetNext()) {
-            (*parameters)[pairs.name()] = pairs.value();
-          }
+          ReadNormalizingParameterNames(t.token_begin(), value_end,
+              parameters);
         }
         break;
       } else if (token[0] == '"') {
@@ -718,13 +725,8 @@ bool Message::EnumerateVia(
       base::StringPiece token(t.token_piece());
       if (next_is_param) {
         if (parameters) {
-          SipUtil::NameValuePairsIterator pairs(
-              t.token_begin(), value_end, ';',
-              SipUtil::NameValuePairsIterator::Values::NOT_REQUIRED,
-              SipUtil::NameValuePairsIterator::Quotes::STRICT_QUOTES);
-          while (pairs.GetNext()) {
-            (*parameters)[pairs.name()] = pairs.value();
-          }
+          ReadNormalizingParameterNames(t.token_begin(), value_end,
+              parameters);
         }
         break;
       } else if (!had_sip) {
