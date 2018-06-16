@@ -10,6 +10,7 @@
 #include "base/strings/string_tokenizer.h"
 #include "base/time/time.h"
 #include "net/base/parse_number.h"
+#include "net/base/url_util.h"
 #include "sippet/message/sip_util.h"
 
 namespace sippet {
@@ -691,6 +692,92 @@ void Message::SetViaReceived(const std::string& received) {
   ParseInternal(new_raw_headers);
 }
 
+bool Message::EnumerateVia(
+    size_t* iter,
+    std::string* protocol,
+    net::HostPortPair* sent_by,
+    std::unordered_map<std::string, std::string>* parameters) const {
+  std::string::const_iterator value_begin, value_end;
+  if (!EnumerateHeader(iter, "via", &value_begin, &value_end))
+      return false;
+
+  std::string via_protocol;
+  bool had_sip = false, had_version = false, had_protocol = false;
+  bool had_sent_by = false, next_is_param = false;
+  base::StringTokenizer t(value_begin, value_end, "/ ;");
+  t.set_quote_chars("\"");
+  t.set_options(base::StringTokenizer::RETURN_DELIMS);
+  while (t.GetNext()) {
+    if (t.token_is_delim()) {
+      switch (*t.token_begin()) {
+        case ';':
+          next_is_param = true;
+          break;
+      }
+    } else {
+      base::StringPiece token(t.token_piece());
+      if (next_is_param) {
+        if (parameters) {
+          SipUtil::NameValuePairsIterator pairs(
+              t.token_begin(), value_end, ';',
+              SipUtil::NameValuePairsIterator::Values::NOT_REQUIRED,
+              SipUtil::NameValuePairsIterator::Quotes::STRICT_QUOTES);
+          while (pairs.GetNext()) {
+            (*parameters)[pairs.name()] = pairs.value();
+          }
+        }
+        break;
+      } else if (!had_sip) {
+        had_sip = true;
+      } else if (!had_version) {
+        had_version = true;
+      } else if (!had_protocol) {
+        via_protocol = token.as_string();
+        had_protocol = true;
+      } else if (!had_sent_by) {
+        if (sent_by) {
+          std::string host;
+          int port;
+          net::ParseHostAndPort(token.as_string(), &host, &port);
+          if (port == -1) {
+            if (via_protocol == "UDP" || via_protocol == "TCP")
+              port = 5060;
+            else if (via_protocol == "TLS")
+              port = 5061;
+            else
+              port = 0;
+          }
+          if (host[0] == '[')  // remove brackets from IPv6 addresses
+            host = host.substr(1, host.size()-2);
+          *sent_by = net::HostPortPair(host, port);
+        }
+        had_sent_by = true;
+      } else {
+        NOTREACHED() << "Logical error";
+      }
+    }
+  }
+
+  if (protocol)
+    protocol->assign(via_protocol);
+  return true;
+}
+
+bool Message::GetBranch(std::string* branch) const {
+  std::unordered_map<std::string, std::string> parameters;
+  if (!EnumerateVia(nullptr, nullptr, nullptr, &parameters))
+    return false;
+  auto it = parameters.find("branch");
+  if (it == parameters.end())
+    return false;
+  *branch = it->second;
+  return true;
+}
+
+bool Message::GetSentBy(net::HostPortPair* sent_by) const {
+  return EnumerateVia(nullptr, nullptr, sent_by, nullptr);
+}
+
 std::string Message::GetStatusText() const {
   CHECK(IsResponse());
   // GetStatusLine() is already normalized, so it has the format:
@@ -711,6 +798,40 @@ std::string Message::GetStatusText() const {
   ++begin;
   CHECK(begin != end);
   return std::string(begin, end);
+}
+
+std::string Message::client_key() const {
+  CHECK(HasHeader("via"));
+  std::string key, method, branch;
+  if (IsRequest()) {
+    method = request_method_;
+  } else {
+    GetCSeq(&method);
+  }
+  GetBranch(&branch);
+  key.append(branch);
+  key.push_back(':');
+  key.append(method);
+  return key;
+}
+
+std::string Message::server_key() const {
+  CHECK(HasHeader("via"));
+  std::string key, method, branch;
+  net::HostPortPair sent_by;
+  if (IsRequest()) {
+    method = request_method_;
+  } else {
+    GetCSeq(&method);
+  }
+  GetBranch(&branch);
+  GetSentBy(&sent_by);
+  key.append(branch);
+  key.push_back(':');
+  key.append(method);
+  key.push_back(':');
+  key.append(sent_by.ToString());
+  return key;
 }
 
 bool Message::NormalizeHeaders(std::string::const_iterator headers_begin,

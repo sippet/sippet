@@ -1269,7 +1269,7 @@ TEST_P(UpdateTest, Update) {
   HeadersToRaw(&new_headers);
   scoped_refptr<Message> new_parsed(Message::Parse(new_headers));
 
-  parsed->Update(*new_parsed.get());
+  parsed->Update(*new_parsed);
 
   EXPECT_EQ(std::string(test.expected_headers), ToSimpleString(parsed));
 }
@@ -1356,6 +1356,77 @@ const UpdateTestData update_tests[] = {
 INSTANTIATE_TEST_CASE_P(MessageTest,
                         UpdateTest,
                         testing::ValuesIn(update_tests));
+
+struct EnumerateViaTestData {
+  const char* orig_headers;
+  const char* expected_protocol;
+  const char* expected_host;
+  uint16_t expected_port;
+  std::unordered_map<std::string, std::string> expected_parameters;
+};
+
+class EnumerateViaTest
+    : public SipMessagesTest,
+      public ::testing::WithParamInterface<EnumerateViaTestData> {
+};
+
+TEST_P(EnumerateViaTest, ReadVia) {
+  const EnumerateViaTestData test = GetParam();
+
+  std::string orig_headers(test.orig_headers);
+  HeadersToRaw(&orig_headers);
+  scoped_refptr<Message> parsed(Message::Parse(orig_headers));
+
+  std::string protocol;
+  net::HostPortPair sent_by;
+  std::unordered_map<std::string, std::string> parameters;
+  parsed->EnumerateVia(nullptr, &protocol, &sent_by, &parameters);
+
+  EXPECT_EQ(std::string(test.expected_protocol), protocol);
+  EXPECT_EQ(std::string(test.expected_host), sent_by.host());
+  EXPECT_EQ(test.expected_port, sent_by.port());
+  EXPECT_EQ(test.expected_parameters, parameters);
+}
+
+const EnumerateViaTestData enumerate_via_tests[] = {
+  { "SIP/2.0 200 OK\n"
+    "Via: SIP/2.0/UDP server10.biloxi.com"
+      ";branch=z9hG4bKnashds8;received=192.0.2.3\n",
+
+    "UDP", "server10.biloxi.com", 5060, {
+      {"branch", "z9hG4bKnashds8"},
+      {"received", "192.0.2.3"},
+    },
+  },
+  { "SIP/2.0 200 OK\n"
+    "Via: SIP/2.0/UDP server10.biloxi.com:15667\n",
+
+    "UDP", "server10.biloxi.com", 15667,
+  },
+  { "SIP/2.0 200 OK\n"
+    "Via: SIP/2.0/UNKNOWN server10.biloxi.com\n",
+
+    "UNKNOWN", "server10.biloxi.com", 0,
+  },
+  { "SIP/2.0 200 OK\n"
+    "Via: SIP/2.0/UDP [2001:db8::9:1];branch=z9hG4bKas3-111\n",
+
+    "UDP", "2001:db8::9:1", 5060, {
+      {"branch", "z9hG4bKas3-111"},
+    }
+  },
+  { "SIP/2.0 200 OK\n"
+    "Via: SIP/2.0/UDP [2001:db8::9:1]:13333;branch=z9hG4bKas3-111\n",
+
+    "UDP", "2001:db8::9:1", 13333, {
+      {"branch", "z9hG4bKas3-111"},
+    }
+  },
+};
+
+INSTANTIATE_TEST_CASE_P(MessageTest,
+                        EnumerateViaTest,
+                        testing::ValuesIn(enumerate_via_tests));
 
 }  // namespace
 

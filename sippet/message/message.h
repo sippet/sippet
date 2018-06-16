@@ -17,6 +17,7 @@
 #include "base/strings/string_piece.h"
 #include "base/time/time.h"
 #include "url/gurl.h"
+#include "net/base/host_port_pair.h"
 #include "sippet/sippet_export.h"
 #include "sippet/message/sip_version.h"
 #include "sippet/message/sip_util.h"
@@ -233,6 +234,19 @@ class SIPPET_EXPORT Message
   // Set a top Via "received" parameter.
   void SetViaReceived(const std::string& value);
 
+  // Enumerate Via headers.
+  bool EnumerateVia(
+      size_t* iter,
+      std::string* protocol,
+      net::HostPortPair* sent_by,
+      std::unordered_map<std::string, std::string>* parameters) const;
+
+  // Returns the branch parameter from the topmost Via header.
+  bool GetBranch(std::string* branch) const;
+
+  // Returns the sent-by parameter from the topmost Via header.
+  bool GetSentBy(net::HostPortPair* sent_by) const;
+
   // Returns whether the message is a request.
   bool IsRequest() const { return !request_method_.empty(); }
 
@@ -265,6 +279,14 @@ class SIPPET_EXPORT Message
 
   // Get the message body.
   const std::string& body() const { return body_; }
+
+  // Get a client transaction identifier from an outgoing request or an incoming
+  // response. If they are related, they will be equal.
+  std::string client_key() const;
+
+  // Get a server transaction identifier from an incoming request or an outgoing
+  // response. If they are related, they will be equal.
+  std::string server_key() const;
 
  private:
   friend class base::RefCountedThreadSafe<Message>;
