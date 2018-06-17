@@ -4,217 +4,80 @@
 
 #include "sippet/message/request.h"
 
-#include <string>
-
-#include "sippet/base/tags.h"
-#include "net/base/net_errors.h"
-#include "base/guid.h"
+#include "base/strings/string_util.h"
 
 namespace sippet {
 
-Request::Request(const Method &method,
-                 const GURL &request_uri,
-                 const Version &version)
-  : Message(true, Outgoing), method_(method),
-    id_(base::GenerateGUID()), request_uri_(request_uri),
-    version_(version), time_stamp_(base::Time::Now()) {
+const char Request::kAck[] = "ACK";
+const char Request::kBye[] = "BYE";
+const char Request::kCancel[] = "CANCEL";
+const char Request::kInvite[] = "INVITE";
+const char Request::kOptions[] = "OPTIONS";
+const char Request::kRegister[] = "REGISTER";
+
+Request::Request() {}
+
+Request::Request(const base::StringPiece& request_method,
+                 const GURL &request_uri) {
+  std::string request_line(request_method.begin(), request_method.end());
+  request_line.push_back(' ');
+  request_line.append(request_uri.spec());
+  request_line.append(" SIP/2.0");
+  request_line.push_back('\0');
+  ParseInternal(request_line);
 }
 
-Request::Request(const Method &method,
-                 const GURL &request_uri,
-                 Direction direction,
-                 const Version &version)
-  : Message(true, direction), method_(method),
-    id_(base::GenerateGUID()), request_uri_(request_uri),
-    version_(version), time_stamp_(base::Time::Now()) {
+Request::~Request() {}
+
+bool Request::IsRequest() const {
+  return true;
 }
 
-Request::~Request() {
-}
+bool Request::ParseStartLine(std::string::const_iterator line_begin,
+                             std::string::const_iterator line_end,
+                             std::string* raw_headers) {
+  std::string::const_iterator p = std::find(line_begin, line_end, ' ');
 
-Method Request::method() const {
-  return method_;
-}
+  if (p == line_end) {
+    DVLOG(1) << "missing method; rejecting";
+    return false;
+  }
+  request_method_ = base::ToUpperASCII(base::StringPiece(line_begin, p));
+  *raw_headers = request_method_;
 
-void Request::set_method(const Method &method) {
-  method_ = method;
-}
+  // Skip whitespace.
+  while (*p == ' ')
+    ++p;
 
-GURL Request::request_uri() const {
-  return request_uri_;
-}
+  std::string::const_iterator uri = p;
+  p = std::find(p, line_end, ' ');
 
-void Request::set_request_uri(const GURL &request_uri) {
-  request_uri_ = request_uri;
-}
+  if (p == line_end) {
+    DVLOG(1) << "missing request-uri; rejecting";
+    return false;
+  }
+  request_uri_ = GURL(std::string(uri, p));
+  raw_headers->push_back(' ');
+  raw_headers->append(request_uri_.spec());
 
-Version Request::version() const {
-  return version_;
-}
+  // Skip whitespace.
+  while (*p == ' ')
+    ++p;
 
-void Request::set_version(const Version &version) {
-  version_ = version;
-}
+  // Extract the version number
+  SipVersion parsed_sip_version = ParseVersion(p, line_end);
 
-void Request::print(raw_ostream &os) const {
-  os << method_.str() << " "
-     << request_uri_.spec() << " "
-     << "SIP/" << version_.major_value()
-     << "." << version_.minor_value()
-     << "\r\n";
-  Message::print(os);
-}
-
-std::string Request::GetDialogId() const {
-  std::string from_tag;
-  std::string to_tag;
-  std::string call_id(get<CallId>()->value());
-  if (get<From>()->HasTag())
-    from_tag = get<From>()->tag();
-  if (get<To>()->HasTag())
-    to_tag = get<To>()->tag();
-  std::ostringstream oss;
-  oss << call_id << ":";
-  if (direction() == Outgoing) {
-    oss << from_tag << ":" << to_tag;
+  // Clamp the version number to one of: {2.0}
+  if (parsed_sip_version == SipVersion(2, 0)) {
+    raw_headers->append(" SIP/2.0");
   } else {
-    oss << to_tag << ":" << from_tag;
+    // Ignore everything else
+    DVLOG(1) << "rejecting SIP/" << parsed_sip_version.major_value() << "."
+             << parsed_sip_version.minor_value();
+    return false;
   }
-  return oss.str();
-}
 
-scoped_refptr<Request> Request::CloneRequest() const {
-  scoped_refptr<Request> result(
-    new Request(method(), request_uri(), version()));
-  result->id_ = id_;  // A cloned request has the same ID
-  for (Message::const_iterator i = begin(), ie = end(); i != ie; ++i) {
-    result->push_back(i->Clone());
-  }
-  if (has_content())
-    result->set_content(content());
-  Message::iterator j = result->find_first<Cseq>();
-  if (result->end() != j) {
-    Cseq *cseq = cast<Cseq>(j);
-    cseq->set_sequence(cseq->sequence() + 1);
-  }
-  return result;
-}
-
-scoped_refptr<Response> Request::CreateResponse(
-    int response_code,
-    const std::string &reason_phrase) {
-  scoped_refptr<Response> response(
-      CreateResponseInternal(response_code, reason_phrase));
-  To *to = response->get<To>();
-  if (response_code > 100 && to && !to->HasTag())
-    to->set_tag(CreateTag());
-  return response;
-}
-
-scoped_refptr<Response> Request::CreateResponse(StatusCode code) {
-  return CreateResponse(static_cast<int>(code), GetReasonPhrase(code));
-}
-
-int Request::CreateAck(const std::string &remote_tag,
-                       scoped_refptr<Request> &ack) {
-  if (Method::INVITE != method()) {
-    DVLOG(1) << "Cannot create an ACK from a non-INVITE request";
-    return net::ERR_NOT_IMPLEMENTED;
-  }
-  if (end() == find_first<From>()
-      || end() == find_first<To>()
-      || end() == find_first<Cseq>()
-      || end() == find_first<CallId>()) {
-    DVLOG(1) << "Incomplete INVITE request, cannot ACK";
-    return net::ERR_UNEXPECTED;
-  }
-  if (end() == find_first<Via>()) {
-    DVLOG(1) << "INVITE request was not sent yet, cannot ACK";
-    return net::ERR_UNEXPECTED;
-  }
-  ack = new Request(Method::ACK, request_uri());
-  CloneTo<Via>(ack.get());
-  std::unique_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  ack->push_back(std::move(max_forwards));
-  CloneTo<From>(ack.get());
-  std::unique_ptr<To> to(Clone<To>());
-  if (to && remote_tag.length() > 0) to->set_tag(remote_tag);
-  ack->push_back(std::move(to));
-  CloneTo<CallId>(ack.get());
-  std::unique_ptr<Cseq> cseq(Clone<Cseq>());
-  if (cseq) cseq->set_method(Method::ACK);
-  ack->push_back(std::move(cseq));
-  CloneTo<Route>(ack.get());
-  return net::OK;
-}
-
-int Request::CreateCancel(scoped_refptr<Request> &cancel) {
-  if (Method::INVITE != method()) {
-    DVLOG(1) << "Cannot create a CANCEL from a non-INVITE request";
-    return net::ERR_NOT_IMPLEMENTED;
-  }
-  if (end() == find_first<From>()
-      || end() == find_first<To>()
-      || end() == find_first<Cseq>()
-      || end() == find_first<CallId>()) {
-    DVLOG(1) << "Incomplete INVITE request, cannot CANCEL";
-    return net::ERR_UNEXPECTED;
-  }
-  if (end() == find_first<Via>()) {
-    DVLOG(1) << "INVITE request was not sent yet, cannot CANCEL";
-    return net::ERR_UNEXPECTED;
-  }
-  cancel = new Request(Method::CANCEL, request_uri());
-  CloneTo<Via>(cancel.get());
-  std::unique_ptr<MaxForwards> max_forwards(new MaxForwards(70));
-  cancel->push_back(std::move(max_forwards));
-  CloneTo<From>(cancel.get());
-  CloneTo<To>(cancel.get());
-  CloneTo<CallId>(cancel.get());
-  std::unique_ptr<Cseq> cseq(Clone<Cseq>());
-  if (cseq) cseq->set_method(Method::CANCEL);
-  cancel->push_back(std::move(cseq));
-  CloneTo<Route>(cancel.get());
-  return net::OK;
-}
-
-scoped_refptr<Response> Request::CreateResponseInternal(
-    int response_code,
-    const std::string &reason_phrase) {
-  if (Message::Incoming != direction()) {
-    DVLOG(1) << "Trying to create a response from an outgoing request";
-    return 0;
-  }
-  scoped_refptr<Response> response(
-      new Response(response_code, reason_phrase, Message::Outgoing));
-  CloneTo<Via>(response.get());
-  CloneTo<From>(response.get());
-  CloneTo<To>(response.get());
-  CloneTo<CallId>(response.get());
-  CloneTo<Cseq>(response.get());
-  if (response_code == 100) {
-    std::unique_ptr<Timestamp> timestamp(Clone<Timestamp>());
-    if (timestamp) {
-      double delay = (base::Time::Now() - time_stamp_).InSecondsF();
-      timestamp->set_delay(delay);
-      response->push_back(std::move(timestamp));
-    }
-  }
-  CloneTo<RecordRoute>(response.get());
-  response->set_refer_to(this);
-  referred_by_ = response->weakptr_factory_.GetWeakPtr();
-  return response;
-}
-
-scoped_refptr<Response> Request::CreateResponse(
-    int response_code,
-    const std::string &reason_phrase,
-    const std::string &to_tag) {
-  scoped_refptr<Response> response(
-      CreateResponseInternal(response_code, reason_phrase));
-  To *to = response->get<To>();
-  if (to) to->set_tag(to_tag);
-  return response;
+  return true;
 }
 
 }  // namespace sippet

@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "sippet/message/message.h"
+#include "sippet/message/request.h"
+#include "sippet/message/response.h"
 
 #include <string>
 
@@ -19,14 +21,12 @@ struct TestRequestData {
   bool expected_valid;
   const char* expected_method;
   const char* expected_request_uri;
-  SipVersion expected_version;
 };
 
 struct TestResponseData {
   const char* raw_headers;
   const char* expected_headers;
   bool expected_valid;
-  SipVersion expected_version;
   int expected_response_code;
   const char* expected_status_text;
 };
@@ -107,10 +107,10 @@ TEST_P(CommonSipRequestsTest, TestCommon) {
     std::replace(expected_headers.begin(), expected_headers.end(), '\n', '\\');
  
     EXPECT_EQ(expected_headers, headers);
- 
-    EXPECT_EQ(test.expected_method, parsed->request_method());
-    EXPECT_EQ(test.expected_request_uri, parsed->request_uri().spec());
-    EXPECT_TRUE(test.expected_version == parsed->GetSipVersion());
+
+    scoped_refptr<Request> request(parsed->as_request());
+    EXPECT_EQ(test.expected_method, request->request_method());
+    EXPECT_EQ(test.expected_request_uri, request->request_uri().spec());
   }
 }
 
@@ -136,10 +136,10 @@ TEST_P(CommonSipResponsesTest, TestCommon) {
     std::replace(expected_headers.begin(), expected_headers.end(), '\n', '\\');
  
     EXPECT_EQ(expected_headers, headers);
- 
-    EXPECT_TRUE(test.expected_version == parsed->GetSipVersion());
-    EXPECT_EQ(test.expected_response_code, parsed->response_code());
-    EXPECT_EQ(test.expected_status_text, parsed->GetStatusText());
+
+    scoped_refptr<Response> response(parsed->as_response());
+    EXPECT_EQ(test.expected_response_code, response->response_code());
+    EXPECT_EQ(test.expected_status_text, response->GetStatusText());
   }
 }
 
@@ -151,7 +151,7 @@ TestRequestData request_headers_tests[] = {
      "INVITE sip:user@example.com SIP/2.0\n"
      "Content-TYPE: application/sdp; charset=utf-8\n",
 
-     true, "INVITE", "sip:user@example.com", SipVersion(2, 0)},
+     true, "INVITE", "sip:user@example.com"},
     {// Normalize the method name.
      "InViTe sip:user@example.com  SIP/2.0 \n"
      "Content-TYPE  : application/sdp; charset=utf-8  \n",
@@ -159,7 +159,7 @@ TestRequestData request_headers_tests[] = {
      "INVITE sip:user@example.com SIP/2.0\n"
      "Content-TYPE: application/sdp; charset=utf-8\n",
 
-     true, "INVITE", "sip:user@example.com", SipVersion(2, 0)},
+     true, "INVITE", "sip:user@example.com"},
     {// Accept weird method names.
      "!interesting-Method0123456789_*+`.%indeed'~ "
      "sip:1_unusual.URI~(to-be!sure)&isn't+it$/crazy?,/;;*"
@@ -174,26 +174,25 @@ TestRequestData request_headers_tests[] = {
      true, "!INTERESTING-METHOD0123456789_*+`.%INDEED'~",
      "sip:1_unusual.URI~(to-be!sure)&isn't+it$/crazy?,/;;*"
      ":&it+has=1,weird!*pas$wo~d_too.(doesn't-it)"
-     "@example.com", SipVersion(2, 0)},
+     "@example.com"},
     {// Accept semicolon in Request-URI.
      "OPTIONS sip:user;par=u%40example.net@example.com SIP/2.0\n",
 
      "OPTIONS sip:user;par=u%40example.net@example.com SIP/2.0\n",
 
-     true, "OPTIONS", "sip:user;par=u%40example.net@example.com",
-     SipVersion(2, 0)},
+     true, "OPTIONS", "sip:user;par=u%40example.net@example.com"},
     {// Malformed SIP Request-URI.
      "INVITE sip:user@example.com; lr SIP/2.0\n",
 
      nullptr,
 
-     false, nullptr, nullptr, SipVersion()},
+     false},
     {// Unknown Protocol Version.
      "OPTIONS sip:t.watson@example.org SIP/7.0\n",
 
      nullptr,
 
-     false, nullptr, nullptr, SipVersion()},
+     false},
 };
 
 INSTANTIATE_TEST_CASE_P(MessageTest,
@@ -212,7 +211,7 @@ TestResponseData response_headers_tests[] = {
      "Expires: 7200\n"
      "Accept-Language: en\n",
 
-     true, SipVersion(2, 0), 202, "Accepted"},
+     true, 202, "Accepted"},
     {// Normalize leading whitespace.
      "SIP/2.0    202   Accepted  \n"
      // Starts with space -- will be skipped as invalid.
@@ -224,13 +223,13 @@ TestResponseData response_headers_tests[] = {
      "Expires: 7200\n"
      "Accept-Language: en\n",
 
-     true, SipVersion(2, 0), 202, "Accepted"},
+     true, 202, "Accepted"},
     {// Keep whitespace within status text.
      "SIP/2.0 404 Not   found  \n",
 
      "SIP/2.0 404 Not   found\n",
 
-     true, SipVersion(2, 0), 404, "Not   found"},
+     true, 404, "Not   found"},
     {// Normalize blank headers.
      "SIP/2.0 200 OK\n"
      "Header1 :          \n"
@@ -245,7 +244,7 @@ TestResponseData response_headers_tests[] = {
      "Header3: \n"
      "Header5: \n",
 
-     true, SipVersion(2, 0), 200, "OK"},
+     true, 200, "OK"},
     {// Normalize SIP/ case and do not add missing status text.
      "sIp/2.0 201\n"
      "Content-TYPE: application/sdp; charset=utf-8\n",
@@ -253,7 +252,7 @@ TestResponseData response_headers_tests[] = {
      "SIP/2.0 201\n"
      "Content-TYPE: application/sdp; charset=utf-8\n",
 
-     true, SipVersion(2, 0), 201, ""},
+     true, 201, ""},
     {// Normalize headers that start with a colon.
      "SIP/2.0    202   Accepted  \n"
      "foo: bar\n"
@@ -265,7 +264,7 @@ TestResponseData response_headers_tests[] = {
      "foo: bar\n"
      "baz: blat\n",
 
-     true, SipVersion(2, 0), 202, "Accepted"},
+     true, 202, "Accepted"},
     {// Normalize headers that end with a colon.
      "SIP/2.0    202   Accepted  \n"
      "foo:   \n"
@@ -279,7 +278,7 @@ TestResponseData response_headers_tests[] = {
      "baz: blat\n"
      "zip: \n",
 
-     true, SipVersion(2, 0), 202, "Accepted"},
+     true, 202, "Accepted"},
     {// Expand compact form headers.
      "SIP/2.0    202   Accepted  \n"
      "i:f81d4fae-7dec-11d0-a765-00a0c91e6bf6@192.0.2.4\n"
@@ -307,7 +306,7 @@ TestResponseData response_headers_tests[] = {
      "Via: SIP/2.0/UDP erlang.bell-telephone.com:5060;branch=z9hG4bK87asdks7\n"
      "x: foo\n",
 
-     true, SipVersion(2, 0), 202, "Accepted"},
+     true, 202, "Accepted"},
     {// Normalize contact-like headers.
      "SIP/2.0 202 Accepted  \n"
      "M:Mr.    John    <sips:bob@192.0.2.4>;expires=60\n"
@@ -323,47 +322,63 @@ TestResponseData response_headers_tests[] = {
      "From: <sip:c8oqz84zk7z@privacy.org>;tag=hyh8\n"
      "To: <sip:+12125551212@server.phone2net.com>\n",
 
-     true, SipVersion(2, 0), 202, "Accepted"},
+     true, 202, "Accepted"},
     {// Reject bad status line.
      "SCREWED_UP_START_LINE\n"
      "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
-     false, SipVersion(), 0, nullptr},
+     false, 0, nullptr},
     {// Reject bad version number.
      "SIP/1.0 202 Accepted\n"
      "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
-     false, SipVersion(), 0, nullptr},
+     false, 0, nullptr},
     {// Reject bad status code.
      "SIP/2.0 -1 Accepted\n"
      "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
-     false, SipVersion(), 0, nullptr},
+     false, 0, nullptr},
     {// Reject bad status code (2).
      "SIP/2.0 18 Accepted\n"
      "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
-     false, SipVersion(), 0, nullptr},
+     false, 0, nullptr},
     {// Reject bad status code (3).
      "SIP/2.0 4294967301 better not break the receiver\n"
      "Content-TYPE: application/sdp; charset=utf-8\n",
 
      nullptr,
 
-     false, SipVersion(), 0, nullptr},
+     false, 0, nullptr},
 };
 
 INSTANTIATE_TEST_CASE_P(MessageTest,
                         CommonSipResponsesTest,
                         testing::ValuesIn(response_headers_tests));
+
+TEST(MessageTest, ToString) {
+  std::string headers =
+      "SIP/2.0 200 OK\n"
+      "Contact: <sips:bob@192.0.2.4>;expires=60\n"
+      "Content-Encoding: tar\n";
+  HeadersToRaw(&headers);
+  scoped_refptr<Message> parsed(Message::Parse(headers));
+
+  EXPECT_EQ(
+      "SIP/2.0 200 OK\r\n"
+      "Contact: <sips:bob@192.0.2.4>;expires=60\r\n"
+      "Content-Encoding: tar\r\n"
+      "\r\n",
+      parsed->ToString());
+}
 
 TEST(MessageTest, EnumerateHeader_Coalesced) {
   // Ensure that commas in quoted strings are not regarded as value separators.
@@ -378,6 +393,7 @@ TEST(MessageTest, EnumerateHeader_Coalesced) {
         ";branch=z9hG4bK776asdhds ;received=192.0.2.1\n";
   HeadersToRaw(&headers);
   scoped_refptr<Message> parsed(Message::Parse(headers));
+  EXPECT_TRUE(parsed);
 
   size_t iter = 0;
   std::string value;
@@ -1025,7 +1041,7 @@ TEST_P(ReplaceStatusTest, ReplaceStatus) {
   scoped_refptr<Message> parsed(Message::Parse(orig_headers));
 
   std::string name(test.new_status);
-  parsed->ReplaceStartLine(name);
+  parsed->as_response()->ReplaceStatusLine(name);
 
   EXPECT_EQ(std::string(test.expected_headers), ToSimpleString(parsed));
 }
@@ -1220,7 +1236,7 @@ INSTANTIATE_TEST_CASE_P(MessageTest,
                         testing::ValuesIn(cseq_tests));
 
 TEST(MessageTest, Create_Request) {
-  scoped_refptr<Message> created(Message::Create("invite",
+  scoped_refptr<Message> created(new Request("invite",
         GURL("sip:user@example.com")));
 
   std::string headers = ToSimpleString(created);
@@ -1229,7 +1245,7 @@ TEST(MessageTest, Create_Request) {
 }
 
 TEST(MessageTest, Create_Response) {
-  scoped_refptr<Message> created(Message::Create(100, "Don't BREAK me out"));
+  scoped_refptr<Message> created(new Response(100, "Don't BREAK me out"));
 
   std::string headers = ToSimpleString(created);
 
@@ -1237,7 +1253,7 @@ TEST(MessageTest, Create_Response) {
 }
 
 TEST(MessageTest, Create_ResponseNoStatusText) {
-  scoped_refptr<Message> created(Message::Create(100));
+  scoped_refptr<Message> created(new Response(100));
 
   std::string headers = ToSimpleString(created);
 
@@ -1245,7 +1261,7 @@ TEST(MessageTest, Create_ResponseNoStatusText) {
 }
 
 TEST(MessageTest, Create_ResponseUnknownStatus) {
-  scoped_refptr<Message> created(Message::Create(151));
+  scoped_refptr<Message> created(new Response(151));
 
   std::string headers = ToSimpleString(created);
 

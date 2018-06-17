@@ -1,113 +1,55 @@
-// Copyright (c) 2013 The Sippet Authors. All rights reserved.
+// Copyright (c) 2013-2018 The Sippet Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef SIPPET_MESSAGE_REQUEST_H_
 #define SIPPET_MESSAGE_REQUEST_H_
 
-#include "base/time/time.h"
-#include "base/memory/weak_ptr.h"
-#include "url/gurl.h"
 #include "sippet/message/message.h"
-#include "sippet/message/method.h"
-#include "sippet/message/version.h"
-#include "sippet/message/status_code.h"
 
 namespace sippet {
 
-class Request :
-  public Message {
- private:
-  DISALLOW_COPY_AND_ASSIGN(Request);
-  ~Request() override;
+class Request : public Message {
  public:
-  // Create a |Request|. New requests assume the |Outgoing| direction.
-  Request(const Method &method,
-          const GURL &request_uri,
-          const Version &version = Version(2,0));
+  // RFC 3261 methods:
+  static const char kAck[];
+  static const char kBye[];
+  static const char kCancel[];
+  static const char kInvite[];
+  static const char kOptions[];
+  static const char kRegister[];
 
-  // Every answered |Request| refers to its corresponding |Response|.
-  scoped_refptr<Response> referred_by() const {
-    return referred_by_.get() ? referred_by_.get() : nullptr;
-  }
+  // Create a new |Request|.
+  Request(const base::StringPiece& request_method,
+          const GURL &request_uri);
 
-  // Every SIP request has an unique associated ID.
-  const std::string &id() const { return id_; }
+  // Returns the SIP request method normalized in uppercase.  This is empty if
+  // the request method could not be parsed.
+  const std::string& request_method() const { return request_method_; }
 
-  Method method() const;
-  void set_method(const Method &method);
+  // Returns the SIP request URI.  This is empty if the request URI could not
+  // be parsed.
+  const GURL& request_uri() const { return request_uri_; };
 
-  GURL request_uri() const;
-  void set_request_uri(const GURL &request_uri);
-
-  Version version() const;
-  void set_version(const Version &version);
-
-  void print(raw_ostream &os) const override;
-
-  // Responses can be generated from incoming requests by using this method.
-  // Headers |From|, |CallId|, |CSeq|, |Via| and |To| are copied from the
-  // request. If the |To| header doesn't contain a tag, then a new random one
-  // is generated (32-bit random string). When a 100 (Trying) |Response| is
-  // generated, any |Timestamp| header present in the |Request| is copied into
-  // the |Response|. Delays are added into the |Timestamp| header of the
-  // response by using the internal timestamp value of the |Request| creation.
-  // By default, any |RecordRoute| header available in the |Request| is copied
-  // to the generated |Response|. Created responses have always |Outgoing|
-  // direction.
-  scoped_refptr<Response> CreateResponse(
-      int response_code,
-      const std::string &reason_phrase);
-  scoped_refptr<Response> CreateResponse(StatusCode code);
-
-  // A |Method::CANCEL| request can be created from an |Method::INVITE|
-  // request by calling this method. Headers |Via|, |MaxForwards|, |From|,
-  // |To|, |CallId|, |Cseq| and |Route| are populated from the current request.
-  int CreateCancel(scoped_refptr<Request> &cancel);
-
-  // Get a the dialog identifier.
-  std::string GetDialogId() const override;
-
-  // Create another request containing all headers of the current request,
-  // incrementing the sequence number (CSeq) if available. Useful for creating
-  // new requests for authentication purposes.
-  scoped_refptr<Request> CloneRequest() const;
+  bool IsRequest() const override;
 
  private:
-  friend class Dialog;
   friend class Message;
-  friend class ClientTransactionImpl;
+  friend class base::RefCountedThreadSafe<Request>;
 
-  Method method_;
-  std::string id_;
+  Request();
+  ~Request() override;
+
+  // Tries to extract the request line from a header block.
+  bool ParseStartLine(std::string::const_iterator line_begin,
+                      std::string::const_iterator line_end,
+                      std::string* raw_headers) override;
+
+  // This is the parsed SIP request method.
+  std::string request_method_;
+
+  // This is the parsed SIP Request-URI.
   GURL request_uri_;
-  Version version_;
-  base::Time time_stamp_;
-  base::WeakPtr<Response> referred_by_;
-
-  // Used by the parser.
-  Request(const Method &method,
-          const GURL &request_uri,
-          Direction direction,
-          const Version &version);
-
-  // Creates an |Method::ACK| request from a |Method::INVITE| request. Intended
-  // to be used by the transaction layer only. Headers |MaxForwards|, |From|,
-  // |To|, |CallId|, |Cseq|, |Route| and |Via| are copied from the current
-  // request. A |remote_tag| needs to collected from a |To::tag| contained on
-  // a final response to the initial |Method::INVITE| request.
-  int CreateAck(const std::string &remote_tag,
-                scoped_refptr<Request> &ack);
-
-  scoped_refptr<Response> CreateResponseInternal(
-      int response_code,
-      const std::string &reason_phrase);
-
-  // Intended to be used only by the dialog.
-  scoped_refptr<Response> CreateResponse(
-      int response_code,
-      const std::string &reason_phrase,
-      const std::string &to_tag);
 };
 
 } // End of sippet namespace

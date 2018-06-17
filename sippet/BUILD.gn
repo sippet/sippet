@@ -11,6 +11,10 @@ static_library("sippet") {
   sources = [
     "message/message.h",
     "message/message.cc",
+    "message/request.h",
+    "message/request.cc",
+    "message/response.h",
+    "message/response.cc",
     "message/sip_util.h",
     "message/sip_util.cc",
     "message/sip_version.h",

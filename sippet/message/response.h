@@ -1,77 +1,49 @@
-// Copyright (c) 2013 The Sippet Authors. All rights reserved.
+// Copyright (c) 2013-2018 The Sippet Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef SIPPET_MESSAGE_RESPONSE_H_
 #define SIPPET_MESSAGE_RESPONSE_H_
 
-#include "base/gtest_prod_util.h"
 #include "sippet/message/message.h"
-#include "sippet/message/version.h"
 
 namespace sippet {
 
-namespace ua {
-class UserAgent;
-} // namespace ua
-
-class Response :
-  public Message {
-private:
-  DISALLOW_COPY_AND_ASSIGN(Response);
+class Response : public Message {
 public:
-  // Every processed |Response| object should refer to some
-  // previous |Request|.
-  const scoped_refptr<Request> &refer_to() const {
-    return refer_to_;
-  }
+  // Creates a new response Message.
+  Response(int response_code);
+  Response(int response_code, const base::StringPiece& status_text);
 
+  // Returns the SIP response code.  This is -1 if the response code text could
+  // not be parsed.
   int response_code() const { return response_code_; }
-  void set_response_code(int response_code) {
-    response_code_ = response_code;
-  }
 
-  std::string reason_phrase() const { return reason_phrase_; }
-  void set_reason_phrase(const std::string &reason_phrase) {
-    reason_phrase_ = reason_phrase;
-  }
+  // Get the SIP status text of the normalized status line.
+  std::string GetStatusText() const;
 
-  Version version() const { return version_; }
-  void set_version(const Version &version) {
-    version_ = version;
-  }
+  // Replaces the current status line with the provided one (|new_start| should
+  // not have any EOL).
+  void ReplaceStatusLine(const std::string& new_status);
 
-  void print(raw_ostream &os) const override;
-
-  // Get a the dialog identifier.
-  std::string GetDialogId() const override;
+  bool IsRequest() const override;
 
 private:
+  friend class Message;
+  friend class base::RefCountedThreadSafe<Response>;
+
+  Response();
   ~Response() override;
 
-  FRIEND_TEST_ALL_PREFIXES(NetworkLayerTest, StaticFunctions);
-  FRIEND_TEST_ALL_PREFIXES(AuthControllerTest, NoExplicitCredentialsAllowed);
+  void Init(int response_code, const base::StringPiece& status_text);
 
-  friend class Request;
-  friend class Message;
-  friend class ClientTransactionImpl;
-  friend class AuthControllerTest;
-  friend class ua::UserAgent;
+  // Tries to extract the status line from a header block.
+  bool ParseStartLine(std::string::const_iterator line_begin,
+                      std::string::const_iterator line_end,
+                      std::string* raw_headers) override;
 
-  Version version_;
+  // This is the parsed SIP response code.
   int response_code_;
-  scoped_refptr<Request> refer_to_;
-  std::string reason_phrase_;
-  base::WeakPtrFactory<Response> weakptr_factory_;
-
-  Response(int response_code,
-           const std::string &reason_phrase,
-           Direction direction,
-           const Version &version = Version(2,0));
-
-  void set_refer_to(const scoped_refptr<Request> &request) {
-    refer_to_ = request;
-  }
 };
 
 } // End of sippet namespace

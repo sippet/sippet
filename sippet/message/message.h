@@ -28,26 +28,12 @@ class Time;
 
 namespace sippet {
 
+class Request;
+class Response;
+
 class SIPPET_EXPORT Message
     : public base::RefCountedThreadSafe<Message> {
  public:
-  // RFC 3261 methods:
-  static const char kAck[];
-  static const char kBye[];
-  static const char kCancel[];
-  static const char kInvite[];
-  static const char kOptions[];
-  static const char kRegister[];
-
-  // Creates a new request Message.
-  static scoped_refptr<Message> Create(const base::StringPiece& method,
-                                       const GURL& request_uri);
-
-  // Creates a new response Message.
-  static scoped_refptr<Message> Create(int response_code);
-  static scoped_refptr<Message> Create(int response_code,
-                                       const base::StringPiece& status_text);
-
   // Parses the given raw_headers.  raw_headers should be formatted thus: each
   // line is \0-terminated, and it's terminated by an empty line (ie, 2 \0s in
   // a row).  (Note that line continuations should have already been joined;
@@ -75,10 +61,6 @@ class SIPPET_EXPORT Message
   // merged together by this method; the one provided is simply put at the
   // end of the list.
   void AddHeader(const std::string& header);
-
-  // Replaces the current start line with the provided one (|new_start| should
-  // not have any EOL).
-  void ReplaceStartLine(const std::string& new_start);
 
   // Fetch the "normalized" value of a single header, where all values for the
   // header name are separated by commas.  See the GetNormalizedMessage for
@@ -248,28 +230,10 @@ class SIPPET_EXPORT Message
   bool GetSentBy(net::HostPortPair* sent_by) const;
 
   // Returns whether the message is a request.
-  bool IsRequest() const { return !request_method_.empty(); }
+  virtual bool IsRequest() const = 0;
 
   // Returns whether the message is a response.
   bool IsResponse() const { return !IsRequest(); }
-
-  // Returns the SIP request method normalized in uppercase.  This is empty if
-  // the request method could not be parsed.
-  const std::string& request_method() const { return request_method_; }
-
-  // Returns the SIP request URI.  This is empty if the request URI could not
-  // be parsed.
-  const GURL& request_uri() const { return request_uri_; };
-
-  // Returns the SIP response code.  This is -1 if the response code text could
-  // not be parsed.
-  int response_code() const { return response_code_; }
-
-  // Get the SIP status text of the normalized status line.
-  std::string GetStatusText() const;
-
-  // Get the SIP version of the normalized status line.
-  SipVersion GetSipVersion() const { return sip_version_; }
 
   // Returns the raw header string.
   const std::string& raw_headers() const { return raw_headers_; }
@@ -288,17 +252,54 @@ class SIPPET_EXPORT Message
   // response. If they are related, they will be equal.
   std::string server_key() const;
 
- private:
+  // Returns the message as request or response.
+  Request* as_request();
+  Response* as_response();
+  const Request* as_request() const;
+  const Response* as_response() const;
+
+  // Serializes Message to a string representation. Joins all the header keys
+  // and values with ": ", and inserts "\r\n" between each header line, and
+  // adds the trailing "\r\n".
+  std::string ToString() const;
+
+ protected:
   friend class base::RefCountedThreadSafe<Message>;
 
   using HeaderSet = std::unordered_set<std::string>;
 
+  Message();
+  virtual ~Message();
+
+  // Parse the message.
+  bool ParseInternal(const std::string& raw_headers);
+
+  // Helper function for ParseStartLine.
+  // Tries to extract the "SIP/X.Y" from a status line formatted like:
+  //    SIP/2.0 200 OK
+  // with line_begin and end pointing at the begin and end of this line.  If the
+  // status line is malformed, returns SipVersion(0,0).
+  static SipVersion ParseVersion(std::string::const_iterator line_begin,
+                                 std::string::const_iterator line_end);
+
+  // Replaces the current headers with the merged version of |raw_headers| and
+  // the current headers without the headers in |headers_to_remove|. Note that
+  // |headers_to_remove| are removed from the current headers (before the
+  // merge), not after the merge.
+  void MergeWithMessage(const std::string& raw_headers,
+                        const HeaderSet& headers_to_remove);
+
+  // Tries to extract the start line from a header block, either a status line
+  // or a request line.
+  // Output will be a normalized version of this.
+  virtual bool ParseStartLine(std::string::const_iterator line_begin,
+                              std::string::const_iterator line_end,
+                              std::string* raw_headers) = 0;
+
+ private:
   // The members of this structure point into raw_headers_.
   struct ParsedHeader;
   typedef std::vector<ParsedHeader> HeaderList;
-
-  Message();
-  ~Message();
 
   // Normalize headers, expanding compact form header names, before parsing the
   // message.
@@ -312,31 +313,6 @@ class SIPPET_EXPORT Message
   // Normalize Via header.
   bool NormalizeViaHeader(std::string::const_iterator values_begin,
                           std::string::const_iterator values_end);
-
-  // Parse the message.
-  bool ParseInternal(const std::string& raw_headers);
-
-  // Helper function for ParseStartLine.
-  // Tries to extract the "SIP/X.Y" from a status line formatted like:
-  //    SIP/2.0 200 OK
-  // with line_begin and end pointing at the begin and end of this line.  If the
-  // status line is malformed, returns SipVersion(0,0).
-  static SipVersion ParseVersion(std::string::const_iterator line_begin,
-                                 std::string::const_iterator line_end);
-
-  // Tries to extract the start line from a header block, either a status line
-  // or a request line.
-  // Output will be a normalized version of this.
-  bool ParseStartLine(std::string::const_iterator line_begin,
-                      std::string::const_iterator line_end);
-
-  // Tries to extract the request line from a header block.
-  bool ParseRequestLine(std::string::const_iterator line_begin,
-                        std::string::const_iterator line_end);
-
-  // Tries to extract the status line from a header block.
-  bool ParseStatusLine(std::string::const_iterator line_begin,
-                       std::string::const_iterator line_end);
 
   // Find the header in our list (case-insensitive) starting with parsed_ at
   // index |from|.  Returns string::npos if not found.
@@ -355,13 +331,6 @@ class SIPPET_EXPORT Message
                    std::string::const_iterator value_begin,
                    std::string::const_iterator value_end);
 
-  // Replaces the current headers with the merged version of |raw_headers| and
-  // the current headers without the headers in |headers_to_remove|. Note that
-  // |headers_to_remove| are removed from the current headers (before the
-  // merge), not after the merge.
-  void MergeWithMessage(const std::string& raw_headers,
-                        const HeaderSet& headers_to_remove);
-
   // We keep a list of ParsedHeader objects.  These tell us where to locate the
   // header-value pairs within raw_headers_.
   HeaderList parsed_;
@@ -370,18 +339,6 @@ class SIPPET_EXPORT Message
   // null byte) and then followed by the raw null-terminated headers from the
   // input that was passed to our constructor.
   std::string raw_headers_;
-
-  // This is the parsed SIP response code.
-  int response_code_;
-
-  // This is the parsed SIP request method.
-  std::string request_method_;
-
-  // This is the parsed SIP Request-URI.
-  GURL request_uri_;
-
-  // The normalized sip version.
-  SipVersion sip_version_;
 
   // The message body.
   std::string body_;
