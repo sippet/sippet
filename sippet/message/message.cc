@@ -656,7 +656,7 @@ bool Message::GetSentBy(net::HostPortPair* sent_by) const {
 
 std::string Message::client_key() const {
   CHECK(HasHeader("via"));
-  std::string key, method, branch;
+  std::string key("C->"), method, branch;
   if (IsRequest()) {
     method = as_request()->request_method();
   } else {
@@ -671,7 +671,7 @@ std::string Message::client_key() const {
 
 std::string Message::server_key() const {
   CHECK(HasHeader("via"));
-  std::string key, method, branch;
+  std::string key("S->"), method, branch;
   net::HostPortPair sent_by;
   if (IsRequest()) {
     method = as_request()->request_method();

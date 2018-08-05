@@ -7,7 +7,7 @@ import("//testing/test.gni")
 
 use_v8_in_net = !is_ios && !is_android
 
-static_library("sippet") {
+component("sippet") {
   sources = [
     "message/message.h",
     "message/message.cc",
@@ -18,7 +18,16 @@ static_library("sippet") {
     "message/sip_util.h",
     "message/sip_util.cc",
     "message/sip_version.h",
+    "transaction_layer.h",
+    "transaction_layer.cc",
+    "transaction_layer_factory.h",
+    "transaction_layer_impl.h",
+    "transaction_layer_impl.cc",
+    "transaction_layer_core.h",
+    "transaction_layer_core.cc",
   ]
+
+  defines = [ "SIPPET_IMPLEMENTATION" ]
 
   public_deps = [
     "//base",

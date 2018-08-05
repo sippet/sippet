@@ -23,7 +23,7 @@ class SIPPET_EXPORT TransportLayer {
   // |transaction_layer| must not be null.
   // |core| must not be null.
   void Init(TransactionLayer* transaction_layer, Core* core) {
-    transaction_later_ = transaction_layer;
+    transaction_layer_ = transaction_layer;
     core_ = core;
   }
 

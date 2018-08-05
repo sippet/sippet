@@ -9,6 +9,9 @@
 
 namespace sippet {
 
+class Request;
+class Response;
+
 class SIPPET_EXPORT Core {
  public:
   virtual ~Core();
@@ -17,7 +20,7 @@ class SIPPET_EXPORT Core {
   //
   // The |id| represents the server transaction identifier, created when
   // the request is received by the transaction layer.
-  virtual void OnIncomingRequest(scoped_ptr<Request> request, int id) = 0;
+  virtual void OnIncomingRequest(scoped_refptr<Request> request) = 0;
 
   // Called on a new incoming response.
   //
@@ -26,7 +29,7 @@ class SIPPET_EXPORT Core {
   //
   // If the |id| is zero, then the incoming response didn't pass through a
   // client transaction (i.e. 200 OK for INVITE requests).
-  virtual void OnIncomingResponse(scoped_ptr<Response> response, int id) = 0;
+  virtual void OnIncomingResponse(scoped_refptr<Response> response) = 0;
 
   // Called when a timeout is detected while trying to send a request, or while
   // trying to send an INVITE error response.
@@ -34,12 +37,12 @@ class SIPPET_EXPORT Core {
   // |request| the request associated with the transaction. For client
   // requests, it's the outgoing request. For server requests, it's the
   // incoming request.
-  virtual void OnTimedOut(int id) = 0;
+  virtual void OnTimedOut(const std::string& id) = 0;
 
   // Called when there's a transport error sending a request or response.
   //
   // The |id| can be a client transaction id or a server transaction id.
-  virtual void OnTransportError(int id, int error) = 0;
+  virtual void OnTransportError(const std::string& id, int error) = 0;
 };
 
 }  // namespace sippet

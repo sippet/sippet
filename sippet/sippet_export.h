@@ -10,20 +10,25 @@
 
 #if defined(SIPPET_IMPLEMENTATION)
 #define SIPPET_EXPORT __declspec(dllexport)
+#define SIPPET_EXPORT_PRIVATE __declspec(dllexport)
 #else
 #define SIPPET_EXPORT __declspec(dllimport)
+#define SIPPET_EXPORT_PRIVATE __declspec(dllimport)
 #endif  // defined(SIPPET_IMPLEMENTATION)
 
 #else  // defined(WIN32)
 #if defined(SIPPET_IMPLEMENTATION)
 #define SIPPET_EXPORT __attribute__((visibility("default")))
+#define SIPPET_EXPORT_PRIVATE __attribute__((visibility("default")))
 #else
 #define SIPPET_EXPORT
+#define SIPPET_EXPORT_PRIVATE
 #endif  // defined(SIPPET_IMPLEMENTATION)
 #endif
 
 #else  // defined(COMPONENT_BUILD)
 #define SIPPET_EXPORT
+#define SIPPET_EXPORT_EXPORT
 #endif
 
 #endif  // SIPPET_SIPPET_EXPORT_H_
