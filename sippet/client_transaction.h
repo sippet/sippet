@@ -14,10 +14,11 @@ class Request;
 class Response;
 class TransportLayer;
 
-class ClientTransaction : public base::RefCounted<ClientTransaction> {
+class ClientTransaction {
  public:
   ClientTransaction(scoped_refptr<Request> request,
       const TransactionConfig& config, TransportLayer* transport_layer);
+  ~ClientTransaction();
 
   // Start the client transaction. The request is sent to the transport layer
   // at this moment.
@@ -31,9 +32,6 @@ class ClientTransaction : public base::RefCounted<ClientTransaction> {
   void Terminate();
 
  private:
-  friend class base::RefCounted<ClientTransaction>;
-  virtual ~ClientTransaction();
-
   scoped_refptr<Request> request_;
   const TransactionConfig config_;
   TransportLayer* transport_layer_;

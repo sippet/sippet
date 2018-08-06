@@ -5,6 +5,7 @@
 #ifndef SIPPET_TRANSACTION_LAYER_CORE_H_
 #define SIPPET_TRANSACTION_LAYER_CORE_H_
 
+#include <memory>
 #include <unordered_map>
 
 #include "base/memory/ref_counted.h"
@@ -75,9 +76,9 @@ class SIPPET_EXPORT_PRIVATE TransactionLayerCore
   scoped_refptr<base::SingleThreadTaskRunner> network_task_runner_;
 
   // Transaction maps.
-  std::unordered_map<std::string, scoped_refptr<ClientTransaction>>
+  std::unordered_map<std::string, std::unique_ptr<ClientTransaction>>
       client_transactions_map_;
-  std::unordered_map<std::string, scoped_refptr<ServerTransaction>>
+  std::unordered_map<std::string, std::unique_ptr<ServerTransaction>>
       server_transactions_map_;
 
   // The URL request context getter.

@@ -34,9 +34,6 @@ class SIPPET_EXPORT_PRIVATE TransactionLayerImpl : public TransactionLayer {
   static void set_factory(TransactionLayerFactory* factory);
   static TransactionLayerFactory* factory();
 
- protected:
-  Core* core() const;
-
  private:
   const scoped_refptr<TransactionLayerCore> core_;
 

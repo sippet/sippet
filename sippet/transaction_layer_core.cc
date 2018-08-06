@@ -10,6 +10,7 @@
 #include "base/single_thread_task_runner.h"
 #include "base/threading/sequenced_task_runner_handle.h"
 #include "base/strings/string_util.h"
+#include "base/memory/ptr_util.h"
 #include "net/base/net_errors.h"
 #include "net/url_request/url_request_context_getter.h"
 #include "sippet/core.h"
@@ -105,13 +106,12 @@ void TransactionLayerCore::OnMessage(scoped_refptr<Message> message) {
     scoped_refptr<Request> request = message->as_request();
     std::string server_key = request->server_key();
 
-    scoped_refptr<ServerTransaction> server_transaction;
     auto it = server_transactions_map_.find(server_key);
     if (it == server_transactions_map_.end()) {
       LOG(INFO) << "New server transaction " << server_key;
-      server_transaction = new ServerTransaction(request, config_,
-          transport_layer_);
-      server_transactions_map_[server_key] = server_transaction;
+      std::unique_ptr<ServerTransaction> server_transaction(
+          new ServerTransaction(request, config_, transport_layer_));
+      server_transactions_map_[server_key] = std::move(server_transaction);
       server_transaction->Start();
     } else {
       it->second->ReceiveRequest(request);
@@ -169,13 +169,12 @@ void TransactionLayerCore::SendRequestOnIOThread(
     scoped_refptr<Request> request) {
   std::string client_key = request->client_key();
 
-  scoped_refptr<ClientTransaction> client_transaction;
   auto it = client_transactions_map_.find(client_key);
   if (it == client_transactions_map_.end()) {
     LOG(INFO) << "New client transaction " << client_key;
-    client_transaction = new ClientTransaction(request, config_,
-        transport_layer_);
-    client_transactions_map_[client_key] = client_transaction;
+    std::unique_ptr<ClientTransaction> client_transaction(
+        new ClientTransaction(request, config_, transport_layer_));
+    client_transactions_map_[client_key] = std::move(client_transaction);
     client_transaction->Start();
   } else {
     LOG(WARNING) << "Trying to duplicate an existing transaction, ignored";
@@ -186,7 +185,6 @@ void TransactionLayerCore::SendResponseOnIOThread(
     scoped_refptr<Response> response) {
   std::string server_key = response->server_key();
 
-  scoped_refptr<ServerTransaction> server_transaction;
   auto it = server_transactions_map_.find(server_key);
   if (it != server_transactions_map_.end()) {
     it->second->SendResponse(response);
