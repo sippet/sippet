@@ -5,7 +5,10 @@
 #ifndef SIPPET_CORE_H_
 #define SIPPET_CORE_H_
 
+#include <string>
+
 #include "sippet/sippet_export.h"
+#include "base/memory/ref_counted.h"
 
 namespace sippet {
 

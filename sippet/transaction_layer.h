@@ -20,6 +20,7 @@ class TransportLayer;
 class Message;
 class Request;
 class Response;
+struct TransactionConfig;
 
 class SIPPET_EXPORT TransactionLayer {
  public:
@@ -29,8 +30,12 @@ class SIPPET_EXPORT TransactionLayer {
   // |core| is stack core, and should not be destroyed before the transaction
   // layer.
   static std::unique_ptr<TransactionLayer> Create(
-      TransportLayer* transport,
-      Core* core);
+      TransportLayer* transport, Core* core);
+
+  // Same function as above, but accept configurations. Used for testing.
+  static std::unique_ptr<TransactionLayer> Create(
+      TransportLayer* transport, Core* core,
+      const TransactionConfig& config);
 
   // Set the URLRequestContext on the request.  Must be called before start.
   virtual void SetRequestContext(

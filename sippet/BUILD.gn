@@ -18,6 +18,8 @@ component("sippet") {
     "message/sip_util.h",
     "message/sip_util.cc",
     "message/sip_version.h",
+    "transaction_config.h",
+    "transaction_config.cc",
     "transaction_layer.h",
     "transaction_layer.cc",
     "transaction_layer_factory.h",

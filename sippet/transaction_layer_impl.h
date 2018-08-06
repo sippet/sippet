@@ -8,13 +8,14 @@
 #include "sippet/transaction_layer.h"
 
 namespace sippet {
-
 class TransactionLayerCore;
 class TransactionLayerFactory;
+struct TransactionConfig;
 
 class SIPPET_EXPORT_PRIVATE TransactionLayerImpl : public TransactionLayer {
  public:
-  TransactionLayerImpl(TransportLayer* transport, Core* core);
+  TransactionLayerImpl(TransportLayer* transport, Core* core,
+      const TransactionConfig& config);
   ~TransactionLayerImpl() override;
 
   // TransactionLayer implementation:

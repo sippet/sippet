@@ -10,6 +10,7 @@
 #include "base/memory/ref_counted.h"
 #include "sippet/sippet_export.h"
 #include "sippet/transaction_layer.h"
+#include "sippet/transaction_config.h"
 
 namespace base {
 class SequencedTaskRunner;
@@ -18,14 +19,15 @@ class SingleThreadTaskRunner;
 
 namespace sippet {
 class Core;
-class TransactionClient;
-class TransactionServer;
+class ClientTransaction;
+class ServerTransaction;
 class TransactionLayerImpl;
 
 class SIPPET_EXPORT_PRIVATE TransactionLayerCore
   : public base::RefCountedThreadSafe<TransactionLayerCore> {
  public:
-  TransactionLayerCore(TransportLayer* transport, Core* core);
+  TransactionLayerCore(TransportLayer* transport_layer, Core* core,
+      const TransactionConfig& config);
 
   // Starts the layer. It's important that this does not happen in the
   // constructor because it causes the IO thread to begin AddRef()ing and
@@ -48,6 +50,10 @@ class SIPPET_EXPORT_PRIVATE TransactionLayerCore
   void OnMessage(scoped_refptr<Message> message);
   void OnTransportError(const std::string& id, int error);
 
+  // Called by ClientTransaction and ServerTransaction to remove themselves.
+  void RemoveClientTransaction(const std::string& id);
+  void RemoveServerTransaction(const std::string& id);
+
  private:
   friend class base::RefCountedThreadSafe<sippet::TransactionLayerCore>;
 
@@ -60,7 +66,8 @@ class SIPPET_EXPORT_PRIVATE TransactionLayerCore
   void TerminateOnIOThread(const std::string& id);
   void CancelAllTransactions(int error);
 
-  TransportLayer* transport_;  // The transport layer
+  const TransactionConfig config_;  // The transaction config
+  TransportLayer* transport_layer_;  // The transport layer
   Core* core_;  // Object to notify on events
   // Task runner for the creating sequence. Used to interact with the core.
   const scoped_refptr<base::SequencedTaskRunner> core_task_runner_;
@@ -68,9 +75,9 @@ class SIPPET_EXPORT_PRIVATE TransactionLayerCore
   scoped_refptr<base::SingleThreadTaskRunner> network_task_runner_;
 
   // Transaction maps.
-  std::unordered_map<std::string, scoped_refptr<TransactionClient>>
+  std::unordered_map<std::string, scoped_refptr<ClientTransaction>>
       client_transactions_map_;
-  std::unordered_map<std::string, scoped_refptr<TransactionServer>>
+  std::unordered_map<std::string, scoped_refptr<ServerTransaction>>
       server_transactions_map_;
 
   // The URL request context getter.

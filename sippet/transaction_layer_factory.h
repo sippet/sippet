@@ -10,13 +10,15 @@
 namespace sippet {
 class Core;
 class TransportLayer;
+struct TransactionConfig;
 
 // TransactionLayer::Create uses the currently registered Factory to create the
 // TransactionLayer. Factory is intended for testing.
 class TransactionLayerFactory {
  public:
   virtual std::unique_ptr<TransactionLayer> CreateTransactionLayer(
-      TransportLayer* transport, Core* core) = 0;
+      TransportLayer* transport, Core* core,
+      const TransactionConfig& config) = 0;
 
  protected:
   virtual ~TransactionLayerFactory() {}

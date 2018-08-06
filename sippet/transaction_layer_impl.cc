@@ -18,8 +18,8 @@ static TransactionLayerFactory* g_factory = nullptr;
 }  // namespace
 
 TransactionLayerImpl::TransactionLayerImpl(TransportLayer* transport,
-    Core* core)
-    : core_(new TransactionLayerCore(transport, core)) {
+    Core* core, const TransactionConfig& config)
+    : core_(new TransactionLayerCore(transport, core, config)) {
   transport->Init(this, core);
 }
 
