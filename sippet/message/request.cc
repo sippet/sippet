@@ -5,6 +5,7 @@
 #include "sippet/message/request.h"
 
 #include "base/strings/string_util.h"
+#include "base/strings/string_number_conversions.h"
 
 namespace sippet {
 
@@ -31,6 +32,41 @@ Request::~Request() {}
 
 bool Request::IsRequest() const {
   return true;
+}
+
+scoped_refptr<Request> Request::CreateAck(const std::string& to_tag) {
+  DCHECK(request_method_ == kInvite);
+
+  scoped_refptr<Request> ack = new Request(kAck, request_uri_);
+
+  size_t it;
+  std::string value;
+
+  it = 0;
+  while (EnumerateHeader(&it, "Via", &value)) {
+    ack->AddHeader("Via: " + value);
+  }
+
+  ack->AddHeader("Max-Forwards: 70");
+
+  EnumerateHeader(nullptr, "From", &value);
+  ack->AddHeader("From: " + value);
+
+  EnumerateHeader(nullptr, "To", &value);
+  ack->AddHeader("To: " + value + ";tag=" + to_tag);
+
+  EnumerateHeader(nullptr, "Call-ID", &value);
+  ack->AddHeader("Call-ID: " + value);
+
+  int64_t sequence = GetCSeq(nullptr);
+  ack->AddHeader("CSeq: " + base::Int64ToString(sequence) + " ACK");
+
+  it = 0;
+  while (EnumerateHeader(&it, "Route", &value)) {
+    ack->AddHeader("Route: " + value);
+  }
+
+  return ack;
 }
 
 bool Request::ParseStartLine(std::string::const_iterator line_begin,

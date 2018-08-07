@@ -34,6 +34,13 @@ class Response;
 class SIPPET_EXPORT Message
     : public base::RefCountedThreadSafe<Message> {
  public:
+  // SIP protocols
+  static const char kTcp[];
+  static const char kTls[];
+  static const char kUdp[];
+  static const char kWs[];
+  static const char kWss[];
+
   // Parses the given raw_headers.  raw_headers should be formatted thus: each
   // line is \0-terminated, and it's terminated by an empty line (ie, 2 \0s in
   // a row).  (Note that line continuations should have already been joined;

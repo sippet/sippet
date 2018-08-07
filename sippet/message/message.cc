@@ -40,6 +40,12 @@ void ReadNormalizingParameterNames(
 
 }  // namespace
 
+const char Message::kTcp[] = "TCP";
+const char Message::kTls[] = "TLS";
+const char Message::kUdp[] = "UDP";
+const char Message::kWs[] = "WS";
+const char Message::kWss[] = "WSS";
+
 struct Message::ParsedHeader {
   // A header "continuation" contains only a subsequent value for the
   // preceding header.  (Header values are comma separated.)

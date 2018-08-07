@@ -27,6 +27,10 @@ component("sippet") {
     "transaction_layer_impl.cc",
     "transaction_layer_core.h",
     "transaction_layer_core.cc",
+    "client_transaction.h",
+    "client_transaction.cc",
+    "server_transaction.h",
+    "server_transaction.cc",
   ]
 
   defines = [ "SIPPET_IMPLEMENTATION" ]

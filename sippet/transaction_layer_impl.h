@@ -5,6 +5,7 @@
 #ifndef SIPPET_TRANSACTION_LAYER_IMPL_H_
 #define SIPPET_TRANSACTION_LAYER_IMPL_H_
 
+#include "sippet/sippet_export.h"
 #include "sippet/transaction_layer.h"
 
 namespace sippet {

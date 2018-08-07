@@ -110,7 +110,8 @@ void TransactionLayerCore::OnMessage(scoped_refptr<Message> message) {
     if (it == server_transactions_map_.end()) {
       LOG(INFO) << "New server transaction " << server_key;
       std::unique_ptr<ServerTransaction> server_transaction(
-          new ServerTransaction(request, config_, transport_layer_));
+          new ServerTransaction(request, config_, transport_layer_,
+              core_task_runner_, core_, this));
       server_transactions_map_[server_key] = std::move(server_transaction);
       server_transaction->Start();
     } else {
@@ -133,7 +134,6 @@ void TransactionLayerCore::OnTransportError(const std::string& id, int error) {
   if (base::StartsWith(id, "C->", base::CompareCase::SENSITIVE)) {
     auto it = client_transactions_map_.find(id);
     if (it != client_transactions_map_.end()) {
-      it->second->Terminate();
       client_transactions_map_.erase(it);
       core_task_runner_->PostTask(FROM_HERE,
           base::Bind(&Core::OnTransportError, base::Unretained(core_), id,
@@ -144,7 +144,6 @@ void TransactionLayerCore::OnTransportError(const std::string& id, int error) {
   } else if (base::StartsWith(id, "S->", base::CompareCase::SENSITIVE)) {
     auto it = server_transactions_map_.find(id);
     if (it != server_transactions_map_.end()) {
-      it->second->Terminate();
       server_transactions_map_.erase(it);
       core_task_runner_->PostTask(FROM_HERE,
           base::Bind(&Core::OnTransportError, base::Unretained(core_), id,
@@ -173,7 +172,8 @@ void TransactionLayerCore::SendRequestOnIOThread(
   if (it == client_transactions_map_.end()) {
     LOG(INFO) << "New client transaction " << client_key;
     std::unique_ptr<ClientTransaction> client_transaction(
-        new ClientTransaction(request, config_, transport_layer_));
+        new ClientTransaction(request, config_, transport_layer_,
+            core_task_runner_, core_, this));
     client_transactions_map_[client_key] = std::move(client_transaction);
     client_transaction->Start();
   } else {
@@ -197,13 +197,11 @@ void TransactionLayerCore::TerminateOnIOThread(const std::string& id) {
   if (base::StartsWith(id, "C->", base::CompareCase::SENSITIVE)) {
     auto it = client_transactions_map_.find(id);
     if (it != client_transactions_map_.end()) {
-      it->second->Terminate();
       client_transactions_map_.erase(it);
     }
   } else if (base::StartsWith(id, "S->", base::CompareCase::SENSITIVE)) {
     auto it = server_transactions_map_.find(id);
     if (it != server_transactions_map_.end()) {
-      it->second->Terminate();
       server_transactions_map_.erase(it);
     }
   } else {
@@ -213,13 +211,6 @@ void TransactionLayerCore::TerminateOnIOThread(const std::string& id) {
 
 void TransactionLayerCore::CancelAllTransactions(int error) {
   DCHECK(network_task_runner_->BelongsToCurrentThread());
-
-  for (auto& it : client_transactions_map_) {
-    it.second->Terminate();
-  }
-  for (auto& it : server_transactions_map_) {
-    it.second->Terminate();
-  }
 
   client_transactions_map_.clear();
   server_transactions_map_.clear();

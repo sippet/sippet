@@ -5,9 +5,12 @@
 #ifndef SIPPET_TRANSPORT_LAYER_H_
 #define SIPPET_TRANSPORT_LAYER_H_
 
+#include "base/memory/ref_counted.h"
 #include "sippet/sippet_export.h"
 
 namespace sippet {
+class Core;
+class TransactionLayer;
 
 class SIPPET_EXPORT TransportLayer {
  public:

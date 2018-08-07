@@ -33,6 +33,9 @@ class Request : public Message {
 
   bool IsRequest() const override;
 
+  // Create an ACK request from an INVITE request.
+  scoped_refptr<Request> CreateAck(const std::string& to_tag);
+
  private:
   friend class Message;
   friend class base::RefCountedThreadSafe<Request>;
