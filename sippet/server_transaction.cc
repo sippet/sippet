@@ -36,22 +36,193 @@ ServerTransaction::~ServerTransaction() {}
 void ServerTransaction::Start() {
   if (request_->request_method() == Request::kInvite) {
     next_state_ = STATE_PROCEED_CALLING;
-    //ScheduleProvisionalResponse();
+    ScheduleProvisionalResponse();
   } else {
     next_state_ = STATE_TRYING;
   }
 }
 
 void ServerTransaction::ReceiveRequest(scoped_refptr<Request> request) {
-  // TODO(guibv)
+  DCHECK(request);
+  DCHECK(next_state_ != STATE_TERMINATED);
+
+  if (request->request_method() != Request::kAck) {
+    if (STATE_PROCEEDING == next_state_
+        || STATE_PROCEED_CALLING == next_state_
+        || STATE_COMPLETED == next_state_) {
+      if (response_) {
+        transport_layer_->SendMessage(response_);
+      }
+    }
+  }
+
+  State state = next_state_;
+  switch (state) {
+    case STATE_TRYING:
+      break;
+    case STATE_PROCEEDING:
+    case STATE_PROCEED_CALLING:
+      break;
+    case STATE_COMPLETED:
+      if (request->request_method() == Request::kAck) {
+        next_state_ = STATE_CONFIRMED;
+      }
+      break;
+    case STATE_CONFIRMED:
+      break;
+    default:
+      NOTREACHED();
+      break;
+  }
+
+  if (STATE_CONFIRMED == next_state_
+      && next_state_ != state) {
+    StopTimers();
+    std::string protocol;
+    request_->EnumerateVia(nullptr, &protocol, nullptr, nullptr);
+    if (protocol != Message::kUdp) {
+      next_state_ = STATE_TERMINATED;
+    } else {
+      ScheduleTerminate();
+    }
+  }
+
+  if (STATE_TERMINATED == next_state_) {
+    Terminate();
+  }
 }
 
 void ServerTransaction::SendResponse(scoped_refptr<Response> response) {
-  // TODO(guibv)
+  DCHECK(response);
+
+  if (STATE_PROCEED_CALLING < next_state_) {
+    DVLOG(1) << "Ignored second final response attempt";
+    return;
+  }
+
+  if (STATE_PROCEED_CALLING == next_state_)
+    StopProvisionalResponse();
+
+  response_ = response;
+  transport_layer_->SendMessage(response);
+
+  State state = next_state_;
+  int response_code = response->response_code();
+  switch (state) {
+    case STATE_TRYING:
+      switch (response_code/100) {
+        case 1: next_state_ = STATE_PROCEEDING; break;
+        default: next_state_ = STATE_COMPLETED; break;
+      }
+    case STATE_PROCEEDING:
+      switch (response_code/100) {
+        case 1: break;
+        default: next_state_ = STATE_COMPLETED; break;
+      }
+      break;
+    case STATE_PROCEED_CALLING:
+      switch (response_code/100) {
+        case 1: break;
+        case 2: next_state_ = STATE_TERMINATED; break;
+        default: next_state_ = STATE_COMPLETED; break;
+      }
+      break;
+    default:
+      NOTREACHED() << "bad state " << state;
+  }
+
+  if (STATE_COMPLETED == next_state_
+      && next_state_ != state) {
+    std::string protocol;
+    request_->EnumerateVia(nullptr, &protocol, nullptr, nullptr);
+    if (request_->request_method() == Request::kInvite) {
+      if (protocol == Message::kUdp)
+        ScheduleRetry();
+      ScheduleTimeout();
+    } else {
+      if (protocol != Message::kUdp) {
+        next_state_ = STATE_TERMINATED;
+      } else {
+        ScheduleTerminate();
+      }
+    }
+  }
+
+  if (STATE_TERMINATED == next_state_)
+    Terminate();
 }
 
 void ServerTransaction::Terminate() {
   transaction_layer_core_->RemoveServerTransaction(request_->server_key());
+}
+
+void ServerTransaction::ScheduleRetry() {
+  retry_timer_.Start(FROM_HERE, GetNextRetryDelay(),
+      base::Bind(&ServerTransaction::RetransmitResponse,
+          weak_ptr_factory_.GetWeakPtr()));
+}
+
+void ServerTransaction::ScheduleTimeout() {
+  timeout_timer_.Start(FROM_HERE, GetTimeoutDelay(),
+    base::Bind(&ServerTransaction::ResponseTimeout,
+        weak_ptr_factory_.GetWeakPtr()));
+}
+
+void ServerTransaction::ScheduleTerminate() {
+  terminate_timer_.Start(FROM_HERE, GetTerminateDelay(),
+    base::Bind(&ServerTransaction::Terminate,
+        weak_ptr_factory_.GetWeakPtr()));
+}
+
+void ServerTransaction::ScheduleProvisionalResponse() {
+  base::TimeDelta delay = base::TimeDelta::FromMilliseconds(200);
+  provisional_response_timer_.Start(FROM_HERE, delay,
+      base::Bind(&ServerTransaction::SendProvisionalResponse,
+          weak_ptr_factory_.GetWeakPtr()));
+}
+
+void ServerTransaction::RetransmitResponse() {
+  DCHECK(request_->request_method() == Request::kInvite);
+  DCHECK(STATE_COMPLETED == next_state_);
+
+  transport_layer_->SendMessage(response_);
+
+  ScheduleRetry();
+}
+
+void ServerTransaction::ResponseTimeout() {
+  DCHECK(request_->request_method() == Request::kInvite);
+  DCHECK(STATE_COMPLETED == next_state_);
+
+  next_state_ = STATE_TERMINATED;
+  core_task_runner_->PostTask(FROM_HERE,
+      base::Bind(&Core::OnTimedOut, base::Unretained(core_),
+          request_->server_key()));
+
+  Terminate();
+}
+
+void ServerTransaction::SendProvisionalResponse() {
+  DCHECK(request_->request_method() == Request::kInvite);
+  DCHECK(STATE_PROCEED_CALLING == next_state_);
+  DCHECK(!response_ || response_->response_code() == 100);
+
+  if (!response_) {
+    response_ = request_->CreateResponse(100);
+  }
+
+  transport_layer_->SendMessage(response_);
+}
+
+void ServerTransaction::StopTimers() {
+  retry_timer_.Stop();
+  timeout_timer_.Stop();
+  terminate_timer_.Stop();
+  provisional_response_timer_.Stop();
+}
+
+void ServerTransaction::StopProvisionalResponse() {
+  provisional_response_timer_.Stop();
 }
 
 base::TimeDelta ServerTransaction::GetNextRetryDelay() {

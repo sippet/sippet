@@ -53,6 +53,22 @@ class ServerTransaction {
     STATE_TERMINATED
   };
 
+  // Start timers
+  void ScheduleRetry();
+  void ScheduleTimeout();
+  void ScheduleTerminate();
+  void ScheduleProvisionalResponse();
+
+  // Timer callbacks
+  void RetransmitResponse();
+  void ResponseTimeout();
+  void SendProvisionalResponse();
+
+  // Other functions
+  void StopTimers();
+  void StopProvisionalResponse();
+
+  // Return the timer durations
   base::TimeDelta GetNextRetryDelay();
   base::TimeDelta GetTimeoutDelay();
   base::TimeDelta GetTerminateDelay();
@@ -60,6 +76,7 @@ class ServerTransaction {
   State next_state_;
 
   scoped_refptr<Request> request_;
+  scoped_refptr<Response> response_;
   const TransactionConfig config_;
   TransportLayer* transport_layer_;
   int retransmissions_;
@@ -70,6 +87,7 @@ class ServerTransaction {
   base::OneShotTimer retry_timer_;
   base::OneShotTimer timeout_timer_;
   base::OneShotTimer terminate_timer_;
+  base::OneShotTimer provisional_response_timer_;
 
   TransactionLayerCore* transaction_layer_core_;
 

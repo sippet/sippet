@@ -6,6 +6,7 @@
 
 #include "base/strings/string_util.h"
 #include "base/strings/string_number_conversions.h"
+#include "sippet/message/response.h"
 
 namespace sippet {
 
@@ -69,6 +70,15 @@ scoped_refptr<Request> Request::CreateAck(const std::string& to_tag) {
   return ack;
 }
 
+scoped_refptr<Response> Request::CreateResponse(int response_code) {
+  return CreateResponse(new Response(response_code));
+}
+
+scoped_refptr<Response> Request::CreateResponse(int response_code,
+    const base::StringPiece& status_text) {
+  return CreateResponse(new Response(response_code, status_text));
+}
+
 bool Request::ParseStartLine(std::string::const_iterator line_begin,
                              std::string::const_iterator line_end,
                              std::string* raw_headers) {
@@ -114,6 +124,36 @@ bool Request::ParseStartLine(std::string::const_iterator line_begin,
   }
 
   return true;
+}
+
+scoped_refptr<Response> Request::CreateResponse(
+    scoped_refptr<Response> response) {
+  size_t it;
+  std::string value;
+
+  it = 0;
+  while (EnumerateHeader(&it, "Via", &value)) {
+    response->AddHeader("Via: " + value);
+  }
+
+  EnumerateHeader(nullptr, "From", &value);
+  response->AddHeader("From: " + value);
+
+  EnumerateHeader(nullptr, "To", &value);
+  response->AddHeader("To: " + value);
+
+  EnumerateHeader(nullptr, "Call-ID", &value);
+  response->AddHeader("Call-ID: " + value);
+
+  EnumerateHeader(nullptr, "CSeq", &value);
+  response->AddHeader("CSeq: " + value);
+
+  it = 0;
+  while (EnumerateHeader(&it, "Record-Route", &value)) {
+    response->AddHeader("Record-Route: " + value);
+  }
+
+  return response;
 }
 
 }  // namespace sippet

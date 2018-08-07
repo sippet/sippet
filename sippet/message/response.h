@@ -9,7 +9,7 @@
 
 namespace sippet {
 
-class Response : public Message {
+class SIPPET_EXPORT Response : public Message {
 public:
   // Creates a new response Message.
   Response(int response_code);

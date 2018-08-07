@@ -5,11 +5,12 @@
 #ifndef SIPPET_MESSAGE_REQUEST_H_
 #define SIPPET_MESSAGE_REQUEST_H_
 
+#include "sippet/sippet_export.h"
 #include "sippet/message/message.h"
 
 namespace sippet {
 
-class Request : public Message {
+class SIPPET_EXPORT Request : public Message {
  public:
   // RFC 3261 methods:
   static const char kAck[];
@@ -19,7 +20,7 @@ class Request : public Message {
   static const char kOptions[];
   static const char kRegister[];
 
-  // Create a new |Request|.
+  // Create a new request.
   Request(const base::StringPiece& request_method,
           const GURL &request_uri);
 
@@ -36,6 +37,14 @@ class Request : public Message {
   // Create an ACK request from an INVITE request.
   scoped_refptr<Request> CreateAck(const std::string& to_tag);
 
+  // Responses can be generated from requests by using this method. Headers
+  // "From", "Call-ID", "CSeq", "Via" and "To" are copied from the request. By
+  // default, any "Record-Route" header available in the request is copied to
+  // the generated response.
+  scoped_refptr<Response> CreateResponse(int response_code);
+  scoped_refptr<Response> CreateResponse(int response_code,
+      const base::StringPiece& status_text);
+
  private:
   friend class Message;
   friend class base::RefCountedThreadSafe<Request>;
@@ -47,6 +56,9 @@ class Request : public Message {
   bool ParseStartLine(std::string::const_iterator line_begin,
                       std::string::const_iterator line_end,
                       std::string* raw_headers) override;
+
+  // Create a response based on current request.
+  scoped_refptr<Response> CreateResponse(scoped_refptr<Response> response);
 
   // This is the parsed SIP request method.
   std::string request_method_;

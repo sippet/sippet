@@ -90,8 +90,6 @@ void ClientTransaction::ReceiveResponse(scoped_refptr<Response> response) {
     case STATE_COMPLETED: break;
     default:
       NOTREACHED() << "bad state " << state;
-      Terminate();
-      return;
   }
 
   if (request_->request_method() == Request::kInvite
