@@ -31,6 +31,10 @@ component("sippet") {
     "client_transaction.cc",
     "server_transaction.h",
     "server_transaction.cc",
+    "core.h",
+    "core.cc",
+    "transport_layer.h",
+    "transport_layer.cc",
   ]
 
   defines = [ "SIPPET_IMPLEMENTATION" ]
@@ -68,6 +72,7 @@ test("sippet_unittests") {
   sources = [
     "../net/test/run_all_unittests.cc",
     "message/message_unittest.cc",
+    "transaction_layer_core_unittest.cc",
   ]
 
   deps = [

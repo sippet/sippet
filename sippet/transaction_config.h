@@ -8,10 +8,11 @@
 #include <vector>
 
 #include "base/time/time.h"
+#include "sippet/sippet_export.h"
 
 namespace sippet {
 
-struct TransactionConfig {
+struct SIPPET_EXPORT TransactionConfig {
   TransactionConfig();
   TransactionConfig(const TransactionConfig& other);
   ~TransactionConfig();

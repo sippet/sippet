@@ -17,8 +17,6 @@ class Response;
 
 class SIPPET_EXPORT Core {
  public:
-  virtual ~Core();
-
   // Called on a new incoming request.
   //
   // The |id| represents the server transaction identifier, created when
@@ -46,6 +44,9 @@ class SIPPET_EXPORT Core {
   //
   // The |id| can be a client transaction id or a server transaction id.
   virtual void OnTransportError(const std::string& id, int error) = 0;
+
+ protected:
+  virtual ~Core();
 };
 
 }  // namespace sippet

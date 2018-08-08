@@ -10,25 +10,20 @@
 
 namespace sippet {
 class Core;
+class Message;
 class TransactionLayer;
 
 class SIPPET_EXPORT TransportLayer {
  public:
   virtual ~TransportLayer();
 
-  // Get the stack Core.
-  Core* core() { return core_; }
-
-  // Get the transaction layer attached to this transport layer.
-  TransactionLayer* transaction_layer() { return transaction_layer_; }
+  // Create a new transport layer.
+  static std::unique_ptr<TransportLayer> Create();
 
   // Called by the transaction layer while setting up the stack.
   // |transaction_layer| must not be null.
   // |core| must not be null.
-  void Init(TransactionLayer* transaction_layer, Core* core) {
-    transaction_layer_ = transaction_layer;
-    core_ = core;
-  }
+  virtual void Init(TransactionLayer* transaction_layer, Core* core) = 0;
 
   // Start receiving messages.
   // It is called by the |TransactionLayer| during the stack setup. The Core
@@ -40,18 +35,7 @@ class SIPPET_EXPORT TransportLayer {
   virtual void Stop() = 0;
 
   // Sends a message to the network.
-  //
-  // If specified, the |id| will be used to notify the transaction layer if a
-  // transport error occurs. See |TransactionLayer::ReceiveTransportError|.
-  virtual int SendMessage(scoped_refptr<Message> message) = 0;
-  virtual int SendMessage(scoped_refptr<Message> message, int id) = 0;
-
- private:
-  // The transaction layer.
-  TransactionLayer* transaction_layer_;
-
-  // The stack core.
-  Core* core_;
+  virtual void SendMessage(scoped_refptr<Message> message) = 0;
 };
 
 }  // namespace sippet
