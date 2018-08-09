@@ -9,6 +9,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "sippet/transaction_config.h"
+#include "sippet/transport_layer.h"
 
 namespace base {
 class SequencedTaskRunner;
@@ -18,18 +19,21 @@ namespace sippet {
 class Core;
 class Request;
 class Response;
-class TransportLayer;
 class TransactionLayerCore;
 
 class ServerTransaction {
  public:
   ServerTransaction(scoped_refptr<Request> request,
-      const TransactionConfig& config, TransportLayer* transport_layer,
-      scoped_refptr<base::SequencedTaskRunner> core_task_runner, Core* core,
-      TransactionLayerCore* transaction_layer_core);
+      scoped_refptr<TransportLayer::Connection> connection,
+      const TransactionConfig& config,
+      scoped_refptr<base::SequencedTaskRunner> core_task_runner,
+      Core* core, TransactionLayerCore* transaction_layer_core);
   ~ServerTransaction();
 
-  // Start the client transaction. The request is sent to the transport layer
+  // Return the server transaction key.
+  const std::string& key() const { return key_; }
+
+  // Start the server transaction. The request is sent to the transport layer
   // at this moment.
   void Start();
 
@@ -78,7 +82,6 @@ class ServerTransaction {
   scoped_refptr<Request> request_;
   scoped_refptr<Response> response_;
   const TransactionConfig config_;
-  TransportLayer* transport_layer_;
   int retransmissions_;
 
   Core* core_;
@@ -90,6 +93,8 @@ class ServerTransaction {
   base::OneShotTimer provisional_response_timer_;
 
   TransactionLayerCore* transaction_layer_core_;
+  scoped_refptr<TransportLayer::Connection> connection_;
+  std::string key_;
 
   base::WeakPtrFactory<ServerTransaction> weak_ptr_factory_;
 };

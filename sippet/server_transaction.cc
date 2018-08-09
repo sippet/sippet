@@ -14,21 +14,23 @@
 namespace sippet {
 
 ServerTransaction::ServerTransaction(scoped_refptr<Request> request,
-      const TransactionConfig& config, TransportLayer* transport_layer,
-      scoped_refptr<base::SequencedTaskRunner> core_task_runner, Core* core,
-      TransactionLayerCore* transaction_layer_core)
+      scoped_refptr<TransportLayer::Connection> connection,
+      const TransactionConfig& config,
+      scoped_refptr<base::SequencedTaskRunner> core_task_runner,
+      Core* core, TransactionLayerCore* transaction_layer_core)
     : request_(request),
       config_(config),
-      transport_layer_(transport_layer),
       retransmissions_(0),
       core_(core),
       core_task_runner_(core_task_runner),
       transaction_layer_core_(transaction_layer_core),
+      connection_(connection),
       weak_ptr_factory_(this) {
   DCHECK(request);
-  DCHECK(transport_layer);
   DCHECK(core);
   DCHECK(core_task_runner);
+
+  key_ = request->server_key();
 }
 
 ServerTransaction::~ServerTransaction() {}
@@ -51,7 +53,7 @@ void ServerTransaction::ReceiveRequest(scoped_refptr<Request> request) {
         || STATE_PROCEED_CALLING == next_state_
         || STATE_COMPLETED == next_state_) {
       if (response_) {
-        transport_layer_->SendMessage(response_);
+        connection_->SendMessage(response_);
       }
     }
   }
@@ -104,7 +106,7 @@ void ServerTransaction::SendResponse(scoped_refptr<Response> response) {
     StopProvisionalResponse();
 
   response_ = response;
-  transport_layer_->SendMessage(response);
+  connection_->SendMessage(response);
 
   State state = next_state_;
   int response_code = response->response_code();
@@ -153,7 +155,7 @@ void ServerTransaction::SendResponse(scoped_refptr<Response> response) {
 }
 
 void ServerTransaction::Terminate() {
-  transaction_layer_core_->RemoveServerTransaction(request_->server_key());
+  transaction_layer_core_->RemoveServerTransaction(this);
 }
 
 void ServerTransaction::ScheduleRetry() {
@@ -185,7 +187,7 @@ void ServerTransaction::RetransmitResponse() {
   DCHECK(request_->request_method() == Request::kInvite);
   DCHECK(STATE_COMPLETED == next_state_);
 
-  transport_layer_->SendMessage(response_);
+  connection_->SendMessage(response_);
 
   ScheduleRetry();
 }
@@ -211,7 +213,7 @@ void ServerTransaction::SendProvisionalResponse() {
     response_ = request_->CreateResponse(100);
   }
 
-  transport_layer_->SendMessage(response_);
+  connection_->SendMessage(response_);
 }
 
 void ServerTransaction::StopTimers() {

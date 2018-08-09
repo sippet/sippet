@@ -8,6 +8,8 @@
 
 namespace sippet {
 
+TransportLayer::Connection::~Connection() {}
+
 TransportLayer::~TransportLayer() {}
 
 // static

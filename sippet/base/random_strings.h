@@ -1,9 +1,9 @@
-// Copyright (c) 2013 The Sippet Authors. All rights reserved.
+// Copyright (c) 2018 The Sippet Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SIPPET_BASE_TAGS_H_
-#define SIPPET_BASE_TAGS_H_
+#ifndef SIPPET_BASE_RANDOM_STRINGS_H_
+#define SIPPET_BASE_RANDOM_STRINGS_H_
 
 #include <string>
 
@@ -30,6 +30,6 @@ inline std::string CreateCallId() {
   return CreateRandomString(120);
 }
 
-} // End of sippet namespace
+} // namespace sippet
 
-#endif // SIPPET_BASE_TAGS_H_
+#endif  // SIPPET_BASE_RANDOM_STRINGS_H_

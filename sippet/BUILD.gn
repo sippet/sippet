@@ -9,6 +9,9 @@ use_v8_in_net = !is_ios && !is_android
 
 component("sippet") {
   sources = [
+    "base/thread_util.h",
+    "base/random_strings.h",
+    "base/random_strings.cc",
     "message/message.h",
     "message/message.cc",
     "message/request.h",
@@ -72,7 +75,7 @@ test("sippet_unittests") {
   sources = [
     "../net/test/run_all_unittests.cc",
     "message/message_unittest.cc",
-    "transaction_layer_core_unittest.cc",
+    "transaction_layer_unittest.cc",
   ]
 
   deps = [

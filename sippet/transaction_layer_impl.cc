@@ -34,8 +34,8 @@ void TransactionLayerImpl::Start() {
   core_->Start();
 }
 
-void TransactionLayerImpl::SendRequest(scoped_refptr<Request> request) {
-  core_->SendRequest(request);
+std::string TransactionLayerImpl::SendRequest(scoped_refptr<Request> request) {
+  return core_->SendRequest(request);
 }
 
 void TransactionLayerImpl::SendResponse(scoped_refptr<Response> response) {
@@ -46,8 +46,9 @@ void TransactionLayerImpl::Terminate(const std::string& id) {
   core_->Terminate(id);
 }
 
-void TransactionLayerImpl::OnMessage(scoped_refptr<Message> message) {
-  core_->OnMessage(message);
+void TransactionLayerImpl::OnMessage(scoped_refptr<Message> message,
+    scoped_refptr<TransportLayer::Connection> connection) {
+  core_->OnMessage(message, connection);
 }
 
 void TransactionLayerImpl::OnTransportError(const std::string& id, int error) {

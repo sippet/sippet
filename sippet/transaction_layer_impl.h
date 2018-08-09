@@ -23,10 +23,11 @@ class SIPPET_EXPORT_PRIVATE TransactionLayerImpl : public TransactionLayer {
   void SetRequestContext(
       net::URLRequestContextGetter* request_context_getter) override;
   void Start() override;
-  void SendRequest(scoped_refptr<Request> request) override;
+  std::string SendRequest(scoped_refptr<Request> request) override;
   void SendResponse(scoped_refptr<Response> response) override;
   void Terminate(const std::string& id) override;
-  void OnMessage(scoped_refptr<Message> message) override;
+  void OnMessage(scoped_refptr<Message> message,
+      scoped_refptr<TransportLayer::Connection> connection) override;
   void OnTransportError(const std::string& id, int error) override;
 
   // Sets the factory used by the static method Create to create a

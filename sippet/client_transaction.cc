@@ -5,6 +5,8 @@
 #include "sippet/client_transaction.h"
 
 #include "base/sequenced_task_runner.h"
+#include "base/strings/string_number_conversions.h"
+#include "sippet/base/random_strings.h"
 #include "sippet/core.h"
 #include "sippet/message/request.h"
 #include "sippet/message/response.h"
@@ -24,11 +26,14 @@ ClientTransaction::ClientTransaction(scoped_refptr<Request> request,
       core_(core),
       core_task_runner_(core_task_runner),
       transaction_layer_core_(transaction_layer_core),
+      branch_id_(CreateBranch()),
       weak_ptr_factory_(this) {
   DCHECK(request);
   DCHECK(transport_layer);
   DCHECK(core);
   DCHECK(core_task_runner);
+
+  key_ = "C->" + branch_id_ + ":" + request->request_method();
 }
 
 ClientTransaction::~ClientTransaction() {}
@@ -40,13 +45,8 @@ void ClientTransaction::Start() {
     next_state_ = STATE_TRYING;
   }
 
-  transport_layer_->SendMessage(request_);
-
-  std::string protocol;
-  request_->EnumerateVia(nullptr, &protocol, nullptr, nullptr);
-  if (protocol == Message::kUdp)
-    ScheduleRetry();
-  ScheduleTimeout();
+  transport_layer_->Connect(request_->request_uri(),
+      base::Bind(&ClientTransaction::OnConnect, weak_ptr_factory_.GetWeakPtr()));
 }
 
 void ClientTransaction::ReceiveResponse(scoped_refptr<Response> response) {
@@ -136,7 +136,7 @@ void ClientTransaction::ReceiveResponse(scoped_refptr<Response> response) {
 }
 
 void ClientTransaction::Terminate() {
-  transaction_layer_core_->RemoveClientTransaction(request_->client_key());
+  transaction_layer_core_->RemoveClientTransaction(this);
 }
 
 void ClientTransaction::ScheduleRetry() {
@@ -164,7 +164,7 @@ void ClientTransaction::RetransmitRequest() {
     DCHECK(STATE_TRYING == next_state_ || STATE_PROCEEDING == next_state_);
   }
 
-  transport_layer_->SendMessage(request_);
+  connection_->SendMessage(request_);
 
   ScheduleRetry();
 }
@@ -194,9 +194,27 @@ void ClientTransaction::StopTimers() {
 }
 
 void ClientTransaction::SendAck(const std::string &to_tag) {
+  DCHECK(connection_);
   if (!ack_)
     ack_ = request_->CreateAck(to_tag);
-  transport_layer_->SendMessage(ack_);
+  connection_->SendMessage(ack_);
+}
+
+void ClientTransaction::OnConnect(
+    scoped_refptr<TransportLayer::Connection> connection) {
+  connection_ = connection;
+
+  // Set the Via header in the request now.
+  std::string protocol = connection_->GetTransportProtocol();
+  net::HostPortPair destination = connection_->GetDestination();
+  request_->AddHeader("Via: SIP/2.0/" + protocol + " " + destination.host() +
+      ":" + base::IntToString(destination.port()) + ";branch=" + branch_id_ + ";rport");
+
+  connection_->SendMessage(request_);
+
+  if (protocol == Message::kUdp)
+    ScheduleRetry();
+  ScheduleTimeout();
 }
 
 base::TimeDelta ClientTransaction::GetNextRetryDelay() {

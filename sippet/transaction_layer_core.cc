@@ -4,6 +4,8 @@
 
 #include "sippet/transaction_layer_core.h"
 
+#include <functional>
+
 #include "base/bind.h"
 #include "base/logging.h"
 #include "base/sequenced_task_runner.h"
@@ -13,6 +15,7 @@
 #include "base/memory/ptr_util.h"
 #include "net/base/net_errors.h"
 #include "net/url_request/url_request_context_getter.h"
+#include "sippet/base/thread_util.h"
 #include "sippet/core.h"
 #include "sippet/message/request.h"
 #include "sippet/message/response.h"
@@ -67,12 +70,11 @@ void TransactionLayerCore::SetRequestContext(
   request_context_getter_ = request_context_getter;
 }
 
-void TransactionLayerCore::SendRequest(scoped_refptr<Request> request) {
+std::string TransactionLayerCore::SendRequest(scoped_refptr<Request> request) {
   if (network_task_runner_->RunsTasksOnCurrentThread()) {
-    SendRequestOnIOThread(request);
+    return SendRequestOnIOThread(request);
   } else {
-    network_task_runner_->PostTask(
-        FROM_HERE,
+    return PostTaskAndWait(network_task_runner_, FROM_HERE,
         base::Bind(&TransactionLayerCore::SendRequestOnIOThread, this,
             request));
   }
@@ -99,7 +101,8 @@ void TransactionLayerCore::Terminate(const std::string& id) {
   }
 }
 
-void TransactionLayerCore::OnMessage(scoped_refptr<Message> message) {
+void TransactionLayerCore::OnMessage(scoped_refptr<Message> message,
+    scoped_refptr<TransportLayer::Connection> connection) {
   DCHECK(network_task_runner_->BelongsToCurrentThread());
 
   if (message->IsRequest()) {
@@ -110,10 +113,10 @@ void TransactionLayerCore::OnMessage(scoped_refptr<Message> message) {
     if (it == server_transactions_map_.end()) {
       LOG(INFO) << "New server transaction " << server_key;
       std::unique_ptr<ServerTransaction> server_transaction(
-          new ServerTransaction(request, config_, transport_layer_,
-              core_task_runner_, core_, this));
-      server_transactions_map_[server_key] = std::move(server_transaction);
+          new ServerTransaction(request, connection, config_, core_task_runner_,
+              core_, this));
       server_transaction->Start();
+      server_transactions_map_[server_key] = std::move(server_transaction);
     } else {
       it->second->ReceiveRequest(request);
     }
@@ -156,29 +159,28 @@ void TransactionLayerCore::OnTransportError(const std::string& id, int error) {
   }
 }
 
-void TransactionLayerCore::RemoveClientTransaction(const std::string& id) {
-  client_transactions_map_.erase(id);
+void TransactionLayerCore::RemoveClientTransaction(
+    const ClientTransaction* client_transaction) {
+  client_transactions_map_.erase(client_transaction->key());
 }
 
-void TransactionLayerCore::RemoveServerTransaction(const std::string& id) {
-  server_transactions_map_.erase(id);
+void TransactionLayerCore::RemoveServerTransaction(
+    const ServerTransaction* server_transaction) {
+  server_transactions_map_.erase(server_transaction->key());
 }
 
-void TransactionLayerCore::SendRequestOnIOThread(
+std::string TransactionLayerCore::SendRequestOnIOThread(
     scoped_refptr<Request> request) {
-  std::string client_key = request->client_key();
+  std::unique_ptr<ClientTransaction> client_transaction(
+      new ClientTransaction(request, config_, transport_layer_,
+          core_task_runner_, core_, this));
 
-  auto it = client_transactions_map_.find(client_key);
-  if (it == client_transactions_map_.end()) {
-    LOG(INFO) << "New client transaction " << client_key;
-    std::unique_ptr<ClientTransaction> client_transaction(
-        new ClientTransaction(request, config_, transport_layer_,
-            core_task_runner_, core_, this));
-    client_transactions_map_[client_key] = std::move(client_transaction);
-    client_transaction->Start();
-  } else {
-    LOG(WARNING) << "Trying to duplicate an existing transaction, ignored";
-  }
+  std::string client_key(client_transaction->key());
+  LOG(INFO) << "New client transaction " << client_key;
+  client_transaction->Start();
+  client_transactions_map_[client_key] = std::move(client_transaction);
+
+  return client_key;
 }
 
 void TransactionLayerCore::SendResponseOnIOThread(

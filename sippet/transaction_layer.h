@@ -9,6 +9,7 @@
 
 #include "base/memory/ref_counted.h"
 #include "sippet/sippet_export.h"
+#include "sippet/transport_layer.h"
 
 namespace net {
 class URLRequestContextGetter;
@@ -54,12 +55,12 @@ class SIPPET_EXPORT TransactionLayer {
   // |Core| doesn't get retransmissions other than 200 OK for INVITE requests.
   //
   // It returns the id of the client transaction.
-  virtual void SendRequest(scoped_refptr<Request> request) = 0;
+  virtual std::string SendRequest(scoped_refptr<Request> request) = 0;
 
   // Sends a response to a server transaction.
   //
-  // Server transactions are created when the incoming request is received.
-  // |id| is the server transaction id.
+  // Server transactions are created when the incoming request is received, so
+  // the |response| should contain the information needed to route the response.
   virtual void SendResponse(scoped_refptr<Response> response) = 0;
 
   // Terminates a client or server transaction forcefully.
@@ -84,7 +85,8 @@ class SIPPET_EXPORT TransactionLayer {
   // response is redirected directly to the |Core|. The latter is done
   // so because of the usual SIP behavior or handling the 200 OK response
   // retransmissions for requests with INVITE method directly.
-  virtual void OnMessage(scoped_refptr<Message> message) = 0;
+  virtual void OnMessage(scoped_refptr<Message> message,
+      scoped_refptr<TransportLayer::Connection> connection) = 0;
 
   // Receives an error from transport.
   //

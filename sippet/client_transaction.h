@@ -9,6 +9,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/memory/ref_counted.h"
 #include "sippet/transaction_config.h"
+#include "sippet/transport_layer.h"
 
 namespace base {
 class SequencedTaskRunner;
@@ -18,7 +19,6 @@ namespace sippet {
 class Core;
 class Request;
 class Response;
-class TransportLayer;
 class TransactionLayerCore;
 
 class ClientTransaction {
@@ -28,6 +28,9 @@ class ClientTransaction {
       scoped_refptr<base::SequencedTaskRunner> core_task_runner, Core* core,
       TransactionLayerCore* transaction_layer_core);
   ~ClientTransaction();
+
+  // Return the client transaction key.
+  const std::string& key() const { return key_; }
 
   // Start the client transaction. The request is sent to the transport layer
   // at this moment.
@@ -62,6 +65,7 @@ class ClientTransaction {
   // Other functions
   void StopTimers();
   void SendAck(const std::string &to_tag);
+  void OnConnect(scoped_refptr<TransportLayer::Connection> connection);
 
   // Return the timer durations
   base::TimeDelta GetNextRetryDelay();
@@ -84,6 +88,9 @@ class ClientTransaction {
   base::OneShotTimer terminate_timer_;
 
   TransactionLayerCore* transaction_layer_core_;
+  scoped_refptr<TransportLayer::Connection> connection_;
+  std::string branch_id_;
+  std::string key_;
 
   base::WeakPtrFactory<ClientTransaction> weak_ptr_factory_;
 };

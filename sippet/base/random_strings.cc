@@ -1,8 +1,8 @@
-// Copyright (c) 2013 The Sippet Authors. All rights reserved.
+// Copyright (c) 2018 The Sippet Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "sippet/base/tags.h"
+#include "sippet/base/random_strings.h"
 
 #include "crypto/random.h"
 #include "base/strings/string_util.h"
@@ -36,4 +36,3 @@ std::string CreateRandomString(int bits) {
 }
 
 }  // namespace sippet
-

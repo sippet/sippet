@@ -45,15 +45,16 @@ class SIPPET_EXPORT_PRIVATE TransactionLayerCore
   // TransactionLayer-like functions.
   void SetRequestContext(
       net::URLRequestContextGetter* request_context_getter);
-  void SendRequest(scoped_refptr<Request> request);
+  std::string SendRequest(scoped_refptr<Request> request);
   void SendResponse(scoped_refptr<Response> response);
   void Terminate(const std::string& id);
-  void OnMessage(scoped_refptr<Message> message);
+  void OnMessage(scoped_refptr<Message> message,
+      scoped_refptr<TransportLayer::Connection> connection);
   void OnTransportError(const std::string& id, int error);
 
   // Called by ClientTransaction and ServerTransaction to remove themselves.
-  void RemoveClientTransaction(const std::string& id);
-  void RemoveServerTransaction(const std::string& id);
+  void RemoveClientTransaction(const ClientTransaction* client_transaction);
+  void RemoveServerTransaction(const ServerTransaction* server_transaction);
 
  private:
   friend class base::RefCountedThreadSafe<sippet::TransactionLayerCore>;
@@ -62,7 +63,7 @@ class SIPPET_EXPORT_PRIVATE TransactionLayerCore
 
   // Wrapper functions that allow us to ensure actions happen on the right
   // thread.
-  void SendRequestOnIOThread(scoped_refptr<Request> request);
+  std::string SendRequestOnIOThread(scoped_refptr<Request> request);
   void SendResponseOnIOThread(scoped_refptr<Response> response);
   void TerminateOnIOThread(const std::string& id);
   void CancelAllTransactions(int error);
@@ -76,10 +77,13 @@ class SIPPET_EXPORT_PRIVATE TransactionLayerCore
   scoped_refptr<base::SingleThreadTaskRunner> network_task_runner_;
 
   // Transaction maps.
-  std::unordered_map<std::string, std::unique_ptr<ClientTransaction>>
-      client_transactions_map_;
-  std::unordered_map<std::string, std::unique_ptr<ServerTransaction>>
-      server_transactions_map_;
+  typedef std::unordered_map<std::string, std::unique_ptr<ClientTransaction>>
+      ClientTransactionsMap;
+  typedef std::unordered_map<std::string, std::unique_ptr<ServerTransaction>>
+      ServerTransactionsMap;
+
+  ClientTransactionsMap client_transactions_map_;
+  ServerTransactionsMap server_transactions_map_;
 
   // The URL request context getter.
   scoped_refptr<net::URLRequestContextGetter> request_context_getter_;
